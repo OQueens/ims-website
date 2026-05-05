@@ -1,6 +1,6 @@
 # Innovative Medical Staffing — Public Website Design Spec
 
-**Status:** Phase 0 ready for execution; Phase 1+ outlined, refined after live prototyping
+**Status:** Phase 0 complete (live as of 2026-05-05T15:40:02Z); Phase 1+ outlined, refined after open-design prototyping
 **Domain:** innovativemedicalstaffing.com (owned, blank slate, Namecheap DNS)
 **Repo target:** `OQueens/ims-website`
 **Created:** 2026-05-05
