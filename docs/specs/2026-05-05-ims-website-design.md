@@ -2,7 +2,7 @@
 
 **Status:** Phase 0 ready for execution; Phase 1+ outlined, refined after live prototyping
 **Domain:** innovativemedicalstaffing.com (owned, blank slate, Namecheap DNS)
-**Repo target:** `OQueens/ias-website`
+**Repo target:** `OQueens/ims-website`
 **Created:** 2026-05-05
 
 ---
@@ -30,7 +30,7 @@ Public marketing website for Innovative Medical Staffing. Brand-grade, fast, acc
 Single page at `innovativemedicalstaffing.com` that signals "intentional, soon" without leaking that the site is greenfield.
 
 ### Page design (all decisions locked)
-- Astro project initialized in `OQueens/ias-website`
+- Astro project initialized in `OQueens/ims-website`
 - `src/pages/index.astro` — single page
 - Dark mode default (`color-scheme: dark`); light mode mirrored via `prefers-color-scheme: light` for completeness
 - IAS tokens loaded via `src/styles/tokens.css` (ported from `IAS-Design-System.md`)
@@ -53,14 +53,14 @@ Single page at `innovativemedicalstaffing.com` that signals "intentional, soon" 
 - `package.json` — Astro 5.x, no extra deps
 - `astro.config.mjs` — minimal
 - Commit the existing `IAS-Design-System.md` into the new repo as `docs/IAS-Design-System.md` (so the source of truth travels with the code)
-- Commit this spec into the new repo as `docs/specs/2026-05-05-ias-website-design.md`
+- Commit this spec into the new repo as `docs/specs/2026-05-05-ims-website-design.md`
 - `DEPLOY.md` at repo root with step-by-step Cloudflare Pages connect + Namecheap CNAME instructions for Zach
 
 ### Build/deploy steps (executed in this order)
-1. Scaffold Astro project locally at `c:\Users\oclou\QueenClaude\ias-website\`
+1. Scaffold Astro project locally at `c:\Users\oclou\QueenClaude\ims-website\`
 2. Implement maintenance page + tokens + robots.txt
 3. Local build verification (`npm run build`, eyeball `dist/`)
-4. `gh repo create OQueens/ias-website --public --source=. --remote=origin --push`
+4. `gh repo create OQueens/ims-website --public --source=. --remote=origin --push`
 5. Hand off to Zach: Cloudflare Pages connect-repo flow + Namecheap CNAME instructions (documented in `DEPLOY.md` in the new repo)
 6. Zach completes the OAuth + DNS steps (the only human-required steps — credentials)
 7. Joint live verification on `https://innovativemedicalstaffing.com`
@@ -77,11 +77,11 @@ Single page at `innovativemedicalstaffing.com` that signals "intentional, soon" 
 ### Information architecture
 ```
 /                                    Home (mission hero, dual CTA, specialty grid, social proof, trust bar)
-/clinicians                          Why work with IAS
+/clinicians                          Why work with IMS
   /clinicians/specialties/[slug]     Programmatic specialty pages (SEO)
   /clinicians/submit-cv              Conversion event for supply side
   /clinicians/calculator             Locum income estimator (CompHealth-style trust device, defer to Phase 3)
-/employers                           Why hire with IAS
+/employers                           Why hire with IMS
   /employers/request-staff           Conversion event for demand side
   /employers/services                Sub-pages per service line (actual list deferred to §4 Open decisions)
 /about                               Story, leadership, JC certification, values
@@ -122,8 +122,8 @@ robots.txt, sitemap.xml, /og/[*].png (programmatic OG images)
 - **PHI in CV uploads.** Some healthcare CVs include sensitive info. Encrypted-at-rest storage (Supabase ✓), retention policy, and BAA paperwork with anyone who touches the data. Phase 2 work.
 - **Indexing accidents.** Maintenance page must stay noindex until the real site lands. Removing the meta + robots disallow is the deliberate launch ceremony.
 - **Domain DNS state.** Currently pointed at Namecheap default DNS, no records configured. CNAME addition is the entire DNS work for Phase 0.
-- **Brand voice gap.** I can draft v1 copy from competitor patterns + IAS positioning, but Zach owns final voice. Don't ship copy without his pass.
-- **Compete on relationship vs scale.** AMN/CHG win on scale ("2M+ clinicians, 40 years"). IAS is smaller — differentiation lever is personal/specialized service. Tone and home hero should reflect that.
+- **Brand voice gap.** I can draft v1 copy from competitor patterns + IMS positioning, but Zach owns final voice. Don't ship copy without his pass.
+- **Compete on relationship vs scale.** AMN/CHG win on scale ("2M+ clinicians, 40 years"). IMS is smaller — differentiation lever is personal/specialized service. Tone and home hero should reflect that.
 
 ## 6. Out of scope (explicit non-goals)
 

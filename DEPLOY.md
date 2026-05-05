@@ -11,19 +11,19 @@ This site deploys to Cloudflare Pages with custom domain `innovativemedicalstaff
 1. Sign in or create a Cloudflare account: https://dash.cloudflare.com
 2. **Workers & Pages → Create → Pages → Connect to Git**
 3. Authorize the GitHub OAuth app for `OQueens` (read-only on this repo is enough)
-4. Pick repo `OQueens/ias-website`, branch `main`
+4. Pick repo `OQueens/ims-website`, branch `main`
 5. Build settings (Astro is auto-detected):
    - **Framework preset:** Astro
    - **Build command:** `npm run build`
    - **Build output directory:** `dist`
-6. **Save and Deploy.** First build takes ~1-2 minutes. Resulting URL: `https://ias-website.pages.dev` (or similar).
+6. **Save and Deploy.** First build takes ~1-2 minutes. Resulting URL: `https://ims-website.pages.dev` (or similar).
 7. Verify the maintenance page renders at the `*.pages.dev` URL.
 
 ### 2. Custom domain in Pages
 
 1. In the Pages project → **Custom domains → Set up a custom domain**
 2. Enter `innovativemedicalstaffing.com`
-3. Cloudflare gives you a CNAME target like `ias-website.pages.dev`. Copy it.
+3. Cloudflare gives you a CNAME target like `ims-website.pages.dev`. Copy it.
 4. Skip the "use Cloudflare DNS" path — we're keeping DNS at Namecheap for v0.
 
 ### 3. Namecheap DNS — point the domain
@@ -35,8 +35,8 @@ This site deploys to Cloudflare Pages with custom domain `innovativemedicalstaff
 
 | Type           | Host | Value (paste from Cloudflare) | TTL       |
 |----------------|------|-------------------------------|-----------|
-| CNAME Record   | www  | `ias-website.pages.dev`       | Automatic |
-| ALIAS Record   | @    | `ias-website.pages.dev`       | Automatic |
+| CNAME Record   | www  | `ims-website.pages.dev`       | Automatic |
+| ALIAS Record   | @    | `ims-website.pages.dev`       | Automatic |
 
 5. Save.
 

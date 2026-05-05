@@ -13,7 +13,7 @@ Public marketing site for [innovativemedicalstaffing.com](https://innovativemedi
 
 **Phase 0 — Maintenance page.** Real site under construction.
 
-See [docs/specs/2026-05-05-ias-website-design.md](docs/specs/2026-05-05-ias-website-design.md) for the full design spec and roadmap.
+See [docs/specs/2026-05-05-ims-website-design.md](docs/specs/2026-05-05-ims-website-design.md) for the full design spec and roadmap.
 
 ## Local development
 
