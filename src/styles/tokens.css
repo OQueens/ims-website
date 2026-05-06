@@ -57,6 +57,47 @@
   /* Typography */
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
   --mono: 'IBM Plex Mono', 'SF Mono', 'Menlo', monospace;
+
+  /* === Marketing brand tokens (PT-derived, IMS-adjusted — spec §4.1) === */
+  /* Surfaces */
+  --surface-page:        #1E1E1E;
+  --surface-card:        #F2E8DC;
+  --surface-card-2:      #FFFAF3;
+  --surface-warm:        #A79785;
+
+  /* Inks */
+  --ink-on-cream:        #1E1E1E;
+  --ink-on-cream-2:      #7B5E5C;
+  --ink-on-cream-3:      #403F3E;
+  --ink-on-dark:         #F2E8DC;
+  --ink-on-dark-2:       #C8C8C8;
+
+  /* Brand */
+  --brand-blue:          #59BFE7;
+  --brand-blue-deep:     #3898EC;
+  --brand-navy:          #1A2B4A;
+  --brand-gold:          #F0B420;
+  --brand-gold-muted:    #B8975B;
+  --brand-red:           #E73C37;
+  --brand-teal:          #3D6B6F;
+  --brand-green:         #2F4A40;
+
+  /* Borders (marketing surfaces — distinct from dashboard --border) */
+  --border-hairline:     rgba(30, 30, 30, 0.12);
+  --border-strong-mkt:   rgba(30, 30, 30, 0.32);
+
+  /* Functional */
+  --success:             #2F6B4A;
+  --warning:             #B87A1F;
+  --error-mkt:           #A33A2C;
+
+  /* Marketing radius scale (vw-based card chrome — spec §4.6) */
+  --r-card:              clamp(20px, 5vw, 96px);
+  --r-section:           16px;
+  --r-audience:          24px;
+  --r-pill-mkt:          999px;
+  --r-input:             8px;
+  --r-illustration:      24px;
 }
 
 @media (prefers-color-scheme: dark) {
