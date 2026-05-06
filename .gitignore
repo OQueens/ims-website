@@ -2,6 +2,10 @@
 dist/
 # generated types
 .astro/
+# wrangler/miniflare runtime cache
+.wrangler/
+# claude-code per-cwd settings (worktree-local)
+.claude/
 
 # dependencies
 node_modules/
