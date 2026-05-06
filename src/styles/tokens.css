@@ -1,3 +1,5 @@
+@import '@fontsource-variable/inter';
+
 :root {
   /* Backgrounds */
   --bg:             #ffffff;
@@ -98,6 +100,30 @@
   --r-pill-mkt:          999px;
   --r-input:             8px;
   --r-illustration:      24px;
+
+  /* === Marketing typography (spec §4.2) === */
+  --font-display: 'TAY Basal', 'Inter Variable', 'Source Serif 4', Georgia, serif;
+  --font-body:    'TAY Amaya', 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-mono-mkt: ui-monospace, 'JetBrains Mono', Consolas, monospace;
+}
+
+/* @font-face declarations live OUTSIDE :root */
+@font-face {
+  font-family: 'TAY Basal';
+  src: url('/fonts/TAYBasalRegular.woff2') format('woff2'),
+       url('/fonts/TAYBasalRegular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TAY Amaya';
+  src: url('/fonts/TAYAmaya.woff2') format('woff2'),
+       url('/fonts/TAYAmaya.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
 @media (prefers-color-scheme: dark) {
