@@ -28,3 +28,6 @@ pnpm-debug.log*
 
 # git worktrees
 .worktrees/
+
+# Claude Code session state (review-gate stamps, etc.)
+.claude/
