@@ -25,3 +25,6 @@ pnpm-debug.log*
 # editor settings
 .vscode/
 .idea/
+
+# git worktrees
+.worktrees/
