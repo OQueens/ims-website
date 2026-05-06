@@ -8,15 +8,14 @@ const SITE_URL = 'https://innovativemedicalstaffing.com';
 export default defineConfig({
   site: SITE_URL,
   output: 'static',
-  adapter: cloudflare({
-    platformProxy: { enabled: true },
-  }),
+  adapter: cloudflare(),
   integrations: [
     sitemap({
       filter: (page) => {
-        if (page.startsWith(`${SITE_URL}/api/`)) return false;
-        if (page.startsWith(`${SITE_URL}/og/`)) return false;
-        if (page.includes('/jobs?')) return false;
+        const url = new URL(page);
+        if (url.pathname.startsWith('/api/')) return false;
+        if (url.pathname.startsWith('/og/')) return false;
+        if (url.pathname === '/jobs' && url.search) return false;
         return true;
       },
     }),
