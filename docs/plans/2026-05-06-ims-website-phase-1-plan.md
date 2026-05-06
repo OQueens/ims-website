@@ -49,10 +49,10 @@ Per user direction at planning kickoff, the plan executes against the current sp
 
 Per project standing rule (CODEX COLLABORATION mandatory 2026-04-23): each non-trivial code commit MUST go through `/codex:rescue` (or direct `codex-companion.mjs` task review) before push. Loop: write → Codex review → fold findings → re-Codex → repeat until clean.
 
-**Per-task Codex matrix:**
-- **Code/route/library/migration tasks:** Codex review **MANDATORY** (T7, T8, T9, T10, T15, T16, T17, T18, T19, T28, T30, T32, T33, T35, T41, T42, T43, T44, T45, T46, T47, T49, T50, PA4, PA5, PA6, PA9, PA10)
-- **Page-copy / markdown / content-seed tasks:** `[codex-skip:reason]` allowed (T20 sub-tasks, T21–T27, T31, T54, T55)
-- **Config / deps / dashboard / process tasks:** Codex case-by-case; default skip with reason (T1, T2, T3, T11, T13, T14, T34, T36–T40, T48, T51, T52, T53, T56–T65)
+**Per-task Codex matrix** (updated post-Codex r1 AMBER #8 fold — T20 sub-tasks, T25, T34, T48, T51, T52 promoted to MANDATORY since they ship real code paths, not just copy):
+- **Code/route/library/migration tasks:** Codex review **MANDATORY** (T7, T8, T9, T10, T15, T16, T17, T18, T19, **T20a-T20j** (homepage section components incl. ScrollReveal+animation logic), **T25** (how-it-works tab JS island), T28, T30, T32, T33, **T34** (empty-state mini-form submit JS — added Codex r1 AMBER #4 fold), T35, T41, T42, T43, T44, T45, T46, T47, **T48** (Turnstile widget JS — multi-instance dispatch hook), T49, T50, **T51** (ApplyModal data-flow wiring with click handlers), **T52** (Plausible goal-fire analytics wiring), PA4, PA5, PA6, PA9, PA10)
+- **Page-copy / markdown / content-seed tasks:** `[codex-skip:reason]` allowed (T21–T24, T26, T27, T31, T54, T55) — note: T20 sub-tasks moved out of skip-allowed because they ship JS for tab toggling, IntersectionObserver wiring, and section-reveal logic per spec §2.4 / §2.7 / §2.8
+- **Config / deps / dashboard / process tasks:** Codex case-by-case; default skip with reason (T1, T2, T3, T11, T13, T14, T36–T40, T53, T56–T65)
 
 **Direct invocation pattern** (per memory feedback `feedback_codex_direct_bash_invocation.md`):
 ```
@@ -86,6 +86,8 @@ Poll via `until grep -qE "Phase: done|Duration:" <output_log>; do sleep 2; done`
 | `src/assets/brand/IMS-Logo-Default.svg` | Generated default variant (cream surfaces) |
 | `src/assets/brand/IMS-Logo-OnDark.svg` | Generated dark-surface variant |
 | `src/assets/brand/IMS-Logo-Mono.svg` | Generated currentColor variant |
+| `src/assets/icons/*.svg` × ≤ 8 | Functional icon set per spec §4.7 (search / arrow / external-link / email / phone / location / play / close — exact 8 picked in T6). T17 verify-build asserts count ≤ 8. (Codex r2 AMBER #6/#12 fold) |
+| `src/components/icons/Icon.astro` | Thin wrapper that inlines the requested icon SVG via build-time import; `<Icon name="search" size={16} />` — provides `currentColor` stroke + size variant. (Codex r2 AMBER #12 fold) |
 | `scripts/voice-lint.mjs` | Greps `.astro` + `.md` for spec §4.5 BANNED + CARE + VISUAL_BANNED tokens; advisory at v1 (exits 0, prints to stderr) |
 | `tests/_setup/vitest.config.ts` | Vitest config; sets up miniflare KV mocks |
 
@@ -157,6 +159,11 @@ Poll via `until grep -qE "Phase: done|Duration:" <output_log>; do sleep 2; done`
 | Path | Responsibility |
 |---|---|
 | `migrations/20260506_ims_phase1_tables.sql` | CREATE `ims_applications` + `ims_contact_messages` + RLS ENABLE per spec §0.5.4 |
+
+**Cloudflare Pages config:**
+| Path | Responsibility |
+|---|---|
+| `public/_redirects` | 301 `/sitemap.xml → /sitemap-index.xml` so robots.txt's stable public URL resolves to the @astrojs/sitemap-emitted file. (Codex r2 AMBER #12 fold — added to map; T14 creates the file.) |
 
 **Tests:**
 | Path | Responsibility |
@@ -239,7 +246,7 @@ Poll via `until grep -qE "Phase: done|Duration:" <output_log>; do sleep 2; done`
 | T31 | 1.A | Seed `src/content/jobs/` (template + 10 example listings — Zach action: replace with real before launch) |
 | T32 | 1.A | Build `src/pages/jobs/index.astro` (Path B SSG over Content Collection — filter rail + card grid) |
 | T33 | 1.A | Wire vanilla-TS filter island for URL-param filter state |
-| T34 | 1.A | Empty-state + filter result rendering verification |
+| T34 | 1.A | Wire empty-state mini-form submit handler (depends on T48) |
 | T35 | 1.A | Create `migrations/20260506_ims_phase1_tables.sql` |
 | T36 | 1.A | Apply migration to Supabase (`gbakzhibzotugfyktcrt` default per §10 item 8) |
 | T37 | 1.A | Provision KV namespace `IMS_RATE` + bind as `RATE_KV` (Cloudflare dashboard — operator action) |
@@ -288,7 +295,7 @@ Poll via `until grep -qE "Phase: done|Duration:" <output_log>; do sleep 2; done`
 
 ## Phase 1.0 — Foundation Tasks
 
-> Phase 1.0 is additive only — site STAYS noindex (`X-Robots-Tag` not removed yet). Phase 1.A T17/T18 do the index-flip together with the home-page swap. Phase 1.0 deploy gate: Lighthouse ≥95 on `/` (still maintenance page), voice-lint runs without errors.
+> Phase 1.0 is additive only — site STAYS noindex (`X-Robots-Tag` not removed yet). Phase 1.A T15/T16 do the index-flip together (T17 then verifies it via build invariants). Phase 1.0 deploy gate: Lighthouse ≥95 on `/` (still maintenance page), voice-lint runs without errors. (Codex r2 AMBER #15 fold — corrected from stale T17/T18 reference.)
 
 ### T1: Install `@astrojs/cloudflare` adapter + `@astrojs/sitemap`; switch to hybrid
 
@@ -573,7 +580,7 @@ git commit -m "feat(1.0): @font-face TAY Basal + Amaya + Inter Variable fallback
 
 ---
 
-### T6: Generate logo SVG variants + Astro components
+### T6: Generate logo SVG variants + functional icon set + Astro components
 
 **Files:**
 - Create: `src/assets/brand/IMS-Logo-Original.svg`
@@ -583,6 +590,8 @@ git commit -m "feat(1.0): @font-face TAY Basal + Amaya + Inter Variable fallback
 - Create: `src/components/brand/LogoDefault.astro`
 - Create: `src/components/brand/LogoOnDark.astro`
 - Create: `src/components/brand/LogoMono.astro`
+- Create: `src/assets/icons/{chevron-down,chevron-right,close,external-link,arrow-right,menu,check,info}.svg` (≤8 functional icons per spec §4.7 — Codex r1 AMBER #5 fold)
+- Create: `src/components/icons/Icon.astro` (single wrapper that takes a `name` prop and inlines the matching SVG)
 
 **Codex review:** `[codex-skip: SVG asset + thin component wrapper]`
 
@@ -632,18 +641,107 @@ Replace `[WIDTH]` `[HEIGHT]` with actual viewBox values from the source SVG. Inl
 
 Same shape as LogoDefault, swap inlined SVG content per variant.
 
-- [ ] **Step 7: Verify components render**
+- [ ] **Step 7: Verify logo components render**
 
 In a temporary scratch route or by importing into `src/pages/index.astro`, render all three and confirm:
 - Default reads correctly on cream
 - OnDark reads correctly on `#1E1E1E`
 - Mono inherits parent `color` (test by wrapping in `<div style="color: red">`)
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 8: Author functional icon SVGs (Codex r1 AMBER #5 fold — spec §4.7)**
+
+Create 8 icons in `src/assets/icons/`. All are 24×24px viewBox, line-art at 1.5px stroke-width, `currentColor` stroke + `none` fill, `stroke-linecap="round"` + `stroke-linejoin="round"`:
+
+| Icon | Path / Use case |
+|---|---|
+| `chevron-down.svg` | `<polyline points="6 9 12 15 18 9" />` — used by select / accordion |
+| `chevron-right.svg` | `<polyline points="9 6 15 12 9 18" />` — used by CTAs (replaces Unicode `→` where icon-style fits better) |
+| `close.svg` | `<line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />` — modal close |
+| `external-link.svg` | `<path d="M14 4h6v6 M14 10l6-6 M19 11v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h8" />` — outbound LinkedIn / careers links in footer |
+| `arrow-right.svg` | `<line x1="4" y1="12" x2="20" y2="12" /><polyline points="14 6 20 12 14 18" />` — primary CTA emphasis |
+| `menu.svg` | `<line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />` — Phase 1.5 hamburger nav (icon staged at v1 even if menu component is 1.5) |
+| `check.svg` | `<polyline points="5 12 10 17 19 7" />` — form-success indicator |
+| `info.svg` | `<circle cx="12" cy="12" r="9" /><line x1="12" y1="11" x2="12" y2="17" /><circle cx="12" cy="7.5" r="0.5" fill="currentColor" />` — tooltip / hint marker |
+
+SVG template (apply to each):
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- icon content per table above -->
+</svg>
+```
+
+**Cap enforcement:** ≤8 icons at Phase 1 launch per spec §4.7. Adding a 9th icon requires either (a) a Phase 1.5 plan addendum, or (b) replacing an existing icon. CI guardrail: `verify-build.mjs` (T17) adds an assertion `readdirSync('src/assets/icons').filter(f => f.endsWith('.svg')).length <= 8`.
+
+- [ ] **Step 9: Create `src/components/icons/Icon.astro` wrapper**
+
+```astro
+---
+import chevronDown from '../../assets/icons/chevron-down.svg?raw';
+import chevronRight from '../../assets/icons/chevron-right.svg?raw';
+import close from '../../assets/icons/close.svg?raw';
+import externalLink from '../../assets/icons/external-link.svg?raw';
+import arrowRight from '../../assets/icons/arrow-right.svg?raw';
+import menu from '../../assets/icons/menu.svg?raw';
+import check from '../../assets/icons/check.svg?raw';
+import info from '../../assets/icons/info.svg?raw';
+
+const ICONS = {
+  'chevron-down': chevronDown,
+  'chevron-right': chevronRight,
+  'close': close,
+  'external-link': externalLink,
+  'arrow-right': arrowRight,
+  'menu': menu,
+  'check': check,
+  'info': info,
+} as const;
+
+interface Props {
+  name: keyof typeof ICONS;
+  size?: number;
+  /** Optional accessible label; if omitted, icon is aria-hidden (decorative) */
+  label?: string;
+}
+const { name, size = 24, label } = Astro.props;
+const raw = ICONS[name];
+---
+<span
+  class="icon"
+  style={`--icon-size: ${size}px`}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+  set:html={raw}
+/>
+
+<style>
+  .icon { display: inline-flex; align-items: center; justify-content: center; }
+  .icon :global(svg) { width: var(--icon-size); height: var(--icon-size); }
+</style>
+```
+
+The `?raw` import + `set:html` trick inlines the SVG so `currentColor` resolves to whatever ink color the parent provides (matches logo Mono behavior).
+
+- [ ] **Step 10: Add icon-set CI guardrail to verify-build.mjs**
+
+This step is consumed by T17 (verify-build rewrite). Add a planned check that will land in T17:
+
+```js
+// In scripts/verify-build.mjs T17 update — icon set cap enforcement
+import { readdirSync } from 'node:fs';
+const iconsDir = 'src/assets/icons';
+let iconCount = 0;
+try { iconCount = readdirSync(iconsDir).filter(f => f.endsWith('.svg')).length; } catch {}
+check(`icon set ≤ 8 (spec §4.7 cap)`, iconCount <= 8);
+check(`icon set has at least chevron-down + close (load-bearing)`, /* check both files exist */);
+```
+
+- [ ] **Step 11: Commit**
 
 ```bash
-git add src/assets/brand/IMS-Logo-*.svg src/components/brand/Logo*.astro
-git commit -m "feat(1.0): IMS logo variants (Default/OnDark/Mono) + Astro wrappers [logically-inspected] [codex-skip: SVG asset]"
+git add src/assets/brand/IMS-Logo-*.svg src/components/brand/Logo*.astro src/assets/icons/*.svg src/components/icons/Icon.astro
+git commit -m "feat(1.0): IMS logo variants + 8 functional icons (spec §4.7) + Icon.astro wrapper [logically-inspected] [codex-skip: SVG asset]"
 ```
 
 ---
@@ -881,7 +979,7 @@ git commit -m "feat(1.0): MarketingLayout (cream card chrome + Plausible + Org J
 
 **Codex review:** MANDATORY (security-policy change)
 
-> **Critical:** Phase 1.0 keeps `X-Robots-Tag: noindex, nofollow` in place — site stays noindex until Phase 1.A T17/T18 remove it. T9 replaces ONLY the CSP value.
+> **Critical:** Phase 1.0 keeps `X-Robots-Tag: noindex, nofollow` in place — site stays noindex until Phase 1.A T15 (functions/_middleware.js) and T16 (public/_headers) remove it. T9 replaces ONLY the CSP value. (Codex r2 AMBER #15 fold — corrected from stale T17/T18 reference.)
 
 - [ ] **Step 1: Modify `functions/_middleware.js` line 22-23**
 
@@ -889,7 +987,7 @@ Replace the `Content-Security-Policy` value in `SECURITY_HEADERS` with the spec 
 
 ```js
 const SECURITY_HEADERS = {
-  "X-Robots-Tag": "noindex, nofollow",  // KEEP — Phase 1.A T17 removes this
+  "X-Robots-Tag": "noindex, nofollow",  // KEEP — Phase 1.A T15 removes this
   "Strict-Transport-Security": "max-age=15768000; includeSubDomains",
   "Content-Security-Policy":
     "default-src 'self'; " +
@@ -1170,33 +1268,61 @@ bash ~/.claude/hooks/review-gate.sh --stamp
 
 **Codex review:** `[codex-skip: 3-line config]`
 
-- [ ] **Step 1: Replace contents**
+- [ ] **Step 1: Replace `public/robots.txt` contents**
 
 ```
 User-agent: *
 Allow: /
 
-Sitemap: https://innovativemedicalstaffing.com/sitemap-index.xml
+Sitemap: https://innovativemedicalstaffing.com/sitemap.xml
 ```
 
-(Note: `@astrojs/sitemap` emits `sitemap-index.xml`, not `sitemap.xml`. The spec §1 references `sitemap.xml` — the integration's actual output name takes precedence.)
+The `sitemap.xml` URL matches spec §1 line 185. `@astrojs/sitemap` emits `sitemap-index.xml` + `sitemap-0.xml` by default, so Step 2 below adds a redirect from `/sitemap.xml` to the integration output.
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 2: Add `/sitemap.xml` → `/sitemap-index.xml` redirect (Codex r1 AMBER #7 fold)**
+
+Cloudflare Pages reads `public/_redirects` for routing. Append (or create) the file with:
+
+```
+/sitemap.xml  /sitemap-index.xml  301
+```
+
+This 301-redirects `https://innovativemedicalstaffing.com/sitemap.xml` (the public URL declared in robots.txt + spec §1) to the actual integration-generated index, so crawlers + cache-validators land on the real file regardless of which name they hit. Both URLs work; canonical is `sitemap.xml` per spec.
+
+- [ ] **Step 3: Verify locally**
 
 ```bash
-git add public/robots.txt
-git commit -m "feat(1.A): robots.txt allow + sitemap reference [logically-inspected] [codex-skip: trivial]"
+npm run build
+npx wrangler pages dev dist
+```
+
+In a separate shell:
+
+```bash
+curl -sI 'http://localhost:8788/sitemap.xml'         # expect 301 → /sitemap-index.xml
+curl -sL 'http://localhost:8788/sitemap.xml' | head  # expect <sitemapindex> XML body
+curl -sI 'http://localhost:8788/sitemap-index.xml'   # expect 200
+curl -sI 'http://localhost:8788/robots.txt'          # expect 200; body references sitemap.xml
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/robots.txt public/_redirects
+git commit -m "feat(1.A): robots.txt + sitemap.xml redirect (aligns with spec §1) [runtime-verified: 4/4 curl smoke] [codex-skip: trivial config]"
 ```
 
 ---
 
-### T15: REMOVE `X-Robots-Tag` from `functions/_middleware.js` (LAUNCH HARD GATE 1/2)
+### T15: REMOVE static `X-Robots-Tag` + ADD query-aware `/jobs?...` noindex header (LAUNCH HARD GATE 1/2)
 
 **Files:** `functions/_middleware.js`
 
-**Codex review:** MANDATORY (security/index header change)
+**Codex review:** MANDATORY (security/index header change AND server-side SEO contract)
 
-- [ ] **Step 1: Remove the X-Robots-Tag entry from SECURITY_HEADERS**
+> **Why two changes in one task (Codex r1 NO-GO #1 fold):** the spec §0.5.5 requires filtered `/jobs?...` URLs to ship `noindex,follow` + canonical to `/jobs`. With Path B SSG, every filtered URL serves the SAME static HTML — so a `<meta name="robots">` injected client-side in T33 hits crawlers AFTER they've already seen indexable content. The fix is server-side: the Pages Function inspects the request URL and sets `X-Robots-Tag: noindex, follow` BEFORE the static HTML is returned. Static `X-Robots-Tag` removal + dynamic `/jobs?...` injection happen in the same middleware function, so they belong in the same task.
+
+- [ ] **Step 1: Remove the static `X-Robots-Tag` entry from `SECURITY_HEADERS`**
 
 In `functions/_middleware.js` line 20, delete the line:
 
@@ -1206,23 +1332,95 @@ In `functions/_middleware.js` line 20, delete the line:
 
 The `SECURITY_HEADERS` object should now START with `"Strict-Transport-Security"`. Leave all other headers (HSTS, CSP, Permissions-Policy, Referrer-Policy, X-Content-Type-Options, X-Frame-Options) intact.
 
-- [ ] **Step 2: Verify no `X-Robots-Tag` reference remains in the file**
+- [ ] **Step 2: Add filtered-`/jobs?...` query-aware noindex injection**
+
+Add this helper above `withSecurityHeaders`:
+
+```js
+const NOINDEX_FOLLOW = "noindex, follow";
+const FILTER_PARAMS = ["specialty", "state", "length"];
+
+function isFilteredJobsUrl(url) {
+  if (url.pathname !== "/jobs" && url.pathname !== "/jobs/") return false;
+  return FILTER_PARAMS.some((p) => url.searchParams.has(p));
+}
+```
+
+Modify `withSecurityHeaders` to accept the `request` argument and conditionally inject `X-Robots-Tag` when the URL has a filtered `/jobs?...` shape:
+
+```js
+const withSecurityHeaders = (response, request) => {
+  const cloned = new Response(response.body, response);
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    cloned.headers.set(name, value);
+  }
+  const url = new URL(request.url);
+  if (isFilteredJobsUrl(url)) {
+    cloned.headers.set("X-Robots-Tag", NOINDEX_FOLLOW);
+    cloned.headers.set("Link", `<${url.origin}/jobs>; rel="canonical"`);
+  }
+  return cloned;
+};
+```
+
+Update both `onRequest` callers to pass `request`:
+
+```js
+export const onRequest = async ({ request, next }) => {
+  const url = new URL(request.url);
+  if (url.hostname === "ims-website.pages.dev") {
+    url.hostname = "innovativemedicalstaffing.com";
+    url.protocol = "https:";
+    return withSecurityHeaders(Response.redirect(url.toString(), 301), request);
+  }
+  return withSecurityHeaders(await next(), request);
+};
+```
+
+The HTTP `Link: rel="canonical"` header is the server-side equivalent of the `<link rel="canonical">` tag and is honored by Google + Bing crawlers (per https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls). T33's client-side meta-injection stays as a defense-in-depth layer for users who view source.
+
+- [ ] **Step 3: Verify no static `X-Robots-Tag` remains; verify dynamic logic is wired**
 
 ```bash
 grep -n "X-Robots-Tag" functions/_middleware.js
 ```
 
-Expected output: empty (no matches).
+Expected: 1 match — the line `cloned.headers.set("X-Robots-Tag", NOINDEX_FOLLOW);` inside the `isFilteredJobsUrl` branch. NO occurrence in `SECURITY_HEADERS`.
 
-- [ ] **Step 3: Codex review**
+```bash
+grep -n "isFilteredJobsUrl\|FILTER_PARAMS" functions/_middleware.js
+```
 
-Prompt: "Review functions/_middleware.js — verify X-Robots-Tag fully removed from SECURITY_HEADERS object, no commented-out version left behind, all OTHER security headers intact, the canonicalization redirect at lines 39-46 unchanged."
+Expected: helper definitions + the call-site in `withSecurityHeaders`.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: E2E verification with `wrangler pages dev`**
+
+```bash
+npm run build
+npx wrangler pages dev dist
+```
+
+In a separate shell:
+
+```bash
+curl -I http://localhost:8788/                    # expect NO X-Robots-Tag header
+curl -I http://localhost:8788/jobs                # expect NO X-Robots-Tag header (root listing, indexable)
+curl -I 'http://localhost:8788/jobs?specialty=anesthesiology'   # expect X-Robots-Tag: noindex, follow + Link: canonical
+curl -I 'http://localhost:8788/jobs?state=TX&length=medium'     # expect X-Robots-Tag + Link: canonical
+curl -I 'http://localhost:8788/jobs?unrelated=1'  # expect NO X-Robots-Tag (only filter params trigger it)
+```
+
+If any expectation fails, debug `_middleware.js` before committing.
+
+- [ ] **Step 5: Codex review**
+
+Prompt: "Review functions/_middleware.js. Verify: static `X-Robots-Tag` fully removed from SECURITY_HEADERS object; dynamic injection only fires for `/jobs` (with optional trailing slash) when query params include specialty/state/length; canonicalization redirect at lines 39-46 unchanged; `request` correctly passed to `withSecurityHeaders` from BOTH the redirect path AND the next() path; no header collision between the dynamic X-Robots-Tag and any client-side `<meta>` injected by T33 (server header takes precedence per Google, but client meta still useful for view-source clarity); `Link: rel=canonical` header URL has correct origin (uses request URL origin, not hardcoded)."
+
+- [ ] **Step 6: Commit**
 
 ```bash
 git add functions/_middleware.js
-git commit -m "feat(1.A): REMOVE X-Robots-Tag from middleware (LAUNCH HARD GATE 1/2) [logically-inspected] [codex-reviewed: r1 GO]"
+git commit -m "feat(1.A): static X-Robots-Tag removed + query-aware /jobs?... noindex,follow header (Codex r1 NO-GO #1 fix) [runtime-verified: 5/5 curl smoke] [codex-reviewed: r1 GO]"
 ```
 
 ---
@@ -1351,6 +1549,19 @@ if (existsSync(sitemapIndexPath)) {
   check('sitemap-index.xml has innovativemedicalstaffing.com URLs', sitemap.includes('innovativemedicalstaffing.com'));
 }
 
+// Functional icon set cap (Codex r2 AMBER #6 — moved from T6 plan to actual T17 enforcement).
+// Spec §4.7 lines 633-638 hard-cap: ≤ 8 functional icons at launch.
+const iconsDir = join(process.cwd(), 'src', 'assets', 'icons');
+if (existsSync(iconsDir)) {
+  const svgFiles = readdirSync(iconsDir).filter((f) => f.endsWith('.svg'));
+  check(
+    `src/assets/icons/*.svg ≤ 8 (functional icon cap; spec §4.7) — found ${svgFiles.length}`,
+    svgFiles.length <= 8,
+  );
+} else {
+  check('src/assets/icons/ directory exists (T6)', false);
+}
+
 if (failures > 0) {
   console.error(`\nverify-build FAILED (${failures} check(s))`);
   process.exit(1);
@@ -1368,7 +1579,7 @@ If the verifier fails because the home page is still maintenance content, that's
 
 - [ ] **Step 3: Codex review**
 
-Prompt: "Review scripts/verify-build.mjs Phase 1.A rewrite. Verify: noindex absence check is correctly negated, sitemap-index.xml (not sitemap.xml) matches @astrojs/sitemap output, JSON-LD detection handles both raw and HTML-entity-encoded JSON, brand-token assertions match the tokens added in T4, TAY @font-face check tolerates either font-family name or src URL pattern (build-time CSS minification might mangle one but not the other)."
+Prompt: "Review scripts/verify-build.mjs Phase 1.A rewrite. Verify: noindex absence check is correctly negated, sitemap-index.xml (not sitemap.xml) matches @astrojs/sitemap output, JSON-LD detection handles both raw and HTML-entity-encoded JSON, brand-token assertions match the tokens added in T4, TAY @font-face check tolerates either font-family name or src URL pattern (build-time CSS minification might mangle one but not the other), AND **icon-cap check (Codex r2 AMBER #6 fold)**: `src/assets/icons/*.svg ≤ 8` assertion runs against the source dir (not dist); fails-closed when directory missing; counts only `.svg` files (no other extensions); failure message includes the actual count for debugging."
 
 Fold findings.
 
@@ -1376,7 +1587,7 @@ Fold findings.
 
 ```bash
 git add scripts/verify-build.mjs
-git commit -m "feat(1.A): verify-build.mjs Phase 1.A invariants (no noindex, sitemap, brand tokens, TAY) [logically-inspected] [codex-reviewed: r1 GO]"
+git commit -m "feat(1.A): verify-build.mjs Phase 1.A invariants (no noindex, sitemap, brand tokens, TAY, icon-cap ≤8 per Codex r2 AMBER #6) [logically-inspected] [codex-reviewed: r1 GO + r2 GO]"
 ```
 
 > **Note:** Subsequent task commits in Phase 1.A may temporarily fail `npm run verify` until T28 lands. That is acceptable on `feat/ims-phase-1-plan` branch; the verifier MUST pass before merging to `main`.
@@ -1648,29 +1859,40 @@ git commit -m "feat(1.A): SiteFooter 3-col with FOLLOW conditional drop per spec
 - Create: `src/components/sections/HomeValues.astro`
 - Create: `src/components/sections/HomeFinalCta.astro`
 
-**Codex review:** SKIP for individual section components (page-copy / markup); MANDATORY when wired into `index.astro` in T28.
+**Codex review:** MANDATORY (per Codex matrix line 53 + Codex r2 AMBER #9 fold). Components ship real ScrollReveal logic (T20a, T20j), tab-toggle JS (T20h), prop-driven count rendering (T20g), and full-bleed dark-band layouts that interact with MarketingLayout slot pattern (T20e, T20j). Use **batch review at end of T20 group** — one `codex task` invocation reviewing all 10 components together (~500-800 LOC) before T28 wire-up.
 
-> **Step 1-10 below each cover one section. Each is its own component file. Per-section copy comes from spec §2.1–§2.10 verbatim where the spec quotes copy, otherwise from brand brief §22-§24 (in predecessor brainstorm memo).**
+> **Step 1-10 below each cover one section. Each is its own component file. Per-section copy comes from spec §2.1–§2.10 verbatim where the spec quotes copy, otherwise from brand brief §22-§24 (in predecessor brainstorm memo). Each component commits separately as `[codex-pending: T20-batch]` — the batch review (T20-batch step at the end) folds across all 10 commits.**
 
-- [ ] **T20a — Hero (§2.1)**: Build `HomeHero.astro` per spec §2.1. Eyebrow `INNOVATIVE MEDICAL STAFFING` (TAY Basal 14px uppercase, `--brand-gold-muted`). Headline `clamp(56px, 9vw, 96px)` "Medical staffing, handled with care." Body 19px TAY Amaya — paragraph 1 from brief §16. Dual CTA: primary `Find Opportunities` → `/jobs` (filled `--brand-navy` bg, cream text, 999px radius); secondary `Request Coverage` → `/contact?intent=coverage` (outline 1.5px navy border, navy text, 999px radius). Right-side ~40% reserved for hand-drawn illustrated character — at v1 use placeholder from `public/illustrations/hero-placeholder.svg` (sourced from Streamline Free or undraw.co with palette-recolor; commit step includes the asset). 600ms fade + 8px rise on first paint via `<ScrollReveal delay={0}>`. Commit: `feat(1.A): HomeHero per spec §2.1 [logically-inspected] [codex-skip: page copy + spec-verbatim layout]`
+- [ ] **T20a — Hero (§2.1)**: Build `HomeHero.astro` per spec §2.1. Eyebrow `INNOVATIVE MEDICAL STAFFING` (TAY Basal 14px uppercase, `--brand-gold-muted`). Headline `clamp(56px, 9vw, 96px)` "Medical staffing, handled with care." Body 19px TAY Amaya — paragraph 1 from brief §16. Dual CTA: primary `Find Opportunities` → `/jobs` (filled `--brand-navy` bg, cream text, 999px radius); secondary `Request Coverage` → `/contact?intent=coverage` (outline 1.5px navy border, navy text, 999px radius). Right-side ~40% reserved for hand-drawn illustrated character — at v1 use placeholder from `public/illustrations/hero-placeholder.svg` (sourced from Streamline Free or undraw.co with palette-recolor; commit step includes the asset). 600ms fade + 8px rise on first paint via `<ScrollReveal delay={0}>`. Commit: `feat(1.A): HomeHero per spec §2.1 [logically-inspected] [codex-pending: T20-batch]`
 
-- [ ] **T20b — Positioning strip (§2.2)**: Build `HomePositioningStrip.astro`. Hairline divider top + bottom. 4 columns, TAY Basal 13px uppercase letter-spacing 0.08em: `Locum Tenens Coverage` · `Multi-Specialty Staffing` · `Clinician Support` · `Facility Partnerships`. Charcoal-on-cream. No icons. Commit: `feat(1.A): HomePositioningStrip per spec §2.2 [logically-inspected] [codex-skip]`
+- [ ] **T20b — Positioning strip (§2.2)**: Build `HomePositioningStrip.astro`. Hairline divider top + bottom. 4 columns, TAY Basal 13px uppercase letter-spacing 0.08em: `Locum Tenens Coverage` · `Multi-Specialty Staffing` · `Clinician Support` · `Facility Partnerships`. Charcoal-on-cream. No icons. Commit: `feat(1.A): HomePositioningStrip per spec §2.2 [logically-inspected] [codex-pending: T20-batch]`
 
-- [ ] **T20c — Philosophy (§2.3)**: Build `HomePhilosophy.astro`. Single column, padding `clamp(96px, 14vh, 200px)` top/bottom. Pull-quote TAY Basal 40-56px: *"Staffing is more than filling a schedule. It is trust, timing, communication, and fit."* Em-dash signature `— The IMS Team` in `--ink-on-cream-2`. Commit: `feat(1.A): HomePhilosophy per spec §2.3 [logically-inspected] [codex-skip]`
+- [ ] **T20c — Philosophy (§2.3)**: Build `HomePhilosophy.astro`. Single column, padding `clamp(96px, 14vh, 200px)` top/bottom. Pull-quote TAY Basal 40-56px: *"Staffing is more than filling a schedule. It is trust, timing, communication, and fit."* Em-dash signature `— The IMS Team` in `--ink-on-cream-2`. Commit: `feat(1.A): HomePhilosophy per spec §2.3 [logically-inspected] [codex-pending: T20-batch]`
 
-- [ ] **T20d — Audience split (§2.4)**: Build `HomeAudienceSplit.astro`. Two equal cards inside cream surface with hand-drawn divider between (vertical SVG line + small ornament). Card 1 For Clinicians: eyebrow `FOR CLINICIANS`, TAY Basal 32px headline *"Opportunities with a team behind you."*, TAY Amaya 17px tease, CTA `Explore Clinician Path →` to `/clinicians`. Card 2 For Facilities: same shape with §2.4 copy. Cards use 1px hairline border, no shadow, padding `clamp(32px, 4vw, 64px)`. Commit: `feat(1.A): HomeAudienceSplit per spec §2.4 [logically-inspected] [codex-skip]`
+- [ ] **T20d — Audience split (§2.4)**: Build `HomeAudienceSplit.astro`. Two equal cards inside cream surface with hand-drawn divider between (vertical SVG line + small ornament). Card 1 For Clinicians: eyebrow `FOR CLINICIANS`, TAY Basal 32px headline *"Opportunities with a team behind you."*, TAY Amaya 17px tease, CTA `Explore Clinician Path →` to `/clinicians`. Card 2 For Facilities: same shape with §2.4 copy. Cards use 1px hairline border, no shadow, padding `clamp(32px, 4vw, 64px)`. Commit: `feat(1.A): HomeAudienceSplit per spec §2.4 [logically-inspected] [codex-pending: T20-batch]`
 
-- [ ] **T20e — Concierge support DARK INVERSE (§2.5)**: Build `HomeConcierge.astro`. **CRITICAL: this section renders OUTSIDE the cream card** — it is a sibling to the card, full-bleed `--surface-page` band. Use MarketingLayout's `inCard={false}` slot pattern OR render as a `<section class="full-bleed">` after the card closes. Three-column grid; headlines TAY Basal 28px, body TAY Amaya 17px. Section closer centered italic. After §2.5, the homepage opens a NEW cream card for §2.6-§2.9 (per spec §1 page-level rules). Commit: `feat(1.A): HomeConcierge dark inverse band per spec §2.5 [logically-inspected] [codex-skip]`
+- [ ] **T20e — Concierge support DARK INVERSE (§2.5)**: Build `HomeConcierge.astro`. **CRITICAL: this section renders OUTSIDE the cream card** — it is a sibling to the card, full-bleed `--surface-page` band. Use MarketingLayout's `inCard={false}` slot pattern OR render as a `<section class="full-bleed">` after the card closes. Three-column grid; headlines TAY Basal 28px, body TAY Amaya 17px. Section closer centered italic. After §2.5, the homepage opens a NEW cream card for §2.6-§2.9 (per spec §1 page-level rules). Commit: `feat(1.A): HomeConcierge dark inverse band per spec §2.5 [logically-inspected] [codex-pending: T20-batch]`
 
-- [ ] **T20f — Human-led tech (§2.6)**: Build `HomeHumanLedTech.astro`. Two-half panel (cream | warm taupe `--surface-warm`). Left TAY Basal 40px *"Technology where it helps."* — right *"People where it matters."* Single body paragraph TAY Amaya 17px below split running full width with brief §10 say-this column copy. Single thin horizontal hand-drawn rule below. NO AI mesh / neural-net / data-stream visuals. Commit: `feat(1.A): HomeHumanLedTech per spec §2.6 [logically-inspected] [codex-skip]`
+- [ ] **T20f — Human-led tech (§2.6)**: Build `HomeHumanLedTech.astro`. Two-half panel (cream | warm taupe `--surface-warm`). Left TAY Basal 40px *"Technology where it helps."* — right *"People where it matters."* Single body paragraph TAY Amaya 17px below split running full width with brief §10 say-this column copy. Single thin horizontal hand-drawn rule below. NO AI mesh / neural-net / data-stream visuals. Commit: `feat(1.A): HomeHumanLedTech per spec §2.6 [logically-inspected] [codex-pending: T20-batch]`
 
-- [ ] **T20g — Specialties 12-card grid (§2.7)**: Build `HomeSpecialties.astro`. 4×3 grid. Each card: TAY Basal 24px specialty name; one-line TAY Amaya 15px framing; live count `N open opportunities` (Path B = build-time count from Content Collection, Path A = runtime KV read — at v1 the component takes a `counts: Record<string, number>` prop and the page provides). Hover: card border darkens to navy + count gets navy underline. Each card links to `/jobs?specialty={slug}`. Sub-CTA below grid centered: `View all specialties →` → `/specialties`. The 12 specialties default to spec §1 list; until Zach confirms top-12 (spec §10 item 4), use the spec defaults. Commit: `feat(1.A): HomeSpecialties 12-card per spec §2.7 [logically-inspected] [codex-skip]`
+- [ ] **T20g — Specialties 12-card grid (§2.7)**: Build `HomeSpecialties.astro`. 4×3 grid. Each card: TAY Basal 24px specialty name; one-line TAY Amaya 15px framing; live count `N open opportunities` (Path B = build-time count from Content Collection, Path A = runtime KV read — at v1 the component takes a `counts: Record<string, number>` prop and the page provides). Hover: card border darkens to navy + count gets navy underline. Each card links to `/jobs?specialty={slug}`. Sub-CTA below grid centered: `View all specialties →` → `/specialties`. The 12 specialties default to spec §1 list; until Zach confirms top-12 (spec §10 item 4), use the spec defaults. Commit: `feat(1.A): HomeSpecialties 12-card per spec §2.7 [logically-inspected] [codex-pending: T20-batch]`
 
-- [ ] **T20h — Process 4-step (§2.8)**: Build `HomeProcess.astro`. Numbered `01`→`04`, hand-drawn connecting rules between steps. Tabbed by audience (Clinicians: Submit CV → Onboarding → Schedule → Start; Facilities: Request → Match → Coordinate → Support). Tab toggle = pill, default Clinicians. ≤14 words body per step. TAY Basal 56px step numbers, TAY Basal 22px headlines. Tab switching = vanilla JS `document.querySelectorAll('[data-tab]')` listeners. Commit: `feat(1.A): HomeProcess 4-step tabbed per spec §2.8 [logically-inspected] [codex-skip]`
+- [ ] **T20h — Process 4-step (§2.8)**: Build `HomeProcess.astro`. Numbered `01`→`04`, hand-drawn connecting rules between steps. Tabbed by audience (Clinicians: Submit CV → Onboarding → Schedule → Start; Facilities: Request → Match → Coordinate → Support). Tab toggle = pill, default Clinicians. ≤14 words body per step. TAY Basal 56px step numbers, TAY Basal 22px headlines. Tab switching = vanilla JS `document.querySelectorAll('[data-tab]')` listeners. Commit: `feat(1.A): HomeProcess 4-step tabbed per spec §2.8 [logically-inspected] [codex-pending: T20-batch]`
 
-- [ ] **T20i — Values 6-tile grid (§2.9)**: Build `HomeValues.astro`. 6 tiles 3×2. Per tile: TAY Basal 22px name (Patient-First / Human-Led / Quality-Obsessed / Built on Trust / Detail-Minded / Calm Under Pressure); TAY Amaya 15px definition from brief §6; restrained `--brand-gold` underline 24px wide × 2px thick beneath each name (the only "decoration"). Commit: `feat(1.A): HomeValues 6-tile per spec §2.9 [logically-inspected] [codex-skip]`
+- [ ] **T20i — Values 6-tile grid (§2.9)**: Build `HomeValues.astro`. 6 tiles 3×2. Per tile: TAY Basal 22px name (Patient-First / Human-Led / Quality-Obsessed / Built on Trust / Detail-Minded / Calm Under Pressure); TAY Amaya 15px definition from brief §6; restrained `--brand-gold` underline 24px wide × 2px thick beneath each name (the only "decoration"). Commit: `feat(1.A): HomeValues 6-tile per spec §2.9 [logically-inspected] [codex-pending: T20-batch]`
 
-- [ ] **T20j — Final CTA (§2.10)**: Build `HomeFinalCta.astro`. Full-bleed dark exterior section (NOT cream, sibling to card). TAY Basal 56-72px headline cream-on-dark *"Ready for a more thoughtful staffing experience?"* Single CTA pill in `--brand-blue-deep` (`#3898EC`, NOT `--brand-blue` — the deep variant is the on-dark CTA per spec §2.10): `Get in Touch` → `/contact`. Hand-drawn character to right + decorative leaf in lower-left. Commit: `feat(1.A): HomeFinalCta dark band per spec §2.10 [logically-inspected] [codex-skip]`
+- [ ] **T20j — Final CTA (§2.10)**: Build `HomeFinalCta.astro`. Full-bleed dark exterior section (NOT cream, sibling to card). TAY Basal 56-72px headline cream-on-dark *"Ready for a more thoughtful staffing experience?"* Single CTA pill in `--brand-blue-deep` (`#3898EC`, NOT `--brand-blue` — the deep variant is the on-dark CTA per spec §2.10): `Get in Touch` → `/contact`. Hand-drawn character to right + decorative leaf in lower-left. Commit: `feat(1.A): HomeFinalCta dark band per spec §2.10 [logically-inspected] [codex-pending: T20-batch]`
+
+- [ ] **T20-batch — Codex batch review of all 10 home sections** (Codex r2 AMBER #9 fold)
+
+After T20a-T20j all committed, run a single Codex review over the 10 component files together. Prompt: "Batch-review src/components/sections/Home*.astro (10 files). Verify across components: (1) consistent ScrollReveal usage — none missing reveal where spec §0.5.7 / §2.1 implies first-paint motion; (2) tab-toggle JS in HomeProcess uses ARIA-correct attributes (role='tablist', role='tab', aria-selected, aria-controls); (3) HomeSpecialties prop signature `counts: Record<string, number>` matches T28 page-level invocation expectations + handles missing slugs gracefully (defaults to 0); (4) HomeConcierge + HomeFinalCta full-bleed pattern is consistent (both close+reopen cream card or both render as siblings to card); (5) brand-blue-deep usage in HomeFinalCta vs brand-blue elsewhere — flag if any cross-contamination; (6) no inline styles bypassing tokens; (7) no AI/mesh/neural-net visuals (brief §3 banned imagery); (8) lang-attr-aware copy (no smart-quotes that fail Plausible event-name encoding); (9) any wrapping `<section>` lacks `id` for in-page anchor / Plausible event source; (10) responsive sizing actually uses `clamp()` not media queries for type-scale per spec §4.3."
+
+Fold findings as a single follow-up commit:
+```bash
+git commit -m "fix(1.A): T20-batch Codex findings across HomeHero/Audience/Process/Specialties/etc [logically-inspected] [codex-reviewed: r1 GO]"
+```
+
+If no findings: skip the follow-up commit; just edit the prior 10 commit messages' `[codex-pending: T20-batch]` is replaced with `[codex-reviewed: r1 GO]` via `git rebase` only if no commits have been pushed yet — otherwise leave as-is and append a note in the T20-batch step's commit body documenting the GO verdict.
 
 > All T20a-T20j commits are independent — each section is a self-contained component. Wire into `index.astro` in T28.
 
@@ -1786,7 +2008,7 @@ git commit -m "feat(1.A): /about with leadership placeholder cards (Zach action:
 
 **Files:** `src/pages/how-it-works.astro`
 
-**Codex review:** `[codex-skip: page copy + small JS for tab toggle]`
+**Codex review:** MANDATORY (per Codex matrix line 53 — tab JS island with URL-param sync ships real client-side state. Codex r2 AMBER #9 fold extends this consistency check beyond the original r1 finding 8 list.)
 
 - [ ] **Step 1: Build the page**
 
@@ -1808,10 +2030,12 @@ setTab(initial);
 tabs.forEach(t => t.addEventListener('click', () => setTab(t.dataset.tab)));
 ```
 
-- [ ] **Step 2: Browser smoke + commit**
+- [ ] **Step 2: Codex review** — Prompt: "Review src/pages/how-it-works.astro tab-toggle JS. Verify: (1) ARIA roles wired (role='tablist', role='tab', aria-selected, aria-controls on each tab, aria-labelledby on each panel); (2) keyboard navigation works (arrow keys move focus between tabs per WAI-ARIA pattern) — flag if missing as a11y gap; (3) URL-param sync uses `history.replaceState` (not pushState — back-button shouldn't trip on tab clicks); (4) initial-load default `clinicians` matches the audience matrix; (5) `audience` query param sanitized — only `clinicians`/`facilities` accepted, anything else falls back to default; (6) panels' `display: none` is class-based (.is-active toggle), not inline-style mutation."
+
+- [ ] **Step 3: Browser smoke + commit**
 
 ```bash
-git commit -m "feat(1.A): /how-it-works tabbed 4-step per spec §1 [logically-inspected] [codex-skip]"
+git commit -m "feat(1.A): /how-it-works tabbed 4-step per spec §1 [logically-inspected] [codex-reviewed: r1 GO]"
 ```
 
 ---
@@ -1847,7 +2071,7 @@ git commit -m "feat(1.A): /contact page (NO map per spec §6) — wires ContactF
 
 - [ ] **Step 1: Build `/privacy`**
 
-MarketingLayout. Headings: What we collect / How we use it / Storage location / Retention (apply 18mo, contact 12mo) / Deletion request flow (mailto `recruiting@iastaffing.com` with subject `Data deletion request`) / Sub-processors (Plausible Cloud, Resend, Supabase — all DPA-signed) / US state-law accommodations (CA/CO/CT/UT/VA) / GDPR section if any EU traffic (paragraph). Stamp at bottom: "Last updated 2026-05-{day}". **Page contains an inline `{/* TODO Zach review before launch */}` comment** — voice-lint may flag — use `<!--` HTML comment instead to avoid voice-lint scoping into Astro frontmatter.
+MarketingLayout. Headings: What we collect / How we use it / Storage location / Retention (apply 18mo, contact 12mo) / Deletion request flow (mailto `recruiting@iastaffing.com` with subject `Data deletion request`) / Sub-processors (Plausible Cloud, Resend, Supabase — all DPA-signed) / US state-law accommodations (CA/CO/CT/UT/VA) / GDPR section if any EU traffic (paragraph). Stamp at bottom: "Last updated 2026-05-{day}". The Zach legal-review gate is tracked separately by SG15 (Pre-Launch Checklist) and surfaced again in T63 walkthrough — no inline placeholder comments needed in the .astro file (Codex r1 NIT #10 fold).
 
 - [ ] **Step 2: Build `/cookies`**
 
@@ -2252,7 +2476,35 @@ const totalCount = active.length;
 
     <div id="empty-state" hidden>
       <p>No openings match those filters. Tell us what you're looking for and we'll reach out when one opens.</p>
-      <a href="/contact?intent=coverage" class="cta">Tell us your criteria →</a>
+      <!-- Mini form per spec §3.1 — specialty + state + email. Posts to /api/contact with intent=coverage and a constructed message field. -->
+      <form id="empty-state-alert-form" class="empty-form" novalidate>
+        <label>
+          <span>Specialty</span>
+          <select name="specialty" required>
+            <option value="">Choose…</option>
+            {specialtiesPresent.map((s) => (
+              <option value={s}>{s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+            ))}
+            <option value="other">Other / not listed</option>
+          </select>
+        </label>
+        <label>
+          <span>State</span>
+          <select name="state" required>
+            <option value="">Choose…</option>
+            {statesPresent.map((st) => (<option value={st}>{st}</option>))}
+            <option value="OPEN">Open / no preference</option>
+          </select>
+        </label>
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" required maxlength="254" />
+        </label>
+        <input type="text" name="phone_alt" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true" />
+        <!-- Reuses TurnstileWidget from T48; widget is page-scoped — see ApplyModal slot. -->
+        <button type="submit" class="submit-btn">Notify me when one opens</button>
+        <p class="form-status" role="status" aria-live="polite"></p>
+      </form>
     </div>
   </div>
 
@@ -2484,9 +2736,151 @@ git commit -m "feat(1.A): /jobs filter island (vanilla TS, URL-param state, noin
 
 ---
 
-### T34: Empty-state copy + CTA verification
+### T34: Wire empty-state mini-form submit handler
 
-Inline in T32. Verify by applying a filter combo with no results — empty-state shows. No commit (subsumed in T32 + T33).
+**Depends on:** **T48 must land first** (Codex r2 AMBER #14 fold — T34's empty-state widget passes `instanceId="jobs-empty-state"` which only works against T48's per-widget-callback TurnstileWidget). If executing tasks in numeric order, gate T34 on T48 completion in the execution-handoff section. Subagent-driven execution: T48 is in the same wave as ContactForm/ApplyModal — schedule T34 in a subsequent wave after T48 lands.
+
+**Files:** `src/pages/jobs/index.astro` (append `<TurnstileWidget />` for the empty-state form + submit handler script)
+
+**Codex review:** MANDATORY (form posts to /api/contact — same anti-spam contract as T49 ContactForm)
+
+> **Codex r1 AMBER #4 fold:** spec §3.1 line 343 calls for an empty-state mini form (specialty + state + email). T32 added the form HTML. T34 wires the Turnstile widget instance + submit handler that posts to `/api/contact` with `intent=coverage` and a constructed `message` field summarizing the criteria. Reuses the same anti-spam plumbing (Turnstile + honeypot + rate-limit on `/api/contact`).
+
+- [ ] **Step 1: Add a second TurnstileWidget for the empty-state form**
+
+In `src/pages/jobs/index.astro`, INSIDE the `#empty-state` div (near the closing `</form>`), add:
+
+```astro
+<TurnstileWidget form="#empty-state-alert-form" instanceId="jobs-empty-state" />
+```
+
+> **Codex r2 AMBER #5 note:** the TurnstileWidget from T48 uses per-widget callbacks (each instance registers `window.onTurnstileSuccess_<sanitized-instanceId>`). Pass an explicit `instanceId` here so the empty-state widget on `/jobs` does not collide with the ApplyModal's TurnstileWidget when both render on the same page. The ApplyModal (T50) registers its widget with `instanceId="jobs-apply-modal"`.
+
+- [ ] **Step 2: Add submit handler script**
+
+Append to the `<script>` block at the end of `src/pages/jobs/index.astro`:
+
+```ts
+const alertForm = document.getElementById('empty-state-alert-form') as HTMLFormElement | null;
+const alertStatus = alertForm?.querySelector<HTMLElement>('.form-status');
+const alertSubmit = alertForm?.querySelector<HTMLButtonElement>('.submit-btn');
+
+if (alertForm && alertStatus && alertSubmit) {
+  alertForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(alertForm);
+    const specialty = String(fd.get('specialty') ?? '');
+    const state = String(fd.get('state') ?? '');
+    const email = String(fd.get('email') ?? '');
+    const phoneAlt = String(fd.get('phone_alt') ?? '');
+    const turnstileToken = String(fd.get('turnstileToken') ?? '');
+
+    if (!turnstileToken) {
+      alertStatus.textContent = 'Please complete the security check.';
+      alertStatus.className = 'form-status is-error';
+      return;
+    }
+    alertSubmit.disabled = true;
+    alertStatus.textContent = 'Sending…';
+    alertStatus.className = 'form-status';
+    try {
+      // Construct a message from criteria; reuses /api/contact route + Turnstile + rate-limit.
+      const message = `Job alert request — specialty: ${specialty || 'any'}, state: ${state || 'any'}.`;
+      const resp = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: '(job-alert)',  // server schema requires non-empty name; we send a marker
+          email,
+          intent: 'coverage',
+          message,
+          turnstileToken,
+          phone_alt: phoneAlt,
+        }),
+      });
+      if (resp.status === 429) {
+        alertStatus.textContent = "You're submitting a bit fast — give us a moment to catch up.";
+        alertStatus.className = 'form-status is-error';
+      } else if (!resp.ok) {
+        alertStatus.textContent = 'Something glitched. Please email recruiting@iastaffing.com.';
+        alertStatus.className = 'form-status is-error';
+      } else {
+        alertStatus.textContent = "Thanks — we'll be in touch when something opens that matches.";
+        alertStatus.className = 'form-status is-success';
+        alertForm.reset();
+        (window as any).plausible?.('contact_form_submitted'); // counts toward HC11 goal
+      }
+    } catch {
+      alertStatus.textContent = 'Network error. Please try again.';
+      alertStatus.className = 'form-status is-error';
+    } finally {
+      alertSubmit.disabled = false;
+    }
+  });
+}
+```
+
+- [ ] **Step 3: Add CSS for `.empty-form`**
+
+Inside the `<style>` block of `src/pages/jobs/index.astro`, add:
+
+```css
+.empty-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  margin: 24px auto 0;
+  text-align: left;
+  font-family: var(--font-body);
+}
+.empty-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.empty-form select, .empty-form input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong-mkt);
+  border-radius: var(--r-input);
+  background: var(--surface-card-2);
+  font-family: inherit;
+  font-size: 16px;
+}
+.empty-form .submit-btn {
+  align-self: flex-start;
+  background: var(--brand-navy);
+  color: var(--surface-card);
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--r-pill-mkt);
+  cursor: pointer;
+  font-family: inherit;
+}
+.empty-form .form-status { font-size: 14px; color: var(--ink-on-cream-2); min-height: 1.4em; }
+.empty-form .form-status.is-error { color: var(--error-mkt); }
+.empty-form .form-status.is-success { color: var(--success); }
+```
+
+- [ ] **Step 4: Browser smoke**
+
+Apply a filter combo that returns 0 results (e.g., specialty Pediatrics + state RI + length short, assuming no seed). Confirm:
+- Empty-state form renders with three fields + Turnstile + submit button
+- Turnstile widget loads + completes
+- Submission shows "Thanks — we'll be in touch…" on success
+- Supabase `ims_contact_messages` row appears with `intent='coverage'`, `name='(job-alert)'`, `message` containing the criteria
+
+**Multi-widget smoke (Codex r2 AMBER #5):** on the SAME page, also click an apply CTA on a card to open the ApplyModal (returns to a non-empty filter to surface a card if needed). Confirm:
+- TWO Turnstile widgets render simultaneously: one inside `#empty-state-alert-form` (callback `onTurnstileSuccess_jobs_empty_state`) and one inside the apply modal `<dialog>` (callback `onTurnstileSuccess_jobs_apply_modal`)
+- Completing the empty-state widget populates ONLY `#empty-state-alert-form input[name="turnstileToken"]` — the apply modal's hidden token input remains empty
+- Completing the apply-modal widget populates ONLY the apply modal's hidden token input — the empty-state form's token is unchanged
+- (`document.querySelectorAll('input[name="turnstileToken"]')` shows two distinct values when both are completed)
+
+- [ ] **Step 5: Codex review**
+
+Prompt: "Review the empty-state mini-form wiring in src/pages/jobs/index.astro. Verify: form posts to /api/contact (not a separate endpoint) with intent=coverage; specialty + state values populate the message body; honeypot phone_alt forwarded to /api/contact for honeypot drop; Turnstile widget uses `instanceId='jobs-empty-state'` distinct from ApplyModal's `instanceId='jobs-apply-modal'` (no cross-widget token leak — Codex r2 AMBER #5 multi-widget contract); Plausible goal-fire wired correctly to `contact_form_submitted`; name field set to `(job-alert)` marker so recruiter can distinguish in Supabase Studio (flag if a dedicated bool column would be cleaner — but for v1 this minimizes schema churn)."
+
+- [ ] **Step 6: Commit**
+
+```bash
+git commit -m "feat(1.A): /jobs empty-state mini-form (specialty + state + email → /api/contact intent=coverage; Codex r1 AMBER #4 + r2 AMBER #5 multi-widget) [runtime-verified] [codex-reviewed: r1 GO + r2 GO]"
+```
 
 ---
 
@@ -2903,10 +3297,68 @@ export function createSupabaseServer(env: RuntimeEnv): SupabaseClient {
 
 - [ ] **Step 2: Codex review** — Prompt: "Throws (not silently fails) when env missing; persistSession=false matches stateless edge; X-Client-Info for telemetry; error message no key leakage."
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: End-to-end env-binding verification (Codex r1 AMBER #9 fold — Risk Register references this test)**
+
+The Risk Register flags Pages-Functions-can't-read-Supabase-env as a real launch risk that should be caught BEFORE T46/T47 routes. This step exercises the env binding through `wrangler pages dev` against a temporary scratch endpoint:
+
+Create `src/pages/api/_supabase-ping.ts` (temp file, removed before commit):
+
+```ts
+import type { APIContext } from 'astro';
+import { createSupabaseServer } from '../../lib/supabase-server';
+
+export const prerender = false;
+
+export async function GET(context: APIContext): Promise<Response> {
+  const env = (context.locals as any).runtime?.env ?? {};
+  try {
+    const sb = createSupabaseServer(env);
+    // Cheap query — auth check uses RLS context. We expect 'count' result regardless of table contents.
+    const { error } = await sb.from('ims_contact_messages').select('id', { count: 'exact', head: true });
+    return new Response(JSON.stringify({ ok: !error, error: error?.message ?? null }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ ok: false, error: e instanceof Error ? e.message : String(e) }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+}
+```
+
+Run:
 
 ```bash
-git commit -m "feat(1.A): supabase-server (service-role, edge-runtime, fail-loud) [logically-inspected] [codex-reviewed: r1 GO]"
+npm run build
+npx wrangler pages dev dist --kv RATE_KV
+```
+
+In a separate shell (env vars from T38 must be set in Cloudflare dashboard OR via `--var` flags):
+
+```bash
+curl -s http://localhost:8788/api/_supabase-ping
+```
+
+Expected: `{"ok":true,"error":null}`. If `ok: false`, inspect `error`:
+- `must be set in Pages env` → env vars not bound; fix T38 setup
+- `permission denied for table ims_contact_messages` → RLS not configured per T35; fix migration
+- network error → check Cloudflare dashboard / wrangler config
+
+Once green, **delete the scratch file** before commit (don't ship the ping endpoint to production):
+
+```bash
+rm src/pages/api/_supabase-ping.ts
+```
+
+This step's pass status is what Risk Register row "Pages Functions can't read Supabase service-role key (env-binding mismatch)" depends on for failure-detection BEFORE T46/T47 routes.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/lib/supabase-server.ts
+git commit -m "feat(1.A): supabase-server (service-role, edge-runtime, fail-loud + env-binding smoke) [runtime-verified: 1/1 ping] [codex-reviewed: r1 GO]"
 ```
 
 ---
@@ -3045,7 +3497,7 @@ Tests cover:
 4. Happy path → Supabase INSERT FIRST with resend_status=pending → THEN Resend → update resend_status=sent → 200
 5. Resend fail → row at resend_status=failed, returns 200
 6. Supabase insert fail → 502, no Resend attempt
-7. Honeypot `phone_alt` populated → 200 silent (bot drop)
+7. Honeypot `phone_alt` populated → 200 silent (bot drop) AND `console.log` fires with `[honeypot]` prefix + truncated `ip_hash` (audit trail per spec §3.3 — Codex r1 AMBER #6 fold). Test stubs `console.log` via `vi.spyOn(console, 'log')` and asserts the call. Also asserts NO Supabase row created and NO Resend call.
 
 - [ ] **Step 2: Implement `src/pages/api/contact.ts`**
 
@@ -3078,19 +3530,23 @@ export async function POST(context: APIContext): Promise<Response> {
   if (!parsed.success) return j(400, { error: 'Invalid payload' });
   const data = parsed.data;
 
-  // Honeypot — silent 200 so bot doesn't retry
-  if (data.phone_alt && data.phone_alt.trim().length > 0) return j(200, { ok: true });
-
   const env = (context.locals as any).runtime?.env ?? {};
   const ip = context.request.headers.get('cf-connecting-ip') ?? '0.0.0.0';
+  // Compute ipHash early so honeypot drop can log a non-PII fingerprint (Codex r1 AMBER #6 fold — spec §3.3 says drop AND log).
+  const ipHash = await hashIp(ip, dailySalt(new Date(), env.IP_HASH_BASE_SECRET ?? ''));
+
+  // Honeypot — silent 200 so bot doesn't retry, but LOG the drop for audit trail (non-PII).
+  if (data.phone_alt && data.phone_alt.trim().length > 0) {
+    console.log(`[honeypot] dropped contact submission ip_hash=${ipHash.slice(0, 16)} phone_alt_len=${data.phone_alt.length}`);
+    return j(200, { ok: true });
+  }
 
   // 1. Turnstile verify
   if (!await verifyTurnstile(data.turnstileToken, ip, env.TURNSTILE_SECRET_KEY ?? '')) {
     return j(403, { error: 'Turnstile verification failed' });
   }
 
-  // 2. Rate-limit
-  const ipHash = await hashIp(ip, dailySalt(new Date(), env.IP_HASH_BASE_SECRET ?? ''));
+  // 2. Rate-limit (ipHash already computed above)
   const bypass = context.request.headers.get('x-ims-test-bypass') ?? '';
   const rl = await checkAndIncrement(env.RATE_KV, 'contact', ipHash, {
     ...RATE, bypassPresented: bypass, bypassExpected: env.IMS_RATE_BYPASS_KEY ?? '',
@@ -3148,12 +3604,12 @@ git commit -m "feat(1.A): /api/contact — full route contract per spec §0.5.4 
 
 **Codex review:** MANDATORY
 
-- [ ] **Step 1: Write tests** mirroring T46's 7 cases plus:
+- [ ] **Step 1: Write tests** mirroring T46's 7 cases (including the honeypot-logs-and-drops case from Codex r1 AMBER #6 fold) plus:
 - NPI validation (10-digit numeric only or empty)
 - jobRef + jobTitle propagated to email subject
 - licenses array max length 60
 
-- [ ] **Step 2: Implement** mirroring T46 pattern but writing to `ims_applications` with apply-specific columns:
+- [ ] **Step 2: Implement** mirroring T46 pattern (including early `ipHash` compute + honeypot `console.log` for audit per spec §3.3) but writing to `ims_applications` with apply-specific columns:
 
 ```ts
 const ApplyPayload = z.object({
@@ -3172,7 +3628,12 @@ const ApplyPayload = z.object({
 
 INSERT statement includes `phone`, `npi`, `licenses`, `note`, `job_ref`, `job_title`. Resend payload includes `applicationId` (uuid), `jobTitle`, `jobRef`. Subject `[IMS Apply] ${jobTitle ?? name}`.
 
-- [ ] **Step 3: Codex review** — Prompt: "Same order-of-ops as /api/contact; apply-specific columns inserted; NPI regex /^\\d{10}$/ matches 10-digit US format; licenses array max 60; jobRef/jobTitle to email subject; honeypot silent 200."
+Honeypot drop log message (matches T46 pattern with `apply` route name):
+```ts
+console.log(`[honeypot] dropped apply submission ip_hash=${ipHash.slice(0, 16)} phone_alt_len=${data.phone_alt.length}`);
+```
+
+- [ ] **Step 3: Codex review** — Prompt: "Same order-of-ops as /api/contact; apply-specific columns inserted; NPI regex /^\\d{10}$/ matches 10-digit US format; licenses array max 60; jobRef/jobTitle to email subject; honeypot silent 200 AND console.log audit trail with ip_hash prefix; ipHash computed BEFORE honeypot check so log can include it."
 
 - [ ] **Step 4: Commit**
 
@@ -3188,43 +3649,46 @@ git commit -m "feat(1.A): /api/apply — full route contract with NPI + licenses
 
 **Files:** `src/components/forms/TurnstileWidget.astro`
 
-**Codex review:** `[codex-skip: thin Cloudflare widget wrapper]`
+**Codex review:** MANDATORY (callback-dispatch correctness — multi-widget pages must not cross-leak tokens; Codex r2 AMBER #5 fold)
 
-- [ ] **Step 1: Build** — Renders the Cloudflare Turnstile widget div + injects the api.js script (CSP allows challenges.cloudflare.com per §0.5.3). Adds an inline script that, on success callback, populates a hidden `<input name="turnstileToken">` inside the form referenced by `data-form` attribute. Multiple Turnstile widgets share the same `window.onTurnstileSuccess` hook — selector-by-form-attribute pattern.
+- [ ] **Step 1: Build** — Renders the Cloudflare Turnstile widget div + injects the api.js script (CSP allows challenges.cloudflare.com per §0.5.3). Each widget instance gets its OWN callback function (named after a sanitized form selector) that closes over the target form selector — this prevents cross-widget token leak when two widgets render on the same page (e.g. `/jobs` empty-state mini-form + apply modal).
 
 ```astro
 ---
 const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
-interface Props { form: string; }
-const { form } = Astro.props;
+interface Props { form: string; instanceId?: string; }
+const { form, instanceId } = Astro.props;
+// Per-widget callback name — sanitized to JS identifier characters only.
+// Defaults derive from the form selector so callers don't need to think about it,
+// but two widgets pointing at the same form should pass distinct instanceId values.
+const callback = `onTurnstileSuccess_${(instanceId ?? form).replace(/[^a-zA-Z0-9_]/g, '_')}`;
 ---
-<div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-form={form} data-callback="onTurnstileSuccess"></div>
+<div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-form={form} data-callback={callback}></div>
 <script is:inline async defer src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
-<script is:inline define:vars={{ form }}>
-  if (!window.onTurnstileSuccess) {
-    window.onTurnstileSuccess = function (token) {
-      document.querySelectorAll('.cf-turnstile').forEach(function (widget) {
-        var formSel = widget.getAttribute('data-form');
-        var target = document.querySelector(formSel);
-        if (!target) return;
-        var input = target.querySelector('input[name="turnstileToken"]');
-        if (!input) {
-          input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = 'turnstileToken';
-          target.appendChild(input);
-        }
-        input.value = token;
-      });
-    };
-  }
+<script is:inline define:vars={{ form, callback }}>
+  // Per-widget callback closes over THIS widget's target form selector — no cross-widget leak.
+  // (Codex r2 AMBER #5 fold — replaced the previous cross-iterating onTurnstileSuccess.)
+  window[callback] = function (token) {
+    var target = document.querySelector(form);
+    if (!target) return;
+    var input = target.querySelector('input[name="turnstileToken"]');
+    if (!input) {
+      input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'turnstileToken';
+      target.appendChild(input);
+    }
+    input.value = token;
+  };
 </script>
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 2: Codex review** — Prompt: "Review src/components/forms/TurnstileWidget.astro. Verify: (1) per-widget callback closes over its own `form` selector (no `document.querySelectorAll('.cf-turnstile').forEach` pattern); (2) callback name is unique per `instanceId` so two widgets on the same page register distinct globals; (3) sanitization regex `/[^a-zA-Z0-9_]/g` prevents JS-identifier injection from form selector strings; (4) `window[callback]` assignment is idempotent on script re-execution (Astro view transitions may re-run inline scripts); (5) `data-callback` attribute matches the `window[callback]` name exactly; (6) hidden input named `turnstileToken` is created if absent (idempotent — multi-fire callback safe)."
+
+- [ ] **Step 3: Commit**
 
 ```bash
-git commit -m "feat(1.A): TurnstileWidget (Cloudflare Managed mode, hidden token input) [logically-inspected] [codex-skip: thin wrapper]"
+git commit -m "feat(1.A): TurnstileWidget per-widget callback (no cross-widget token leak; Codex r2 AMBER #5) [logically-inspected] [codex-reviewed: r2 GO]"
 ```
 
 ---
@@ -3257,7 +3721,9 @@ Then update `/contact.astro` (T26) to render `<ContactForm defaultIntent={intent
 
 - [ ] **Step 1: Build** — Native `<dialog>` element + `showModal()` — preferred for built-in focus-trap + ESC-close. Backdrop click closes. Form fields: name, email, phone (required), npi (optional 10-digit), licenses_csv (parsed client-side: split → trim → uppercase → filter to 2-letter). Hidden `jobRef` + `jobTitle` populated by `window.openApplyModal(ref, title)`. Submit-handler same shape as ContactForm. Confirmation copy verbatim from spec §3.3 step 5: *"We received your application for ${jobTitle}. Our team will be in touch within 1 business day."* Plausible goal `application_submitted` fires on success.
 
-- [ ] **Step 2: Codex review** — Prompt: "Native <dialog> + showModal; backdrop click closes (event.target === dialog); openApplyModal global type-safe (window declaration); licenses_csv splits + filters to 2-letter uppercase only — non-2-letter entries silently dropped (intentional? or surprise?); confirmation message wording exact spec match; Plausible fires only on success; phone required (matches spec §3.3 contact-style payload)."
+> **TurnstileWidget instance** (Codex r2 AMBER #5): render `<TurnstileWidget form="#apply-modal-form" instanceId="jobs-apply-modal" />` inside the dialog so it does NOT collide with T34's `instanceId="jobs-empty-state"` widget when both render on `/jobs`.
+
+- [ ] **Step 2: Codex review** — Prompt: "Native <dialog> + showModal; backdrop click closes (event.target === dialog); openApplyModal global type-safe (window declaration); licenses_csv splits + filters to 2-letter uppercase only — non-2-letter entries silently dropped (intentional? or surprise?); confirmation message wording exact spec match; Plausible fires only on success; phone required (matches spec §3.3 contact-style payload); TurnstileWidget rendered with `instanceId='jobs-apply-modal'` distinct from T34's `instanceId='jobs-empty-state'` per Codex r2 AMBER #5 multi-widget contract."
 
 - [ ] **Step 3: Commit**
 
@@ -3271,7 +3737,7 @@ git commit -m "feat(1.A): ApplyModal (native <dialog>, vanilla JS, /api/apply in
 
 **Files:** `src/pages/jobs/index.astro` (append script)
 
-**Codex review:** `[codex-skip: small wiring]`
+**Codex review:** MANDATORY (per Codex matrix line 53 — click-handler wiring with global function call. Codex r2 AMBER #9 fold extends consistency.)
 
 - [ ] **Step 1: Append wiring script** to `/jobs/index.astro`:
 
@@ -3289,12 +3755,14 @@ git commit -m "feat(1.A): ApplyModal (native <dialog>, vanilla JS, /api/apply in
 </script>
 ```
 
-- [ ] **Step 2: Browser smoke** — open `/jobs`, click `Apply through IMS →`, confirm modal opens with correct job title displayed; submit → status message shown.
+- [ ] **Step 2: Codex review** — Prompt: "Review the apply-trigger wiring script. Verify: (1) querySelector scope is per-page (not cross-page); (2) `closest('.job-card')` matches the actual DOM produced by T30/T32; (3) `window.openApplyModal` is defined by T50 ApplyModal before this script runs (Astro `is:inline` ordering — flag if T50's modal renders AFTER this script in HTML order, since `?.()` swallows the bug); (4) `dataset.jobRef` and `dataset.jobTitle` match the data-attrs T30 emits on the card; (5) no XSS path through dataset values into modal innerHTML — modal must use textContent/setAttribute, not innerHTML interpolation."
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: Browser smoke** — open `/jobs`, click `Apply through IMS →`, confirm modal opens with correct job title displayed; submit → status message shown.
+
+- [ ] **Step 4: Commit**
 
 ```bash
-git commit -m "feat(1.A): wire ApplyModal trigger from /jobs cards [logically-inspected] [codex-skip: small wiring]"
+git commit -m "feat(1.A): wire ApplyModal trigger from /jobs cards [logically-inspected] [codex-reviewed: r1 GO]"
 ```
 
 ---
@@ -3303,7 +3771,7 @@ git commit -m "feat(1.A): wire ApplyModal trigger from /jobs cards [logically-in
 
 **Files:** `src/components/sections/HomeHero.astro` + small global script in MarketingLayout
 
-**Codex review:** N/A
+**Codex review:** MANDATORY (per Codex matrix line 53 — analytics wiring affects HC11 conversion-goal pass/fail. Codex r2 AMBER #9 fold extends consistency.)
 
 - [ ] **Step 1:** In Plausible dashboard → Goals → register: `cta_find_opportunities`, `cta_request_coverage`, `application_submitted`, `contact_form_submitted` (the latter two are fired by T49 + T50 already).
 
@@ -3321,10 +3789,12 @@ document.querySelectorAll('[data-analytics]').forEach((el) => {
 });
 ```
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Codex review** — Prompt: "Review goal-fire wiring. Verify: (1) goal names exact-match Plausible-dashboard registration (`cta_find_opportunities`, `cta_request_coverage`) — typo would mean events fire but don't count toward HC11 goals; (2) `window.plausible?.()` optional-chain is correct (event silently noops when blocker/extension prevents Plausible script load); (3) script lives in MarketingLayout (not BaseLayout) so /jobs job-cards don't accidentally fire hero goals; (4) `data-analytics` value-list is closed (only the two known goals — anything else is silently dropped); (5) click handler does not stopPropagation/preventDefault on anchor CTAs (link navigation must still occur)."
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git commit -m "feat(1.A): wire Plausible goal-fire on hero CTAs (cta_find_opportunities, cta_request_coverage) [logically-inspected] [codex-skip: telemetry wiring]"
+git commit -m "feat(1.A): wire Plausible goal-fire on hero CTAs (cta_find_opportunities, cta_request_coverage) [logically-inspected] [codex-reviewed: r1 GO]"
 ```
 
 ---
@@ -3498,35 +3968,280 @@ git commit -m "feat(1.A · Path A): workers/jobs-sync scaffold [logically-inspec
 - [ ] **Step 5: Commit**
 
 ```bash
-git commit -m "feat(1.A · Path A): jobs-sync normalize (specialty alias, USPS state, rate sanitize) [runtime-verified: N/N] [codex-reviewed: r1 GO]"
+git commit -m "feat(1.A · Path A): jobs-sync normalize (specialty alias, USPS state, rate sanitize) [runtime-verified] [codex-reviewed: r1 GO]"
 ```
 
 ---
 
-### PA5: TDD `workers/jobs-sync/src/kv-writer.ts`
+### PA5: TDD `workers/jobs-sync/src/kv-writer.ts` (incl. stale-listing lifecycle)
 
 **Files:** `workers/jobs-sync/src/kv-writer.ts` + tests
 
-**Codex review:** MANDATORY (write-budget critical)
+**Codex review:** MANDATORY (write-budget critical AND stale-lifecycle correctness — Codex r1 NO-GO #3 fold)
 
-- [ ] **Step 1: Tests** —
-- Hash-based dedup: unchanged record → no write
+> **Stale-lifecycle requirement (spec §3.4 lines 408-410 and 467-468):** listings absent from a sync are NOT immediately dropped. Pattern: 2 consecutive misses → mark `_stale: true`; 24h grace from `_lastSeenAt` → drop entirely. State (per-id miss counter) lives in `jobs:_meta.lifecycle: { [id]: { missCount, lastSeenAt } }`.
+
+- [ ] **Step 1: Tests** — extend the test cases below:
+
+Core write-budget tests:
+- Hash-based dedup: unchanged record → no `jobs:byid:{id}` write
 - Hash diff: changed record → write
-- `jobs:index` slim record (id/specialty/state/length/rateLow/rateHigh/callType only — confirm budget ≤500KB)
+- `jobs:index` slim record (id/specialty/state/length/rateLow/rateHigh/callType only — assert size ≤ 500KB at 1000-listing scale)
 - `jobs:by:specialty:{slug}` updates correctly
 - `jobs:by:state:{ST}` updates correctly
-- `jobs:byid:{id}` full record
+- `jobs:byid:{id}` full record stored separately
 - `jobs:_meta.hashes` persisted across runs (read at Worker start, write at end)
 - `jobs:_meta.unknownSpecialties[]` deduped + capped at 200 entries
 
-- [ ] **Step 2: Implement** — `syncToKv(kv, listings, unknownSpecialties): SyncStats`. Uses Web Crypto SHA-256 for per-listing hash. Writes only changed `jobs:byid:{id}`; always writes `jobs:index`, `jobs:by:specialty:{slug}` (one per specialty seen), `jobs:by:state:{ST}` (one per state), `jobs:_meta`. Logs WARN if `jobs:index` size > 500KB.
+Stale-lifecycle tests (Codex r1 NO-GO #3 fold + Codex r2 NO-GO #3 expansion):
+- **1-miss retain (r2 #3 fix):** listing seen in sync N but absent in sync N+1 → `lifecycle[id].missCount === 1`, listing remains in `jobs:byid` (NO rewrite — read-but-don't-write), AND remains in `jobs:index` with `_stale: false`, AND remains in `jobs:by:specialty:{slug}` AND `jobs:by:state:{ST}` with `_stale: false`
+- 2-miss → stale: listing absent in sync N+1 AND N+2 → `lifecycle[id].missCount === 2`, `jobs:byid:{id}` updated to include `_stale: true`, still appears in `jobs:index` with `_stale: true` flag (UI renders "Updated N hours ago" microtype), still in by-specialty/by-state aggregates
+- Listing returns in sync N+3 (after 1 miss) → `missCount` resets to 0, `_stale: false`, `_lastSeenAt` updated
+- Listing absent for N+1 + N+2 + 24h since last `_lastSeenAt` elapsed → `jobs:byid:{id}` deleted, removed from `jobs:index`, removed from `jobs:by:specialty:*` and `jobs:by:state:*`, `lifecycle[id]` deleted from meta
+- Listing absent for N+1 + N+2 but only 12h since `_lastSeenAt` → still in KV (24h grace not yet elapsed), `_stale: true`
+- Boundary: listing JUST missed cutoff (24h - 1s) → still in KV; listing JUST past (24h + 1s) → dropped
 
-- [ ] **Step 3: Codex review** — Prompt: "Hash dedup actually skips writes; jobs:index slim fields match spec §3.4 KV constraints; 500KB cap log-only or hard-fail decision documented; KV writes/cycle worst-case = (always-rewrite ~3-5) + (per-changed listing) — confirm under 1k/day with 24 cycles; meta.hashes persistence cold-start safe; unknownSpecialties dedup + cap at 200 to avoid unbounded growth."
+Hash-diff aggregate-write tests (NEW — Codex r2 AMBER #4 fold):
+- `jobs:index` content unchanged across sync N and N+1 (same listings, same data) → KV.put('jobs:index') NOT called in N+1 (assert via mock spy)
+- `jobs:by:specialty:crna` content unchanged → KV.put NOT called for that key on N+1
+- `jobs:by:state:CA` content unchanged → KV.put NOT called for that key on N+1
+- Specialty/state key transitions to empty (last listing for that slug dropped) → KV.delete called for that key, hash entry removed from `meta.aggregateHashes`
+- **Write-budget bound:** 200-listing fixture, 5% churn (~10 listings change per cycle) → total writes per cycle ≤ 25 (assert ≤ 25 to leave 1k/day headroom: 24 cycles × 25 = 600/day)
+- **Day-1 cold-start burst:** empty KV at start, 200-listing fixture → first-cycle writes ≤ 240 (200 byid + 1 index + ~6 specialty + ~30 state + 1 meta + 1-2 retries headroom = 238 nominal + 2 headroom)
+
+- [ ] **Step 2: Implement** — `syncToKv(kv, listings, unknownSpecialties): SyncStats`. Logic:
+
+```ts
+import type { NormalizedListing } from './normalize';
+
+const STALE_AFTER_MISSES = 2;
+const DROP_AFTER_GRACE_MS = 24 * 60 * 60 * 1000;
+
+interface LifecycleEntry {
+  missCount: number;
+  lastSeenAt: string; // ISO
+}
+
+interface MetaRecord {
+  lastSyncAt: string;
+  lastSyncDurationMs: number;
+  syncErrorCount: number;
+  unknownSpecialties: string[];
+  hashes: Record<string, string>;
+  /** SHA-256 hex of last-written JSON for each aggregate KV key (jobs:index + jobs:by:*).
+   *  Used to skip writes when content unchanged. (Codex r2 AMBER #4 fold) */
+  aggregateHashes: Record<string, string>;
+  lifecycle: Record<string, LifecycleEntry>;
+}
+
+export interface SyncStats {
+  totalSeen: number;
+  written: number;
+  staleMarked: number;
+  dropped: number;
+  unknownSpecialties: string[];
+  durationMs: number;
+}
+
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hashListing(l: NormalizedListing): Promise<string> {
+  return sha256Hex(JSON.stringify({
+    id: l.id, title: l.title, specialty: l.specialty, state: l.state,
+    rateLow: l.rateLow, rateHigh: l.rateHigh, schedule: l.schedule,
+    callType: l.callType, lengthCategory: l.lengthCategory,
+    facilityType: l.facilityType,
+  }));
+}
+
+/** Hash-diff aggregate-write helper (Codex r2 AMBER #4 fold).
+ *  Records the new hash in `nextHashes` regardless. Writes only when content differs from `prevHashes`.
+ *  Returns true iff a write occurred. */
+async function putIfChanged(
+  kv: KVNamespace,
+  key: string,
+  json: string,
+  prevHashes: Record<string, string>,
+  nextHashes: Record<string, string>,
+): Promise<boolean> {
+  const hash = await sha256Hex(json);
+  nextHashes[key] = hash;
+  if (prevHashes[key] === hash) return false;
+  await kv.put(key, json);
+  return true;
+}
+
+const SLIM_KEYS: (keyof NormalizedListing | '_stale')[] = [
+  'id', 'specialty', 'state', 'lengthCategory', 'rateLow', 'rateHigh', 'callType', '_stale',
+];
+
+function slim(l: NormalizedListing, stale: boolean): Record<string, unknown> {
+  return Object.fromEntries(SLIM_KEYS.map((k) => [k, k === '_stale' ? stale : (l as any)[k]]));
+}
+
+export async function syncToKv(
+  kv: KVNamespace,
+  listings: NormalizedListing[],
+  unknownSpecialties: string[],
+): Promise<SyncStats> {
+  const start = Date.now();
+  const nowIso = new Date().toISOString();
+  const nowMs = Date.now();
+
+  const meta = (await kv.get<MetaRecord>('jobs:_meta', 'json')) ?? {
+    lastSyncAt: '', lastSyncDurationMs: 0, syncErrorCount: 0,
+    unknownSpecialties: [], hashes: {}, aggregateHashes: {}, lifecycle: {},
+  };
+  // Backfill aggregateHashes on legacy meta records that pre-date the r2 fold
+  meta.aggregateHashes ??= {};
+
+  const currentIds = new Set(listings.map((l) => l.id));
+  const previousIds = new Set(Object.keys(meta.lifecycle));
+
+  // 1. Drop pass — find IDs that have exceeded grace and delete from all KV indexes
+  const toDrop: string[] = [];
+  for (const id of previousIds) {
+    if (currentIds.has(id)) continue; // listing returned; skip drop
+    const lc = meta.lifecycle[id];
+    if (!lc) continue;
+    const ageMs = nowMs - new Date(lc.lastSeenAt).getTime();
+    if (lc.missCount >= STALE_AFTER_MISSES && ageMs > DROP_AFTER_GRACE_MS) {
+      toDrop.push(id);
+    }
+  }
+  for (const id of toDrop) {
+    await kv.delete(`jobs:byid:${id}`);
+    delete meta.hashes[id];
+    delete meta.lifecycle[id];
+  }
+
+  // 2. Absence pass (Codex r2 NO-GO #3 fold) — IDs absent this sync get missCount++.
+  //    missCount === 1 → KEEP ACTIVE in aggregate indexes (NO _stale flag, NO byid rewrite).
+  //    missCount >= 2 → flip _stale on byid record, include in slim index with _stale: true.
+  const stalePayloadById = new Map<string, NormalizedListing>();
+  const oneMissPayloadById = new Map<string, NormalizedListing>();
+  for (const id of previousIds) {
+    if (currentIds.has(id)) continue;
+    if (toDrop.includes(id)) continue;
+    const lc = meta.lifecycle[id];
+    if (!lc) continue;
+    lc.missCount += 1;
+    const prev = await kv.get<NormalizedListing>(`jobs:byid:${id}`, 'json');
+    if (!prev) continue; // already gone (defensive)
+    if (lc.missCount >= STALE_AFTER_MISSES) {
+      const updated: NormalizedListing = { ...prev, _stale: true };
+      await kv.put(`jobs:byid:${id}`, JSON.stringify(updated));
+      stalePayloadById.set(id, updated);
+    } else {
+      // missCount === 1 — listing stays alive in aggregates without _stale flag.
+      // Do NOT rewrite byid (saves a write).
+      oneMissPayloadById.set(id, prev);
+    }
+  }
+
+  // 3. Active-write pass — current listings update lifecycle, write changed records
+  const newHashes: Record<string, string> = { ...meta.hashes };
+  let written = 0;
+  for (const l of listings) {
+    const lc = meta.lifecycle[l.id];
+    meta.lifecycle[l.id] = { missCount: 0, lastSeenAt: nowIso };
+    const hash = await hashListing(l);
+    newHashes[l.id] = hash;
+    if (lc && meta.hashes[l.id] === hash) continue; // unchanged
+    await kv.put(`jobs:byid:${l.id}`, JSON.stringify({ ...l, _lastSeenAt: nowIso, _stale: false }));
+    written++;
+  }
+
+  // 4. Build slim index — active + 1-miss-retained (both _stale=false) + 2-miss-stale (_stale=true at end).
+  //    Hash-diff aggregate write (Codex r2 AMBER #4 fold) — only put when content changed.
+  const nextAggregateHashes: Record<string, string> = {};
+  const indexJson = JSON.stringify([
+    ...listings.map((l) => slim(l, false)),
+    ...[...oneMissPayloadById.values()].map((l) => slim(l, false)),
+    ...[...stalePayloadById.values()].map((l) => slim(l, true)),
+  ]);
+  if (indexJson.length > 500_000) {
+    console.warn(`jobs:index size ${indexJson.length} exceeds 500KB cap`);
+  }
+  if (await putIfChanged(kv, 'jobs:index', indexJson, meta.aggregateHashes, nextAggregateHashes)) {
+    written++;
+  }
+
+  // 5. By-specialty + by-state — rebuild from active + 1-miss + stale, hash-diff per key,
+  //    delete previously-tracked aggregate keys whose listing-set is now empty.
+  const indexLive: NormalizedListing[] = [
+    ...listings,
+    ...oneMissPayloadById.values(),
+    ...stalePayloadById.values(),
+  ];
+  const bySpecialty: Record<string, NormalizedListing[]> = {};
+  const byState: Record<string, NormalizedListing[]> = {};
+  for (const l of indexLive) {
+    (bySpecialty[l.specialty] ??= []).push(l);
+    (byState[l.state] ??= []).push(l);
+  }
+  const presentSpecialtyKeys = new Set(Object.keys(bySpecialty).map((k) => `jobs:by:specialty:${k}`));
+  const presentStateKeys = new Set(Object.keys(byState).map((k) => `jobs:by:state:${k}`));
+  for (const key of Object.keys(meta.aggregateHashes)) {
+    if (key === 'jobs:index') continue;
+    if (key.startsWith('jobs:by:specialty:') && !presentSpecialtyKeys.has(key)) {
+      await kv.delete(key);
+      // Do not carry hash forward — key is gone.
+    } else if (key.startsWith('jobs:by:state:') && !presentStateKeys.has(key)) {
+      await kv.delete(key);
+    }
+  }
+  for (const [k, v] of Object.entries(bySpecialty)) {
+    if (await putIfChanged(kv, `jobs:by:specialty:${k}`, JSON.stringify(v), meta.aggregateHashes, nextAggregateHashes)) {
+      written++;
+    }
+  }
+  for (const [k, v] of Object.entries(byState)) {
+    if (await putIfChanged(kv, `jobs:by:state:${k}`, JSON.stringify(v), meta.aggregateHashes, nextAggregateHashes)) {
+      written++;
+    }
+  }
+
+  // 6. Update meta — always written because lastSyncAt advances each cycle (24/day max).
+  const updatedMeta: MetaRecord = {
+    lastSyncAt: nowIso,
+    lastSyncDurationMs: Date.now() - start,
+    syncErrorCount: meta.syncErrorCount,
+    unknownSpecialties: [...new Set([...meta.unknownSpecialties, ...unknownSpecialties])].slice(0, 200),
+    hashes: newHashes,
+    aggregateHashes: nextAggregateHashes,
+    lifecycle: meta.lifecycle,
+  };
+  await kv.put('jobs:_meta', JSON.stringify(updatedMeta));
+  written++;
+
+  return {
+    totalSeen: listings.length,
+    written,
+    staleMarked: stalePayloadById.size,
+    dropped: toDrop.length,
+    unknownSpecialties,
+    durationMs: Date.now() - start,
+  };
+}
+```
+
+**Worst-case write budget (Codex r2 AMBER #4 + r3 AMBER #1 reconciled math — 200-listing fixture):** Steady state with 200-listing fixture + ~5% churn: 24 (`_meta`) + ~10 (`byid` changes) + ~3 (changed specialty aggregates) + ~5 (changed state aggregates) + 1 (`index`) ≈ 43 writes/changed-cycle; with most cycles writing only `_meta` (24/day baseline), total daily ≈ 100-250/day steady. Day-1 cold-start burst: 200 (`byid`) + 1 (`index`) + ~6 (`specialty`) + ~30 (`state`) + 1 (`meta`) = **238 writes one-time** (test bound: ≤ 240 with retry headroom). Both well under 1k/day Workers Free cap.
+
+This requires extending `NormalizedListing` (in PA4) to include optional `_stale?: boolean` and optional `_lastSeenAt?: string` fields. Update PA4's normalize() to NOT set these on output (they're managed by kv-writer); the PA4 type union just allows them to be present after kv-writer enriches.
+
+- [ ] **Step 3: Codex review**
+
+Prompt: "Review workers/jobs-sync/src/kv-writer.ts. Verify: (1) **1-miss retain (Codex r2 NO-GO #3):** missCount=1 listings remain in `jobs:index`, `jobs:by:specialty:*`, `jobs:by:state:*` with `_stale: false` AND `jobs:byid:{id}` is NOT rewritten (oneMissPayloadById path). (2) Stale-lifecycle matches spec §3.4 lines 408-410 + 467-468 (2-miss → flip _stale on byid + include in slim-index/by-* with _stale:true; 24h-after-lastSeenAt + ≥2 misses → drop). (3) missCount resets to 0 when listing returns; lastSeenAt advances. (4) Drop pass deletes byid + meta.hashes + meta.lifecycle entry — confirm no strand. (5) **Hash-diff aggregate writes (Codex r2 AMBER #4):** putIfChanged writes only when SHA-256 hex differs; nextAggregateHashes accumulates ALL aggregate keys this cycle (whether written or not); previously-tracked aggregates with empty listing-sets are kv.delete'd; meta.aggregateHashes round-trips legacy nullish field via `??= {}`. (6) Worst-case write budget: 200-listing + 5% churn ≤ 43 writes/changed-cycle, 200-listing cold start = 238 writes (test bound ≤ 240) one-time, both under 1k/day. (Codex r3 AMBER #1 reconciliation — all four locations now state 200-listing fixture.) (7) jobs:index size cap 500KB warn-only. (8) Concurrency: cron-only writer (one Worker invocation at a time) — KV eventual consistency tolerable. (9) lifecycle entry creation for never-seen-before IDs (first sync — verify entry written via active-write loop)."
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git commit -m "feat(1.A · Path A): kv-writer (hash dedup, slim index, meta.hashes, 500KB cap warn) [runtime-verified: N/N] [codex-reviewed: r1 GO]"
+git add workers/jobs-sync/src/kv-writer.ts workers/jobs-sync/tests/kv-writer.test.ts
+git commit -m "feat(1.A · Path A): kv-writer with 2-miss/24h-grace lifecycle + hash-diff aggregate writes (Codex r1 NO-GO #3 + r2 NO-GO #3 + r2 AMBER #4) [runtime-verified] [codex-reviewed: r1 GO + r2 NO-GO 1+1+0 → r3 GO]"
 ```
 
 ---
@@ -3600,7 +4315,7 @@ export default {
 - [ ] **Step 4: Commit**
 
 ```bash
-git commit -m "feat(1.A · Path A): jobs-sync Worker entrypoint (scheduled + fetch + auth-gated /run) [runtime-verified: N/N] [codex-reviewed: r1 GO]"
+git commit -m "feat(1.A · Path A): jobs-sync Worker entrypoint (scheduled + fetch + auth-gated /run) [runtime-verified] [codex-reviewed: r1 GO]"
 ```
 
 ---
@@ -3661,21 +4376,83 @@ function j(status: number, body: unknown) {
 - [ ] Codex review + commit.
 
 ```bash
-git commit -m "feat(1.A · Path A): /api/jobs KV reader [runtime-verified: N/N] [codex-reviewed: r1 GO]"
+git commit -m "feat(1.A · Path A): /api/jobs KV reader [runtime-verified] [codex-reviewed: r1 GO]"
 ```
 
 ---
 
-### PA10: Modify `src/pages/jobs/index.astro` to switch on `PUBLIC_PATH_A`
+### PA10: Modify `src/pages/jobs/index.astro` to switch on `PUBLIC_PATH_A` (build-time)
 
-- [ ] **Step 1: Make jobs page Path-aware** — read `PUBLIC_PATH_A === 'true'` env flag. If true: SSR over KV. If false (default): SSG over Content Collection. Set `export const prerender = false` unconditionally (Path B can SSR fine; switching cost negligible).
+> **Codex r1 NO-GO #2 fold:** spec §0.5.1 line 26 + §3.4 lines 455-460 require Path B `/jobs` to be SSG. Earlier draft used `export const prerender = false` unconditionally, which would have regressed Path B to SSR. Fix: `prerender` evaluates the build-time env flag. When `PUBLIC_PATH_A=true` at build, Astro emits SSR for `/jobs`; when unset/false (Path B default), Astro pre-renders `/jobs` to static HTML at build time. Switching paths becomes a build-and-redeploy operation (acceptable — both Path A activation and Path A→B fallback already imply a redeploy).
 
-- [ ] **Step 2:** Set `PUBLIC_PATH_A=true` in Cloudflare env vars (Production + Preview) — flip ONLY after PA8 confirmed clean cycle.
+- [ ] **Step 1: Make `prerender` build-time conditional**
 
-- [ ] **Step 3: Codex review + commit**
+In `src/pages/jobs/index.astro`, replace the existing `export const prerender = false` (or absence thereof) with:
+
+```ts
+// Path B (default) prerenders to SSG; Path A SSRs against KV.
+// Astro evaluates `import.meta.env` at build time so this is statically resolved.
+export const prerender = import.meta.env.PUBLIC_PATH_A !== 'true';
+```
+
+- [ ] **Step 2: Make data-fetch path-aware**
+
+In the same `<script>` frontmatter, branch the `active` listings source on the same flag — but DO NOT use a runtime conditional that breaks SSG. Instead, define both branches as separate top-level `await` calls and let dead-code-elimination drop the unused branch when `prerender = true`:
+
+```ts
+const isPathA = import.meta.env.PUBLIC_PATH_A === 'true';
+
+let active: any[];
+if (isPathA) {
+  // Path A: SSR — read KV at request time
+  const env = (Astro.locals as any).runtime?.env;
+  active = env?.JOBS_KV ? (await env.JOBS_KV.get('jobs:index', 'json')) ?? [] : [];
+} else {
+  // Path B: SSG — read Content Collection at build time
+  const { getCollection } = await import('astro:content');
+  const all = await getCollection('jobs');
+  const now = new Date();
+  active = all
+    .filter((j) => !j.data.expiresAt || j.data.expiresAt > now)
+    .sort((a, b) => +b.data.publishedAt - +a.data.publishedAt)
+    .map((j) => ({ slug: j.slug, ...j.data }));
+}
+```
+
+When `prerender = true`, the `if (isPathA)` branch is unreachable and Astro/Vite can tree-shake it. The page emits to `dist/jobs/index.html` as static. When `prerender = false`, both branches compile but only the `isPathA = true` branch executes at runtime.
+
+- [ ] **Step 3: Set env var when activating Path A**
+
+In Cloudflare Pages → Settings → Environment variables → Production AND Preview:
+- `PUBLIC_PATH_A=true` (set ONLY after PA8 confirms clean Worker cron cycle)
+
+After setting, trigger a fresh deploy (Cloudflare Pages → Deployments → Retry last deployment). The new build picks up the env var and emits SSR for `/jobs`.
+
+To roll back to Path B: unset `PUBLIC_PATH_A` (or set to `false`), retry deployment. The new build emits SSG for `/jobs` again. This is the Path A → Path B fallback procedure documented in PA12.
+
+- [ ] **Step 4: Verify both paths build cleanly**
+
+Run two builds locally, observe output:
 
 ```bash
-git commit -m "feat(1.A · Path A): /jobs runtime-toggleable Path A vs Path B via PUBLIC_PATH_A [runtime-verified] [codex-reviewed: r1 GO]"
+PUBLIC_PATH_A=false npm run build
+ls dist/jobs/index.html        # expect file (SSG output)
+
+PUBLIC_PATH_A=true npm run build
+ls dist/jobs/                   # expect SSR endpoint, NO index.html in dist (or empty dir)
+```
+
+Astro emits SSR routes as Functions; static routes as `dist/<route>/index.html`. Confirm both shapes.
+
+- [ ] **Step 5: Codex review**
+
+Prompt: "Review src/pages/jobs/index.astro Path A/B switch. Verify: `prerender` is build-time evaluated (`import.meta.env.PUBLIC_PATH_A !== 'true'`), not runtime; both data-fetch branches compile but only the active one runs (Astro tree-shakes the unreachable branch when prerender=true); fallback to Path B requires unsetting env + redeploying (matches PA12 fallback doc); /api/jobs (PA9) is similarly Path-A-only and PA9's prerender flag should align — flag if PA9 missing the same conditional pattern."
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/pages/jobs/index.astro
+git commit -m "feat(1.A · Path A): /jobs build-time prerender conditional (Path B SSG default; Path A SSR when PUBLIC_PATH_A=true; Codex r1 NO-GO #2 fix) [runtime-verified] [codex-reviewed: r1 GO]"
 ```
 
 ---
@@ -3863,7 +4640,7 @@ This section mirrors spec §5 Phase 1.A `pre-deploy hard checks` (machine-verifi
 ### Hard checks (machine-verifiable)
 - [ ] **HC1** `functions/_middleware.js` CSP replaced per §0.5.3; `X-Robots-Tag: noindex, nofollow` REMOVED from line 20 (T9 + T15)
 - [ ] **HC2** `public/_headers` no longer contains `X-Robots-Tag` line (T16)
-- [ ] **HC3** `public/robots.txt` reads `User-agent: *\nAllow: /\nSitemap: https://innovativemedicalstaffing.com/sitemap-index.xml` (T14)
+- [ ] **HC3** `public/robots.txt` reads `User-agent: *\nAllow: /\nSitemap: https://innovativemedicalstaffing.com/sitemap.xml`; `public/_redirects` 301s `/sitemap.xml → /sitemap-index.xml` (T14)
 - [ ] **HC4** `@astrojs/sitemap` integration installed; sitemap excludes `/api/*`, `/og/*`, filtered `/jobs?...` URLs (T1)
 - [ ] **HC5** `@astrojs/cloudflare` adapter installed; `output: "hybrid"`. Path B SSR routes built: `/api/apply`, `/api/contact`. Path A (only if active) adds `/jobs`, `/api/jobs` SSR (T1, optional PA10)
 - [ ] **HC6** KV namespace `IMS_RATE` provisioned + bound as `RATE_KV`. (Path A only) `IMS_JOBS` provisioned + bound as `JOBS_KV` + Worker `ims-jobs-sync` deployed + 1 clean cron cycle observed (T37, optional PA2/PA8). (Path B only) `src/content/jobs/` populated with ≥10 real listings + recruiter onboarded (T31 confirmation)
@@ -3891,7 +4668,7 @@ This section mirrors spec §5 Phase 1.A `pre-deploy hard checks` (machine-verifi
 | Apply-form Supabase row written AFTER Resend send (out-of-order failure semantics) | T47 TDD enforces order with explicit test asserting `resend_status='pending'` row exists before Resend call. Codex review MANDATORY |
 | Resend send failure crashes 200 response path | T47 TDD test asserts forced Resend failure leaves row at `resend_status='failed'` + returns 200. T60 E2E confirms in deployed environment |
 | Rate-limit bypass leaks to production | T42 includes test asserting bypass header `X-IMS-Test-Bypass` only honored when `IMS_RATE_BYPASS_KEY` env var matches; default-empty env fails closed |
-| Path A KV write-budget exceeds 1k/day free-tier cap | PA5 TDD test fixes upper bound on writes/cycle (≤74 baseline + ≤500 burst); deploy step PA8 observes first cycle's actual write count |
+| Path A KV write-budget exceeds 1k/day free-tier cap | PA5 uses hash-diff `putIfChanged` for `jobs:index` + `jobs:by:specialty:*` + `jobs:by:state:*` (Codex r2 AMBER #4 fold). Worst-case math (200-listing fixture, reconciled per Codex r3 AMBER #1): ≤ 43 writes/changed-cycle steady state; cold-start = 238 writes one-time (test bound ≤ 240). PA5 TDD asserts upper bound ≤ 25 writes for 5%-churn cycle and ≤ 240 for cold start. PA8 deploy step observes first cycle's actual write count via Cloudflare KV analytics |
 | TAY Basal at 96px reads too light | T55 documents validation step at first paint; if fails, Inter Variable 700-900 fallback already wired via T2 (`@fontsource-variable/inter`) — swap is CSS-token change in `tokens.css` `--font-display`, no rebuild of layouts |
 | Recruiter Path B onboarding lag delays content | T31 ships placeholder seeds; HC6 (Path B branch) calls out that 10 real listings must replace placeholders before launch; failure mode = launch slips, not breaks |
 | Plausible script blocked by CSP | §0.5.3 CSP includes `script-src https://plausible.io` + `connect-src https://plausible.io`; T9 verification step greps both domains in committed CSP |
@@ -3908,6 +4685,21 @@ After plan approval, two execution paths:
 
 **2. Inline Execution** — Use `superpowers:executing-plans`. Execute tasks in this session with batch checkpoints. Better for tight feedback loops on tasks with high coupling (e.g., the api/apply.ts task chain T41–T47).
 
-Recommendation: **Subagent-Driven for T1–T34, T52–T65** (independent, parallelizable in waves) + **Inline Execution for T35–T51** (Supabase migration → KV → server libs → API routes is a dependency chain and benefits from same-session continuity). Path A (PA1–PA12) is a separate single-track execution gated on PA1's decision.
+Recommendation (Codex r3 AMBER #D8 reconciled): **Subagent-Driven for T1–T34, T48–T65** (independent components — pages, sections, forms, telemetry, verification — parallelizable in waves) + **Inline Execution for T35–T47** (Supabase migration → KV → server libs → API routes is a dependency chain that benefits from same-session continuity). **T34 deferred to a wave after T48** (Codex r2 AMBER #14 fold — T34's empty-state TurnstileWidget instance passes `instanceId="jobs-empty-state"` which depends on T48's per-widget-callback wrapper). Path A (PA1–PA12) is a separate single-track execution gated on PA1's decision.
+
+Wave plan for subagent-driven execution:
+1. **Wave 1** (no deps): T1, T2, T3, T4, T5, T6, T11, T13 (Phase 1.0 foundation)
+2. **Wave 2** (deps Wave 1): T7, T8, T9, T10, T12 (layout + scroll-reveal + CSP)
+3. **Wave 3** (Phase 1.A index-flip + nav): T14, T15, T16, T17, T18, T19
+4. **Wave 4** (homepage sections + content): T20a-T20j, T31 (parallel-safe)
+5. **Wave 5** (T20-batch Codex review + page wire-ups): T20-batch, T21, T22, T23, T24, T25, T26, T27, T28, T29
+6. **Wave 6** (job board Path B + forms infra): T30, T32, T33, T48
+7. **Wave 7** (T34 + form components — T48 dep met): T34, T49, T50
+8. **Wave 8** (Inline backend chain): T35 → T36 → T37 → T38 → T39 → T40 → T41 → T42 → T43 → T44 → T45 → T46 → T47
+9. **Wave 9** (Plausible + analytics): T51, T52, T53, T54, T55
+10. **Wave 10** (Pre-launch verification): T56, T57, T58, T59, T60, T61, T62, T63, T64
+11. **Wave 11** (Launch): T65
+
+Path A (PA1–PA12) runs as Wave-A1 through Wave-A6 in parallel with Waves 6-10, gated on PA1's 2026-05-13 LS authorization decision.
 
 Ask Zach which approach when ready to execute.
