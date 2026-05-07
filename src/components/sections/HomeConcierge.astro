@@ -1,0 +1,125 @@
+---
+// HomeConcierge — homepage §2.5 (spec L262-270).
+//
+// CRITICAL: this section renders OUTSIDE the cream card per spec §1 page-level
+// rules ("§2.5 inverse section sits OUTSIDE the cream card DOM — sibling in
+// MarketingLayout"). At T28 wire-up, the home page sets inCard={false} on
+// MarketingLayout and this component renders as a full-bleed sibling between
+// the §2.1-§2.4 cream-card-1 and §2.6-§2.9 cream-card-2.
+//
+// Self-styled with --surface-page background + --ink-on-dark color so the dark
+// inversion holds even if the parent context is unexpectedly cream.
+import ScrollReveal from '../util/ScrollReveal.astro';
+
+const phases = [
+  {
+    title: 'Before assignment',
+    items: [
+      'Clear role details',
+      'Availability alignment',
+      'Documentation',
+      'Credentialing guidance',
+      'Expectation setting',
+    ],
+  },
+  {
+    title: 'During assignment',
+    items: [
+      'Responsive communication',
+      'Schedule support',
+      'Travel and lodging',
+      'Real-time problem solving',
+    ],
+  },
+  {
+    title: 'After assignment',
+    items: [
+      'Follow-up',
+      'Feedback',
+      'Future planning',
+      'Continued relationship',
+    ],
+  },
+];
+---
+<ScrollReveal as="section" id="concierge" class="concierge-band" aria-labelledby="concierge-heading">
+  <div class="inner">
+    <h2 id="concierge-heading" class="visually-hidden">Concierge support</h2>
+    <div class="grid">
+      {phases.map((phase) => (
+        <article class="phase">
+          <h3>{phase.title}</h3>
+          <ul>
+            {phase.items.map((item) => <li>{item}</li>)}
+          </ul>
+        </article>
+      ))}
+    </div>
+    <p class="closer">
+      From credentialing and travel to first-day preparation, our team stays close to the process.
+    </p>
+  </div>
+</ScrollReveal>
+
+<style>
+  .concierge-band {
+    background: var(--surface-page);
+    color: var(--ink-on-dark);
+    padding: clamp(80px, 12vh, 160px) clamp(24px, 5vw, 80px);
+  }
+  .inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(40px, 5vw, 72px);
+  }
+  @media (min-width: 900px) {
+    .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  .phase h3 {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 3vw, 28px);
+    line-height: 1.2;
+    color: var(--ink-on-dark);
+    margin: 0 0 24px;
+    letter-spacing: -0.005em;
+  }
+  .phase ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .phase li {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-on-dark-2);
+    padding: 8px 0;
+    border-top: 1px solid rgba(242, 232, 220, 0.16);
+  }
+  .phase li:last-child { border-bottom: 1px solid rgba(242, 232, 220, 0.16); }
+  .closer {
+    margin: clamp(56px, 8vh, 96px) auto 0;
+    max-width: 64ch;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-on-dark);
+    text-align: center;
+  }
+</style>
