@@ -1,0 +1,130 @@
+---
+// LinkedIn URL confirmed by Zach 2026-05-07 (strip ?viewAsMember query
+// per memo). Spec §10 deferred-item resolved. FOLLOW column drops to
+// 2-col only when LINKEDIN_URL is empty — kept here as a future-proof
+// switch in case the company link ever needs to come down temporarily.
+const LINKEDIN_URL = 'https://www.linkedin.com/company/innovative-medical-staffing/';
+const showFollow = LINKEDIN_URL.length > 0;
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class:list={['cols', { 'is-2col': !showFollow }]}>
+    <div class="col">
+      <h3>EXPLORE</h3>
+      <ul>
+        <li><a href="/clinicians">For Clinicians</a></li>
+        <li><a href="/facilities">For Facilities</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/how-it-works">How It Works</a></li>
+        <li><a href="/jobs">Open Opportunities</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </div>
+    {showFollow && (
+      <div class="col">
+        <h3>FOLLOW</h3>
+        <ul>
+          <li>
+            <a href={LINKEDIN_URL} rel="noopener noreferrer" target="_blank">
+              LinkedIn
+            </a>
+          </li>
+        </ul>
+      </div>
+    )}
+    <div class="col">
+      <h3>CONTACT</h3>
+      <ul>
+        <li><a href="mailto:recruiting@iastaffing.com">recruiting@iastaffing.com</a></li>
+        <li><a href="tel:+15125246686">512-524-6686</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="bottom">
+    <span>© {year} INNOVATIVE MEDICAL STAFFING</span>
+    <span class="legal-links">
+      <a href="/privacy">PRIVACY POLICY</a>
+      <a href="/cookies">COOKIES</a>
+      <a href="/terms">TERMS &amp; CONDITIONS</a>
+    </span>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--surface-page);
+    color: var(--ink-on-dark);
+    padding: 80px clamp(20px, 4vw, 64px) 32px;
+    font-family: var(--font-body);
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 48px;
+    margin-bottom: 48px;
+  }
+  /* Drop to 2-col when FOLLOW is hidden. The .is-2col class is rendered
+     server-side from `showFollow` so the layout is correct on first paint
+     in every browser, no :has() fallback needed. */
+  .cols.is-2col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .col h3 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.10em;
+    margin: 0 0 16px;
+    text-transform: uppercase;
+  }
+  .col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .col a {
+    color: inherit;
+    text-decoration: none;
+    font-size: 15px;
+    transition: opacity 180ms ease-out;
+  }
+  .col a:hover { opacity: 0.7; }
+  .bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(242, 232, 220, 0.12);
+    padding-top: 24px;
+    font-family: var(--font-display);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .legal-links { display: flex; gap: 24px; }
+  .legal-links a { color: inherit; text-decoration: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .col a { transition: none; }
+  }
+
+  @media (max-width: 768px) {
+    .cols, .cols.is-2col {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    .bottom {
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    /* Wrap the legal-link row so PRIVACY POLICY / COOKIES / TERMS &
+       CONDITIONS don't overflow at 320px wide (Codex T19 r1 fold). */
+    .legal-links {
+      flex-wrap: wrap;
+      gap: 8px 20px;
+    }
+  }
+</style>
