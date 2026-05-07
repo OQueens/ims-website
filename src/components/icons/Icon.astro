@@ -1,0 +1,43 @@
+---
+import chevronDown from '../../assets/icons/chevron-down.svg?raw';
+import chevronRight from '../../assets/icons/chevron-right.svg?raw';
+import close from '../../assets/icons/close.svg?raw';
+import externalLink from '../../assets/icons/external-link.svg?raw';
+import arrowRight from '../../assets/icons/arrow-right.svg?raw';
+import menu from '../../assets/icons/menu.svg?raw';
+import check from '../../assets/icons/check.svg?raw';
+import info from '../../assets/icons/info.svg?raw';
+
+const ICONS = {
+  'chevron-down': chevronDown,
+  'chevron-right': chevronRight,
+  'close': close,
+  'external-link': externalLink,
+  'arrow-right': arrowRight,
+  'menu': menu,
+  'check': check,
+  'info': info,
+} as const;
+
+interface Props {
+  name: keyof typeof ICONS;
+  size?: number;
+  /** Optional accessible label; if omitted, icon is aria-hidden (decorative) */
+  label?: string;
+}
+const { name, size = 24, label } = Astro.props;
+const raw = ICONS[name];
+---
+<span
+  class="icon"
+  style={`--icon-size: ${size}px`}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+  set:html={raw}
+/>
+
+<style>
+  .icon { display: inline-flex; align-items: center; justify-content: center; }
+  .icon :global(svg) { width: var(--icon-size); height: var(--icon-size); }
+</style>

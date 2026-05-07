@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import LogoDefault from "../components/brand/LogoDefault.astro";
+import LogoOnDark from "../components/brand/LogoOnDark.astro";
 
 export const prerender = false;
 ---
@@ -10,6 +12,8 @@ export const prerender = false;
   noindex={true}
 >
   <main>
+    <span class="brand-mark brand-mark--light"><LogoDefault height={88} /></span>
+    <span class="brand-mark brand-mark--dark"><LogoOnDark height={88} /></span>
     <h1 class="wordmark">Innovative Medical Staffing</h1>
     <p class="subline">We're crafting something new. Back shortly.</p>
   </main>
@@ -27,13 +31,26 @@ export const prerender = false;
     animation: fade-in 0.6s var(--ease-out) both;
   }
 
+  /* Logo wrappers (parent-owned spans) so Astro's scoped selectors match.
+     Default (cls-2 #1E1E1E) reads on cream; OnDark (cls-2 #F2E8DC) reads
+     on near-black. prefers-color-scheme swap keeps the cyan cls-1 swoop
+     visible in both schemes — display:none removes the inactive copy
+     from the accessibility tree per WAI guidance. */
+  .brand-mark { margin: 0 0 28px 0; }
+  .brand-mark--light { display: block; }
+  .brand-mark--dark { display: none; }
+  @media (prefers-color-scheme: dark) {
+    .brand-mark--light { display: none; }
+    .brand-mark--dark { display: block; }
+  }
+
   .wordmark {
-    font-size: clamp(28px, 6vw, 56px);
+    font-size: clamp(22px, 4.5vw, 36px);
     font-weight: 600;
     letter-spacing: -0.02em;
-    line-height: 1.1;
+    line-height: 1.15;
     color: var(--text);
-    margin: 0 0 16px 0;
+    margin: 0 0 14px 0;
   }
 
   .subline {
