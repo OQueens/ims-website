@@ -1,0 +1,204 @@
+---
+// /privacy — privacy notice (spec §0.5.8 + plan T27 step 1).
+//
+// Phase 1.A scope: drafted per plan T27 outline. Zach legal review is the
+// SG15 Pre-Launch Checklist gate (spec §10 item 5); review artifact is a
+// /legal-review/ PR comment from Zach approving the content.
+//
+// Content covers: what we collect, how we use it, storage location, retention
+// (apply 18mo / contact 12mo), deletion request flow (mailto subject
+// "Data deletion request"), sub-processors (Plausible Cloud, Resend,
+// Supabase — DPA-signed), US state-law accommodations (CA/CO/CT/UT/VA),
+// GDPR section if EU traffic. Last-updated stamp at bottom per plan.
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import SiteNav from '../components/nav/SiteNav.astro';
+import SiteFooter from '../components/footer/SiteFooter.astro';
+import ScrollReveal from '../components/util/ScrollReveal.astro';
+
+const LAST_UPDATED = '2026-05-07';
+const SUPPORT_EMAIL = 'recruiting@iastaffing.com';
+const DELETION_SUBJECT = encodeURIComponent('Data deletion request');
+---
+<MarketingLayout
+  title="Privacy — Innovative Medical Staffing"
+  description="What we collect, how we use it, where it lives, and how to ask us to remove it."
+>
+  <SiteNav slot="nav" />
+
+  <ScrollReveal as="article" id="privacy" class="legal" aria-labelledby="privacy-heading">
+    <div class="legal__inner">
+      <p class="eyebrow">PRIVACY</p>
+      <h1 id="privacy-heading" class="headline">Privacy Notice</h1>
+      <p class="lead">
+        This notice describes what Innovative Medical Staffing (&ldquo;IMS&rdquo;,
+        &ldquo;we&rdquo;) collects through this site and our staffing service,
+        what we do with it, where it lives, and how to ask us to delete it.
+      </p>
+
+      <h2>What we collect</h2>
+      <ul>
+        <li><strong>Application data</strong> — name, contact details, CV, license states, certifications, references, work history, and availability submitted through the site or by email.</li>
+        <li><strong>Contact-form data</strong> — name, contact details, intent (clinician opportunity / facility coverage / general), and message body.</li>
+        <li><strong>Usage telemetry</strong> — anonymous, aggregated visit data via Plausible Cloud (no cookies, no cross-site identifiers, no IP storage past page-load). See the <a href="/cookies">Cookies notice</a>.</li>
+        <li><strong>Operational records</strong> — credentialing artifacts, references, and assignment history maintained for clinicians and facility partners we work with.</li>
+      </ul>
+
+      <h2>How we use it</h2>
+      <ul>
+        <li>To match clinicians to assignments and facilities to qualified clinicians.</li>
+        <li>To handle credentialing, onboarding, travel, and assignment logistics.</li>
+        <li>To respond to inquiries from this site and stay in touch with the clinicians and facility partners we work with.</li>
+        <li>To meet legal, regulatory, and contractual obligations specific to healthcare staffing.</li>
+      </ul>
+
+      <h2>Where it lives</h2>
+      <ul>
+        <li>Application + contact data: Supabase (US-based Postgres, encrypted at rest, row-level security enabled).</li>
+        <li>Outbound transactional email: Resend (SOC 2 Type II, DPA signed).</li>
+        <li>Anonymous site analytics: Plausible Cloud (EU-hosted, GDPR/CCPA-compliant, DPA signed).</li>
+        <li>Site hosting: Cloudflare Pages (US/EU edge, DPA signed).</li>
+      </ul>
+
+      <h2>How long we keep it</h2>
+      <ul>
+        <li><strong>Job-application data</strong> — 18 months from last contact, then deleted unless an active engagement extends the relationship.</li>
+        <li><strong>Contact-form messages</strong> — 12 months from last reply, then deleted.</li>
+        <li><strong>Operational records for active clinicians and facility partners</strong> — kept for the duration of the relationship plus 7 years to satisfy healthcare-staffing record-retention norms.</li>
+      </ul>
+
+      <h2>Your rights and how to exercise them</h2>
+      <p>
+        You can ask us at any time to confirm what we hold about you, correct
+        it, or delete it. Email <a href={`mailto:${SUPPORT_EMAIL}?subject=${DELETION_SUBJECT}`}>{SUPPORT_EMAIL}</a>
+        with subject <em>Data deletion request</em>. We respond within 30 days.
+      </p>
+      <p>
+        We do not sell personal data. We do not share personal data with third
+        parties for advertising. We disclose only to the sub-processors listed
+        above and to facilities or clinicians involved in an active engagement
+        you have agreed to.
+      </p>
+
+      <h2>US state-law accommodations</h2>
+      <p>
+        If you reside in California (CCPA/CPRA), Colorado (CPA), Connecticut
+        (CTDPA), Utah (UCPA), or Virginia (VCDPA), you have additional rights
+        including the right to know, the right to delete, the right to correct,
+        and the right to opt out of profiling for decisions with legal or
+        similarly significant effects. The deletion-request flow above
+        satisfies these state-law requests; we honor verifiable consumer
+        requests within 45 days, extendable once with notice.
+      </p>
+
+      <h2>EU/UK visitors (GDPR)</h2>
+      <p>
+        For visitors in the EU or UK, IMS acts as the data controller. The
+        legal basis for processing is performance of a contract (when you
+        engage our staffing service), legitimate interest (when you contact
+        us about possible engagement), or consent (where required by local
+        law). You have the rights of access, rectification, erasure,
+        restriction, portability, and objection. Contact
+        <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> to exercise
+        them or to lodge a complaint.
+      </p>
+
+      <h2>Changes to this notice</h2>
+      <p>
+        We update this notice when our practices change or when the law
+        requires it. The date below reflects the most recent change.
+      </p>
+
+      <p class="updated">Last updated {LAST_UPDATED}.</p>
+    </div>
+  </ScrollReveal>
+
+  <SiteFooter slot="footer" />
+</MarketingLayout>
+
+<style>
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brand-gold-muted);
+    margin: 0 0 16px;
+  }
+  .legal {
+    padding: clamp(64px, 12vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .legal__inner {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .legal .headline {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 6vw, 56px);
+    line-height: 1.1;
+    color: var(--ink-on-cream);
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+  }
+  .legal .lead {
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--ink-on-cream-3);
+    margin: 0 0 40px;
+    max-width: 64ch;
+  }
+  .legal h2 {
+    font-family: var(--font-display);
+    font-size: clamp(22px, 2.6vw, 28px);
+    line-height: 1.25;
+    color: var(--ink-on-cream);
+    margin: 40px 0 12px;
+    letter-spacing: -0.005em;
+  }
+  .legal p,
+  .legal li {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink-on-cream-3);
+    margin: 0 0 12px;
+    max-width: 64ch;
+  }
+  .legal ul {
+    margin: 0 0 16px;
+    padding-left: 1.25em;
+  }
+  .legal a {
+    color: var(--brand-navy);
+    text-decoration: none;
+    border-bottom: 1px solid var(--brand-navy);
+    padding-bottom: 1px;
+    transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .legal a:hover {
+    color: var(--brand-blue-deep);
+    border-color: var(--brand-blue-deep);
+  }
+  .legal a:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 3px;
+    border-color: transparent;
+  }
+  .legal strong {
+    color: var(--ink-on-cream);
+    font-weight: 600;
+  }
+  .legal em {
+    color: var(--ink-on-cream);
+    font-style: italic;
+  }
+  .updated {
+    margin-top: 56px;
+    color: var(--ink-on-cream-2);
+    font-size: 14px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .legal a { transition: none; }
+  }
+</style>
