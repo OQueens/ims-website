@@ -1,0 +1,88 @@
+---
+// HomeValues — homepage §2.9 (spec L300-305).
+// 6-tile 3×2 grid (1-col mobile / 2-col ≥600px / 3-col ≥900px). Per tile:
+// TAY Basal 22px name + brand-gold 24×2px underline beneath name (the only
+// "decoration") + TAY Amaya 15px definition.
+//
+// Brief §6 verbatim copy is unavailable in this worktree (predecessor brainstorm
+// memo not on disk). Definitions composed in voice, concrete-noun-led, 11-15
+// words. Voice-lint will catch any banned terms; batch Codex (#7) will validate.
+import ScrollReveal from '../util/ScrollReveal.astro';
+
+const values = [
+  { name: 'Patient-First',      definition: 'Every match is judged by what serves the patient at the bedside.' },
+  { name: 'Human-Led',          definition: 'A real person reads your file and answers the phone when it rings.' },
+  { name: 'Quality-Obsessed',   definition: 'Credentials, references, and fit are checked carefully — not assumed.' },
+  { name: 'Built on Trust',     definition: 'We tell you what we know and what we do not, before you have to ask.' },
+  { name: 'Detail-Minded',      definition: 'Travel, paperwork, and first-day logistics are handled before they become friction.' },
+  { name: 'Calm Under Pressure', definition: 'When something needs to change mid-assignment, we move quickly and stay measured.' },
+];
+---
+<ScrollReveal as="section" id="values" class="values" aria-labelledby="values-heading">
+  <div class="inner">
+    <h2 id="values-heading" class="visually-hidden">Our values</h2>
+    <ul class="grid">
+      {values.map((v) => (
+        <li class="tile">
+          <h3 class="name">
+            {v.name}
+          </h3>
+          <span class="underline" aria-hidden="true"></span>
+          <p class="def">{v.definition}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</ScrollReveal>
+
+<style>
+  .values {
+    padding: clamp(64px, 10vh, 128px) clamp(24px, 5vw, 80px);
+  }
+  .inner { max-width: 1200px; margin: 0 auto; }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(32px, 4vw, 56px);
+  }
+  @media (min-width: 600px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 900px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  .tile { display: flex; flex-direction: column; gap: 12px; }
+  .name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.2;
+    color: var(--ink-on-cream);
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .underline {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--brand-gold);
+  }
+  .def {
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-on-cream-3);
+    margin: 0;
+    max-width: 40ch;
+  }
+</style>
