@@ -1,0 +1,61 @@
+---
+const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+
+interface Props {
+  /** CSS selector for the form whose hidden turnstileToken input gets populated. */
+  form: string;
+  /** Optional override when two widgets share a form selector. Defaults to `form`. */
+  instanceId?: string;
+}
+
+const { form, instanceId } = Astro.props;
+
+// Per-widget callback name — sanitized to JS identifier characters only.
+// Defaults derive from the form selector so callers do not need to think about it,
+// but two widgets pointing at the same form should pass distinct instanceId values.
+const callback = `onTurnstileSuccess_${(instanceId ?? form).replace(/[^a-zA-Z0-9_]/g, '_')}`;
+---
+<div
+  class="cf-turnstile"
+  data-sitekey={TURNSTILE_SITE_KEY}
+  data-form={form}
+  data-callback={callback}
+></div>
+<script
+  is:inline
+  async
+  defer
+  src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+></script>
+<script is:inline define:vars={{ callback }}>
+  // Per-widget callback closes over THIS widget's target form selector via
+  // the data-form attribute on the widget div — no cross-widget leak.
+  // (Codex r2 AMBER #5 fold — replaced the previous cross-iterating
+  // onTurnstileSuccess that read the first widget on the page.)
+  //
+  // SECURITY (Codex r2 T7 fold): `form` is intentionally NOT in define:vars.
+  // Astro 5.18 lacks the GHSA-j687-52p2-xcff patch, so any value passed to
+  // define:vars containing a closing-script-tag sequence would terminate the
+  // outer script. `callback` is safe (sanitized via the JS-identifier
+  // whitelist regex above); `form` is read at runtime from the widget's
+  // data-form HTML attribute, which Astro auto-escapes at render time.
+  // Defense-in-depth even though current callers hardcode `form` at build
+  // time — keeps this safe if a future Phase 1.5 caller derives `form` from
+  // runtime user input.
+  window[callback] = function (token) {
+    var widget = document.querySelector(
+      '.cf-turnstile[data-callback="' + callback + '"]',
+    );
+    if (!widget) return;
+    var target = document.querySelector(widget.dataset.form);
+    if (!target) return;
+    var input = target.querySelector('input[name="turnstileToken"]');
+    if (!input) {
+      input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'turnstileToken';
+      target.appendChild(input);
+    }
+    input.value = token;
+  };
+</script>
