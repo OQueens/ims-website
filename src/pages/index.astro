@@ -1,72 +1,100 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
-import LogoDefault from "../components/brand/LogoDefault.astro";
-import LogoOnDark from "../components/brand/LogoOnDark.astro";
+// Homepage — marketing surface (spec §2 + plan T28).
+//
+// LAUNCH MOMENT: this file replaced the Phase-0 maintenance page in the
+// same commit window as T14 (middleware X-Robots-Tag drop) + T15 (robots.txt
+// Allow flip) + T16 (_headers X-Robots-Tag drop + verify-build inversion).
+// All four MUST land together — partial flip = silent misconfigured prod.
+//
+// `prerender = false` preserved from Phase 1.0 — REQUIRED so the homepage
+// continues to route through src/middleware.ts for the canonical pages.dev
+// → innovativemedicalstaffing.com 301 redirect. Removing this would let
+// /_routes.json exclude `/`, which would silently disable the redirect.
+//
+// Architecture: MarketingLayout `inCard={false}` so the homepage owns its
+// card-wrapper markup. Cream-card-1 wraps §2.1-§2.4 (hero, positioning
+// strip, philosophy, audience split). HomeConcierge §2.5 renders as a
+// full-bleed dark sibling between the cards. Cream-card-2 wraps §2.6-§2.9
+// (human-led tech, specialties, process, values). HomeFinalCta §2.10 closes
+// as a full-bleed dark sibling. SiteFooter rounds out the dark exterior
+// chrome.
+//
+// Specialty counts (Path B, default per spec §3.4 default-stance until
+// LocumSmart auth lands 2026-05-13): build-time read from the `jobs`
+// Content Collection. HomeSpecialties takes the Record<string,number> and
+// renders "{N} open opportunities" per card; missing slugs default to 0.
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import SiteNav from '../components/nav/SiteNav.astro';
+import SiteFooter from '../components/footer/SiteFooter.astro';
+import HomeHero from '../components/sections/HomeHero.astro';
+import HomePositioningStrip from '../components/sections/HomePositioningStrip.astro';
+import HomePhilosophy from '../components/sections/HomePhilosophy.astro';
+import HomeAudienceSplit from '../components/sections/HomeAudienceSplit.astro';
+import HomeConcierge from '../components/sections/HomeConcierge.astro';
+import HomeHumanLedTech from '../components/sections/HomeHumanLedTech.astro';
+import HomeSpecialties from '../components/sections/HomeSpecialties.astro';
+import HomeProcess from '../components/sections/HomeProcess.astro';
+import HomeValues from '../components/sections/HomeValues.astro';
+import HomeFinalCta from '../components/sections/HomeFinalCta.astro';
 
 export const prerender = false;
----
 
-<BaseLayout
-  title="Innovative Medical Staffing"
-  description="We're crafting something new. Back shortly."
-  noindex={true}
+// Path B specialty counts — build-time read from the jobs Content Collection.
+// At Phase 1.A v1 the collection is empty (LocumSmart auth deadline still
+// pending per spec §3.4); HomeSpecialties handles missing slugs by defaulting
+// to 0 and the "{N} open opportunities" labels render as "0 open opportunities"
+// until the collection is populated. Empty-state acknowledged rather than
+// papered over per the same pattern used by leadership placeholder cards.
+const counts: Record<string, number> = {};
+try {
+  const { getCollection } = await import('astro:content');
+  const jobs = await getCollection('jobs');
+  for (const j of jobs) {
+    const slug = (j.data as { specialty?: string }).specialty;
+    if (typeof slug === 'string' && slug.length > 0) {
+      counts[slug] = (counts[slug] ?? 0) + 1;
+    }
+  }
+} catch {
+  // Collection not yet defined — treat as empty. Path B counts default to
+  // 0 per slug; this is the documented Phase 1.A v1 baseline.
+}
+---
+<MarketingLayout
+  title="Innovative Medical Staffing — Healthcare staffing, handled with care"
+  description="A more personal, responsive, and technology-enabled medical staffing experience."
+  inCard={false}
 >
-  <main>
-    <span class="brand-mark brand-mark--light"><LogoDefault height={88} /></span>
-    <span class="brand-mark brand-mark--dark"><LogoOnDark height={88} /></span>
-    <h1 class="wordmark">Innovative Medical Staffing</h1>
-    <p class="subline">We're crafting something new. Back shortly.</p>
-  </main>
-</BaseLayout>
+  <SiteNav slot="nav" />
+
+  <section class="card-wrap-1" id="main">
+    <HomeHero />
+    <HomePositioningStrip />
+    <HomePhilosophy />
+    <HomeAudienceSplit />
+  </section>
+
+  <HomeConcierge />
+
+  <section class="card-wrap-2">
+    <HomeHumanLedTech />
+    <HomeSpecialties counts={counts} />
+    <HomeProcess />
+    <HomeValues />
+  </section>
+
+  <HomeFinalCta />
+
+  <SiteFooter slot="footer" />
+</MarketingLayout>
 
 <style>
-  main {
-    min-height: 100svh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    text-align: center;
-    animation: fade-in 0.6s var(--ease-out) both;
-  }
-
-  /* Logo wrappers (parent-owned spans) so Astro's scoped selectors match.
-     Default (cls-2 #1E1E1E) reads on cream; OnDark (cls-2 #F2E8DC) reads
-     on near-black. prefers-color-scheme swap keeps the cyan cls-1 swoop
-     visible in both schemes — display:none removes the inactive copy
-     from the accessibility tree per WAI guidance. */
-  .brand-mark { margin: 0 0 28px 0; }
-  .brand-mark--light { display: block; }
-  .brand-mark--dark { display: none; }
-  @media (prefers-color-scheme: dark) {
-    .brand-mark--light { display: none; }
-    .brand-mark--dark { display: block; }
-  }
-
-  .wordmark {
-    font-size: clamp(22px, 4.5vw, 36px);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-    color: var(--text);
-    margin: 0 0 14px 0;
-  }
-
-  .subline {
-    font-size: clamp(15px, 2vw, 17px);
-    line-height: 1.5;
-    color: var(--text-secondary);
-    margin: 0;
-    max-width: 32ch;
-  }
-
-  @keyframes fade-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    main { animation: none; }
+  .card-wrap-1,
+  .card-wrap-2 {
+    background: var(--surface-card);
+    color: var(--ink-on-cream);
+    border-radius: var(--r-card);
+    margin: clamp(20px, 4vw, 64px);
+    overflow: hidden;
   }
 </style>

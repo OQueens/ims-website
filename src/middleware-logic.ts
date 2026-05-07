@@ -16,7 +16,9 @@ export const PAGES_DEV_HOSTNAME = "ims-website.pages.dev";
 export const CANONICAL_HOSTNAME = "innovativemedicalstaffing.com";
 
 export const SECURITY_HEADERS: Record<string, string> = {
-  "X-Robots-Tag": "noindex, nofollow",
+  // X-Robots-Tag dropped at LAUNCH HARD GATE (T14 paired with T15+T16+T28).
+  // Reintroducing this header would silently de-index the site — see the
+  // matching regression guard in scripts/verify-build.mjs.
   "Strict-Transport-Security": "max-age=15768000; includeSubDomains",
   // Spec §0.5.3 final CSP — Plausible analytics + Cloudflare Turnstile
   // allowlisted; 'unsafe-inline' for scripts/styles accepted per spec §0.5.3

@@ -16,26 +16,25 @@ import { join } from 'node:path';
 //     (this file — guards Plausible script ref, Org JSON-LD, canonical link
 //     against accidental template removal)
 //
-// LAUNCH HARD GATE (T14 + T15 + T16 — paired removal):
-//   The following THREE markers are intentionally checked as PRESENT
-//   during the Phase 1.A noindex window. ALL THREE must be inverted (or
-//   removed) in the same launch commit; partial flip = misconfigured prod.
+// LAUNCH HARD GATE — FLIPPED (T14 + T15 + T16 + T28 paired commit):
+//   All three noindex markers were dropped in the same launch commit that
+//   swapped the homepage from BaseLayout maintenance to MarketingLayout
+//   marketing surface. The assertions below are now REGRESSION GUARDS —
+//   they fail loudly if anyone reintroduces the dropped headers/values.
 //
-//     • T14 — middleware bundle inlines `noindex, nofollow`
-//             ↳ assertion: 'middleware bundle inlines X-Robots-Tag noindex value'
-//             ↳ on launch: invert (or delete) — drop X-Robots-Tag from
-//               src/middleware-logic.ts SECURITY_HEADERS
-//     • T15 — robots.txt contains `Disallow: /`
-//             ↳ assertion: 'robots.txt has Disallow: / (LAUNCH HARD GATE …)'
-//             ↳ on launch: flip to `Allow: /` — edit public/robots.txt
-//     • T16 — _headers contains `X-Robots-Tag: noindex, nofollow`
-//             ↳ assertion: '_headers contains "X-Robots-Tag"'
-//                          (matches via the `requiredHeaders` array below)
-//             ↳ on launch: drop the X-Robots-Tag entry from public/_headers
-//               AND remove the requiredHeaders entry here
+//     • T14 — src/middleware-logic.ts SECURITY_HEADERS no longer carries
+//             X-Robots-Tag. Guard asserts the bundle does NOT contain
+//             "noindex, nofollow".
+//     • T15 — public/robots.txt flipped Disallow: / → Allow: /. Guard
+//             asserts the Allow: / directive is present.
+//     • T16 — public/_headers no longer carries X-Robots-Tag. The
+//             requiredHeaders array below has the entry removed; any
+//             reintroduction would only fail accidentally if it shows up
+//             via a different header name.
 //
-//   That paired-flip is the gate's tests-fail-becomes-pass story; do NOT
-//   silently remove the markers in between.
+//   Reverting any single marker without reverting the others = silent
+//   misconfiguration. Treat these guards as one set; do not silence them
+//   independently.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const dist = join(process.cwd(), 'dist');
@@ -113,10 +112,16 @@ if (existsSync(middlewareBundlePath)) {
     'middleware bundle constructs 301 redirect with Location header',
     /status:\s*301/.test(middlewareBundle) && middlewareBundle.includes('Location'),
   );
-  // LAUNCH HARD GATE marker — flipped by T14
+  // LAUNCH HARD GATE — FLIPPED by T14. Regression guard: the middleware
+  // bundle must NOT contain a noindex directive value — reintroducing it
+  // (under any HTTP header name, in any letter case) would silently
+  // de-index the live site. Codex r2 fold: word-boundary case-insensitive
+  // match catches `NoIndex`, `NOINDEX`, etc. — HTTP directive values are
+  // case-insensitive in spec, so a literal substring match alone is too
+  // narrow.
   check(
-    'middleware bundle inlines X-Robots-Tag noindex value (LAUNCH HARD GATE — T14 flips)',
-    middlewareBundle.includes('noindex, nofollow'),
+    'middleware bundle does NOT inline a noindex directive value (LAUNCH HARD GATE FLIPPED — regression guard)',
+    !/\bnoindex\b/i.test(middlewareBundle),
   );
   check(
     "middleware bundle inlines CSP default-src 'self'",
@@ -157,8 +162,9 @@ if (routesOk) {
 check('dist/_headers exists (Pages CDN headers)', existsSync(headersPath));
 if (existsSync(headersPath)) {
   const headersFile = readFileSync(headersPath, 'utf8');
+  // X-Robots-Tag entry intentionally absent — LAUNCH HARD GATE FLIPPED by T16.
+  // Reintroducing it would silently de-index every static-prerendered page.
   const requiredHeaders = [
-    'X-Robots-Tag: noindex, nofollow',  // LAUNCH HARD GATE — T16 flips
     'Strict-Transport-Security:',
     'Content-Security-Policy:',
     'Permissions-Policy:',
@@ -172,6 +178,22 @@ if (existsSync(headersPath)) {
       headersFile.includes(required),
     );
   }
+  // LAUNCH HARD GATE FLIPPED — paired regression guards. Removing the entry
+  // from the requiredHeaders array above is necessary but not sufficient:
+  // a future devs could reintroduce X-Robots-Tag and this file would still
+  // pass without these explicit negative assertions. Codex r1 fold.
+  // Codex r2 fold: case-insensitive header-name + directive-value matchers
+  // — HTTP header names are case-insensitive per RFC 7230, and the noindex
+  // directive value is case-insensitive at the crawler level, so naive
+  // case-sensitive substring guards are bypassable.
+  check(
+    '_headers does NOT contain X-Robots-Tag (LAUNCH HARD GATE FLIPPED — regression guard, case-insensitive)',
+    !/^\s*x-robots-tag\s*:/mi.test(headersFile),
+  );
+  check(
+    '_headers does NOT contain a noindex directive value (LAUNCH HARD GATE FLIPPED — regression guard, case-insensitive)',
+    !/\bnoindex\b/i.test(headersFile),
+  );
 }
 
 // ─── SEO + crawler hygiene ───────────────────────────────────────────────────
@@ -181,10 +203,22 @@ check('dist/sitemap-index.xml exists', existsSync(sitemapIndexPath));
 
 if (existsSync(robotsPath)) {
   const robots = readFileSync(robotsPath, 'utf8');
-  // LAUNCH HARD GATE marker — flipped by T15
+  // LAUNCH HARD GATE — FLIPPED by T15. Regression guards (paired):
+  //   1. robots.txt MUST contain "Allow: /" — confirms the post-launch state.
+  //   2. robots.txt MUST NOT contain "Disallow: /" — a partial revert that
+  //      keeps Allow but adds Disallow would still de-index since most
+  //      crawlers honor the Disallow directive when both apply.
+  // Codex r2 fold: case-insensitive directive matchers — robots.txt
+  // directives are case-insensitive per the original protocol spec, so
+  // naive case-sensitive checks would let `disallow: /` slip through and
+  // still de-index the site.
   check(
-    'robots.txt has Disallow: / (LAUNCH HARD GATE — T15 flips to Allow)',
-    /Disallow:\s*\/\s*$/m.test(robots),
+    'robots.txt has Allow: / (LAUNCH HARD GATE FLIPPED — post-launch state, case-insensitive)',
+    /^\s*allow\s*:\s*\/\s*$/mi.test(robots),
+  );
+  check(
+    'robots.txt does NOT have Disallow: / (LAUNCH HARD GATE FLIPPED — regression guard, case-insensitive)',
+    !/^\s*disallow\s*:\s*\/\s*$/mi.test(robots),
   );
   // Codex r1+r2 fold: enforce exact canonical sitemap URL — a loose
   // /Sitemap:\s+https:\/\// match would pass pages.dev / wrong-host /
@@ -376,11 +410,19 @@ const pagesRenderingMarketingLayout = pageFiles.filter((f) =>
 // route count — closes both the solo-T28 vacuous-bypass (r2) and the
 // dead-import / layout-drift bypass (r3).
 const marketingEraActive = indexRendersMarketingLayout;
+// Codex r1 fold (LAUNCH HARD GATE flip review): post-T28 the orphan check
+// must require ALL marketing pages render MarketingLayout, not >= 1. The
+// >= 1 form was vacuously satisfied by index.astro alone and would let any
+// of the other 9 pages drift onto a different layout (or an inadvertent
+// BaseLayout regression) without a verify failure. Tighten to strict
+// equality so the gate fails loudly on layout drift.
 check(
   marketingEraActive
-    ? `MarketingLayout rendered by ≥1 page route (orphan check active) — found ${pagesRenderingMarketingLayout.length} of ${pageFiles.length}`
+    ? `MarketingLayout rendered by every page (orphan check load-bearing) — found ${pagesRenderingMarketingLayout.length} of ${pageFiles.length}`
     : `MarketingLayout orphan check vacuous (pre-T28: index.astro on BaseLayout, ${pageFiles.length} page(s))`,
-  marketingEraActive ? pagesRenderingMarketingLayout.length >= 1 : true,
+  marketingEraActive
+    ? pagesRenderingMarketingLayout.length === pageFiles.length
+    : true,
 );
 
 // ─── Result ─────────────────────────────────────────────────────────────────

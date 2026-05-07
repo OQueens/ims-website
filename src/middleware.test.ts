@@ -91,8 +91,13 @@ describe("applySecurityHeaders", () => {
 });
 
 describe("SECURITY_HEADERS contents", () => {
-  it("includes Phase 1.0 noindex via X-Robots-Tag", () => {
-    expect(SECURITY_HEADERS["X-Robots-Tag"]).toBe("noindex, nofollow");
+  it("no longer carries X-Robots-Tag (LAUNCH HARD GATE FLIPPED — T14)", () => {
+    // Phase 1.A LAUNCH paired with T15+T16+T28: the de-indexing header was
+    // intentionally dropped from SECURITY_HEADERS in src/middleware-logic.ts.
+    // Reintroducing it would silently de-index the live site. The matching
+    // regression guard in scripts/verify-build.mjs catches it at the
+    // bundled-output level; this unit test catches it at the source level.
+    expect(SECURITY_HEADERS["X-Robots-Tag"]).toBeUndefined();
   });
 
   it("includes a strict CSP with default-src 'self' + Plausible/Turnstile allowlists", () => {
