@@ -1,0 +1,384 @@
+---
+// /facilities — demand-side marketing page (spec §1).
+//
+// Mirrors /clinicians structure per plan T22 ("mirror T21 structure, swap
+// clinicians voice for facilities voice"). All sections inherit cream surface
+// from MarketingLayout default in-card mode.
+//
+// Voice register: TAY Basal display + TAY Amaya body. Why-IMS bullets adapt
+// brief §11 from the facility-partner POV. Hero body adapts brief §16
+// facilities paragraph in voice (composed pending Zach memo verbatim, matches
+// T20i / T21 pattern). Hero CTAs per plan T22: primary → /contact?intent=
+// coverage, secondary → /about.
+//
+// Process steps mirror HomeProcess facilities-tab content (Request → Match →
+// Coordinate → Support).
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import SiteNav from '../components/nav/SiteNav.astro';
+import SiteFooter from '../components/footer/SiteFooter.astro';
+import ScrollReveal from '../components/util/ScrollReveal.astro';
+
+const specialties: { slug: string; name: string }[] = [
+  { slug: 'anesthesiology',     name: 'Anesthesiology' },
+  { slug: 'crna',               name: 'CRNA' },
+  { slug: 'hospitalist',        name: 'Hospitalist' },
+  { slug: 'emergency-medicine', name: 'Emergency Medicine' },
+  { slug: 'family-medicine',    name: 'Family Medicine' },
+  { slug: 'psychiatry',         name: 'Psychiatry' },
+  { slug: 'ob-gyn',             name: 'OB/GYN' },
+  { slug: 'general-surgery',    name: 'General Surgery' },
+  { slug: 'radiology',          name: 'Radiology' },
+  { slug: 'pediatrics',         name: 'Pediatrics' },
+  { slug: 'cardiology',         name: 'Cardiology' },
+  { slug: 'neurology',          name: 'Neurology' },
+];
+
+const steps: { num: string; title: string; body: string }[] = [
+  { num: '01', title: 'Request',    body: 'Tell us what coverage you need, when, and any context that shapes a good fit.' },
+  { num: '02', title: 'Match',      body: 'Curated clinician shortlist with credentials reviewed and references in hand.' },
+  { num: '03', title: 'Coordinate', body: 'Credentialing, travel, and onboarding coordination handled end-to-end.' },
+  { num: '04', title: 'Support',    body: 'Ongoing check-ins through the assignment so issues surface early, not late.' },
+];
+---
+<MarketingLayout
+  title="For Facilities — Innovative Medical Staffing"
+  description="Coverage support you can trust — quality matching, responsive partnership, and follow-through across the assignment."
+>
+  <SiteNav slot="nav" />
+
+  <ScrollReveal as="section" id="hero" class="fa-hero" aria-labelledby="fa-hero-heading">
+    <div class="fa-hero__inner">
+      <p class="eyebrow">FOR FACILITIES</p>
+      <h1 id="fa-hero-heading" class="headline">Coverage support you can trust.</h1>
+      <p class="body">
+        Quality matching for the shifts and assignments that keep your
+        service running. Real partnership across credentialing, travel,
+        and onboarding — and a recruiter who answers the phone after the
+        clinician arrives.
+      </p>
+      <div class="ctas">
+        <a class="cta cta--primary" href="/contact?intent=coverage">Request Coverage</a>
+        <a class="cta cta--secondary" href="/about">Learn About IMS</a>
+      </div>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="why-ims" class="fa-why" aria-labelledby="fa-why-heading">
+    <div class="fa-why__inner">
+      <p class="eyebrow">WHY IMS</p>
+      <h2 id="fa-why-heading" class="section-heading">A more personal, responsive, technology-enabled partnership.</h2>
+      <ul class="why-grid">
+        <li class="why-card">
+          <h3>Personal</h3>
+          <p>You work with a recruiter who knows your service, your acuity, and the kind of clinician who fits — not a generic queue.</p>
+        </li>
+        <li class="why-card">
+          <h3>Responsive</h3>
+          <p>Clear timelines, honest match feedback, and follow-through that lasts past the placement. We stay reachable through the assignment.</p>
+        </li>
+        <li class="why-card">
+          <h3>Technology-enabled</h3>
+          <p>Modern tools handle credentialing, scheduling, and travel coordination — so the coverage gap closes faster and with fewer surprises.</p>
+        </li>
+      </ul>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="specialties" class="fa-specialties" aria-labelledby="fa-specialties-heading">
+    <div class="fa-specialties__inner">
+      <p class="eyebrow">SPECIALTIES WE STAFF</p>
+      <h2 id="fa-specialties-heading" class="section-heading">Where we focus.</h2>
+      <ul class="pill-list">
+        {specialties.map((s) => (
+          <li>
+            <a class="pill" href={`/jobs?specialty=${s.slug}`}>{s.name}</a>
+          </li>
+        ))}
+      </ul>
+      <p class="sub-cta">
+        <a href="/specialties">
+          View all specialties
+          <span aria-hidden="true">&nbsp;→</span>
+        </a>
+      </p>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="process" class="fa-process" aria-labelledby="fa-process-heading">
+    <div class="fa-process__inner">
+      <p class="eyebrow">HOW IT WORKS</p>
+      <h2 id="fa-process-heading" class="section-heading">From request to support.</h2>
+      <ol class="steps">
+        {steps.map((step) => (
+          <li class="step">
+            <span class="num">{step.num}</span>
+            <h3 class="step-title">{step.title}</h3>
+            <p class="step-body">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="sub-cta">
+        <a href="/how-it-works?audience=facilities">
+          See the full process
+          <span aria-hidden="true">&nbsp;→</span>
+        </a>
+      </p>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="final-cta" class="fa-final" aria-labelledby="fa-final-heading">
+    <div class="fa-final__inner">
+      <h2 id="fa-final-heading" class="final-headline">Ready to talk through coverage?</h2>
+      <p class="final-body">Tell us what you need and we&rsquo;ll come back with a real recruiter, not a contact form auto-reply.</p>
+      <a class="cta cta--primary" href="/contact?intent=coverage">Request Coverage</a>
+    </div>
+  </ScrollReveal>
+
+  <SiteFooter slot="footer" />
+</MarketingLayout>
+
+<style>
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brand-gold-muted);
+    margin: 0 0 16px;
+  }
+  .section-heading {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.1;
+    color: var(--ink-on-cream);
+    margin: 0 0 clamp(32px, 4vw, 56px);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .sub-cta {
+    margin: clamp(40px, 5vw, 64px) 0 0;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: 17px;
+  }
+  .sub-cta a {
+    color: var(--brand-navy);
+    text-decoration: none;
+    border-bottom: 1px solid var(--brand-navy);
+    padding-bottom: 2px;
+    transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .sub-cta a:hover {
+    color: var(--brand-blue-deep);
+    border-color: var(--brand-blue-deep);
+  }
+  .sub-cta a:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 4px;
+    border-color: transparent;
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    border-radius: var(--r-pill-mkt);
+    font-family: var(--font-body);
+    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .cta--primary {
+    background: var(--brand-navy);
+    color: var(--ink-on-dark);
+    border: 1.5px solid var(--brand-navy);
+  }
+  .cta--primary:hover {
+    background: color-mix(in srgb, var(--brand-navy) 88%, white);
+    border-color: color-mix(in srgb, var(--brand-navy) 88%, white);
+  }
+  .cta--secondary {
+    background: transparent;
+    color: var(--brand-navy);
+    border: 1.5px solid var(--brand-navy);
+  }
+  .cta--secondary:hover {
+    background: var(--brand-navy);
+    color: var(--ink-on-dark);
+  }
+  .cta:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 3px;
+  }
+
+  /* Hero */
+  .fa-hero {
+    padding: clamp(64px, 12vh, 144px) clamp(24px, 5vw, 80px) clamp(56px, 9vh, 112px);
+  }
+  .fa-hero__inner { max-width: 880px; margin: 0 auto; }
+  .fa-hero .headline {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 8vw, 80px);
+    line-height: 1.05;
+    color: var(--ink-on-cream);
+    margin: 0 0 32px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .fa-hero .body {
+    font-family: var(--font-body);
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    max-width: 60ch;
+    margin: 0 0 40px;
+  }
+  .fa-hero .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* Why IMS */
+  .fa-why {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .fa-why__inner { max-width: 1200px; margin: 0 auto; }
+  .why-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  @media (min-width: 800px) {
+    .why-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+  }
+  .why-card {
+    padding: clamp(28px, 3vw, 40px);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-section);
+  }
+  .why-card h3 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    line-height: 1.2;
+    color: var(--ink-on-cream);
+    margin: 0 0 12px;
+    letter-spacing: -0.005em;
+  }
+  .why-card p {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    margin: 0;
+  }
+
+  /* Specialties strip */
+  .fa-specialties {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .fa-specialties__inner { max-width: 1200px; margin: 0 auto; }
+  .pill-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 18px;
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-pill-mkt);
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--ink-on-cream);
+    text-decoration: none;
+    background: transparent;
+    transition: border-color 200ms var(--ease-out), background-color 200ms var(--ease-out);
+  }
+  .pill:hover {
+    border-color: var(--brand-navy);
+    background: color-mix(in srgb, var(--brand-navy) 4%, transparent);
+  }
+  .pill:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 2px;
+  }
+
+  /* Process */
+  .fa-process {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .fa-process__inner { max-width: 1200px; margin: 0 auto; }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(32px, 4vw, 48px);
+  }
+  @media (min-width: 900px) {
+    .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  }
+  .step { text-align: left; }
+  .num {
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(40px, 4vw, 48px);
+    line-height: 1;
+    color: var(--ink-on-cream-2);
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .step-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.2;
+    color: var(--ink-on-cream);
+    margin: 0 0 10px;
+    letter-spacing: -0.005em;
+  }
+  .step-body {
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-on-cream-3);
+    margin: 0;
+    max-width: 36ch;
+  }
+
+  /* Final CTA (in-card variant) */
+  .fa-final {
+    padding: clamp(64px, 11vh, 128px) clamp(24px, 5vw, 80px);
+    text-align: center;
+  }
+  .fa-final__inner { max-width: 720px; margin: 0 auto; }
+  .final-headline {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.1;
+    color: var(--ink-on-cream);
+    margin: 0 0 20px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .final-body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    margin: 0 0 32px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta, .pill, .sub-cta a { transition: none; }
+  }
+</style>
