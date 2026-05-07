@@ -1,0 +1,126 @@
+---
+// HomeAudienceSplit — homepage §2.4 (spec L242-260).
+// Two equal cards inside the cream surface, vertical divider line + small
+// hand-drawn ornament between them on ≥900px viewports.
+import ScrollReveal from '../util/ScrollReveal.astro';
+---
+<ScrollReveal as="section" id="audience" class="audience-split" aria-label="Audience split">
+  <div class="cards">
+    <article class="card">
+      <p class="eyebrow">FOR CLINICIANS</p>
+      <h2>Opportunities with a team behind you.</h2>
+      <p class="tease">Locum work that fits your goals, with details handled.</p>
+      <a class="cta" href="/clinicians">
+        Explore Clinician Path
+        <span aria-hidden="true">&nbsp;→</span>
+      </a>
+    </article>
+
+    <div class="divider" aria-hidden="true">
+      <svg viewBox="0 0 8 240" preserveAspectRatio="none" focusable="false">
+        <path d="M4 4 Q 6 80 4 120 Q 2 160 4 236" fill="none" stroke="var(--border-strong-mkt)" stroke-width="1.2" stroke-linecap="round" />
+        <circle cx="4" cy="120" r="3" fill="var(--brand-gold-muted)" />
+      </svg>
+    </div>
+
+    <article class="card">
+      <p class="eyebrow">FOR FACILITIES</p>
+      <h2>Coverage support you can trust.</h2>
+      <p class="tease">Quality matching, responsive partnership, follow-through.</p>
+      <a class="cta" href="/facilities">
+        Explore Facility Path
+        <span aria-hidden="true">&nbsp;→</span>
+      </a>
+    </article>
+  </div>
+</ScrollReveal>
+
+<style>
+  .audience-split {
+    padding: clamp(64px, 10vh, 128px) clamp(24px, 5vw, 80px);
+  }
+  .cards {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    align-items: stretch;
+  }
+  @media (min-width: 900px) {
+    .cards {
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0;
+    }
+  }
+  .card {
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-audience);
+    padding: clamp(32px, 4vw, 64px);
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+  }
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brand-gold-muted);
+    margin: 0 0 16px;
+  }
+  .card h2 {
+    font-family: var(--font-display);
+    font-size: clamp(26px, 3vw, 32px);
+    line-height: 1.15;
+    color: var(--ink-on-cream);
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+  }
+  .tease {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    margin: 0 0 32px;
+  }
+  .cta {
+    margin-top: auto;
+    font-family: var(--font-body);
+    font-size: 17px;
+    color: var(--brand-navy);
+    text-decoration: none;
+    border-bottom: 1px solid var(--brand-navy);
+    align-self: flex-start;
+    padding-bottom: 2px;
+    transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .cta:hover {
+    color: var(--brand-blue-deep);
+    border-color: var(--brand-blue-deep);
+  }
+  .cta:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 4px;
+    border-color: transparent;
+  }
+  .divider {
+    display: none;
+  }
+  @media (min-width: 900px) {
+    .divider {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      width: 32px;
+    }
+    .divider svg {
+      width: 8px;
+      height: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta { transition: none; }
+  }
+</style>
