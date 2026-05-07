@@ -308,3 +308,112 @@ const specialtyLabel = (s: string) =>
     .filter-rail { position: static; }
   }
 </style>
+
+<script>
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('.job-card'));
+  const empty = document.getElementById('empty-state');
+  const checkboxes = document.querySelectorAll<HTMLInputElement>(
+    '.filter-rail input[type=checkbox]',
+  );
+  const reset = document.getElementById('filter-reset');
+
+  function readUrlFilters() {
+    const p = new URL(window.location.href).searchParams;
+    return {
+      specialty: new Set(p.getAll('specialty')),
+      state: new Set(p.getAll('state')),
+      length: new Set(p.getAll('length')),
+    };
+  }
+
+  function applyFilters() {
+    const f = readUrlFilters();
+    let visible = 0;
+    for (const card of cards) {
+      const sp = card.dataset.specialty || '';
+      const st = card.dataset.state || '';
+      const ln = card.dataset.length || '';
+      const show =
+        (f.specialty.size === 0 || f.specialty.has(sp)) &&
+        (f.state.size === 0 || f.state.has(st)) &&
+        (f.length.size === 0 || f.length.has(ln));
+      card.hidden = !show;
+      if (show) visible++;
+    }
+    if (empty) empty.hidden = visible !== 0;
+  }
+
+  function syncCheckboxesFromUrl() {
+    const f = readUrlFilters();
+    checkboxes.forEach((cb) => {
+      const set = f[cb.name as keyof typeof f];
+      cb.checked = !!set?.has(cb.value);
+    });
+  }
+
+  function writeUrlFromCheckboxes() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('specialty');
+    url.searchParams.delete('state');
+    url.searchParams.delete('length');
+    checkboxes.forEach((cb) => {
+      if (cb.checked) url.searchParams.append(cb.name, cb.value);
+    });
+    history.replaceState({}, '', url.toString());
+  }
+
+  // Spec section 0.5.5: filtered URLs (any specialty/state/length param)
+  // flip the robots meta directive + retarget canonical to root /jobs.
+  // Prevents thin-content indexing of every filter combination.
+  // Symmetric: both branches set canonical explicitly so navigation between
+  // filtered and unfiltered states cannot leave stale metadata behind.
+  function updateRobotsMeta() {
+    const params = new URL(window.location.href).searchParams;
+    const isFiltered =
+      params.has('specialty') || params.has('state') || params.has('length');
+    const head = document.head;
+    let robots = head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    const can = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    // Always retarget canonical to the unfiltered /jobs URL — same value for
+    // both branches, since the canonical for the page is the search-less form.
+    if (can) {
+      const u = new URL(can.href);
+      u.search = '';
+      can.href = u.toString();
+    }
+    if (isFiltered) {
+      if (!robots) {
+        robots = document.createElement('meta');
+        robots.name = 'robots';
+        head.appendChild(robots);
+      }
+      robots.content = 'noindex,follow';
+    } else if (robots) {
+      robots.remove();
+    }
+  }
+
+  syncCheckboxesFromUrl();
+  applyFilters();
+  updateRobotsMeta();
+  checkboxes.forEach((cb) =>
+    cb.addEventListener('change', () => {
+      writeUrlFromCheckboxes();
+      applyFilters();
+      updateRobotsMeta();
+    }),
+  );
+  reset?.addEventListener('click', () => {
+    checkboxes.forEach((cb) => {
+      cb.checked = false;
+    });
+    writeUrlFromCheckboxes();
+    applyFilters();
+    updateRobotsMeta();
+  });
+  window.addEventListener('popstate', () => {
+    syncCheckboxesFromUrl();
+    applyFilters();
+    updateRobotsMeta();
+  });
+</script>
