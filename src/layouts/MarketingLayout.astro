@@ -1,0 +1,129 @@
+---
+import '../styles/tokens.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+  /** When true, the page wraps content in the cream rounded card. False = full-bleed dark exterior (rare; used by §2.5/§2.10 dark sections rendered as siblings) */
+  inCard?: boolean;
+  /** Canonical URL override (defaults to current Astro.url) */
+  canonical?: string;
+  /** OG image URL (Phase 1.5 will add programmatic /og/[slug].png — at v1, falls back to a static asset) */
+  ogImage?: string;
+}
+
+const {
+  title = 'Innovative Medical Staffing',
+  description = 'Healthcare staffing that is more personal, responsive, and technology-enabled.',
+  noindex = false,
+  inCard = true,
+  canonical,
+  ogImage = '/og-default.png',
+} = Astro.props;
+
+// Canonical: build from pathname only — strip query + hash so /?utm_source=x
+// and /?ref=email don't self-canonicalize and fragment search signals. Strip
+// trailing slash for non-root paths to match Astro's static emit form.
+let pathname = Astro.url.pathname;
+if (pathname.length > 1 && pathname.endsWith('/')) {
+  pathname = pathname.slice(0, -1);
+}
+const SITE = Astro.site ?? new URL(Astro.url.origin);
+const defaultCanonical = new URL(pathname, SITE).toString();
+const canonicalUrl = canonical ?? defaultCanonical;
+
+// og:image: resolve to absolute URL — many social/preview consumers reject
+// relative paths. Preserve already-absolute overrides.
+const ogImageAbsolute = /^https?:\/\//.test(ogImage)
+  ? ogImage
+  : new URL(ogImage, SITE).toString();
+
+const PLAUSIBLE_DOMAIN = 'innovativemedicalstaffing.com';
+const ORG_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Innovative Medical Staffing',
+  url: 'https://innovativemedicalstaffing.com',
+  logo: 'https://innovativemedicalstaffing.com/og-default.png',
+  contactPoint: [
+    {
+      '@type': 'ContactPoint',
+      email: 'recruiting@iastaffing.com',
+      telephone: '+1-512-524-6686',
+      contactType: 'customer service',
+      areaServed: 'US',
+      availableLanguage: ['English'],
+    },
+  ],
+};
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageAbsolute} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#1E1E1E" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+    <!-- Plausible Cloud — privacy-friendly, no cookie banner per spec §0.5.8 -->
+    <script
+      is:inline
+      defer
+      data-domain={PLAUSIBLE_DOMAIN}
+      src="https://plausible.io/js/script.tagged-events.js"
+    ></script>
+    <!-- Schema.org Organization — spec §6 -->
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(ORG_JSON_LD)}
+    />
+  </head>
+  <body class="marketing">
+    <slot name="nav" />
+    {inCard ? (
+      <main class="card">
+        <slot />
+      </main>
+    ) : (
+      <main class="full-bleed">
+        <slot />
+      </main>
+    )}
+    <slot name="footer" />
+  </body>
+</html>
+
+<style>
+  body.marketing {
+    background: var(--surface-page);
+    font-family: var(--font-body);
+    color: var(--ink-on-cream);
+    line-height: 1.6;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  main.card {
+    background: var(--surface-card);
+    border-radius: var(--r-card);
+    margin: clamp(20px, 4vw, 64px);
+    overflow: hidden;
+  }
+  main.full-bleed {
+    background: var(--surface-page);
+    color: var(--ink-on-dark);
+  }
+</style>
