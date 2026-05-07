@@ -1,0 +1,385 @@
+---
+// /clinicians — supply-side marketing page (spec §1).
+//
+// Renders inside the cream card via MarketingLayout default `inCard={true}`.
+// All sections inherit cream surface from the parent <main class="card"> —
+// no per-section background. Inverse (dark) section pattern is reserved for
+// the homepage per plan T21 ("this page stays in-card").
+//
+// Voice register: TAY Basal display + TAY Amaya body. Why-IMS bullets adapt
+// brief §11 say-this column ("personal, responsive, and technology-enabled").
+// Hero body adapts brief §16 paragraph 2 (clinician POV) — composed in voice
+// pending verbatim memo from Zach (matches T20i value-tile pattern; replace
+// when brief surfaces).
+//
+// Section component reuse deferred per plan T21 ("each may be inlined for
+// now — can promote to components if reused"). T22 /facilities will mirror
+// this structure with the facilities-side voice variant.
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import SiteNav from '../components/nav/SiteNav.astro';
+import SiteFooter from '../components/footer/SiteFooter.astro';
+import ScrollReveal from '../components/util/ScrollReveal.astro';
+
+const specialties: { slug: string; name: string }[] = [
+  { slug: 'anesthesiology',     name: 'Anesthesiology' },
+  { slug: 'crna',               name: 'CRNA' },
+  { slug: 'hospitalist',        name: 'Hospitalist' },
+  { slug: 'emergency-medicine', name: 'Emergency Medicine' },
+  { slug: 'family-medicine',    name: 'Family Medicine' },
+  { slug: 'psychiatry',         name: 'Psychiatry' },
+  { slug: 'ob-gyn',             name: 'OB/GYN' },
+  { slug: 'general-surgery',    name: 'General Surgery' },
+  { slug: 'radiology',          name: 'Radiology' },
+  { slug: 'pediatrics',         name: 'Pediatrics' },
+  { slug: 'cardiology',         name: 'Cardiology' },
+  { slug: 'neurology',          name: 'Neurology' },
+];
+
+const steps: { num: string; title: string; body: string }[] = [
+  { num: '01', title: 'Submit CV',  body: 'Share your background, license states, and availability — we read every one.' },
+  { num: '02', title: 'Onboarding', body: 'Credentialing, paperwork, and travel logistics handled with you, not at you.' },
+  { num: '03', title: 'Schedule',   body: 'A schedule that fits your life and the assignment — confirmed before you arrive.' },
+  { num: '04', title: 'Start',      body: 'First-day support and a real human on call when something needs adjusting.' },
+];
+---
+<MarketingLayout
+  title="For Clinicians — Innovative Medical Staffing"
+  description="Locum opportunities with a team behind you — personal, responsive, and technology-enabled support from CV to first day."
+>
+  <SiteNav slot="nav" />
+
+  <ScrollReveal as="section" id="hero" class="cl-hero" aria-labelledby="cl-hero-heading">
+    <div class="cl-hero__inner">
+      <p class="eyebrow">FOR CLINICIANS</p>
+      <h1 id="cl-hero-heading" class="headline">Opportunities with a team behind you.</h1>
+      <p class="body">
+        Locum work that fits your goals, with the details handled. Real
+        recruiter relationships, fast answers when you need them, and
+        modern tools that take the friction out of credentialing and travel.
+      </p>
+      <div class="ctas">
+        <a class="cta cta--primary" href="/jobs">Find Opportunities</a>
+        <a class="cta cta--secondary" href="/contact">Talk to a Recruiter</a>
+      </div>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="why-ims" class="cl-why" aria-labelledby="cl-why-heading">
+    <div class="cl-why__inner">
+      <p class="eyebrow">WHY IMS</p>
+      <h2 id="cl-why-heading" class="section-heading">A more personal, responsive, technology-enabled experience.</h2>
+      <ul class="why-grid">
+        <li class="why-card">
+          <h3>Personal</h3>
+          <p>You talk to a real recruiter who knows your file — not a queue, not a chatbot. Relationships carry across assignments.</p>
+        </li>
+        <li class="why-card">
+          <h3>Responsive</h3>
+          <p>Quick answers, honest timelines, and follow-through after you start. We stay reachable through the assignment, not just the placement.</p>
+        </li>
+        <li class="why-card">
+          <h3>Technology-enabled</h3>
+          <p>Modern tools handle credentialing, paperwork, and travel logistics so you spend less time on forms and more time on patients.</p>
+        </li>
+      </ul>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="specialties" class="cl-specialties" aria-labelledby="cl-specialties-heading">
+    <div class="cl-specialties__inner">
+      <p class="eyebrow">SPECIALTIES WE STAFF</p>
+      <h2 id="cl-specialties-heading" class="section-heading">Where we focus.</h2>
+      <ul class="pill-list">
+        {specialties.map((s) => (
+          <li>
+            <a class="pill" href={`/jobs?specialty=${s.slug}`}>{s.name}</a>
+          </li>
+        ))}
+      </ul>
+      <p class="sub-cta">
+        <a href="/specialties">
+          View all specialties
+          <span aria-hidden="true">&nbsp;→</span>
+        </a>
+      </p>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="process" class="cl-process" aria-labelledby="cl-process-heading">
+    <div class="cl-process__inner">
+      <p class="eyebrow">HOW IT WORKS</p>
+      <h2 id="cl-process-heading" class="section-heading">From CV to first day.</h2>
+      <ol class="steps">
+        {steps.map((step) => (
+          <li class="step">
+            <span class="num">{step.num}</span>
+            <h3 class="step-title">{step.title}</h3>
+            <p class="step-body">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="sub-cta">
+        <a href="/how-it-works?audience=clinicians">
+          See the full process
+          <span aria-hidden="true">&nbsp;→</span>
+        </a>
+      </p>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="final-cta" class="cl-final" aria-labelledby="cl-final-heading">
+    <div class="cl-final__inner">
+      <h2 id="cl-final-heading" class="final-headline">Ready to take a closer look?</h2>
+      <p class="final-body">Browse open opportunities by specialty, state, or shift type.</p>
+      <a class="cta cta--primary" href="/jobs">Find Opportunities</a>
+    </div>
+  </ScrollReveal>
+
+  <SiteFooter slot="footer" />
+</MarketingLayout>
+
+<style>
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brand-gold-muted);
+    margin: 0 0 16px;
+  }
+  .section-heading {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.1;
+    color: var(--ink-on-cream);
+    margin: 0 0 clamp(32px, 4vw, 56px);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .sub-cta {
+    margin: clamp(40px, 5vw, 64px) 0 0;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: 17px;
+  }
+  .sub-cta a {
+    color: var(--brand-navy);
+    text-decoration: none;
+    border-bottom: 1px solid var(--brand-navy);
+    padding-bottom: 2px;
+    transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .sub-cta a:hover {
+    color: var(--brand-blue-deep);
+    border-color: var(--brand-blue-deep);
+  }
+  .sub-cta a:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 4px;
+    border-color: transparent;
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    border-radius: var(--r-pill-mkt);
+    font-family: var(--font-body);
+    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .cta--primary {
+    background: var(--brand-navy);
+    color: var(--ink-on-dark);
+    border: 1.5px solid var(--brand-navy);
+  }
+  .cta--primary:hover {
+    background: color-mix(in srgb, var(--brand-navy) 88%, white);
+    border-color: color-mix(in srgb, var(--brand-navy) 88%, white);
+  }
+  .cta--secondary {
+    background: transparent;
+    color: var(--brand-navy);
+    border: 1.5px solid var(--brand-navy);
+  }
+  .cta--secondary:hover {
+    background: var(--brand-navy);
+    color: var(--ink-on-dark);
+  }
+  .cta:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 3px;
+  }
+
+  /* Hero */
+  .cl-hero {
+    padding: clamp(64px, 12vh, 144px) clamp(24px, 5vw, 80px) clamp(56px, 9vh, 112px);
+  }
+  .cl-hero__inner { max-width: 880px; margin: 0 auto; }
+  .cl-hero .headline {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 8vw, 80px);
+    line-height: 1.05;
+    color: var(--ink-on-cream);
+    margin: 0 0 32px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .cl-hero .body {
+    font-family: var(--font-body);
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    max-width: 60ch;
+    margin: 0 0 40px;
+  }
+  .cl-hero .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* Why IMS */
+  .cl-why {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .cl-why__inner { max-width: 1200px; margin: 0 auto; }
+  .why-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  @media (min-width: 800px) {
+    .why-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+  }
+  .why-card {
+    padding: clamp(28px, 3vw, 40px);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-section);
+  }
+  .why-card h3 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    line-height: 1.2;
+    color: var(--ink-on-cream);
+    margin: 0 0 12px;
+    letter-spacing: -0.005em;
+  }
+  .why-card p {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    margin: 0;
+  }
+
+  /* Specialties strip */
+  .cl-specialties {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .cl-specialties__inner { max-width: 1200px; margin: 0 auto; }
+  .pill-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 18px;
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-pill-mkt);
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--ink-on-cream);
+    text-decoration: none;
+    background: transparent;
+    transition: border-color 200ms var(--ease-out), background-color 200ms var(--ease-out);
+  }
+  .pill:hover {
+    border-color: var(--brand-navy);
+    background: color-mix(in srgb, var(--brand-navy) 4%, transparent);
+  }
+  .pill:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 2px;
+  }
+
+  /* Process */
+  .cl-process {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .cl-process__inner { max-width: 1200px; margin: 0 auto; }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(32px, 4vw, 48px);
+  }
+  @media (min-width: 900px) {
+    .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  }
+  .step { text-align: left; }
+  .num {
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(40px, 4vw, 48px);
+    line-height: 1;
+    color: var(--ink-on-cream-2);
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .step-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.2;
+    color: var(--ink-on-cream);
+    margin: 0 0 10px;
+    letter-spacing: -0.005em;
+  }
+  .step-body {
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-on-cream-3);
+    margin: 0;
+    max-width: 36ch;
+  }
+
+  /* Final CTA (in-card variant — page stays cream per plan T21) */
+  .cl-final {
+    padding: clamp(64px, 11vh, 128px) clamp(24px, 5vw, 80px);
+    text-align: center;
+  }
+  .cl-final__inner { max-width: 720px; margin: 0 auto; }
+  .final-headline {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.1;
+    color: var(--ink-on-cream);
+    margin: 0 0 20px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .final-body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    margin: 0 0 32px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta, .pill, .sub-cta a { transition: none; }
+  }
+</style>
