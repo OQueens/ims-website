@@ -94,10 +94,11 @@ Poll via `until grep -qE "Phase: done|Duration:" <output_log>; do sleep 2; done`
 ### Files to MODIFY in Phase 1.0
 | Path | Change |
 |---|---|
-| `astro.config.mjs` | Add `@astrojs/cloudflare` adapter (`output: "hybrid"`) + `@astrojs/sitemap` integration with excludes per spec §0.5.5; canonical site URL `https://innovativemedicalstaffing.com` |
+| `astro.config.mjs` | Add `@astrojs/cloudflare` adapter (`output: "static"`) + `@astrojs/sitemap` integration with excludes per spec §0.5.5; canonical site URL `https://innovativemedicalstaffing.com`. **Note:** `output: "hybrid"` was REMOVED in Astro 5.0 and merged into `output: "static"` (which retains hybrid capabilities via per-route `export const prerender = false`). Pinned to Astro 5.18 + adapter v12 (Path A) per `_codex-T1-T5-batch-findings.md` to preserve Pages deployment shape; v13+ dropped Pages support. |
 | `package.json` | Add deps: `@astrojs/cloudflare`, `@astrojs/sitemap`, `@fontsource-variable/inter`, `@supabase/supabase-js`, `resend`, `vitest`, `@vitest/ui`, `@cloudflare/workers-types`, `miniflare`, `zod`. Add scripts: `test`, `test:watch`, `test:ui`, extend `verify` to invoke voice-lint advisory |
-| `functions/_middleware.js` | Replace `Content-Security-Policy` value (line 22-23) with §0.5.3 final CSP block. **DO NOT remove `X-Robots-Tag` yet** — that's a Phase 1.A LAUNCH HARD GATE in T15 |
-| `scripts/verify-build.mjs` | Wire voice-lint script as advisory (warnings to stderr, exit 0); KEEP existing Phase-0 maintenance-page assertions until T17 swaps them at Phase 1.A |
+| ~~`functions/_middleware.js`~~ | **DELETED** in canonical-redirect migration. `@astrojs/cloudflare` adapter v12 emits `dist/_worker.js` (advanced-mode Pages bundle) which displaces `/functions` per Cloudflare Pages docs (`_worker.js` takes precedence; `/functions` is ignored). The CSP + canonicalization authority migrated to `src/middleware.ts` + `src/middleware-logic.ts` (worker-handled responses) + `public/_headers` (CDN-applied for paths excluded from worker via auto-generated `_routes.json`). |
+| `src/pages/index.astro` | Add `export const prerender = false` so the homepage routes through `_worker.js` and `src/middleware.ts` can issue the host-aware `ims-website.pages.dev` → `innovativemedicalstaffing.com` 301. Without this, `_routes.json` auto-excludes `/` and the worker (and middleware) never sees homepage requests. |
+| `scripts/verify-build.mjs` | Wire voice-lint script as advisory (warnings to stderr, exit 0); KEEP existing Phase-0 maintenance-page assertions until T17 swaps them at Phase 1.A. **Architecture note:** `dist/index.html` no longer exists post-canonical-redirect migration (homepage is SSR via `prerender = false`). HTML smoke checks moved out of `verify-build` and live as middleware unit tests + future Phase 1.A miniflare runtime test. |
 
 ### Files to CREATE in Phase 1.A
 **Pages:**
@@ -182,11 +183,12 @@ Poll via `until grep -qE "Phase: done|Duration:" <output_log>; do sleep 2; done`
 ### Files to MODIFY in Phase 1.A
 | Path | Change |
 |---|---|
-| `public/_headers` | REMOVE line 2 `X-Robots-Tag: noindex, nofollow` (LAUNCH HARD GATE) |
-| `functions/_middleware.js` | REMOVE line 20 `"X-Robots-Tag": "noindex, nofollow",` from `SECURITY_HEADERS` (LAUNCH HARD GATE — both files must change together) |
+| `public/_headers` | REMOVE line 2 `X-Robots-Tag: noindex, nofollow` (LAUNCH HARD GATE 2/2) |
+| `src/middleware-logic.ts` | REMOVE `"X-Robots-Tag": "noindex, nofollow",` entry from `SECURITY_HEADERS` (LAUNCH HARD GATE 1/2 — both files must change together). **NOTE:** target migrated from `functions/_middleware.js:20`; that file was deleted in the canonical-redirect migration since `@astrojs/cloudflare` advanced-mode `_worker.js` displaces `/functions`. |
+| `src/middleware.test.ts` | Update `SECURITY_HEADERS contents` test that asserts `X-Robots-Tag: noindex, nofollow` — flip to assert the entry is absent post-launch. |
 | `public/robots.txt` | Replace `User-agent: *\nDisallow: /` with `User-agent: *\nAllow: /\nSitemap: https://innovativemedicalstaffing.com/sitemap.xml` |
-| `scripts/verify-build.mjs` | Swap from Phase-0 maintenance-page assertions to Phase 1.A indexability assertions (no `noindex`, sitemap exists, brand tokens present, robots.txt allows) |
-| `src/pages/index.astro` | Replace Phase-0 maintenance content with marketing home (10 sections per spec §2) |
+| `scripts/verify-build.mjs` | Swap Phase-0 X-Robots-Tag assertions to Phase 1.A indexability assertions (no `noindex` in `_headers` OR `src/middleware-logic.ts`, sitemap exists, brand tokens present, robots.txt allows). |
+| `src/pages/index.astro` | Replace Phase-0 maintenance content with marketing home (10 sections per spec §2). **Keep `export const prerender = false`** so the canonical-redirect middleware continues to fire on homepage requests. |
 | `src/layouts/BaseLayout.astro` | Default `noindex` flips to `false` (or stays for any non-marketing route still using BaseLayout); MarketingLayout used for all public pages |
 
 ### Files to CREATE on Path A scope-add (CONDITIONAL)
@@ -221,13 +223,13 @@ Poll via `until grep -qE "Phase: done|Duration:" <output_log>; do sleep 2; done`
 | T6 | 1.0 | Generate logo SVG variants + Astro components (Default / OnDark / Mono from preserved Original) |
 | T7 | 1.0 | Create `ScrollReveal.astro` IntersectionObserver helper |
 | T8 | 1.0 | Create `MarketingLayout.astro` chrome (cream card + dark exterior + Plausible + Org JSON-LD) |
-| T9 | 1.0 | Replace CSP block in `functions/_middleware.js` per §0.5.3 (X-Robots-Tag stays — Phase 1.A removes it) |
+| T9 | 1.0 | Replace `Content-Security-Policy` value in `src/middleware-logic.ts` `SECURITY_HEADERS` AND `public/_headers` per §0.5.3. Both files must change together — `src/middleware-logic.ts` is authoritative for worker-handled responses; `public/_headers` is authoritative for CDN-served static assets. **NOTE:** target migrated from `functions/_middleware.js` (deleted in canonical-redirect migration — see "Files to MODIFY" §). X-Robots-Tag stays in both — Phase 1.A T15+T16 removes it as paired LAUNCH HARD GATE. |
 | T10 | 1.0 | Create `scripts/voice-lint.mjs` advisory script |
 | T11 | 1.0 | Wire voice-lint into `npm run verify` (advisory, exit 0) |
 | T12 | 1.0 | Phase 1.0 deploy gate — Lighthouse ≥95 on `/` (still maintenance), voice-lint runs without errors |
 | T13 | 1.0 | Tag Phase 1.0 commit; deploy preview |
 | T14 | 1.A | Update `public/robots.txt` (`Allow: /` + `Sitemap:` line) |
-| T15 | 1.A | REMOVE `X-Robots-Tag` from `functions/_middleware.js:20` (LAUNCH HARD GATE 1/2) |
+| T15 | 1.A | REMOVE `X-Robots-Tag` entry from `src/middleware-logic.ts` `SECURITY_HEADERS` (LAUNCH HARD GATE 1/2). **NOTE:** target migrated from `functions/_middleware.js:20` — that file was deleted in the canonical-redirect migration. |
 | T16 | 1.A | REMOVE `X-Robots-Tag` from `public/_headers:2` (LAUNCH HARD GATE 2/2) |
 | T17 | 1.A | Update `scripts/verify-build.mjs` from Phase-0 to Phase-1.A invariants |
 | T18 | 1.A | Create `SiteNav.astro` (sticky after 80vh scroll) |
@@ -973,17 +975,19 @@ git commit -m "feat(1.0): MarketingLayout (cream card chrome + Plausible + Org J
 
 ---
 
-### T9: Replace CSP block in `functions/_middleware.js` per §0.5.3
+### T9: Replace CSP block in `src/middleware-logic.ts` AND `public/_headers` per §0.5.3
 
-**Files:** `functions/_middleware.js`
+**Files:** `src/middleware-logic.ts` (worker layer) + `public/_headers` (CDN layer for paths excluded from worker via auto-generated `_routes.json`)
 
 **Codex review:** MANDATORY (security-policy change)
 
-> **Critical:** Phase 1.0 keeps `X-Robots-Tag: noindex, nofollow` in place — site stays noindex until Phase 1.A T15 (functions/_middleware.js) and T16 (public/_headers) remove it. T9 replaces ONLY the CSP value. (Codex r2 AMBER #15 fold — corrected from stale T17/T18 reference.)
+> **Migration note (canonical-redirect commit 2026-05-07):** This task originally targeted `functions/_middleware.js`. That file was deleted because `@astrojs/cloudflare` adapter v12 emits `dist/_worker.js` (advanced-mode Pages bundle) which per Cloudflare Pages docs displaces `/functions` entirely (`_worker.js` takes precedence; `/functions` ignored). The CSP authority migrated to `src/middleware-logic.ts` for worker-handled responses (homepage + any future SSR routes) and `public/_headers` for CDN-served static assets (paths in `_routes.json.exclude` like `/_astro/*`, `/favicon.*`, `/fonts/*`). Both files MUST change together — they're authoritative for different response paths and a divergence creates a CSP bypass. Below references rewritten accordingly.
+>
+> **Critical:** Phase 1.0 keeps `X-Robots-Tag: noindex, nofollow` in place in BOTH files — site stays noindex until Phase 1.A T15 (`src/middleware-logic.ts`) and T16 (`public/_headers`) remove it. T9 replaces ONLY the CSP value. (Codex r2 AMBER #15 fold — corrected from stale T17/T18 reference.)
 
-- [ ] **Step 1: Modify `functions/_middleware.js` line 22-23**
+- [ ] **Step 1: Modify `src/middleware-logic.ts` `SECURITY_HEADERS["Content-Security-Policy"]` AND `public/_headers` `Content-Security-Policy:` line**
 
-Replace the `Content-Security-Policy` value in `SECURITY_HEADERS` with the spec §0.5.3 final block:
+Replace the `Content-Security-Policy` value in BOTH places with the spec §0.5.3 final block:
 
 ```js
 const SECURITY_HEADERS = {
@@ -1010,18 +1014,22 @@ const SECURITY_HEADERS = {
 
 - [ ] **Step 2: Verify CSP locally**
 
-Run dev server: `npm run dev`. Open `http://localhost:4321/` and check browser DevTools Network → `/` response → Headers. Confirm `Content-Security-Policy` matches above (note: `_middleware.js` only runs in Pages env; for full local CSP test use `npx wrangler pages dev dist` after a build).
+Two layers to verify:
+
+1. **Vitest contract** — update `src/middleware.test.ts` if any test asserts the old CSP value. The existing assertions (`expect(SECURITY_HEADERS["Content-Security-Policy"]).toContain("default-src 'none'")`) need to become `.toContain("default-src 'self'")` plus assertions for the new `script-src`, `connect-src`, and `frame-src` allowlists. Run `npm test` — expect 14/14 pass after the test update.
+2. **Build + verify** — `npm run build` then `npm run verify`. The middleware-bundle content-marker assertions in `scripts/verify-build.mjs` already check `default-src 'none'` literal; update that marker to `default-src 'self'` in lockstep with the CSP change so the bundle assertion still proves middleware-logic.ts content was inlined.
+3. **(Optional E2E)** `npx wrangler pages dev dist` then `curl -I http://localhost:8788/` to confirm the worker emits the expected CSP header. Not load-bearing — vitest + verify-build are the contract.
 
 - [ ] **Step 3: Codex review**
 
-Prompt: "Review functions/_middleware.js CSP change. Verify: matches spec §0.5.3 exactly; trailing semicolon retention; all required directives present (default-src, script-src, style-src, img-src, font-src, connect-src, frame-src, form-action, base-uri, frame-ancestors); X-Robots-Tag intentionally KEPT for Phase 1.0 (Phase 1.A removes); no regressions to canonicalization redirect logic at lines 39-46."
+Prompt: "Review CSP change in src/middleware-logic.ts SECURITY_HEADERS['Content-Security-Policy'] AND public/_headers Content-Security-Policy line. Verify: matches spec §0.5.3 exactly; both files contain identical CSP value (defense-in-depth: worker layer + CDN layer must not diverge); all required directives present (default-src, script-src, style-src, img-src, font-src, connect-src, frame-src, form-action, base-uri, frame-ancestors); X-Robots-Tag intentionally KEPT in BOTH for Phase 1.0 (T15+T16 paired removal in Phase 1.A); src/middleware.test.ts CSP assertions updated; scripts/verify-build.mjs middleware-bundle CSP marker (`default-src 'self'`) updated in lockstep so the bundle-content gate still proves user middleware was inlined; no regressions to canonical-redirect logic in src/middleware-logic.ts buildCanonicalRedirect or src/middleware.ts onRequest."
 
 Fold findings.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add functions/_middleware.js
+git add src/middleware-logic.ts public/_headers src/middleware.test.ts scripts/verify-build.mjs
 git commit -m "feat(1.0): replace CSP per spec §0.5.3 (Plausible + Turnstile + self-hosted fonts) [logically-inspected] [codex-reviewed: r1 GO]"
 ```
 
@@ -1316,15 +1324,17 @@ git commit -m "feat(1.A): robots.txt + sitemap.xml redirect (aligns with spec §
 
 ### T15: REMOVE static `X-Robots-Tag` + ADD query-aware `/jobs?...` noindex header (LAUNCH HARD GATE 1/2)
 
-**Files:** `functions/_middleware.js`
+**Files:** `src/middleware-logic.ts` (`SECURITY_HEADERS` constant) + `src/middleware.ts` (the `defineMiddleware` `onRequest` wrapper that needs the request-shape awareness for the dynamic injection) + `src/middleware.test.ts` (vitest contract update — flip the existing `expect(SECURITY_HEADERS["X-Robots-Tag"]).toBe("noindex, nofollow")` to assert it's absent, plus add new tests for the filtered-jobs branch)
 
 **Codex review:** MANDATORY (security/index header change AND server-side SEO contract)
 
-> **Why two changes in one task (Codex r1 NO-GO #1 fold):** the spec §0.5.5 requires filtered `/jobs?...` URLs to ship `noindex,follow` + canonical to `/jobs`. With Path B SSG, every filtered URL serves the SAME static HTML — so a `<meta name="robots">` injected client-side in T33 hits crawlers AFTER they've already seen indexable content. The fix is server-side: the Pages Function inspects the request URL and sets `X-Robots-Tag: noindex, follow` BEFORE the static HTML is returned. Static `X-Robots-Tag` removal + dynamic `/jobs?...` injection happen in the same middleware function, so they belong in the same task.
+> **Migration note (canonical-redirect commit 2026-05-07):** Originally targeted `functions/_middleware.js`. That file was deleted (see T9 prologue). Logic migrated to `src/middleware-logic.ts` (`SECURITY_HEADERS` + helper functions, pure TS, unit-tested via vitest) plus `src/middleware.ts` (the `defineMiddleware` integration point). E2E verification swapped from `wrangler pages dev` against `functions/_middleware.js` to vitest unit tests against pure logic + (Phase 1.A) miniflare integration test against the built `dist/_worker.js`. Below code blocks rewritten for the new module layout; `wrangler pages dev` smoke can stay as additional coverage but isn't load-bearing anymore.
+>
+> **Why two changes in one task (Codex r1 NO-GO #1 fold):** the spec §0.5.5 requires filtered `/jobs?...` URLs to ship `noindex,follow` + canonical to `/jobs`. With static prerendered SSG, every filtered URL serves the SAME static HTML — so a `<meta name="robots">` injected client-side in T33 hits crawlers AFTER they've already seen indexable content. The fix is server-side: the worker middleware inspects the request URL and sets `X-Robots-Tag: noindex, follow` BEFORE the static HTML is returned. Static `X-Robots-Tag` removal + dynamic `/jobs?...` injection happen in the same middleware module, so they belong in the same task.
 
-- [ ] **Step 1: Remove the static `X-Robots-Tag` entry from `SECURITY_HEADERS`**
+- [ ] **Step 1: Remove the static `X-Robots-Tag` entry from `src/middleware-logic.ts` `SECURITY_HEADERS`**
 
-In `functions/_middleware.js` line 20, delete the line:
+In `src/middleware-logic.ts`, delete the line:
 
 ```js
 "X-Robots-Tag": "noindex, nofollow",
@@ -1334,22 +1344,22 @@ The `SECURITY_HEADERS` object should now START with `"Strict-Transport-Security"
 
 - [ ] **Step 2: Add filtered-`/jobs?...` query-aware noindex injection**
 
-Add this helper above `withSecurityHeaders`:
+In `src/middleware-logic.ts`, add this helper near the existing constants:
 
-```js
+```ts
 const NOINDEX_FOLLOW = "noindex, follow";
 const FILTER_PARAMS = ["specialty", "state", "length"];
 
-function isFilteredJobsUrl(url) {
+export function isFilteredJobsUrl(url: URL): boolean {
   if (url.pathname !== "/jobs" && url.pathname !== "/jobs/") return false;
   return FILTER_PARAMS.some((p) => url.searchParams.has(p));
 }
 ```
 
-Modify `withSecurityHeaders` to accept the `request` argument and conditionally inject `X-Robots-Tag` when the URL has a filtered `/jobs?...` shape:
+Refactor `applySecurityHeaders` to accept the `Request` (so it can read URL shape) and conditionally inject the dynamic `X-Robots-Tag` + `Link: rel="canonical"`:
 
-```js
-const withSecurityHeaders = (response, request) => {
+```ts
+export function applySecurityHeaders(response: Response, request: Request): Response {
   const cloned = new Response(response.body, response);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     cloned.headers.set(name, value);
@@ -1360,43 +1370,69 @@ const withSecurityHeaders = (response, request) => {
     cloned.headers.set("Link", `<${url.origin}/jobs>; rel="canonical"`);
   }
   return cloned;
-};
+}
 ```
 
-Update both `onRequest` callers to pass `request`:
+Likewise extend `buildCanonicalRedirect` (or its call site) so the redirect response also carries the dynamic header when applicable. Simplest: leave `buildCanonicalRedirect` alone (the redirect IS the canonical signal — no need to also tag it noindex). Let `src/middleware.ts` only invoke `applySecurityHeaders` on the `next()` path:
 
-```js
-export const onRequest = async ({ request, next }) => {
-  const url = new URL(request.url);
-  if (url.hostname === "ims-website.pages.dev") {
-    url.hostname = "innovativemedicalstaffing.com";
-    url.protocol = "https:";
-    return withSecurityHeaders(Response.redirect(url.toString(), 301), request);
-  }
-  return withSecurityHeaders(await next(), request);
-};
+In `src/middleware.ts`:
+
+```ts
+import { defineMiddleware } from "astro:middleware";
+import { applySecurityHeaders, buildCanonicalRedirect } from "./middleware-logic";
+
+export const onRequest = defineMiddleware(async ({ request }, next) => {
+  const redirect = buildCanonicalRedirect(request.url);
+  if (redirect) return redirect;
+  const response = await next();
+  return applySecurityHeaders(response, request);
+});
 ```
+
+Update `src/middleware.test.ts`: every existing `applySecurityHeaders(upstream)` call site now needs a `Request` argument. Add new tests for the filtered-jobs branch (e.g., `applySecurityHeaders(new Response("ok"), new Request("https://innovativemedicalstaffing.com/jobs?specialty=anesthesiology"))` → asserts `X-Robots-Tag: noindex, follow` + `Link: <https://innovativemedicalstaffing.com/jobs>; rel="canonical"`). Plus negative cases: `/jobs` without filter params → no dynamic header; `/jobs?unrelated=1` → no dynamic header; `/jobs/?specialty=foo` (trailing slash) → header present.
 
 The HTTP `Link: rel="canonical"` header is the server-side equivalent of the `<link rel="canonical">` tag and is honored by Google + Bing crawlers (per https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls). T33's client-side meta-injection stays as a defense-in-depth layer for users who view source.
 
 - [ ] **Step 3: Verify no static `X-Robots-Tag` remains; verify dynamic logic is wired**
 
 ```bash
-grep -n "X-Robots-Tag" functions/_middleware.js
+grep -n "X-Robots-Tag" src/middleware-logic.ts
 ```
 
 Expected: 1 match — the line `cloned.headers.set("X-Robots-Tag", NOINDEX_FOLLOW);` inside the `isFilteredJobsUrl` branch. NO occurrence in `SECURITY_HEADERS`.
 
 ```bash
-grep -n "isFilteredJobsUrl\|FILTER_PARAMS" functions/_middleware.js
+grep -n "isFilteredJobsUrl\|FILTER_PARAMS" src/middleware-logic.ts
 ```
 
-Expected: helper definitions + the call-site in `withSecurityHeaders`.
+Expected: helper definitions + the call-site in `applySecurityHeaders`.
 
-- [ ] **Step 4: E2E verification with `wrangler pages dev`**
+```bash
+git grep -n "X-Robots-Tag"
+```
+
+Expected: matches in `src/middleware-logic.ts` (the dynamic branch), `src/middleware.test.ts` (test assertions), `public/_headers` (until T16 paired removal). NO match for the static `noindex, nofollow` value — the only X-Robots-Tag values that survive in code should be the dynamic `noindex, follow` for filtered jobs.
+
+- [ ] **Step 4: Vitest + build verification**
+
+```bash
+npm test
+```
+
+Expected: all tests pass (14 pre-existing + new filtered-jobs cases). The vitest suite is the load-bearing contract — it tests the pure logic without needing miniflare.
 
 ```bash
 npm run build
+npm run verify
+```
+
+Expected: build clean; verify-build green. The middleware-bundle content-marker assertions in `scripts/verify-build.mjs` may need updating: the old `noindex, nofollow` literal check is no longer valid (that string is removed from `SECURITY_HEADERS`); replace with a check for `noindex, follow` (the dynamic value) OR for `isFilteredJobsUrl` symbol if it survives bundling.
+
+- [ ] **Step 4b (optional): E2E smoke with miniflare**
+
+The plan defers a full miniflare integration test to Phase 1.A (planned around T11+T12). For an interim manual smoke, after `npm run build`:
+
+```bash
 npx wrangler pages dev dist
 ```
 
@@ -1410,17 +1446,17 @@ curl -I 'http://localhost:8788/jobs?state=TX&length=medium'     # expect X-Robot
 curl -I 'http://localhost:8788/jobs?unrelated=1'  # expect NO X-Robots-Tag (only filter params trigger it)
 ```
 
-If any expectation fails, debug `_middleware.js` before committing.
+If any expectation fails, debug `src/middleware-logic.ts` / `src/middleware.ts` before committing. NOT load-bearing: vitest is the contract.
 
 - [ ] **Step 5: Codex review**
 
-Prompt: "Review functions/_middleware.js. Verify: static `X-Robots-Tag` fully removed from SECURITY_HEADERS object; dynamic injection only fires for `/jobs` (with optional trailing slash) when query params include specialty/state/length; canonicalization redirect at lines 39-46 unchanged; `request` correctly passed to `withSecurityHeaders` from BOTH the redirect path AND the next() path; no header collision between the dynamic X-Robots-Tag and any client-side `<meta>` injected by T33 (server header takes precedence per Google, but client meta still useful for view-source clarity); `Link: rel=canonical` header URL has correct origin (uses request URL origin, not hardcoded)."
+Prompt: "Review src/middleware-logic.ts + src/middleware.ts + src/middleware.test.ts for X-Robots-Tag dynamic-injection change. Verify: static `X-Robots-Tag: noindex, nofollow` fully removed from SECURITY_HEADERS object; dynamic injection (isFilteredJobsUrl + applySecurityHeaders) only fires for `/jobs` (with optional trailing slash) when query params include specialty/state/length; canonical-redirect logic in buildCanonicalRedirect unchanged (still 301s pages.dev → canonical, no dynamic tag on redirect because the redirect IS the canonical signal); `request` correctly threaded through src/middleware.ts onRequest into applySecurityHeaders; vitest tests cover positive (filtered) + negative (root /jobs, /jobs?unrelated, arbitrary path) branches; scripts/verify-build.mjs middleware-bundle markers updated to reflect removed `noindex, nofollow` literal; no header collision between server X-Robots-Tag and any client-side `<meta>` injected by T33 (server header takes precedence per Google, but client meta still useful for view-source clarity); `Link: rel=canonical` header URL has correct origin (uses request URL origin, not hardcoded)."
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add functions/_middleware.js
-git commit -m "feat(1.A): static X-Robots-Tag removed + query-aware /jobs?... noindex,follow header (Codex r1 NO-GO #1 fix) [runtime-verified: 5/5 curl smoke] [codex-reviewed: r1 GO]"
+git add src/middleware-logic.ts src/middleware.ts src/middleware.test.ts scripts/verify-build.mjs
+git commit -m "feat(1.A): static X-Robots-Tag removed + query-aware /jobs?... noindex,follow header (Codex r1 NO-GO #1 fix) [runtime-verified: 14+N/14+N vitest] [codex-reviewed: r1 GO]"
 ```
 
 ---
@@ -1439,7 +1475,7 @@ In `public/_headers`, remove the line:
   X-Robots-Tag: noindex, nofollow
 ```
 
-The remaining file content keeps HSTS, CSP, Permissions-Policy, Referrer-Policy, X-Content-Type-Options, X-Frame-Options. (Spec §0.5.3 makes `_middleware.js` authoritative; `_headers` is fallback only — but both must agree.)
+The remaining file content keeps HSTS, CSP, Permissions-Policy, Referrer-Policy, X-Content-Type-Options, X-Frame-Options. (Spec §0.5.3 originally made `functions/_middleware.js` authoritative; the canonical-redirect migration commit 2026-05-07 moved authority to `src/middleware-logic.ts` for worker-handled responses. `public/_headers` remains authoritative for CDN-served static assets in `_routes.json.exclude` paths. Both layers must agree — defense-in-depth.)
 
 - [ ] **Step 2: Cross-file verification (T15 + T16)**
 
@@ -3665,11 +3701,23 @@ const callback = `onTurnstileSuccess_${(instanceId ?? form).replace(/[^a-zA-Z0-9
 ---
 <div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-form={form} data-callback={callback}></div>
 <script is:inline async defer src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
-<script is:inline define:vars={{ form, callback }}>
-  // Per-widget callback closes over THIS widget's target form selector — no cross-widget leak.
+<script is:inline define:vars={{ callback }}>
+  // Per-widget callback closes over THIS widget's target form selector via
+  // the data-form attribute on the widget div — NO cross-widget leak.
   // (Codex r2 AMBER #5 fold — replaced the previous cross-iterating onTurnstileSuccess.)
+  //
+  // SECURITY (Codex r2 T7 fold): `form` is intentionally NOT in define:vars.
+  // Astro 5.18 lacks the GHSA-j687-52p2-xcff patch, so any value passed to
+  // define:vars that contains `</script>` would terminate the outer script.
+  // `callback` is safe (sanitized via the JS-identifier whitelist regex above);
+  // `form` is read at runtime from the widget's `data-form` HTML attribute,
+  // which Astro auto-escapes at render time. Defense-in-depth even though
+  // current callers hardcode `form` at build time — keeps this safe if a
+  // future Phase 1.5 caller derives `form` from runtime user input.
   window[callback] = function (token) {
-    var target = document.querySelector(form);
+    var widget = document.querySelector('.cf-turnstile[data-callback="' + callback + '"]');
+    if (!widget) return;
+    var target = document.querySelector(widget.dataset.form);
     if (!target) return;
     var input = target.querySelector('input[name="turnstileToken"]');
     if (!input) {
@@ -3683,7 +3731,7 @@ const callback = `onTurnstileSuccess_${(instanceId ?? form).replace(/[^a-zA-Z0-9
 </script>
 ```
 
-- [ ] **Step 2: Codex review** — Prompt: "Review src/components/forms/TurnstileWidget.astro. Verify: (1) per-widget callback closes over its own `form` selector (no `document.querySelectorAll('.cf-turnstile').forEach` pattern); (2) callback name is unique per `instanceId` so two widgets on the same page register distinct globals; (3) sanitization regex `/[^a-zA-Z0-9_]/g` prevents JS-identifier injection from form selector strings; (4) `window[callback]` assignment is idempotent on script re-execution (Astro view transitions may re-run inline scripts); (5) `data-callback` attribute matches the `window[callback]` name exactly; (6) hidden input named `turnstileToken` is created if absent (idempotent — multi-fire callback safe)."
+- [ ] **Step 2: Codex review** — Prompt: "Review src/components/forms/TurnstileWidget.astro. Verify: (1) per-widget callback closes over its own `form` selector via `data-form` attribute lookup (no `document.querySelectorAll('.cf-turnstile').forEach` pattern); (2) callback name is unique per `instanceId` so two widgets on the same page register distinct globals; (3) sanitization regex `/[^a-zA-Z0-9_]/g` prevents JS-identifier injection from form selector strings; (4) `form` is NOT in `define:vars` (Codex r2 T7 fold — Astro 5.18 lacks GHSA-j687-52p2-xcff patch; only the sanitized `callback` is inlined); (5) `window[callback]` assignment is idempotent on script re-execution (Astro view transitions may re-run inline scripts); (6) `data-callback` attribute matches the `window[callback]` name exactly; (7) hidden input named `turnstileToken` is created if absent (idempotent — multi-fire callback safe); (8) the `.cf-turnstile[data-callback=\"...\"]` selector reliably resolves to THIS widget when multiple Turnstile widgets render on the same page."
 
 - [ ] **Step 3: Commit**
 
@@ -4638,7 +4686,7 @@ Update `~/.claude/projects/.../memory/projects/` with launch memo summarizing wh
 This section mirrors spec §5 Phase 1.A `pre-deploy hard checks` (machine-verifiable) + `pre-deploy soft gates` (human approval). **All 12 hard checks + 5 soft gates must pass before tagging `v1.0.0-launch`.** Tasks T62 + T63 walk through this checklist.
 
 ### Hard checks (machine-verifiable)
-- [ ] **HC1** `functions/_middleware.js` CSP replaced per §0.5.3; `X-Robots-Tag: noindex, nofollow` REMOVED from line 20 (T9 + T15)
+- [ ] **HC1** `src/middleware-logic.ts` `SECURITY_HEADERS["Content-Security-Policy"]` AND `public/_headers` `Content-Security-Policy:` line replaced per §0.5.3; `X-Robots-Tag: noindex, nofollow` REMOVED from `src/middleware-logic.ts` `SECURITY_HEADERS` AND `public/_headers` (T9 + T15 + T16). **NOTE:** original spec/plan named `functions/_middleware.js`; that file was deleted in the canonical-redirect migration commit (2026-05-07) since `@astrojs/cloudflare` adapter v12 advanced-mode `_worker.js` displaces `/functions`. Authority migrated to `src/middleware-logic.ts` (worker layer) + `public/_headers` (CDN layer).
 - [ ] **HC2** `public/_headers` no longer contains `X-Robots-Tag` line (T16)
 - [ ] **HC3** `public/robots.txt` reads `User-agent: *\nAllow: /\nSitemap: https://innovativemedicalstaffing.com/sitemap.xml`; `public/_redirects` 301s `/sitemap.xml → /sitemap-index.xml` (T14)
 - [ ] **HC4** `@astrojs/sitemap` integration installed; sitemap excludes `/api/*`, `/og/*`, filtered `/jobs?...` URLs (T1)

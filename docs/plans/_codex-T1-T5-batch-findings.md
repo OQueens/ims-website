@@ -42,7 +42,9 @@ filter: (page) => {
 
 ## Confirmed clean
 
-- `output: 'static'` is the correct Astro 6 replacement for removed `output: 'hybrid'`. `export const prerender = false` remains the right downstream SSR mechanism. (Note: under Path A pin to Astro 5, restore `output: 'hybrid'`.)
+- `output: 'static'` is the correct Astro 6 replacement for removed `output: 'hybrid'`. `export const prerender = false` remains the right downstream SSR mechanism.
+
+  **CORRECTION 2026-05-07 (canonical-redirect migration):** the original parenthetical here said "under Path A pin to Astro 5, restore `output: 'hybrid'`." That was wrong. Astro 5.0 ALSO removed `output: 'hybrid'` (the v5 release merged it into `'static'`, with per-route `prerender = false` retained as the SSR opt-out mechanism). Verified via context7 `/withastro/docs` `guides/upgrade-to/v5.mdx`. Path A keeps `output: 'static'` — that is the correct setting under both Astro 5 and Astro 6.
 - T5 font paths resolve: TAY files exist under `public/fonts/`. `@import '@fontsource-variable/inter'` correctly placed at line 1 (CSS spec — `@import` must precede other rules).
 - T4 brand palette tokens byte-exact to spec §4.1 with all 28 declarations inside `:root`. Existing dashboard tokens preserved.
 - T3 vitest config minimal but right-shaped. Glob patterns cover planned `tests/`, `src/`, `workers/`. Cloudflare date-tagged versions (`workers-types@^4.20260506.1`, `miniflare@^4.20260504.0`) are normal release patterns, not pre-release pins.
@@ -66,8 +68,39 @@ Downgrade Astro to ^5 + Cloudflare adapter to ^12 to align runtime with plan des
 
 Adapter v13's wrangler.json output expects **Cloudflare Workers** deployment (not Cloudflare Pages auto-deploy from git). Migrating Pages → Workers means dashboard reconfiguration, DNS routing changes, new CI flow. Under 1-week LS authorization deadline, that's deployment risk.
 
-Path A preserves Pages deploy + makes plan T9/T15/T35-T47 work as written. v6 + Workers + Astro middleware migration becomes a clean Phase 1.5 effort with proper planning.
+Path A preserves Pages deploy. **CORRECTION 2026-05-07:** the original wording here ("makes plan T9/T15/T35-T47 work as written") was wrong. Adapter v12 ALSO emits `dist/_worker.js` advanced-mode (its `mode: 'directory'` flag was removed; v12 always emits the worker bundle), and per Cloudflare Pages docs `_worker.js` takes precedence over `/functions` (the `/functions` directory is silently ignored). So Path A resolved NO-GO 1 (verify-build paths) + AMBER 1 (Astro.locals.runtime API) + AMBER 2 (platformProxy) + NIT (sitemap filter) but did NOT resolve NO-GO 2. The canonical-redirect migration commit 2026-05-07 actually resolves NO-GO 2 — see "## Canonical-redirect migration follow-up 2026-05-07" below.
+
+v6 + Workers + Astro middleware migration becomes a clean Phase 1.5 effort with proper planning.
 
 ## Lesson
 
 Per-task code-reviewer subagents only see their own diff in isolation. A retrospective Codex pass against the live filesystem caught architectural mismatches (plan-vs-runtime version drift) the per-task reviews structurally couldn't. **For foundation-tier batches (Wave 1-style infrastructure), run Codex on the cumulative batch even when each task individually qualifies for `[codex-skip]`.** The matrix's per-task classification is necessary but not sufficient.
+
+## Canonical-redirect migration follow-up 2026-05-07
+
+Path A pin (commit `de942cd`) resolved 4 of the 5 NO-GO/AMBER/NIT findings, but NO-GO 2 (`functions/_middleware.js` dead under adapter v13) survived the pin because adapter v12 ALSO emits `_worker.js` advanced-mode that displaces `/functions`. Resolved by the canonical-redirect migration commit on 2026-05-07.
+
+**Architectural change:**
+
+| Before (Phase 0 + de942cd) | After (canonical-redirect migration commit) |
+|---|---|
+| `functions/_middleware.js` was authoritative for CSP + canonicalization. Plan T9/T15 targeted lines 22-23 + line 20. | DELETED — silently ignored by `_worker.js` advanced-mode. |
+| `public/_headers` was fallback only (CDN-only, didn't cover worker-handled responses). | Still authoritative for CDN-served static assets in `_routes.json.exclude` paths. Defense-in-depth identical to worker layer. |
+| No worker-layer middleware. Homepage prerendered to static `dist/index.html`. | `src/middleware-logic.ts` (pure logic — `SECURITY_HEADERS`, `buildCanonicalRedirect`, `applySecurityHeaders`) + `src/middleware.ts` (Astro `defineMiddleware` adapter integration). Homepage `prerender = false` so the worker (and middleware) sees `/` requests. |
+| `dist/_routes.json` auto-excluded `/` (homepage was static). Middleware would never have fired on homepage. | `dist/_routes.json` exclude array no longer contains `/` (per-route `prerender = false` opts in to worker handling). Worker fires on `/`; middleware does the canonical 301. |
+| Cloudflare zone-level Single Redirect was suggested as alternative — NOT viable: `pages.dev` is Cloudflare's zone, not the user's. The redirect MUST happen inside the Pages app. | In-repo middleware is the right architecture. Custom domain TLS comes from Cloudflare Pages's automatic Edge Certificate provisioning. |
+
+**Codex chain on the migration commit:**
+
+| Round | Task ID | Verdict | Findings |
+|---|---|---|---|
+| r1 | (codex-companion adversarial-review) | AMBER | 1 finding: `verify-build.mjs` only checked `_worker.js/index.js` exists — didn't prove `src/middleware.ts` was bundled. |
+| r2 | (codex-companion adversarial-review) | AMBER | 1 finding: `_astro-internal_middleware.mjs` artifact-existence check insufficient because adapter v12's own pre-middleware (`onRequest$1` setting `context.locals.runtime`) also causes that file to be emitted. Recommended content-marker assertions. |
+| r3 | (codex-companion adversarial-review) | AMBER | 0 code findings; flagged stale T9/T15 detailed-section instructions targeting `functions/_middleware.js`. Resolved in same commit by rewriting the detailed sections. **Code path declared GO post-doc-rewrite.** |
+
+**Folds applied between rounds:**
+- r1 → r2: added `_astro-internal_middleware.mjs` existence check.
+- r2 → r3: added 5 content-marker assertions (PAGES_DEV_HOSTNAME literal, CANONICAL_HOSTNAME literal, `status: 301` + `Location` construction, `noindex, nofollow` X-Robots-Tag value, `default-src 'none'` CSP value). 25/25 verify-build green.
+- r3 → commit: rewrote T9 Step 2-4 + T15 Step 2-6 detailed sections + HC1 launch checklist + audit doc lines 45/65-69 + plan line 3704 TurnstileWidget `define:vars` (T7 fold from Codex r2 — drop `form` from inlined values).
+
+**Verify-build hardening (post-migration):** the 25/25 green check now includes 5 middleware-bundle content markers that prove `src/middleware-logic.ts` content was inlined into the worker. Future regression where `src/middleware.ts` is dropped would flip these markers to FAIL even though `_astro-internal_middleware.mjs` would still exist (adapter pre-middleware emits it). This closes the silent-regression vector Codex r2 flagged.
