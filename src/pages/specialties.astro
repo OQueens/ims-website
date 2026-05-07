@@ -1,0 +1,292 @@
+---
+// /specialties — 12-card editorial overview (spec §1 + plan T23).
+//
+// Phase 1.A scope: editorial overview only. Per-specialty [slug] pages are
+// Phase 1.75 (programmatic SEO). Each card links to /jobs?specialty={slug}
+// for filtered-listing entry. NO /specialties/[slug] route at v1.
+//
+// Card framing copy: 2-line TAY Amaya 17px expansions of the HomeSpecialties
+// 1-line versions, composed in voice (spec §2.7 examples were CRNA-only;
+// other 11 expand on the §2.7 register). Replace with brief verbatim if Zach
+// memo surfaces.
+//
+// Top-12 set per spec §1 L189 + spec §10 item 4 (Zach hasn't confirmed yet
+// — defaults shipped per spec §10 item 4 default-stance).
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import SiteNav from '../components/nav/SiteNav.astro';
+import SiteFooter from '../components/footer/SiteFooter.astro';
+import ScrollReveal from '../components/util/ScrollReveal.astro';
+
+const specialties: { slug: string; name: string; framing: string }[] = [
+  {
+    slug: 'anesthesiology',
+    name: 'Anesthesiology',
+    framing: 'Operative coverage for community hospitals, academic centers, and ambulatory surgicenters. Mixed acuity and case-mix considered.',
+  },
+  {
+    slug: 'crna',
+    name: 'CRNA',
+    framing: 'Independent and supervised practice across surgical, OB, and pain settings. Both staff-augment and full-coverage assignments.',
+  },
+  {
+    slug: 'hospitalist',
+    name: 'Hospitalist',
+    framing: 'Inpatient rounding for community and tertiary hospitals. Day, swing, and night shifts with consistent census expectations.',
+  },
+  {
+    slug: 'emergency-medicine',
+    name: 'Emergency Medicine',
+    framing: 'Single- and double-coverage shifts across volume tiers, from rural critical-access to high-volume urban EDs.',
+  },
+  {
+    slug: 'family-medicine',
+    name: 'Family Medicine',
+    framing: 'Outpatient and urgent-care coverage with broad scope. FQHC, private practice, and rural-clinic settings.',
+  },
+  {
+    slug: 'psychiatry',
+    name: 'Psychiatry',
+    framing: 'Inpatient, consult-liaison, and outpatient assignments. Adult, child-and-adolescent, and geriatric subspecialty matches.',
+  },
+  {
+    slug: 'ob-gyn',
+    name: 'OB/GYN',
+    framing: 'Labor-and-delivery and clinic coverage at variable acuity. Locum-only and locum-to-perm options where the facility allows.',
+  },
+  {
+    slug: 'general-surgery',
+    name: 'General Surgery',
+    framing: 'Call coverage and elective scheduling for community hospitals. Trauma and laparoscopic experience matched to facility need.',
+  },
+  {
+    slug: 'radiology',
+    name: 'Radiology',
+    framing: 'Diagnostic and teleradiology coverage with mixed modalities. Final read, prelim, and after-hours call shifts available.',
+  },
+  {
+    slug: 'pediatrics',
+    name: 'Pediatrics',
+    framing: 'Inpatient pediatrics, newborn nursery, and clinic settings. NICU and PICU subspecialty available where credentialed.',
+  },
+  {
+    slug: 'cardiology',
+    name: 'Cardiology',
+    framing: 'Non-invasive consult coverage with reading-room support. Echo, stress, and Holter reads paired with clinic days.',
+  },
+  {
+    slug: 'neurology',
+    name: 'Neurology',
+    framing: 'Inpatient consult, stroke coverage, and outpatient clinic. Tele-neurology arms also matched where the facility supports.',
+  },
+];
+---
+<MarketingLayout
+  title="Specialties — Innovative Medical Staffing"
+  description="The 12 specialties we focus on across community hospitals, academic centers, and outpatient settings."
+>
+  <SiteNav slot="nav" />
+
+  <ScrollReveal as="section" id="hero" class="sp-hero" aria-labelledby="sp-hero-heading">
+    <div class="sp-hero__inner">
+      <p class="eyebrow">SPECIALTIES</p>
+      <h1 id="sp-hero-heading" class="headline">What we cover.</h1>
+      <p class="body">
+        Twelve specialties across community hospitals, academic centers,
+        and outpatient settings. Each card links to live opportunities you
+        can browse by state, shift type, or rate.
+      </p>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="grid" class="sp-grid" aria-labelledby="sp-grid-heading">
+    <div class="sp-grid__inner">
+      <h2 id="sp-grid-heading" class="visually-hidden">All twelve specialties</h2>
+      <ul class="grid">
+        {specialties.map((s) => (
+          <li>
+            <a class="card" href={`/jobs?specialty=${s.slug}`}>
+              <h3 class="name">{s.name}</h3>
+              <p class="framing">{s.framing}</p>
+              <span class="link-affordance">
+                See open opportunities
+                <span aria-hidden="true">&nbsp;→</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="closing" class="sp-closing" aria-labelledby="sp-closing-heading">
+    <div class="sp-closing__inner">
+      <h2 id="sp-closing-heading" class="closing-headline">Don&rsquo;t see your specialty?</h2>
+      <p class="closing-body">Tell us what you cover and where you&rsquo;re open to working — we&rsquo;ll come back with a real recruiter, not an auto-reply.</p>
+      <a class="cta cta--primary" href="/contact">Talk to a Recruiter</a>
+    </div>
+  </ScrollReveal>
+
+  <SiteFooter slot="footer" />
+</MarketingLayout>
+
+<style>
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brand-gold-muted);
+    margin: 0 0 16px;
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    border-radius: var(--r-pill-mkt);
+    font-family: var(--font-body);
+    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .cta--primary {
+    background: var(--brand-navy);
+    color: var(--ink-on-dark);
+    border: 1.5px solid var(--brand-navy);
+  }
+  .cta--primary:hover {
+    background: color-mix(in srgb, var(--brand-navy) 88%, white);
+    border-color: color-mix(in srgb, var(--brand-navy) 88%, white);
+  }
+  .cta:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 3px;
+  }
+
+  /* Hero */
+  .sp-hero {
+    padding: clamp(64px, 12vh, 144px) clamp(24px, 5vw, 80px) clamp(40px, 6vh, 80px);
+  }
+  .sp-hero__inner { max-width: 880px; margin: 0 auto; }
+  .sp-hero .headline {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 7vw, 64px);
+    line-height: 1.05;
+    color: var(--ink-on-cream);
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .sp-hero .body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  /* 12-card grid */
+  .sp-grid {
+    padding: clamp(40px, 6vh, 80px) clamp(24px, 5vw, 80px) clamp(56px, 9vh, 120px);
+  }
+  .sp-grid__inner { max-width: 1200px; margin: 0 auto; }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  @media (min-width: 700px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  }
+  @media (min-width: 1100px) {
+    .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: clamp(24px, 3vw, 32px);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-section);
+    text-decoration: none;
+    background: transparent;
+    height: 100%;
+    transition: border-color 200ms var(--ease-out);
+  }
+  .card:hover { border-color: var(--brand-navy); }
+  .card:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 2px;
+  }
+  .name {
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1.15;
+    color: var(--ink-on-cream);
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .framing {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--ink-on-cream-3);
+    margin: 0;
+    flex: 1;
+  }
+  .link-affordance {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--brand-navy);
+    margin-top: 4px;
+  }
+  .card:hover .link-affordance {
+    text-decoration: underline;
+    text-decoration-color: var(--brand-navy);
+    text-underline-offset: 3px;
+  }
+
+  /* Closing */
+  .sp-closing {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+    text-align: center;
+  }
+  .sp-closing__inner { max-width: 720px; margin: 0 auto; }
+  .closing-headline {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 4.5vw, 48px);
+    line-height: 1.1;
+    color: var(--ink-on-cream);
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .closing-body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    margin: 0 0 32px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta, .card { transition: none; }
+  }
+</style>
