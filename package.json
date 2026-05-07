@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "verify": "node scripts/verify-build.mjs",
+    "verify": "node scripts/verify-build.mjs && node scripts/voice-lint.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
