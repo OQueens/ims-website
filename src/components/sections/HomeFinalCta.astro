@@ -1,0 +1,90 @@
+---
+// HomeFinalCta — homepage §2.10 (spec L307-316).
+//
+// CRITICAL ARCHITECTURAL NOTE — section renders OUTSIDE the cream card per
+// spec §1 ("§2.10 final-CTA is again outside the card (dark exterior)"). At
+// T28 wire-up, this component renders as a full-bleed sibling AFTER the
+// §2.6-§2.9 cream-card-2 closes. Footer follows directly below.
+//
+// CTA color: --brand-blue-deep (#3898EC) NOT --brand-blue (#59BFE7). Per
+// spec §2.10 explicit: brand-blue is the logo accent and is too low-contrast
+// as a CTA fill on the dark exterior; brand-blue-deep matches PT's "GET IN
+// TOUCH" button density on dark.
+import ScrollReveal from '../util/ScrollReveal.astro';
+---
+<ScrollReveal as="section" id="final-cta" class="final-cta" aria-labelledby="final-cta-heading">
+  <div class="inner">
+    <h2 id="final-cta-heading" class="headline">
+      Ready for a more thoughtful staffing experience?
+    </h2>
+    <a class="cta" href="/contact">Get in Touch</a>
+
+    <svg class="ornament-leaf" viewBox="0 0 80 80" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="var(--brand-gold-muted)" stroke-width="1.6" stroke-linecap="round">
+        <path d="M16 64 C 8 48, 24 28, 48 24 C 56 40, 40 60, 16 64 Z" />
+        <path d="M16 64 L 44 36" />
+      </g>
+    </svg>
+  </div>
+</ScrollReveal>
+
+<style>
+  .final-cta {
+    background: var(--surface-page);
+    color: var(--ink-on-dark);
+    padding: clamp(96px, 14vh, 200px) clamp(24px, 5vw, 80px);
+    position: relative;
+    overflow: hidden;
+  }
+  .inner {
+    max-width: 960px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .headline {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 7vw, 72px);
+    line-height: 1.1;
+    color: var(--ink-on-dark);
+    margin: 0 0 48px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 36px;
+    background: var(--brand-blue-deep);
+    color: var(--ink-on-dark);
+    border-radius: var(--r-pill-mkt);
+    font-family: var(--font-body);
+    font-size: 17px;
+    text-decoration: none;
+    transition: background-color 200ms var(--ease-out), transform 200ms var(--ease-out);
+  }
+  .cta:hover {
+    background: #2D7BC7;
+    transform: translateY(-1px);
+  }
+  .cta:focus-visible {
+    outline: 2px solid var(--brand-blue);
+    outline-offset: 3px;
+  }
+  .ornament-leaf {
+    position: absolute;
+    bottom: clamp(24px, 4vw, 64px);
+    left: clamp(24px, 4vw, 64px);
+    width: 64px;
+    height: 64px;
+    z-index: 0;
+    opacity: 0.7;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta { transition: none; }
+    .cta:hover { transform: none; }
+  }
+</style>
