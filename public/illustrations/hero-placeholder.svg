@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Placeholder hero illustration for v1 launch.
+  Spec §2.1: hand-drawn-feel line-art, cream/navy/brand-blue/brand-gold palette.
+  Brief §3 banned: AI mesh, neural-net, data-stream lines, crossed-arms doctor stock,
+  blue-gradient-medical, hospital-hallway-stock.
+  Phase 1.5 swap: custom IMS illustration commission.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-labelledby="hero-illust-title">
+  <title id="hero-illust-title">A clinician at a desk with a stethoscope, coffee, and a paper schedule</title>
+
+  <!-- Decorative leaf, top-right corner (PT motif reference) -->
+  <g fill="none" stroke="#B8975B" stroke-width="1.5" stroke-linecap="round">
+    <path d="M420 60 C 440 50, 455 65, 450 90 C 445 110, 425 110, 415 95 Z" />
+    <path d="M420 60 L 432 95" />
+  </g>
+
+  <!-- Hand-drawn arc, lower-left (frames composition) -->
+  <path d="M 24 410 Q 120 380 240 410" fill="none" stroke="#1A2B4A" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Desk surface -->
+  <rect x="60" y="320" width="360" height="6" fill="#1A2B4A" rx="2" />
+
+  <!-- Clinician figure: head + shoulders + torso -->
+  <g fill="none" stroke="#1A2B4A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Head -->
+    <circle cx="240" cy="170" r="38" />
+    <!-- Calm, soft expression: closed-ish eyes (gentle line) + a smile -->
+    <path d="M226 168 q 4 -3 8 0" />
+    <path d="M246 168 q 4 -3 8 0" />
+    <path d="M232 184 q 8 6 16 0" />
+    <!-- Hair — short, no implied gender -->
+    <path d="M205 160 q 18 -38 70 -8" />
+    <!-- Shoulders / scrubs collar (V-neck) -->
+    <path d="M180 260 q 60 -32 120 0" />
+    <path d="M225 218 l 15 22 l 15 -22" />
+    <!-- Torso (hands resting forward, not crossed) -->
+    <path d="M180 260 v 60 q 60 16 120 0 v -60" />
+    <!-- Forearm + hand resting on desk, calm posture -->
+    <path d="M205 290 q -5 24 0 30" />
+    <path d="M275 290 q 5 24 0 30" />
+  </g>
+
+  <!-- Cream scrub fill (subtle) -->
+  <path d="M180 260 q 60 -32 120 0 v 60 q -60 16 -120 0 z" fill="#F2E8DC" opacity="0.4" />
+
+  <!-- Stethoscope (laid on desk, not draped) — brand-blue accent loop -->
+  <g fill="none" stroke="#59BFE7" stroke-width="2.2" stroke-linecap="round">
+    <path d="M120 326 q 8 -22 30 -22 q 22 0 28 22" />
+    <circle cx="118" cy="328" r="5" fill="#59BFE7" />
+    <circle cx="180" cy="328" r="5" fill="#59BFE7" />
+    <path d="M150 305 v -10" />
+    <circle cx="150" cy="295" r="6" fill="none" stroke="#1A2B4A" stroke-width="2" />
+  </g>
+
+  <!-- Coffee cup -->
+  <g fill="none" stroke="#1A2B4A" stroke-width="2" stroke-linejoin="round">
+    <path d="M340 300 h 30 l -3 22 q -2 6 -10 6 h -4 q -8 0 -10 -6 z" />
+    <path d="M370 308 q 8 0 8 8 q 0 8 -8 8" />
+    <!-- Steam wisp -->
+    <path d="M350 290 q 4 -8 0 -16" stroke="#7B5E5C" />
+    <path d="M360 290 q -4 -10 0 -18" stroke="#7B5E5C" />
+  </g>
+
+  <!-- Paper schedule -->
+  <g fill="#FFFAF3" stroke="#1A2B4A" stroke-width="1.6">
+    <rect x="200" y="296" width="84" height="26" rx="2" />
+    <line x1="208" y1="304" x2="276" y2="304" stroke-width="1" />
+    <line x1="208" y1="311" x2="260" y2="311" stroke-width="1" />
+    <line x1="208" y1="318" x2="270" y2="318" stroke-width="1" />
+  </g>
+
+  <!-- Subtle gold underline accent beneath figure (matches §2.9 value-tile underline cue) -->
+  <line x1="190" y1="340" x2="290" y2="340" stroke="#F0B420" stroke-width="2" stroke-linecap="round" />
+</svg>

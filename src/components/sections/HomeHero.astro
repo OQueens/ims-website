@@ -1,0 +1,120 @@
+---
+// HomeHero — homepage §2.1 (spec docs/specs/2026-05-05-ims-website-phase-1-design.md L208-225)
+//
+// Renders inside the cream card per spec §1 page-level rules. Self-styled with
+// cream surface inheritance (no background set — inherits from parent .card).
+// First-paint reveal: 600ms fade + 8px rise via <ScrollReveal delay={0}>.
+import ScrollReveal from '../util/ScrollReveal.astro';
+---
+<ScrollReveal as="section" id="hero" class="home-hero" delay={0}>
+  <div class="grid">
+    <div class="content">
+      <p class="eyebrow">INNOVATIVE MEDICAL STAFFING</p>
+      <h1 class="headline">Medical staffing, handled with care.</h1>
+      <p class="body">
+        Innovative Medical Staffing connects healthcare facilities with qualified
+        clinicians through a more personal, responsive, and technology-enabled
+        staffing experience.
+      </p>
+      <div class="ctas">
+        <a class="cta cta--primary" href="/jobs">Find Opportunities</a>
+        <a class="cta cta--secondary" href="/contact?intent=coverage">Request Coverage</a>
+      </div>
+    </div>
+    <div class="illustration" aria-hidden="true">
+      <img src="/illustrations/hero-placeholder.svg" alt="" loading="eager" decoding="async" width="480" height="480" />
+    </div>
+  </div>
+</ScrollReveal>
+
+<style>
+  .home-hero {
+    min-height: 85vh;
+    padding: clamp(48px, 8vh, 120px) clamp(24px, 5vw, 80px);
+    display: flex;
+    align-items: center;
+  }
+  .grid {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(32px, 5vw, 80px);
+    align-items: center;
+  }
+  @media (min-width: 900px) {
+    .grid {
+      grid-template-columns: 60% 40%;
+    }
+  }
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brand-gold-muted);
+    margin: 0 0 24px;
+  }
+  .headline {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 9vw, 96px);
+    line-height: 1.05;
+    color: var(--ink-on-cream);
+    margin: 0 0 32px;
+    letter-spacing: -0.01em;
+  }
+  .body {
+    font-family: var(--font-body);
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    max-width: 64ch;
+    margin: 0 0 40px;
+  }
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    border-radius: var(--r-pill-mkt);
+    font-family: var(--font-body);
+    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .cta--primary {
+    background: var(--brand-navy);
+    color: var(--ink-on-dark);
+    border: 1.5px solid var(--brand-navy);
+  }
+  .cta--primary:hover { background: #243A66; border-color: #243A66; }
+  .cta--secondary {
+    background: transparent;
+    color: var(--brand-navy);
+    border: 1.5px solid var(--brand-navy);
+  }
+  .cta--secondary:hover { background: var(--brand-navy); color: var(--ink-on-dark); }
+  .cta:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 3px;
+  }
+  .illustration {
+    display: flex;
+    justify-content: center;
+  }
+  .illustration img {
+    width: 100%;
+    max-width: 480px;
+    height: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta { transition: none; }
+  }
+</style>
