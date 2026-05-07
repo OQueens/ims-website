@@ -643,3 +643,31 @@ Paste this into any new HTML file to start with the right foundation:
 ---
 
 *This design system is derived from the IAS production dashboards: LocumSmart Analytics, Rate Calculator, PokeTrader, and Weekly Sync. Last updated April 2026.*
+
+---
+
+## Marketing Phase 1.0 implementation (2026-05-07)
+
+Phase 1.0 foundation primitives are landed across two pushes:
+
+**Shipped to production via PR #1 merge `dfd29fa` (2026-05-07):**
+- `@astrojs/cloudflare` adapter v12 + `@astrojs/sitemap` integration (Path A pin — adapter v13+ dropped Pages support).
+- Brand palette tokens (PT-derived) added to `src/styles/tokens.css`.
+- TAY Basal + TAY Amaya fonts self-hosted at `public/fonts/` with `@font-face` declarations.
+- `src/middleware-logic.ts` + `src/middleware.ts` canonical-redirect (`ims-website.pages.dev` → 301 → `innovativemedicalstaffing.com`) + 7 SECURITY_HEADERS defense-in-depth at worker layer.
+- `public/_headers` mirrors SECURITY_HEADERS for paths excluded from worker.
+- 14/14 vitest middleware tests; 25/25 verify-build structural + content-marker checks.
+
+**Landed on `feat/ims-phase-1a-content` (T6–T11):**
+- T6: IMS logo system — 4 SVG variants (Original / Default / OnDark / Mono) + 3 Astro components + 8-icon functional set + `Icon.astro` `?raw`+`set:html` dispatcher. Inline `fill=""` (not class-based `<defs><style>`) prevents class-collision when two logo instances render on the same page.
+- T7: `ScrollReveal.astro` IntersectionObserver helper — once-only fade+rise (500ms / 12px / `-10%` rootMargin), feature-guarded against missing IO API, full reduced-motion respect (transition: none + immediate visibility).
+- T8: `MarketingLayout.astro` chrome — cream card on dark exterior pattern, Plausible Cloud snippet, Schema.org Organization JSON-LD, canonical normalization (origin+pathname only — strips query/hash/utm), absolute og:image resolution, `inCard` prop toggling cream vs full-bleed.
+- T9: CSP rewrite per spec §0.5.3 — `default-src 'self'` + Plausible/Turnstile allowlists across `script-src` / `connect-src` / `frame-src`; `form-action 'self'` (unblocks T46/T47 form POSTs); `frame-ancestors 'none'` preserved. 27/27 verify-build (added 2 content markers asserting Plausible + Turnstile literals inlined in worker bundle).
+- T10: `scripts/voice-lint.mjs` advisory script per spec §4.5 / §0.5.6 — scans `src/` + `docs/specs/` for BANNED + CARE + VISUAL_BANNED tokens, skips markdown code fences (eliminates anti-pattern-list noise), surfaces scan errors visibly, exits 0 always at v1 (Phase 1.5 promotes BANNED tier to blocking).
+- T11: `npm run verify` chains `verify-build` + `voice-lint`.
+
+**Site is still `noindex`** — the `X-Robots-Tag: noindex, nofollow` header in both `src/middleware-logic.ts` and `public/_headers` is intentionally preserved. Phase 1.A T15 + T16 are the paired removal tasks that flip the site indexable; that's the LAUNCH HARD GATE.
+
+**Codex 3-round adversarial review** ran on every non-trivial commit per session-start standing order. Across T6–T10 the loop caught 6 real shipping-blockers (dark-mode logo invisibility, Astro scoped-CSS not reaching child components, missing IntersectionObserver feature-guard, reduced-motion still animating opacity, canonical leaking utm params, og:image relative path). Verdict chains greppable via `git log --grep="codex-reviewed"`.
+
+**Lighthouse ≥95 gate (T12):** pending Zach manual run in browser DevTools against the preview URL — the placeholder layout is unchanged from production except for the new logo render, so Phase 1.0 score parity is expected.
