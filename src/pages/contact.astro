@@ -1,0 +1,249 @@
+---
+// /contact — skeleton page (spec §1 + plan T26).
+//
+// Phase 1.A scope: SKELETON-builds the page. Actual form rendering depends
+// on T49 (ContactForm component with Turnstile + Resend wiring). At T49,
+// the placeholder block below gets replaced with the real ContactForm
+// invocation, conditionally pre-filling the intent dropdown based on
+// ?intent=coverage.
+//
+// Per spec §6 disposition: NO map embed. Right-column contact card shows
+// email + phone in plain text only.
+//
+// Intent-aware hero subhead: vanilla JS reads ?intent= on load and swaps
+// the subhead text for the coverage variant (facilities flow). Default
+// subhead is the general clinician-or-facility phrasing.
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import SiteNav from '../components/nav/SiteNav.astro';
+import SiteFooter from '../components/footer/SiteFooter.astro';
+import ScrollReveal from '../components/util/ScrollReveal.astro';
+
+const SUPPORT_EMAIL = 'recruiting@iastaffing.com';
+const SUPPORT_PHONE_DISPLAY = '(512) 524-6686';
+const SUPPORT_PHONE_TEL = '+15125246686';
+---
+<MarketingLayout
+  title="Contact — Innovative Medical Staffing"
+  description="Tell us what you're looking for — clinician opportunities, coverage requests, or general questions. We respond same business day."
+>
+  <SiteNav slot="nav" />
+
+  <ScrollReveal as="section" id="hero" class="ct-hero" aria-labelledby="ct-hero-heading">
+    <div class="ct-hero__inner">
+      <p class="eyebrow">CONTACT</p>
+      <h1 id="ct-hero-heading" class="headline">Tell us what you&rsquo;re looking for.</h1>
+      <p class="body" data-default-subhead="Whether you&rsquo;re a clinician exploring locum opportunities or a facility partner trying to close a coverage gap, we&rsquo;d like to hear from you. A real recruiter responds same business day." data-coverage-subhead="Tell us about the coverage gap — service line, dates, acuity, and any context that shapes a good match. A recruiter assigned to your account responds same business day.">
+        Whether you&rsquo;re a clinician exploring locum opportunities or a
+        facility partner trying to close a coverage gap, we&rsquo;d like to
+        hear from you. A real recruiter responds same business day.
+      </p>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="form" class="ct-form" aria-labelledby="ct-form-heading">
+    <div class="ct-form__inner">
+      <h2 id="ct-form-heading" class="visually-hidden">Send a message or reach us directly</h2>
+      <div class="cols">
+        <div class="col-form">
+          <p class="col-eyebrow">SEND A MESSAGE</p>
+          <div class="form-placeholder" role="region" aria-label="Contact form coming soon">
+            <p class="placeholder-headline">Form arriving with the launch build.</p>
+            <p class="placeholder-body">
+              Until then, the fastest path is email or phone — both go to
+              the same recruiter who would handle a form submission.
+            </p>
+            {/* T49 wires ContactForm here — intent dropdown pre-fills to "Coverage" when ?intent=coverage; "General" otherwise. Turnstile + Resend transport on submit. */}
+          </div>
+        </div>
+        <aside class="col-contact" aria-label="Direct contact methods">
+          <p class="col-eyebrow">REACH US DIRECTLY</p>
+          <dl class="contact-list">
+            <div class="row">
+              <dt>Email</dt>
+              <dd><a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></dd>
+            </div>
+            <div class="row">
+              <dt>Phone</dt>
+              <dd><a href={`tel:${SUPPORT_PHONE_TEL}`}>{SUPPORT_PHONE_DISPLAY}</a></dd>
+            </div>
+            <div class="row">
+              <dt>Hours</dt>
+              <dd>Monday – Friday, 8a – 6p Central</dd>
+            </div>
+            <div class="row">
+              <dt>Response</dt>
+              <dd>Same business day, every business day.</dd>
+            </div>
+          </dl>
+        </aside>
+      </div>
+    </div>
+  </ScrollReveal>
+
+  <SiteFooter slot="footer" />
+</MarketingLayout>
+
+<style>
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brand-gold-muted);
+    margin: 0 0 16px;
+  }
+  .col-eyebrow {
+    font-family: var(--font-display);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brand-gold-muted);
+    margin: 0 0 16px;
+  }
+
+  /* Hero */
+  .ct-hero {
+    padding: clamp(64px, 12vh, 144px) clamp(24px, 5vw, 80px) clamp(40px, 6vh, 80px);
+  }
+  .ct-hero__inner { max-width: 880px; margin: 0 auto; }
+  .ct-hero .headline {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 6vw, 56px);
+    line-height: 1.1;
+    color: var(--ink-on-cream);
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .ct-hero .body {
+    font-family: var(--font-body);
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  /* Form + contact card columns */
+  .ct-form {
+    padding: clamp(40px, 6vh, 80px) clamp(24px, 5vw, 80px) clamp(72px, 11vh, 144px);
+  }
+  .ct-form__inner { max-width: 1200px; margin: 0 auto; }
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  @media (min-width: 900px) {
+    .cols { grid-template-columns: 1.4fr 1fr; gap: 64px; }
+  }
+
+  .col-form, .col-contact {
+    padding: clamp(28px, 3vw, 40px);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-section);
+    background: transparent;
+  }
+  .form-placeholder { padding: 8px 0; }
+  .placeholder-headline {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.25;
+    color: var(--ink-on-cream);
+    margin: 0 0 12px;
+    letter-spacing: -0.005em;
+  }
+  .placeholder-body {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    margin: 0;
+  }
+
+  .contact-list {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .row dt {
+    font-family: var(--font-body);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-on-cream-2);
+    margin: 0;
+  }
+  .row dd {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--ink-on-cream);
+    margin: 0;
+  }
+  .row dd a {
+    color: var(--brand-navy);
+    text-decoration: none;
+    border-bottom: 1px solid var(--brand-navy);
+    padding-bottom: 1px;
+    transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .row dd a:hover {
+    color: var(--brand-blue-deep);
+    border-color: var(--brand-blue-deep);
+  }
+  .row dd a:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 3px;
+    border-color: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .row dd a { transition: none; }
+  }
+</style>
+
+<script>
+  // Intent-aware hero subhead — read ?intent=coverage from the URL on load
+  // and swap the subhead text via the data-coverage-subhead attribute.
+  // Sanitized against an allowlist; unknown values keep the default copy.
+  const INTENTS = ['coverage'] as const;
+  type Intent = typeof INTENTS[number];
+
+  function isIntent(v: string | null): v is Intent {
+    return v !== null && (INTENTS as readonly string[]).includes(v);
+  }
+
+  function init() {
+    const subhead = document.querySelector<HTMLElement>('.ct-hero .body[data-default-subhead][data-coverage-subhead]');
+    if (!subhead) return;
+    const intent = new URL(window.location.href).searchParams.get('intent');
+    if (isIntent(intent) && intent === 'coverage') {
+      const text = subhead.dataset.coverageSubhead;
+      if (text) subhead.textContent = text;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+</script>
