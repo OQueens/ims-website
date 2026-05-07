@@ -95,13 +95,21 @@ describe("SECURITY_HEADERS contents", () => {
     expect(SECURITY_HEADERS["X-Robots-Tag"]).toBe("noindex, nofollow");
   });
 
-  it("includes a strict CSP with default-src 'none'", () => {
-    expect(SECURITY_HEADERS["Content-Security-Policy"]).toContain(
-      "default-src 'none'",
+  it("includes a strict CSP with default-src 'self' + Plausible/Turnstile allowlists", () => {
+    const csp = SECURITY_HEADERS["Content-Security-Policy"];
+    // Phase 1.A spec §0.5.3 — replaces the Phase 1.0 'none' default.
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain(
+      "script-src 'self' 'unsafe-inline' https://plausible.io https://challenges.cloudflare.com",
     );
-    expect(SECURITY_HEADERS["Content-Security-Policy"]).toContain(
-      "frame-ancestors 'none'",
+    expect(csp).toContain(
+      "connect-src 'self' https://plausible.io https://challenges.cloudflare.com",
     );
+    expect(csp).toContain("frame-src https://challenges.cloudflare.com");
+    expect(csp).toContain("font-src 'self'");
+    expect(csp).toContain("form-action 'self'");
+    // frame-ancestors stays at 'none' — clickjacking defense persists.
+    expect(csp).toContain("frame-ancestors 'none'");
   });
 
   it("includes HSTS with includeSubDomains", () => {

@@ -85,9 +85,20 @@ if (existsSync(middlewareBundlePath)) {
     'middleware bundle inlines X-Robots-Tag noindex value',
     middlewareBundle.includes('noindex, nofollow'),
   );
+  // T9 (Phase 1.A) replaced default-src 'none' with 'self' + Plausible/Turnstile
+  // allowlists per spec §0.5.3. Marker proves middleware-logic.ts CSP value
+  // (not adapter pre-middleware) was inlined.
   check(
-    'middleware bundle inlines CSP default-src none',
-    middlewareBundle.includes("default-src 'none'"),
+    "middleware bundle inlines CSP default-src 'self'",
+    middlewareBundle.includes("default-src 'self'"),
+  );
+  check(
+    'middleware bundle inlines Plausible script-src allowlist',
+    middlewareBundle.includes('https://plausible.io'),
+  );
+  check(
+    'middleware bundle inlines Turnstile script-src/frame-src allowlist',
+    middlewareBundle.includes('https://challenges.cloudflare.com'),
   );
 }
 

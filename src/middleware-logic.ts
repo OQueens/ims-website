@@ -18,8 +18,21 @@ export const CANONICAL_HOSTNAME = "innovativemedicalstaffing.com";
 export const SECURITY_HEADERS: Record<string, string> = {
   "X-Robots-Tag": "noindex, nofollow",
   "Strict-Transport-Security": "max-age=15768000; includeSubDomains",
+  // Spec §0.5.3 final CSP — Plausible analytics + Cloudflare Turnstile
+  // allowlisted; 'unsafe-inline' for scripts/styles accepted per spec §0.5.3
+  // Notes (Astro hydration injects inline scripts; component-scoped styles).
+  // form-action 'self' allows POST to /api/contact + /api/apply (T46+T47).
   "Content-Security-Policy":
-    "default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' https://plausible.io https://challenges.cloudflare.com; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data:; " +
+    "font-src 'self'; " +
+    "connect-src 'self' https://plausible.io https://challenges.cloudflare.com; " +
+    "frame-src https://challenges.cloudflare.com; " +
+    "form-action 'self'; " +
+    "base-uri 'self'; " +
+    "frame-ancestors 'none'",
   "Permissions-Policy":
     "camera=(), microphone=(), geolocation=(), interest-cohort=()",
   "Referrer-Policy": "strict-origin-when-cross-origin",
