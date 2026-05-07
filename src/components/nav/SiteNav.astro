@@ -1,0 +1,151 @@
+---
+import LogoDefault from '../brand/LogoDefault.astro';
+import LogoOnDark from '../brand/LogoOnDark.astro';
+
+interface Props {
+  /** When true, nav uses dark variant (used over §2.5/§2.10 dark sections) */
+  inverse?: boolean;
+}
+const { inverse = false } = Astro.props;
+
+const links = [
+  { href: '/clinicians', label: 'For Clinicians' },
+  { href: '/facilities', label: 'For Facilities' },
+  { href: '/specialties', label: 'Specialties' },
+  { href: '/jobs', label: 'Open Roles' },
+  { href: '/about', label: 'About' },
+  { href: '/contact', label: 'Contact' },
+];
+---
+<nav class:list={['site-nav', { inverse }]} aria-label="Main">
+  <a href="/" class="brand" aria-label="Innovative Medical Staffing — home">
+    {inverse ? <LogoOnDark height={28} /> : <LogoDefault height={28} />}
+  </a>
+  <ul class="links">
+    {links.map((l) => (
+      <li><a href={l.href}>{l.label}</a></li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px clamp(20px, 4vw, 64px);
+    background: var(--surface-card);
+    color: var(--ink-on-cream);
+    font-family: var(--font-body);
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms;
+  }
+  .site-nav.inverse {
+    background: var(--surface-page);
+    color: var(--ink-on-dark);
+  }
+  .site-nav .brand {
+    display: inline-flex;
+    align-items: center;
+  }
+  .site-nav .links {
+    display: flex;
+    gap: 28px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .site-nav .links a {
+    color: inherit;
+    text-decoration: none;
+    font-size: 15px;
+    transition: opacity 180ms ease-out;
+  }
+  .site-nav .links a:hover { opacity: 0.7; }
+
+  /* Sticky-after-80vh per spec §1: nav slides out for the first 80vh
+     (hero owns the logo above the fold) and slides in once user scrolls
+     past the threshold. */
+  .site-nav.is-hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Honor reduced-motion — match T7 ScrollReveal spec §4.4 contract.
+     Snap between visible/hidden states without animating. */
+  @media (prefers-reduced-motion: reduce) {
+    .site-nav,
+    .site-nav .links a {
+      transition: none;
+    }
+  }
+
+  /* Mobile: stack brand on top of a wrapping link row so every primary
+     destination remains reachable without a hamburger. Phase 1.5 will
+     replace this with a proper collapsible menu — but until then, hiding
+     the links wholesale (the plan's original `display: none` shape) is
+     a navigation regression for mobile + keyboard + screen-reader users
+     (Codex T18 r1 NO-GO fold). Keep gap small + font-size compact so
+     two rows of 3 links fit a 375px viewport without dominating. */
+  @media (max-width: 768px) {
+    .site-nav {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      padding: 12px clamp(16px, 4vw, 24px);
+    }
+    .site-nav .brand {
+      align-self: flex-start;
+    }
+    .site-nav .links {
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      font-size: 14px;
+    }
+  }
+</style>
+
+<script>
+  // Hidden state must remove the nav from BOTH the visual surface AND
+  // the keyboard / screen-reader path. CSS alone (transform + opacity:0
+  // + pointer-events:none) leaves links keyboard-focusable and AT-readable,
+  // so a keyboard user landing at page top would tab through 7 off-screen
+  // focusable elements before reaching the visible content (Codex T18 r2
+  // NO-GO fold). Toggle inert + aria-hidden alongside the .is-hidden class
+  // so the entire subtree is excluded from focus order + the a11y tree.
+  //
+  // r3 fold: never apply inert while the nav itself contains keyboard focus
+  // — that would strand focus inside an inert subtree (browsers fall back
+  // to body, AT may relocate). Defer the hide until focus leaves (focusout)
+  // and re-evaluate the scroll-state at that moment.
+  const nav = document.querySelector('.site-nav') as HTMLElement | null;
+  if (nav) {
+    let shouldHide = false;
+    const apply = () => {
+      const containsFocus = nav.contains(document.activeElement);
+      const hide = shouldHide && !containsFocus;
+      nav.classList.toggle('is-hidden', hide);
+      if (hide) {
+        nav.setAttribute('inert', '');
+        nav.setAttribute('aria-hidden', 'true');
+      } else {
+        nav.removeAttribute('inert');
+        nav.removeAttribute('aria-hidden');
+      }
+    };
+    const onScroll = () => {
+      shouldHide = window.scrollY < window.innerHeight * 0.8;
+      apply();
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // focusout fires before activeElement settles to the next focused
+    // element (or body). Defer to next microtask before re-evaluating.
+    nav.addEventListener('focusout', () => {
+      setTimeout(apply, 0);
+    });
+  }
+</script>
