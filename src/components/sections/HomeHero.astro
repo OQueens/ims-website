@@ -93,7 +93,10 @@ import ScrollReveal from '../util/ScrollReveal.astro';
     color: var(--ink-on-dark);
     border: 1.5px solid var(--brand-navy);
   }
-  .cta--primary:hover { background: #243A66; border-color: #243A66; }
+  .cta--primary:hover {
+    background: color-mix(in srgb, var(--brand-navy) 88%, white);
+    border-color: color-mix(in srgb, var(--brand-navy) 88%, white);
+  }
   .cta--secondary {
     background: transparent;
     color: var(--brand-navy);

@@ -5,10 +5,12 @@ interface Props {
   /** Reveal delay in ms (default 0) */
   delay?: number;
   class?: string;
+  /** Any other HTML attribute (id, aria-*, role, data-*, etc.) is forwarded to the rendered tag. */
+  [key: string]: unknown;
 }
-const { as: As = 'section', delay = 0, class: className = '' } = Astro.props;
+const { as: As = 'section', delay = 0, class: className = '', ...rest } = Astro.props;
 ---
-<As class:list={['scroll-reveal', className]} data-reveal-delay={delay}>
+<As class:list={['scroll-reveal', className]} data-reveal-delay={delay} {...rest}>
   <slot />
 </As>
 

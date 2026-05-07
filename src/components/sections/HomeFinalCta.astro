@@ -66,7 +66,10 @@ import ScrollReveal from '../util/ScrollReveal.astro';
     transition: background-color 200ms var(--ease-out), transform 200ms var(--ease-out);
   }
   .cta:hover {
-    background: #2D7BC7;
+    /* Lighten on hover (deep-blue CTA on near-black surface): darkening would
+       make the CTA recede into the dark exterior. Mix toward white preserves
+       press-feedback affordance. */
+    background: color-mix(in srgb, var(--brand-blue-deep) 88%, white);
     transform: translateY(-1px);
   }
   .cta:focus-visible {

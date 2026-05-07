@@ -109,9 +109,9 @@ const phases = [
     line-height: 1.6;
     color: var(--ink-on-dark-2);
     padding: 8px 0;
-    border-top: 1px solid rgba(242, 232, 220, 0.16);
+    border-top: 1px solid color-mix(in srgb, var(--ink-on-dark) 16%, transparent);
   }
-  .phase li:last-child { border-bottom: 1px solid rgba(242, 232, 220, 0.16); }
+  .phase li:last-child { border-bottom: 1px solid color-mix(in srgb, var(--ink-on-dark) 16%, transparent); }
   .closer {
     margin: clamp(56px, 8vh, 96px) auto 0;
     max-width: 64ch;
