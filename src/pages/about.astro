@@ -1,0 +1,394 @@
+---
+// /about — story, leadership (placeholder), philosophy, values (spec §1).
+//
+// Phase 1.A scope: leadership placeholder cards with cream-on-cream silhouette
+// SVG + role only. Real headshots are the Zach action per spec §10 item 2;
+// gate is SG15 launch checklist. Page ships with placeholder cards + visible
+// "Photo coming soon" hint so the absence is acknowledged rather than papered
+// over.
+//
+// Story copy adapts brief §3 mission in voice (composed pending Zach memo
+// verbatim, matches T20i / T21 / T22 / T23 pattern). Values quick-grid reuses
+// the 6 HomeValues definitions verbatim — keeping a single source of truth in
+// voice across home + about until the brief §6 memo surfaces.
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import SiteNav from '../components/nav/SiteNav.astro';
+import SiteFooter from '../components/footer/SiteFooter.astro';
+import ScrollReveal from '../components/util/ScrollReveal.astro';
+
+const leaders: { role: string }[] = [
+  { role: 'Founder & CEO' },
+  { role: 'Operations Lead' },
+  { role: 'Recruiting Lead' },
+];
+
+const values: { name: string; definition: string }[] = [
+  { name: 'Patient-First',       definition: 'Every match is judged by what serves the patient at the bedside.' },
+  { name: 'Human-Led',           definition: 'A real person reads your file and answers the phone when it rings.' },
+  { name: 'Quality-Obsessed',    definition: 'Credentials, references, and fit are checked carefully — not assumed.' },
+  { name: 'Built on Trust',      definition: 'We tell you what we know and what we do not, before you have to ask.' },
+  { name: 'Detail-Minded',       definition: 'Travel, paperwork, and first-day logistics are handled before they become friction.' },
+  { name: 'Calm Under Pressure', definition: 'When something needs to change mid-assignment, we move quickly and stay measured.' },
+];
+---
+<MarketingLayout
+  title="About — Innovative Medical Staffing"
+  description="The story behind IMS, the team, and the values that shape how we match clinicians and facilities."
+>
+  <SiteNav slot="nav" />
+
+  <ScrollReveal as="section" id="hero" class="ab-hero" aria-labelledby="ab-hero-heading">
+    <div class="ab-hero__inner">
+      <p class="eyebrow">ABOUT IMS</p>
+      <h1 id="ab-hero-heading" class="headline">Built around trust.</h1>
+      <p class="body">
+        Innovative Medical Staffing connects healthcare facilities with
+        qualified clinicians through a more personal, responsive, and
+        technology-enabled experience.
+      </p>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="story" class="ab-story" aria-labelledby="ab-story-heading">
+    <div class="ab-story__inner">
+      <p class="eyebrow">OUR STORY</p>
+      <h2 id="ab-story-heading" class="section-heading">A small team, focused on doing this well.</h2>
+      <div class="prose">
+        <p>
+          IMS was started by a team that had spent years inside large
+          staffing agencies and watched the same patterns repeat. Clinicians
+          treated as inventory. Facilities passed between handlers. Coverage
+          gaps closed with whoever was nearest, not whoever fit best.
+        </p>
+        <p>
+          We thought the relationship side of staffing deserved more
+          attention than it was getting. So we built a smaller agency that
+          treats clinicians and facilities as long-term partners — and uses
+          modern tools to take the friction out of credentialing, travel,
+          and onboarding so the human side has more room to do its job.
+        </p>
+        <p>
+          The result is a service that feels closer to a thoughtful
+          recruiter you would refer to a friend than a transactional
+          marketplace. Quieter, slower in the right places, faster in the
+          ones that matter.
+        </p>
+      </div>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="leadership" class="ab-leadership" aria-labelledby="ab-leadership-heading">
+    <div class="ab-leadership__inner">
+      <p class="eyebrow">LEADERSHIP</p>
+      <h2 id="ab-leadership-heading" class="section-heading">The people behind the work.</h2>
+      <ul class="leaders">
+        {leaders.map((l) => (
+          <li class="leader">
+            <div class="silhouette" aria-hidden="true">
+              <img src="/illustrations/leadership-placeholder.svg" alt="" loading="lazy" decoding="async" width="200" height="200" />
+            </div>
+            <h3 class="name" aria-label={`Name pending — ${l.role}`}>&mdash;</h3>
+            <p class="role">{l.role}</p>
+            <p class="hint">Photo coming soon</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="philosophy" class="ab-philosophy" aria-labelledby="ab-philosophy-quote">
+    <blockquote class="pull-quote">
+      <p id="ab-philosophy-quote">
+        Staffing is more than filling a schedule. It is trust, timing, communication, and fit.
+      </p>
+      <footer class="signature">&mdash; The IMS Team</footer>
+    </blockquote>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="values" class="ab-values" aria-labelledby="ab-values-heading">
+    <div class="ab-values__inner">
+      <p class="eyebrow">WHAT WE STAND ON</p>
+      <h2 id="ab-values-heading" class="section-heading">Six values, applied to every match.</h2>
+      <ul class="values-grid">
+        {values.map((v) => (
+          <li class="value">
+            <h3 class="value-name">{v.name}</h3>
+            <span class="underline" aria-hidden="true"></span>
+            <p class="def">{v.definition}</p>
+          </li>
+        ))}
+      </ul>
+      <p class="sub-cta">
+        <a href="/#values">
+          See the values on the homepage
+          <span aria-hidden="true">&nbsp;→</span>
+        </a>
+      </p>
+    </div>
+  </ScrollReveal>
+
+  <ScrollReveal as="section" id="closing" class="ab-closing" aria-labelledby="ab-closing-heading">
+    <div class="ab-closing__inner">
+      <h2 id="ab-closing-heading" class="closing-headline">Let&rsquo;s talk.</h2>
+      <p class="closing-body">Whether you&rsquo;re a clinician looking for the right assignment or a facility trying to close a coverage gap, we&rsquo;d like to hear from you.</p>
+      <a class="cta cta--primary" href="/contact">Get in Touch</a>
+    </div>
+  </ScrollReveal>
+
+  <SiteFooter slot="footer" />
+</MarketingLayout>
+
+<style>
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brand-gold-muted);
+    margin: 0 0 16px;
+  }
+  .section-heading {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.1;
+    color: var(--ink-on-cream);
+    margin: 0 0 clamp(32px, 4vw, 56px);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .sub-cta {
+    margin: clamp(40px, 5vw, 64px) 0 0;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: 17px;
+  }
+  .sub-cta a {
+    color: var(--brand-navy);
+    text-decoration: none;
+    border-bottom: 1px solid var(--brand-navy);
+    padding-bottom: 2px;
+    transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .sub-cta a:hover {
+    color: var(--brand-blue-deep);
+    border-color: var(--brand-blue-deep);
+  }
+  .sub-cta a:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 4px;
+    border-color: transparent;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    border-radius: var(--r-pill-mkt);
+    font-family: var(--font-body);
+    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  .cta--primary {
+    background: var(--brand-navy);
+    color: var(--ink-on-dark);
+    border: 1.5px solid var(--brand-navy);
+  }
+  .cta--primary:hover {
+    background: color-mix(in srgb, var(--brand-navy) 88%, white);
+    border-color: color-mix(in srgb, var(--brand-navy) 88%, white);
+  }
+  .cta:focus-visible {
+    outline: 2px solid var(--brand-navy);
+    outline-offset: 3px;
+  }
+
+  /* Hero */
+  .ab-hero {
+    padding: clamp(64px, 12vh, 144px) clamp(24px, 5vw, 80px) clamp(40px, 6vh, 80px);
+  }
+  .ab-hero__inner { max-width: 880px; margin: 0 auto; }
+  .ab-hero .headline {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 7vw, 64px);
+    line-height: 1.05;
+    color: var(--ink-on-cream);
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .ab-hero .body {
+    font-family: var(--font-body);
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  /* Story */
+  .ab-story {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .ab-story__inner { max-width: 720px; margin: 0 auto; }
+  .prose p {
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--ink-on-cream-3);
+    margin: 0 0 24px;
+    max-width: 64ch;
+  }
+  .prose p:last-child { margin-bottom: 0; }
+
+  /* Leadership */
+  .ab-leadership {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .ab-leadership__inner { max-width: 1100px; margin: 0 auto; }
+  .leaders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  @media (min-width: 700px) {
+    .leaders { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+  }
+  .leader {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .silhouette {
+    width: 200px;
+    height: 200px;
+    border-radius: var(--r-section);
+    overflow: hidden;
+    background: var(--surface-card-2);
+    border: 1px solid var(--border-hairline);
+  }
+  .silhouette img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .leader .name {
+    font-family: var(--font-display);
+    font-size: 26px;
+    line-height: 1.2;
+    color: var(--ink-on-cream-2);
+    margin: 8px 0 0;
+    letter-spacing: -0.005em;
+  }
+  .leader .role {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.4;
+    color: var(--ink-on-cream);
+    margin: 0;
+  }
+  .leader .hint {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--ink-on-cream-2);
+    font-style: italic;
+    margin: 0;
+  }
+
+  /* Philosophy */
+  .ab-philosophy {
+    padding: clamp(80px, 12vh, 160px) clamp(24px, 5vw, 80px);
+  }
+  .pull-quote {
+    margin: 0 auto;
+    max-width: 64ch;
+    text-align: center;
+  }
+  .pull-quote p {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 4.5vw, 48px);
+    line-height: 1.2;
+    color: var(--ink-on-cream);
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .signature {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--ink-on-cream-2);
+    font-style: normal;
+  }
+
+  /* Values quick-grid */
+  .ab-values {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+  }
+  .ab-values__inner { max-width: 1200px; margin: 0 auto; }
+  .values-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(28px, 3.5vw, 48px);
+  }
+  @media (min-width: 600px) { .values-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 900px) { .values-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .value { display: flex; flex-direction: column; gap: 10px; }
+  .value-name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.2;
+    color: var(--ink-on-cream);
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .underline {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--brand-gold);
+  }
+  .def {
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-on-cream-3);
+    margin: 0;
+    max-width: 40ch;
+  }
+
+  /* Closing */
+  .ab-closing {
+    padding: clamp(56px, 9vh, 120px) clamp(24px, 5vw, 80px);
+    text-align: center;
+  }
+  .ab-closing__inner { max-width: 720px; margin: 0 auto; }
+  .closing-headline {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 4.5vw, 48px);
+    line-height: 1.1;
+    color: var(--ink-on-cream);
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .closing-body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-on-cream-3);
+    margin: 0 0 32px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta, .sub-cta a { transition: none; }
+  }
+</style>
