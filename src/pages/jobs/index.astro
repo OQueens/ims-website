@@ -1,21 +1,124 @@
 ---
+/**
+ * /jobs — Open opportunities listing.
+ *
+ * Data source: Supabase ims_jobs WHERE status='active'.
+ * Populated by the LocumSmart webhook receiver at src/pages/api/locumsmart-webhook.ts;
+ * see migrations/20260508_ims_jobs_table.sql for the row shape + CHECK constraints.
+ *
+ * Render mode: SSR (prerender=false) so LS events surface without a rebuild.
+ * The route flows through _worker.js; on Pages preview/production
+ * Astro.locals.runtime.env exposes SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.
+ *
+ * Public/internal boundary (schema design): facility_name is INTERNAL data
+ * and is NEVER read by this page. The /jobs headline always renders
+ * public_facility_label (derived by the receiver via derivePublicFacilityLabel).
+ * The schema's facility_name_public clearance flag is intentionally ignored
+ * here — see facilityHeadline below for the sticky-clearance rationale.
+ */
+
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
 import SiteNav from '../../components/nav/SiteNav.astro';
 import SiteFooter from '../../components/footer/SiteFooter.astro';
-import { getCollection } from 'astro:content';
+import { createClient } from '@supabase/supabase-js';
 
-const all = await getCollection('jobs');
-const now = new Date();
-const active = all
-  .filter((j) => !j.data.expiresAt || j.data.expiresAt > now)
-  .sort((a, b) => +b.data.publishedAt - +a.data.publishedAt);
+export const prerender = false;
 
-const specialtiesPresent = [...new Set(active.map((j) => j.data.specialty))].sort();
-const statesPresent = [...new Set(active.map((j) => j.data.state))].sort();
-const totalCount = active.length;
+interface PagesEnv {
+  SUPABASE_URL?: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+}
+
+interface JobRow {
+  id: string;
+  specialty_slug: string;
+  specialty_name: string | null;
+  facility_state: string | null;
+  facility_city: string | null;
+  public_facility_label: string | null;
+  length_category: string | null;
+  call_type: string | null;
+  coverage_type: string | null;
+}
+
+const cfEnv = (Astro.locals as { runtime?: { env?: PagesEnv } }).runtime?.env;
+const env: PagesEnv = cfEnv ?? {
+  SUPABASE_URL: import.meta.env.SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+};
+
+let jobs: JobRow[] = [];
+if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+  try {
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    // LIMIT 1000 matches PostgREST default server max — Phase 1.A scale is
+    // tens-to-low-hundreds of active assignments at any time, so a single
+    // page fetches the whole list. Beyond 1000 active rows the filter rail
+    // also starts truncating; Phase 1.5 adds range pagination if scale
+    // exceeds the bound. Spec §3.1 explicitly defers search to Phase 1.5.
+    const { data, error } = await supabase
+      .from('ims_jobs')
+      .select(
+        'id, specialty_slug, specialty_name, facility_state, facility_city, public_facility_label, length_category, call_type, coverage_type',
+      )
+      .eq('status', 'active')
+      .order('ls_last_modified', { ascending: false, nullsFirst: false })
+      .limit(1000);
+    if (error) {
+      console.error('[/jobs] supabase read failed:', error.message);
+    } else if (data) {
+      jobs = data as JobRow[];
+    }
+  } catch (e) {
+    console.error('[/jobs] supabase client crash:', e);
+  }
+} else {
+  console.warn('[/jobs] env not configured — rendering empty grid');
+}
+
+const specialtiesPresent = [...new Set(jobs.map((j) => j.specialty_slug))].sort();
+const statesPresent = [
+  ...new Set(jobs.map((j) => j.facility_state).filter((s): s is string => !!s)),
+].sort();
+const totalCount = jobs.length;
 
 const specialtyLabel = (s: string) =>
   s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+// length_category enum from the schema: short | medium | long | ongoing | NULL.
+// Filter UI exposes short/medium/long only — fold 'ongoing' into 'long' for
+// the data attribute so the "12+ weeks" checkbox captures open-ended assignments
+// alongside bucketed-long. NULL (start_date present but end_date absent and
+// vice-versa edge cases) renders no data-length so it shows only when no
+// length filter is active.
+const lengthDataAttr = (c: string | null): string => (c === 'ongoing' ? 'long' : c ?? '');
+const lengthDisplay = (c: string | null): string =>
+  c ? c.charAt(0).toUpperCase() + c.slice(1) : '';
+
+const facilityHeadline = (j: JobRow): string => {
+  // Always render public_facility_label — the schema clearance flag
+  // facility_name_public is intentionally NOT consulted here. The flag is
+  // recruiter-owned (sticky across LS updates), but facility_name itself
+  // overwrites on every LS event. A prior clearance for "Hospital A" would
+  // therefore expose "Hospital B" the next time LS routes the assignment
+  // through the same row. The fallback default ('Healthcare Facility') only
+  // fires for the admin-set-NULL edge case; the receiver's
+  // derivePublicFacilityLabel always emits a non-null value.
+  const label = j.public_facility_label ?? 'Healthcare Facility';
+  const locTail = [j.facility_city, j.facility_state].filter(Boolean).join(', ');
+  return locTail ? `${label} · ${locTail}` : label;
+};
+
+const bodyParts = (j: JobRow): string =>
+  [j.call_type, j.coverage_type].filter(Boolean).join(' · ');
+
+// jobTitle is the denormalized string the ApplyModal will display in confirmation
+// + the recruiter email subject (per spec §3.3). Specialty alone is informative
+// enough — the modal composes richer text from data-state + data-job-ref.
+const cardTitle = (j: JobRow): string =>
+  j.specialty_name ?? specialtyLabel(j.specialty_slug);
 ---
 <MarketingLayout
   title="Open Roles · Innovative Medical Staffing"
@@ -65,24 +168,22 @@ const specialtyLabel = (s: string) =>
       </aside>
 
       <section class="results" id="results-grid" aria-live="polite">
-        {active.map((j) => (
+        {jobs.map((j) => (
           <article
             class="job-card"
             data-job-ref={j.id}
-            data-job-title={j.data.title}
-            data-specialty={j.data.specialty}
-            data-state={j.data.state}
-            data-length={j.data.lengthCategory}
+            data-job-title={cardTitle(j)}
+            data-specialty={j.specialty_slug}
+            data-state={j.facility_state ?? ''}
+            data-length={lengthDataAttr(j.length_category)}
           >
             <div class="eyebrow">
-              <span class="specialty">{specialtyLabel(j.data.specialty)}</span>
-              <span class="length">{j.data.lengthCategory}</span>
+              <span class="specialty">{specialtyLabel(j.specialty_slug)}</span>
+              {j.length_category && <span class="length">{lengthDisplay(j.length_category)}</span>}
             </div>
-            <h3>{j.data.facilityType} · {j.data.city}, {j.data.state}</h3>
-            <p>{[j.data.callType, j.data.schedule].filter(Boolean).join(' · ')}</p>
-            {j.data.rateLow != null && j.data.rateHigh != null
-              ? <p class="rate"><strong>${j.data.rateLow} – ${j.data.rateHigh} / hr</strong></p>
-              : <p class="rate"><em>Rate on request</em></p>}
+            <h3>{facilityHeadline(j)}</h3>
+            {bodyParts(j) && <p>{bodyParts(j)}</p>}
+            <p class="rate"><em>Rate on request</em></p>
             <button class="apply-trigger" type="button" data-apply-trigger>Apply through IMS →</button>
           </article>
         ))}
