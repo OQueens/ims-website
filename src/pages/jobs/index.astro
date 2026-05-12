@@ -309,7 +309,11 @@ const cardTitle = (j: JobRow): string =>
   }
   .job-card[hidden] { display: none !important; }
   .job-card:hover {
-    border-color: var(--brand-navy);
+    /* Cyan accent border on hover — needs to be visible against the dark
+     * card surface. --brand-navy alias resolves to dark navy, which would
+     * disappear into the surface. Codex r2 fold (parallel fix for legacy
+     * /jobs CSS during the dark-system reskin). */
+    border-color: var(--ims-cyan-500);
     transform: translateY(-1px);
   }
   .job-card .eyebrow {
@@ -338,14 +342,18 @@ const cardTitle = (j: JobRow): string =>
     color: var(--ink-on-cream-2);
   }
   .job-card .rate {
-    color: var(--brand-navy);
+    /* Cyan accent — needs contrast against dark card surface. */
+    color: var(--ims-cyan-400);
     font-weight: 600;
   }
   .job-card .apply-trigger {
     margin-top: 16px;
     background: transparent;
-    border: 1.5px solid var(--brand-navy);
-    color: var(--brand-navy);
+    /* Cyan outline button (was dark navy on cream). Patched for the
+     * dark-system reskin: outline must contrast against the dark card
+     * surface. Codex r2 fold. */
+    border: 1.5px solid var(--ims-cyan-500);
+    color: var(--ims-cyan-400);
     padding: 10px 20px;
     border-radius: var(--r-pill-mkt);
     cursor: pointer;
@@ -353,8 +361,8 @@ const cardTitle = (j: JobRow): string =>
     font-size: 14px;
   }
   .job-card .apply-trigger:hover {
-    background: var(--brand-navy);
-    color: var(--surface-card);
+    background: var(--ims-cyan-500);
+    color: var(--ims-navy-900);
   }
   #empty-state {
     text-align: center;
@@ -391,8 +399,9 @@ const cardTitle = (j: JobRow): string =>
   }
   .empty-form .submit-btn {
     grid-column: 1 / -1;
-    background: var(--brand-navy);
-    color: var(--surface-card);
+    /* Cyan filled CTA — patched for dark-system reskin. Codex r2 fold. */
+    background: var(--ims-cyan-500);
+    color: var(--ims-navy-900);
     border: none;
     border-radius: var(--r-pill-mkt);
     padding: 12px 24px;

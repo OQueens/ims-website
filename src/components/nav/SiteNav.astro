@@ -1,151 +1,185 @@
 ---
-import LogoDefault from '../brand/LogoDefault.astro';
-import LogoOnDark from '../brand/LogoOnDark.astro';
-
-interface Props {
-  /** When true, nav uses dark variant (used over §2.5/§2.10 dark sections) */
-  inverse?: boolean;
-}
-const { inverse = false } = Astro.props;
-
-const links = [
-  { href: '/clinicians', label: 'For Clinicians' },
-  { href: '/facilities', label: 'For Facilities' },
-  { href: '/specialties', label: 'Specialties' },
-  { href: '/jobs', label: 'Open Roles' },
-  { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' },
+/*
+ * SiteNav — IMS dark sticky nav. Translated from the ims-dark-website
+ * Claude Design handoff (components/Nav.jsx). Three-column grid:
+ * logo + wordmark on the left, pill-tabs centered, phone + Apply CTA right.
+ *
+ * The scroll-hide behavior the cream-card nav had is dropped — the dark
+ * blur nav is meant to be visible at all scroll positions per the source
+ * design. Pages.dev preview rendering is preserved (sticky + backdrop-filter).
+ */
+const route = Astro.url.pathname.replace(/\/$/, '') || '/';
+const items: { href: string; label: string }[] = [
+  { href: '/clinicians',  label: 'Clinicians' },
+  { href: '/facilities',  label: 'Facilities' },
+  { href: '/jobs',        label: 'Job board' },
+  { href: '/about',       label: 'Our story' },
+  { href: '/contact',     label: 'Get in touch' },
 ];
+function isActive(href: string) {
+  if (href === '/') return route === '/';
+  return route === href;
+}
 ---
-<nav class:list={['site-nav', { inverse }]} aria-label="Main">
-  <a href="/" class="brand" aria-label="Innovative Medical Staffing — home">
-    {inverse ? <LogoOnDark height={28} /> : <LogoDefault height={28} />}
-  </a>
-  <ul class="links">
-    {links.map((l) => (
-      <li><a href={l.href}>{l.label}</a></li>
-    ))}
-  </ul>
-</nav>
+<header class="nav">
+  <div class="inner">
+    <a href="/" class="brand" aria-label="Innovative Medical Staffing — home">
+      <img src="/ims-logo-light.png" alt="" class="mark" width="120" height="28" />
+      <span class="wordmark">
+        <span class="wordmark__name">Innovative</span>
+        <span class="wordmark__sub">Medical Staffing</span>
+      </span>
+    </a>
+
+    <nav class="tabs" aria-label="Primary">
+      {items.map((it) => (
+        <a
+          href={it.href}
+          class={`tab ${isActive(it.href) ? 'tab--active' : ''}`}
+          aria-current={isActive(it.href) ? 'page' : undefined}
+        >
+          {it.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="right">
+      <a href="tel:+15125246686" class="phone lnk" aria-label="Call IMS">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#7FD0EE" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/>
+        </svg>
+        <span>(512) 524-6686</span>
+      </a>
+      <a href="/contact" class="cta">
+        Apply now
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14"/><path d="m13 5 7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</header>
 
 <style>
-  .site-nav {
+  .nav {
     position: sticky;
     top: 0;
     z-index: 50;
-    display: flex;
+    width: 100%;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(11, 19, 42, 0.78);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .inner {
+    max-width: 1368px;
+    margin: 0 auto;
+    padding: 16px 36px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
-    padding: 16px clamp(20px, 4vw, 64px);
-    background: var(--surface-card);
-    color: var(--ink-on-cream);
-    font-family: var(--font-body);
-    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms;
+    gap: 24px;
   }
-  .site-nav.inverse {
-    background: var(--surface-page);
-    color: var(--ink-on-dark);
+  .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+  .mark { height: 28px; width: auto; display: block; }
+  .wordmark { display: flex; flex-direction: column; line-height: 1; }
+  .wordmark__name {
+    font: 800 16px/1 var(--font);
+    letter-spacing: -0.01em;
+    color: var(--fg-1);
   }
-  .site-nav .brand {
+  .wordmark__sub {
+    font: 500 9px/1 var(--font);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ims-cyan-400);
+    margin-top: 5px;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.025);
+    border-radius: 999px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .tab {
+    font: 500 14px/1 var(--font);
+    letter-spacing: -0.2px;
+    color: var(--fg-2);
+    text-decoration: none;
+    padding: 9px 16px;
+    border-radius: 999px;
+    transition: color 120ms var(--ease-out), background 200ms var(--ease-out);
+  }
+  .tab:hover { color: var(--fg-1); }
+  .tab--active {
+    background: rgba(91, 192, 232, 0.12);
+    color: var(--ims-cyan-300);
+  }
+  .right { display: flex; gap: 12px; align-items: center; justify-content: flex-end; }
+  .phone {
     display: inline-flex;
     align-items: center;
-  }
-  .site-nav .links {
-    display: flex;
-    gap: 28px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .site-nav .links a {
-    color: inherit;
+    gap: 8px;
+    font: 500 13px/1 var(--font);
+    color: var(--fg-2);
+    padding: 8px 12px;
+    border-radius: 999px;
     text-decoration: none;
-    font-size: 15px;
-    transition: opacity 180ms ease-out;
   }
-  .site-nav .links a:hover { opacity: 0.7; }
-
-  /* Sticky-after-80vh per spec §1: nav slides out for the first 80vh
-     (hero owns the logo above the fold) and slides in once user scrolls
-     past the threshold. */
-  .site-nav.is-hidden {
-    transform: translateY(-100%);
-    opacity: 0;
-    pointer-events: none;
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 600 14px/1 var(--font);
+    color: var(--ims-navy-900);
+    background: var(--ims-cyan-500);
+    padding: 10px 18px;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: filter 120ms var(--ease-out);
   }
+  .cta:hover { filter: brightness(1.05); color: var(--ims-navy-900); }
 
-  /* Honor reduced-motion — match T7 ScrollReveal spec §4.4 contract.
-     Snap between visible/hidden states without animating. */
-  @media (prefers-reduced-motion: reduce) {
-    .site-nav,
-    .site-nav .links a {
-      transition: none;
+  /* Mobile: don't hide primary destinations. Stack brand+CTA on top row,
+   * wrap the tab pills underneath. Codex r1 [high] fold — the prior
+   * `display: none` rule hid Clinicians / Facilities / Job board /
+   * Our story / Get in touch behind no replacement menu, leaving only
+   * the logo + Apply CTA reachable. */
+  @media (max-width: 980px) {
+    .inner {
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto;
+      grid-template-areas:
+        "brand cta"
+        "tabs tabs";
+      gap: 12px;
+      padding: 14px 20px;
     }
-  }
-
-  /* Mobile: stack brand on top of a wrapping link row so every primary
-     destination remains reachable without a hamburger. Phase 1.5 will
-     replace this with a proper collapsible menu — but until then, hiding
-     the links wholesale (the plan's original `display: none` shape) is
-     a navigation regression for mobile + keyboard + screen-reader users
-     (Codex T18 r1 NO-GO fold). Keep gap small + font-size compact so
-     two rows of 3 links fit a 375px viewport without dominating. */
-  @media (max-width: 768px) {
-    .site-nav {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 10px;
-      padding: 12px clamp(16px, 4vw, 24px);
-    }
-    .site-nav .brand {
-      align-self: flex-start;
-    }
-    .site-nav .links {
+    .brand { grid-area: brand; }
+    .right { grid-area: cta; gap: 8px; }
+    .phone { display: none; }
+    .tabs {
+      grid-area: tabs;
       flex-wrap: wrap;
-      gap: 8px 18px;
-      font-size: 14px;
+      justify-content: flex-start;
+      background: transparent;
+      padding: 0;
+      border: 0;
+      gap: 4px 6px;
     }
+    .tab { font-size: 13px; padding: 7px 12px; }
+  }
+  /* Tight phone viewports (375px / iPhone, 320px / older Android): drop the
+   * full wordmark to keep the brand+CTA top row from overflowing into
+   * horizontal scroll. Logo mark + CTA only on the top row; tabs wrap below.
+   * Codex r2 [medium] fold. */
+  @media (max-width: 480px) {
+    .wordmark { display: none; }
+    .mark { height: 24px; }
+    .cta { padding: 9px 14px; font-size: 13px; }
+    .inner { padding: 12px 16px; gap: 10px; }
   }
 </style>
-
-<script>
-  // Hidden state must remove the nav from BOTH the visual surface AND
-  // the keyboard / screen-reader path. CSS alone (transform + opacity:0
-  // + pointer-events:none) leaves links keyboard-focusable and AT-readable,
-  // so a keyboard user landing at page top would tab through 7 off-screen
-  // focusable elements before reaching the visible content (Codex T18 r2
-  // NO-GO fold). Toggle inert + aria-hidden alongside the .is-hidden class
-  // so the entire subtree is excluded from focus order + the a11y tree.
-  //
-  // r3 fold: never apply inert while the nav itself contains keyboard focus
-  // — that would strand focus inside an inert subtree (browsers fall back
-  // to body, AT may relocate). Defer the hide until focus leaves (focusout)
-  // and re-evaluate the scroll-state at that moment.
-  const nav = document.querySelector('.site-nav') as HTMLElement | null;
-  if (nav) {
-    let shouldHide = false;
-    const apply = () => {
-      const containsFocus = nav.contains(document.activeElement);
-      const hide = shouldHide && !containsFocus;
-      nav.classList.toggle('is-hidden', hide);
-      if (hide) {
-        nav.setAttribute('inert', '');
-        nav.setAttribute('aria-hidden', 'true');
-      } else {
-        nav.removeAttribute('inert');
-        nav.removeAttribute('aria-hidden');
-      }
-    };
-    const onScroll = () => {
-      shouldHide = window.scrollY < window.innerHeight * 0.8;
-      apply();
-    };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    // focusout fires before activeElement settles to the next focused
-    // element (or body). Defer to next microtask before re-evaluating.
-    nav.addEventListener('focusout', () => {
-      setTimeout(apply, 0);
-    });
-  }
-</script>

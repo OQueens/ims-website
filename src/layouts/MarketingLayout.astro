@@ -1,30 +1,52 @@
 ---
+/*
+ * MarketingLayout — dark IMS chrome (Claude Design handoff 2026-05-12).
+ *
+ * The Phase-1.A v1 cream-card chrome was retired after Zach reviewed the
+ * preview and rejected the warm direction. The replacement is the IMS dark
+ * design system from the ims-dark-website bundle: deep navy page, cyan
+ * accent, saturated-card vocabulary, Inter throughout.
+ *
+ * The layout keeps the load-bearing scaffolding intact (canonical, OG,
+ * Plausible, Schema.org JSON-LD) so verify-build's MarketingLayout
+ * source-template invariants stay green. What changed:
+ *   - Body is dark by default (var(--ims-navy-900) via tokens.css)
+ *   - The cream `<main class="card">` wrapping is gone; pages now own their
+ *     own section layout against a full-bleed dark page
+ *   - `inCard` prop is retained as a deprecated no-op for backward compat
+ *     until every page is migrated
+ *   - theme-color flipped to the new navy
+ */
+
 import '../styles/tokens.css';
 
 interface Props {
   title?: string;
   description?: string;
   noindex?: boolean;
-  /** When true, the page wraps content in the cream rounded card. False = full-bleed dark exterior (rare; used by §2.5/§2.10 dark sections rendered as siblings) */
+  /** When true (default), wrap page content in a dark elevated card so legacy
+   * pages built against the old cream-card layout still have a contained
+   * surface to render on. The new dark-system homepage opts out with
+   * inCard={false} and owns its full-bleed sectioning. Codex r2 [high] fold:
+   * restored to prevent legacy clinicians/facilities/about/etc from rendering
+   * inner content directly on the dark page (broken layout). */
   inCard?: boolean;
-  /** Canonical URL override (defaults to current Astro.url) */
   canonical?: string;
-  /** OG image URL (Phase 1.5 will add programmatic /og/[slug].png — at v1, falls back to a static asset) */
   ogImage?: string;
 }
 
 const {
   title = 'Innovative Medical Staffing',
-  description = 'Healthcare staffing that is more personal, responsive, and technology-enabled.',
+  description = 'Locum tenens, refined. Every specialty. One recruiter, their cell — and a team that picks up the phone.',
   noindex = false,
   inCard = true,
   canonical,
   ogImage = '/og-default.png',
 } = Astro.props;
 
-// Canonical: build from pathname only — strip query + hash so /?utm_source=x
-// and /?ref=email don't self-canonicalize and fragment search signals. Strip
-// trailing slash for non-root paths to match Astro's static emit form.
+// Canonical: pathname only — strip query + hash so /?utm_source=x doesn't
+// self-canonicalize. Strip trailing slash for non-root paths to match
+// Astro's static emit form.
 let pathname = Astro.url.pathname;
 if (pathname.length > 1 && pathname.endsWith('/')) {
   pathname = pathname.slice(0, -1);
@@ -33,8 +55,6 @@ const SITE = Astro.site ?? new URL(Astro.url.origin);
 const defaultCanonical = new URL(pathname, SITE).toString();
 const canonicalUrl = canonical ?? defaultCanonical;
 
-// og:image: resolve to absolute URL — many social/preview consumers reject
-// relative paths. Preserve already-absolute overrides.
 const ogImageAbsolute = /^https?:\/\//.test(ogImage)
   ? ogImage
   : new URL(ogImage, SITE).toString();
@@ -45,7 +65,7 @@ const ORG_JSON_LD = {
   '@type': 'Organization',
   name: 'Innovative Medical Staffing',
   url: 'https://innovativemedicalstaffing.com',
-  logo: 'https://innovativemedicalstaffing.com/og-default.png',
+  logo: 'https://innovativemedicalstaffing.com/ims-logo-mark.png',
   contactPoint: [
     {
       '@type': 'ContactPoint',
@@ -73,9 +93,9 @@ const ORG_JSON_LD = {
     <meta property="og:url" content={canonicalUrl} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#1E1E1E" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0B132A" />
+    <link rel="icon" href="/ims-logo-mark.png" type="image/png" />
     <title>{title}</title>
     <!-- Plausible Cloud — privacy-friendly, no cookie banner per spec §0.5.8 -->
     <script
@@ -108,22 +128,26 @@ const ORG_JSON_LD = {
 
 <style>
   body.marketing {
-    background: var(--surface-page);
-    font-family: var(--font-body);
-    color: var(--ink-on-cream);
+    background: var(--ims-navy-900);
+    color: var(--fg-1);
+    font-family: var(--font);
     line-height: 1.6;
     margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  /* Legacy cream-card pages render their inner content inside a dark
+   * elevated surface (not cream). This keeps the wrap visible against
+   * the page bg without forcing per-page migration. */
   main.card {
-    background: var(--surface-card);
-    border-radius: var(--r-card);
+    background: var(--ims-navy-800);
+    border-radius: clamp(20px, 4vw, 40px);
     margin: clamp(20px, 4vw, 64px);
     overflow: hidden;
+    border: 1px solid var(--border);
   }
   main.full-bleed {
-    background: var(--surface-page);
-    color: var(--ink-on-dark);
+    background: transparent;
+    display: block;
   }
 </style>

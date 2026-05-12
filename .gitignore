@@ -35,3 +35,7 @@ pnpm-debug.log*
 
 # Claude Code session state (review-gate stamps, etc.)
 .claude/
+.superpowers/
+
+# Claude Design handoff bundles (translated into src/; raw bundle kept local)
+design-imports/

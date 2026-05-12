@@ -1,100 +1,1004 @@
 ---
-// Homepage — marketing surface (spec §2 + plan T28).
-//
-// LAUNCH MOMENT: this file replaced the Phase-0 maintenance page in the
-// same commit window as T14 (middleware X-Robots-Tag drop) + T15 (robots.txt
-// Allow flip) + T16 (_headers X-Robots-Tag drop + verify-build inversion).
-// All four MUST land together — partial flip = silent misconfigured prod.
-//
-// `prerender = false` preserved from Phase 1.0 — REQUIRED so the homepage
-// continues to route through src/middleware.ts for the canonical pages.dev
-// → innovativemedicalstaffing.com 301 redirect. Removing this would let
-// /_routes.json exclude `/`, which would silently disable the redirect.
-//
-// Architecture: MarketingLayout `inCard={false}` so the homepage owns its
-// card-wrapper markup. Cream-card-1 wraps §2.1-§2.4 (hero, positioning
-// strip, philosophy, audience split). HomeConcierge §2.5 renders as a
-// full-bleed dark sibling between the cards. Cream-card-2 wraps §2.6-§2.9
-// (human-led tech, specialties, process, values). HomeFinalCta §2.10 closes
-// as a full-bleed dark sibling. SiteFooter rounds out the dark exterior
-// chrome.
-//
-// Specialty counts (Path B, default per spec §3.4 default-stance until
-// LocumSmart auth lands 2026-05-13): build-time read from the `jobs`
-// Content Collection. HomeSpecialties takes the Record<string,number> and
-// renders "{N} open opportunities" per card; missing slugs default to 0.
+/*
+ * Homepage — IMS dark redesign, translated from Claude Design handoff
+ * (design-imports/claude-design-01/ims-dark-website/, 2026-05-12).
+ *
+ * Sections (top to bottom):
+ *   1. Hero cluster — duotone headline + 5-card saturated cluster
+ *   2. Trust strip — 5 stats in a deep-navy shell
+ *   3. Audience split — clinicians (cyan) + facilities (champagne)
+ *   4. How we work — 3 saturated cards (cobalt / tangerine / seafoam)
+ *   5. Closing CTA — cream/champagne shell + this-week stats card
+ *
+ * Deferred to next session: Specialties grid + chip cloud, Pull quote with
+ * member card SVG, 4-step Placement workflow, Featured assignments, Team
+ * teaser, Traveler's Pamphlet (the showstopper). The other 10 marketing
+ * pages still render with the new chrome but their inner content uses the
+ * old cream-card tokens and will look broken — to be rewritten next session.
+ *
+ * prerender = false preserved so the homepage continues routing through
+ * src/middleware.ts for the pages.dev → innovativemedicalstaffing.com 301
+ * canonical redirect (Phase 1.0 architecture).
+ */
 import MarketingLayout from '../layouts/MarketingLayout.astro';
 import SiteNav from '../components/nav/SiteNav.astro';
 import SiteFooter from '../components/footer/SiteFooter.astro';
-import HomeHero from '../components/sections/HomeHero.astro';
-import HomePositioningStrip from '../components/sections/HomePositioningStrip.astro';
-import HomePhilosophy from '../components/sections/HomePhilosophy.astro';
-import HomeAudienceSplit from '../components/sections/HomeAudienceSplit.astro';
-import HomeConcierge from '../components/sections/HomeConcierge.astro';
-import HomeHumanLedTech from '../components/sections/HomeHumanLedTech.astro';
-import HomeSpecialties from '../components/sections/HomeSpecialties.astro';
-import HomeProcess from '../components/sections/HomeProcess.astro';
-import HomeValues from '../components/sections/HomeValues.astro';
-import HomeFinalCta from '../components/sections/HomeFinalCta.astro';
 
 export const prerender = false;
-
-// Path B specialty counts — build-time read from the jobs Content Collection.
-// At Phase 1.A v1 the collection is empty (LocumSmart auth deadline still
-// pending per spec §3.4); HomeSpecialties handles missing slugs by defaulting
-// to 0 and the "{N} open opportunities" labels render as "0 open opportunities"
-// until the collection is populated. Empty-state acknowledged rather than
-// papered over per the same pattern used by leadership placeholder cards.
-const counts: Record<string, number> = {};
-try {
-  const { getCollection } = await import('astro:content');
-  const jobs = await getCollection('jobs');
-  for (const j of jobs) {
-    const slug = (j.data as { specialty?: string }).specialty;
-    if (typeof slug === 'string' && slug.length > 0) {
-      counts[slug] = (counts[slug] ?? 0) + 1;
-    }
-  }
-} catch {
-  // Collection not yet defined — treat as empty. Path B counts default to
-  // 0 per slug; this is the documented Phase 1.A v1 baseline.
-}
 ---
 <MarketingLayout
-  title="Innovative Medical Staffing — Healthcare staffing, handled with care"
-  description="A more personal, responsive, and technology-enabled medical staffing experience."
+  title="Innovative Medical Staffing — locum tenens, refined"
+  description="Every clinical specialty, 47 states. One recruiter, their cell, a team that picks up the phone. Friday pay, $2M malpractice, travel handled — the country club of locum tenens."
   inCard={false}
 >
   <SiteNav slot="nav" />
 
-  <section class="card-wrap-1" id="main">
-    <HomeHero />
-    <HomePositioningStrip />
-    <HomePhilosophy />
-    <HomeAudienceSplit />
+  <!-- ====================================================================
+       1. HERO CLUSTER
+       =================================================================== -->
+  <section class="hero" aria-labelledby="hero-headline">
+    <div class="hero__eyebrow">
+      <span aria-hidden="true">⟶</span>
+      <span>Locum tenens, refined · est. 2018 as IAS</span>
+    </div>
+    <h1 id="hero-headline" class="hero__duo">
+      <span class="hero__claim">Stop chasing agency callbacks.</span>{' '}
+      <span class="hero__soft">A real human picks up at IMS.</span>
+    </h1>
+    <p class="hero__lede">
+      We staff every clinical specialty across 47 states — and we treat you the
+      way the big firms forgot to. One recruiter. Their cell. A team that picks
+      up the phone.
+    </p>
+    <div class="hero__ctas">
+      <a href="/contact" class="btn btn--primary">
+        Apply now
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+      </a>
+      <a href="/facilities" class="btn btn--ghost">
+        I run a facility
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+    <div class="hero__proof">
+      <span class="hero__proof-item"><span class="hero__proof-dot"></span>Friday direct deposit, every Friday</span>
+      <span class="hero__proof-item"><span class="hero__proof-dot"></span>$2M / $4M occurrence malpractice</span>
+      <span class="hero__proof-item"><span class="hero__proof-dot"></span>47 states · every specialty</span>
+    </div>
+
+    <!-- 5-card saturated cluster: tangerine spans 2 rows on the left;
+         periwinkle / cobalt / seafoam / rose fill a 2×2 on the right -->
+    <div class="cluster">
+      <a href="/jobs" class="cluster__card cluster__card--lg cluster__tangerine">
+        <span class="cluster__eyebrow">Daily placements</span>
+        <h3 class="cluster__h--lg">
+          Anesthesia.<br/>OB-GYN.<br/>Urology.<br/>EM. IM. Surgery.
+        </h3>
+        <p class="cluster__body">
+          Six specialties we live in — and a long tail of forty more we know cold.
+        </p>
+        <div class="cluster__chips">
+          <span>Radiology</span>
+          <span>Psychiatry</span>
+          <span>Hospitalist</span>
+          <span>Pain</span>
+          <span>Cardiology</span>
+          <span>Family</span>
+          <span>+ 40 more</span>
+        </div>
+        <div class="cluster__foot">
+          See open assignments
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+        </div>
+      </a>
+
+      <a href="/clinicians" class="cluster__card cluster__periwinkle">
+        <span class="cluster__eyebrow">Your recruiter</span>
+        <h3 class="cluster__h">
+          One name,<br/>
+          <span class="cluster__h-accent">one cell.</span>
+        </h3>
+        <p class="cluster__body">
+          Same person who placed you, every assignment after.
+          Texting, calling, weekends — your person, not a queue.
+        </p>
+        <div class="cluster__foot cluster__foot--soft">(512) 524-6686 · call or text</div>
+      </a>
+
+      <a href="/jobs" class="cluster__card cluster__cobalt">
+        <span class="cluster__eyebrow">This week</span>
+        <h3 class="cluster__h">
+          Open<br/>assignments.
+        </h3>
+        <p class="cluster__body">
+          Live board, curated by a recruiter — not auto-scraped. Updated as
+          LocumSmart pushes new roles.
+        </p>
+        <div class="cluster__live">
+          <span class="cluster__live-dot" aria-hidden="true"></span>
+          <span>See the job board</span>
+        </div>
+      </a>
+
+      <a href="/clinicians" class="cluster__card cluster__seafoam">
+        <span class="cluster__eyebrow">Cash flow</span>
+        <h3 class="cluster__h cluster__h--ink">
+          Friday pay.<br/>
+          <span class="cluster__h-mute">Every Friday.</span>
+        </h3>
+        <p class="cluster__body cluster__body--ink">
+          Direct deposit. Not "within 14 days." Not "pending clearance." Friday.
+        </p>
+        <div class="cluster__foot cluster__foot--ink">Weekly pay · simple timesheets</div>
+      </a>
+
+      <a href="/facilities" class="cluster__card cluster__rose">
+        <span class="cluster__eyebrow">Where we work</span>
+        <h3 class="cluster__h">
+          47 states.<br/>
+          <span class="cluster__h-accent">Every specialty.</span>
+        </h3>
+        <p class="cluster__body">
+          One licensing team. One credentialing engine. One coast-to-coast roster.
+        </p>
+        <div class="cluster__foot cluster__foot--soft">Coast to coast · every specialty</div>
+      </a>
+    </div>
   </section>
 
-  <HomeConcierge />
-
-  <section class="card-wrap-2">
-    <HomeHumanLedTech />
-    <HomeSpecialties counts={counts} />
-    <HomeProcess />
-    <HomeValues />
+  <!-- ====================================================================
+       2. TRUST STRIP — verifiable / qualitative copy only.
+       Codex r1 [medium] fold: dropped fabricated metrics (1,840 roster,
+       <1 hr avg reply, 92% return rate) in line with CLAUDE.md
+       "no estimated/fake data" rule. Numbers below are verifiable
+       (founding year, licensing footprint, malpractice coverage from
+       spec) or qualitative truths.
+       =================================================================== -->
+  <section class="trust">
+    <div class="trust__shell">
+      <div class="trust__stat">
+        <div class="trust__num trust__num--accent">est. 2018</div>
+        <div class="trust__label">as IAS · anesthesia-first</div>
+      </div>
+      <div class="trust__stat">
+        <div class="trust__num">47</div>
+        <div class="trust__label">states + D.C., licensed</div>
+      </div>
+      <div class="trust__stat">
+        <div class="trust__num">every</div>
+        <div class="trust__label">clinical specialty</div>
+      </div>
+      <div class="trust__stat">
+        <div class="trust__num trust__num--accent">$2M / $4M</div>
+        <div class="trust__label">occurrence malpractice, included</div>
+      </div>
+      <div class="trust__stat">
+        <div class="trust__num">Friday</div>
+        <div class="trust__label">direct deposit, every Friday</div>
+      </div>
+    </div>
   </section>
 
-  <HomeFinalCta />
+  <!-- ====================================================================
+       3. AUDIENCE SPLIT
+       =================================================================== -->
+  <section class="audience">
+    <div class="audience__intro">
+      <div>
+        <span class="eyebrow eyebrow--mut" style="display:block;margin-bottom:24px">Two sides of the same handshake</span>
+        <h2 class="audience__h2">
+          We work for <span class="audience__accent-cyan">clinicians.</span><br/>
+          We work with <span class="audience__accent-champagne">facilities.</span>
+        </h2>
+      </div>
+      <p class="audience__sub">
+        The same care we give a CRNA on a Sunday night is the care we give a chief
+        medical officer on a Monday morning. Different needs, one standard.
+      </p>
+    </div>
+
+    <div class="audience__pair">
+      <div class="audience__card audience__card--clin">
+        <span class="audience__card-eyebrow audience__card-eyebrow--clin">For clinicians</span>
+        <h3 class="audience__card-title">The career-long handshake.</h3>
+        <p class="audience__card-body">
+          Your recruiter doesn't rotate. Your cell number doesn't change. Your
+          credentials don't expire on our watch.
+        </p>
+        <ul class="audience__list">
+          <li>
+            <span class="audience__li-icon audience__li-icon--clin"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg></span>
+            <div>
+              <div class="audience__li-text">One recruiter. Their cell.</div>
+              <div class="audience__li-meta">Texting, calling, weekends. A real human, not a queue or a portal ping.</div>
+            </div>
+          </li>
+          <li>
+            <span class="audience__li-icon audience__li-icon--clin"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg></span>
+            <div>
+              <div class="audience__li-text">Travel handled, end to end.</div>
+              <div class="audience__li-meta">We negotiate the best the facility will cover, then handle the booking, the keys, and the arrival details.</div>
+            </div>
+          </li>
+          <li>
+            <span class="audience__li-icon audience__li-icon--clin"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+            <div>
+              <div class="audience__li-text">$2M / $4M occurrence malpractice.</div>
+              <div class="audience__li-meta">Occurrence-based coverage, included with every assignment.</div>
+            </div>
+          </li>
+          <li>
+            <span class="audience__li-icon audience__li-icon--clin"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            <div>
+              <div class="audience__li-text">Friday direct deposit, every Friday.</div>
+              <div class="audience__li-meta">Not "within 14 days." Not "pending clearance." Friday.</div>
+            </div>
+          </li>
+        </ul>
+        <div class="audience__cta-row">
+          <a href="/contact" class="btn btn--cyan">
+            Apply now
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+          </a>
+          <a href="/jobs" class="audience__link audience__link--cyan">
+            Browse open assignments
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="audience__card audience__card--fac">
+        <span class="audience__card-eyebrow audience__card-eyebrow--fac">For facilities</span>
+        <h3 class="audience__card-title">The roster you can vouch for.</h3>
+        <p class="audience__card-body">
+          We don't volume-staff. We send three clinicians we know personally —
+          because you'll remember the one you wish we hadn't sent.
+        </p>
+        <ul class="audience__list">
+          <li>
+            <span class="audience__li-icon audience__li-icon--fac"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+            <div>
+              <div class="audience__li-text">Curated, not scraped.</div>
+              <div class="audience__li-meta">Three hand-picked candidates. Each vetted by a recruiter who's met them.</div>
+            </div>
+          </li>
+          <li>
+            <span class="audience__li-icon audience__li-icon--fac"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+            <div>
+              <div class="audience__li-text">Credentialing handled in-house.</div>
+              <div class="audience__li-meta">One licensing team works your privileging packets alongside the placement — not after.</div>
+            </div>
+          </li>
+          <li>
+            <span class="audience__li-icon audience__li-icon--fac"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17 9 19l-3-3 6-6 3 3"/><path d="m14 10 3-3 4 4-3 3"/><path d="M9 13 3 7l3-3 6 6"/></svg></span>
+            <div>
+              <div class="audience__li-text">Direct line to your account lead.</div>
+              <div class="audience__li-meta">No call center, no offshoring. A name and a cell, from the start.</div>
+            </div>
+          </li>
+          <li>
+            <span class="audience__li-icon audience__li-icon--fac"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+            <div>
+              <div class="audience__li-text">A real human picks up when it matters.</div>
+              <div class="audience__li-meta">Holiday call-out, sick CRNA, last-minute trauma — you reach a person, not a portal.</div>
+            </div>
+          </li>
+        </ul>
+        <div class="audience__cta-row">
+          <a href="/facilities" class="btn btn--cream">
+            See our model
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+          </a>
+          <a href="/contact" class="audience__link audience__link--champagne">
+            Request a roster
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       4. HOW WE WORK — 3 saturated cards (cobalt / tangerine / seafoam)
+       =================================================================== -->
+  <section class="how">
+    <div class="how__head">
+      <div>
+        <span class="eyebrow" style="display:block;margin-bottom:24px">⟶ How we work</span>
+        <h2 class="how__h2">
+          A staffing firm <br/>that acts like a <span class="how__accent">private club.</span>
+        </h2>
+      </div>
+      <p class="how__sub">
+        You aren't a number on a portal. You work with us — and the care we put in
+        matches the kind of clinician we want on a Sunday-night call. Three pillars,
+        all included.
+      </p>
+    </div>
+    <div class="how__grid">
+      <div class="how__card how__card--cobalt">
+        <span class="how__card-eyebrow">Concierge desk</span>
+        <h3 class="how__card-title">Your recruiter. Their cell.</h3>
+        <p class="how__card-body">
+          Not a 1-800 maze. The same person who placed you keeps your career, for years.
+        </p>
+        <ul class="how__list">
+          <li><span class="how__bullet how__bullet--gold"></span>A real human, not a queue</li>
+          <li><span class="how__bullet how__bullet--gold"></span>Small caseload, intentional</li>
+          <li><span class="how__bullet how__bullet--gold"></span>A recruiting desk with names you'll learn</li>
+        </ul>
+      </div>
+      <div class="how__card how__card--tangerine">
+        <span class="how__card-eyebrow">Travel &amp; landing</span>
+        <h3 class="how__card-title">We handle the trip.</h3>
+        <p class="how__card-body">
+          Whatever the facility covers — flight, hotel, rental, stipend — we book it,
+          negotiate it, and make sure you arrive without a headache.
+        </p>
+        <ul class="how__list">
+          <li><span class="how__bullet how__bullet--gold"></span>Curated booking, not a stack of receipts</li>
+          <li><span class="how__bullet how__bullet--gold"></span>Keys, parking, and pager handed over on arrival</li>
+          <li><span class="how__bullet how__bullet--gold"></span>Plus a Traveler's Issue — every city, curated</li>
+        </ul>
+      </div>
+      <div class="how__card how__card--seafoam">
+        <span class="how__card-eyebrow how__card-eyebrow--ink">Credentials &amp; coverage</span>
+        <h3 class="how__card-title how__card-title--ink">We do the paperwork.</h3>
+        <p class="how__card-body how__card-body--ink">
+          Licensure, privileging, NPDB, $2M / $4M occurrence-based malpractice —
+          included, expedited, and tracked by a real human.
+        </p>
+        <ul class="how__list how__list--ink">
+          <li><span class="how__bullet how__bullet--ink"></span>Occurrence-based · included, not extra</li>
+          <li><span class="how__bullet how__bullet--ink"></span>Expedited state licensure where possible</li>
+          <li><span class="how__bullet how__bullet--ink"></span>Renewals tracked proactively, not last-minute</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       5. CLOSING CTA
+       =================================================================== -->
+  <section class="cta-out">
+    <div class="cta-out__shell">
+      <div class="cta-out__bg" aria-hidden="true"></div>
+      <div class="cta-out__copy">
+        <span class="cta-out__eyebrow">⟶ Ready when you are</span>
+        <h2 class="cta-out__h2">Tell us where you want to work next.</h2>
+        <p class="cta-out__body">
+          Whether you're a clinician between assignments or a chief medical officer who
+          needs coverage soon — give us a call, send a note, or fill the form.
+          A real human replies, fast.
+        </p>
+        <div class="cta-out__btns">
+          <a href="/contact" class="btn btn--ink-on-cream">
+            Apply now
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+          </a>
+          <a href="/jobs" class="btn btn--ghost-on-cream">Browse assignments</a>
+        </div>
+      </div>
+      <div class="cta-out__sidecard">
+        <!-- Codex r1 [medium] fold: dropped fabricated week-of-IMS counts.
+             Replaced with verifiable / qualitative facts from the spec. -->
+        <h3 class="cta-out__sidecard-title">What's on the table</h3>
+        <div class="cta-out__sidecard-row"><span>Open assignments</span><span class="cta-out__sidecard-val">Live board ↗</span></div>
+        <div class="cta-out__sidecard-row"><span>Coverage</span><span class="cta-out__sidecard-val">47 states</span></div>
+        <div class="cta-out__sidecard-row"><span>Response</span><span class="cta-out__sidecard-val">Real human</span></div>
+        <div class="cta-out__sidecard-row"><span>Malpractice</span><span class="cta-out__sidecard-val">$2M / $4M occurrence</span></div>
+      </div>
+    </div>
+  </section>
 
   <SiteFooter slot="footer" />
 </MarketingLayout>
 
 <style>
-  .card-wrap-1,
-  .card-wrap-2 {
-    background: var(--surface-card);
-    color: var(--ink-on-cream);
-    border-radius: var(--r-card);
-    margin: clamp(20px, 4vw, 64px);
+  /* =====================================================================
+   * BUTTONS — shared across the homepage
+   * =================================================================== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font: 600 15px/1 var(--font);
+    letter-spacing: -0.2px;
+    padding: 14px 22px;
+    border-radius: 999px;
+    border: 0;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: filter 120ms var(--ease-out), transform 120ms var(--ease-out), background 200ms var(--ease-out);
+  }
+  .btn:hover { filter: brightness(1.05); }
+  .btn:active { transform: scale(0.98); }
+  /* Codex r1 [medium] fold — white text on #FF8C3A is ~1.95:1 (fails WCAG AA
+   * for normal text). Navy ink on tangerine measures ~7.3:1 (passes AA).
+   * Cluster-card display headlines still use white text since the source
+   * design accepts the trade-off there, but interactive buttons must pass
+   * AA contrast as primary CTAs. */
+  .btn--primary { background: var(--card-tangerine); color: var(--ims-navy-900); }
+  .btn--primary:hover { color: var(--ims-navy-900); }
+  .btn--cyan    { background: var(--ims-cyan-500); color: var(--ims-navy-900); }
+  .btn--cyan:hover { color: var(--ims-navy-900); }
+  .btn--cream   { background: var(--card-champagne); color: var(--ims-navy-900); }
+  .btn--cream:hover { color: var(--ims-navy-900); }
+  .btn--ghost   {
+    background: transparent;
+    color: var(--fg-1);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+  }
+  .btn--ghost:hover { color: var(--fg-1); }
+  .btn--ink-on-cream {
+    background: var(--ims-navy-900);
+    color: var(--card-champagne);
+  }
+  .btn--ink-on-cream:hover { color: var(--card-champagne); }
+  .btn--ghost-on-cream {
+    background: transparent;
+    color: #1a1409;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.20);
+  }
+  .btn--ghost-on-cream:hover { color: #1a1409; }
+
+  /* =====================================================================
+   * 1. HERO
+   * =================================================================== */
+  .hero {
+    max-width: 1368px;
+    margin: 0 auto;
+    padding: 80px 36px 80px;
+  }
+  .hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font: 600 13px/1 var(--font);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--card-tangerine);
+    margin-bottom: 28px;
+  }
+  .hero__duo {
+    font: 800 clamp(48px, 6.4vw, 92px) / 0.96 var(--font);
+    letter-spacing: -0.025em;
+    margin: 0;
+    text-wrap: balance;
+    max-width: 1100px;
+  }
+  .hero__claim { color: var(--fg-1); }
+  .hero__soft  { color: var(--fg-3); }
+  .hero__lede {
+    font: 500 18px/1.55 var(--font);
+    letter-spacing: -0.3px;
+    color: var(--fg-2);
+    margin-top: 32px;
+    max-width: 560px;
+  }
+  .hero__ctas {
+    display: flex;
+    gap: 12px;
+    margin-top: 36px;
+    flex-wrap: wrap;
+  }
+  .hero__proof {
+    margin-top: 36px;
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .hero__proof-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: 500 13px/1.4 var(--font);
+    color: var(--fg-3);
+    letter-spacing: -0.2px;
+  }
+  .hero__proof-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--card-seafoam);
+  }
+
+  /* Cluster grid */
+  .cluster {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+    margin-top: 56px;
+  }
+  .cluster__card {
+    border-radius: 22px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
     overflow: hidden;
+    min-height: 220px;
+    color: #fff;
+    text-decoration: none;
+    transition: transform 200ms var(--ease-out), filter 200ms var(--ease-out);
+  }
+  .cluster__card:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.04);
+    color: #fff;
+  }
+  .cluster__card--lg {
+    min-height: 460px;
+    padding: 40px 36px;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .cluster__tangerine  { background: var(--card-tangerine);  }
+  .cluster__periwinkle { background: var(--card-periwinkle); grid-column: 2; grid-row: 1; }
+  .cluster__cobalt     { background: var(--card-cobalt);     grid-column: 3; grid-row: 1; }
+  .cluster__seafoam    { background: var(--card-seafoam);    grid-column: 2; grid-row: 2; color: var(--ims-navy-900); }
+  .cluster__seafoam:hover { color: var(--ims-navy-900); }
+  .cluster__rose       { background: var(--card-rose);       grid-column: 3; grid-row: 2; }
+
+  .cluster__eyebrow {
+    font: 600 11px/1 var(--font);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .cluster__h {
+    font: 800 32px/0.98 var(--font);
+    letter-spacing: -0.025em;
+    margin: 0;
+  }
+  .cluster__h--lg {
+    font: 800 clamp(40px, 4vw, 60px) / 0.96 var(--font);
+    letter-spacing: -0.03em;
+    margin: 0;
+  }
+  .cluster__h--ink  { color: var(--ims-navy-900); }
+  .cluster__h-accent { color: #FFE588; }
+  .cluster__h-mute   { color: var(--ims-navy-900); opacity: 0.55; }
+  .cluster__unit {
+    font: 700 18px/1 var(--font);
+    opacity: 0.85;
+  }
+  .cluster__body {
+    font: 500 14px/1.55 var(--font);
+    letter-spacing: -0.2px;
+    opacity: 0.85;
+    margin: 0;
+  }
+  .cluster__body--ink { color: var(--ims-navy-900); opacity: 0.7; }
+  .cluster__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 16px;
+  }
+  .cluster__chips span {
+    font: 600 11px/1 var(--font);
+    letter-spacing: 0.04em;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+    white-space: nowrap;
+  }
+  .cluster__foot {
+    margin-top: auto;
+    font: 500 12px/1.4 var(--font);
+    opacity: 0.75;
+    letter-spacing: -0.1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cluster__foot--soft { opacity: 0.65; }
+  .cluster__foot--ink  { color: var(--ims-navy-900); opacity: 0.65; }
+  .cluster__live {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: auto;
+    font: 600 12px/1.4 var(--font);
+    opacity: 0.95;
+  }
+  .cluster__live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #5FE8C7;
+    box-shadow: 0 0 0 4px rgba(95,232,199,0.30);
+  }
+
+  /* =====================================================================
+   * 2. TRUST STRIP
+   * =================================================================== */
+  .trust {
+    max-width: 1368px;
+    margin: 0 auto;
+    padding: 0 36px;
+  }
+  .trust__shell {
+    background: var(--ims-navy-800);
+    border-radius: 28px;
+    padding: 44px 56px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 32px;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .trust__num {
+    font: 800 44px/1 var(--font);
+    letter-spacing: -0.03em;
+    color: var(--fg-1);
+  }
+  .trust__num--accent { color: var(--ims-cyan-500); }
+  .trust__label {
+    font: 500 13px/1.45 var(--font);
+    color: var(--fg-3);
+    margin-top: 10px;
+    letter-spacing: -0.2px;
+  }
+
+  /* =====================================================================
+   * 3. AUDIENCE SPLIT
+   * =================================================================== */
+  .audience {
+    max-width: 1368px;
+    margin: 0 auto;
+    padding: 120px 36px 40px;
+  }
+  .audience__intro {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 56px;
+    align-items: end;
+  }
+  .audience__h2 {
+    font: 700 clamp(40px, 5vw, 72px) / 0.98 var(--font);
+    letter-spacing: -0.025em;
+    color: var(--fg-1);
+    margin: 0;
+    text-wrap: balance;
+  }
+  .audience__accent-cyan      { color: var(--ims-cyan-500); }
+  .audience__accent-champagne { color: var(--card-champagne); }
+  .audience__sub {
+    font: 500 17px/1.6 var(--font);
+    color: var(--fg-3);
+    margin: 0;
+    max-width: 460px;
+  }
+  .audience__pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .audience__card {
+    border-radius: 28px;
+    padding: 56px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 540px;
+    position: relative;
+    overflow: hidden;
+  }
+  .audience__card--clin { background: var(--ims-navy-700); }
+  .audience__card--fac  { background: #142a3a; }
+  .audience__card-eyebrow {
+    font: 600 12px/1 var(--font);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .audience__card-eyebrow--clin { color: var(--ims-cyan-400); }
+  .audience__card-eyebrow--fac  { color: var(--card-champagne); }
+  .audience__card-title {
+    font: 700 clamp(34px, 3.4vw, 48px) / 1 var(--font);
+    letter-spacing: -0.025em;
+    color: var(--fg-1);
+    margin: 0;
+    margin-top: 8px;
+    text-wrap: balance;
+  }
+  .audience__card-body {
+    font: 500 16px/1.6 var(--font);
+    color: var(--fg-2);
+    margin: 0;
+    letter-spacing: -0.2px;
+    max-width: 440px;
+  }
+  .audience__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0;
+  }
+  .audience__list > li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .audience__li-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .audience__li-icon--clin {
+    background: rgba(91,192,232,0.15);
+    color: var(--ims-cyan-400);
+  }
+  .audience__li-icon--fac {
+    background: rgba(232,217,182,0.15);
+    color: var(--card-champagne);
+  }
+  .audience__li-text {
+    font: 500 15px/1.5 var(--font);
+    color: var(--fg-1);
+    letter-spacing: -0.2px;
+  }
+  .audience__li-meta {
+    font: 500 13px/1.4 var(--font);
+    color: var(--fg-3);
+    margin-top: 3px;
+  }
+  .audience__cta-row {
+    margin-top: auto;
+    padding-top: 28px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .audience__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 14px/1 var(--font);
+    text-decoration: none;
+  }
+  .audience__link--cyan      { color: var(--ims-cyan-300); }
+  .audience__link--champagne { color: var(--card-champagne); }
+
+  /* =====================================================================
+   * 4. HOW WE WORK
+   * =================================================================== */
+  .how {
+    max-width: 1368px;
+    margin: 0 auto;
+    padding: 120px 36px 60px;
+  }
+  .how__head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 56px;
+    align-items: end;
+  }
+  .how__h2 {
+    font: 700 clamp(40px, 5vw, 72px) / 0.98 var(--font);
+    letter-spacing: -0.025em;
+    color: var(--fg-1);
+    margin: 0;
+    text-wrap: balance;
+  }
+  .how__accent { color: var(--ims-cyan-500); }
+  .how__sub {
+    font: 500 17px/1.6 var(--font);
+    color: var(--fg-3);
+    margin: 0;
+    max-width: 460px;
+  }
+  .how__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .how__card {
+    border-radius: 22px;
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 420px;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    transition: transform 200ms var(--ease-out), filter 200ms var(--ease-out);
+  }
+  .how__card:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.04);
+  }
+  .how__card--cobalt    { background: var(--card-cobalt); }
+  .how__card--tangerine { background: var(--card-tangerine); }
+  .how__card--seafoam   { background: var(--card-seafoam); color: var(--ims-navy-900); }
+  .how__card-eyebrow {
+    font: 600 11px/1 var(--font);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .how__card-eyebrow--ink { opacity: 0.7; }
+  .how__card-title {
+    font: 800 32px/0.98 var(--font);
+    letter-spacing: -0.025em;
+    margin: 0;
+  }
+  .how__card-title--ink { color: var(--ims-navy-900); }
+  .how__card-body {
+    font: 500 15px/1.55 var(--font);
+    letter-spacing: -0.2px;
+    opacity: 0.9;
+    margin: 0;
+  }
+  .how__card-body--ink { color: var(--ims-navy-900); opacity: 0.8; }
+  .how__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: auto 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .how__list > li {
+    font: 500 13px/1.5 var(--font);
+    letter-spacing: -0.2px;
+    opacity: 0.85;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .how__list--ink > li { color: var(--ims-navy-900); opacity: 0.85; }
+  .how__bullet {
+    display: inline-block;
+    margin-top: 7px;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .how__bullet--gold { background: #FFE588; }
+  .how__bullet--ink  { background: var(--ims-navy-900); }
+
+  /* =====================================================================
+   * 5. CLOSING CTA
+   * =================================================================== */
+  .cta-out {
+    max-width: 1368px;
+    margin: 0 auto;
+    padding: 120px 36px 60px;
+  }
+  .cta-out__shell {
+    background: linear-gradient(170deg, var(--card-champagne) 0%, #c2a98a 100%);
+    border-radius: 36px;
+    padding: 80px 64px;
+    color: #1a1409;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 64px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-out__bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(35% 80% at 100% 0%, rgba(255,255,255,0.35), transparent 60%),
+      radial-gradient(45% 80% at 0% 100%, rgba(0,0,0,0.10), transparent 60%);
+  }
+  .cta-out__copy { position: relative; }
+  .cta-out__eyebrow {
+    font: 600 12px/1 var(--font);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #5a3e1c;
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+  .cta-out__h2 {
+    font: 700 clamp(40px, 5.5vw, 72px) / 0.98 var(--font);
+    letter-spacing: -0.025em;
+    margin: 0;
+    color: #1a1409;
+    text-wrap: balance;
+  }
+  .cta-out__body {
+    font: 500 18px/1.55 var(--font);
+    color: #3d2e1a;
+    margin: 24px 0 0;
+    max-width: 520px;
+  }
+  .cta-out__btns {
+    display: flex;
+    gap: 12px;
+    margin-top: 36px;
+    flex-wrap: wrap;
+  }
+  .cta-out__sidecard {
+    position: relative;
+    background: rgba(255,255,255,0.50);
+    border: 1px solid rgba(0,0,0,0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 24px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .cta-out__sidecard-title {
+    font: 700 18px/1.2 var(--font);
+    color: #1a1409;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .cta-out__sidecard-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-top: 1px solid rgba(0,0,0,0.10);
+    font: 500 13px/1.4 var(--font);
+    color: #3d2e1a;
+  }
+  .cta-out__sidecard-val {
+    font-weight: 700;
+    color: #1a1409;
+    letter-spacing: -0.1px;
+  }
+
+  /* =====================================================================
+   * RESPONSIVE
+   * =================================================================== */
+  @media (max-width: 1080px) {
+    .cluster {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto;
+    }
+    .cluster__card--lg {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      min-height: 360px;
+    }
+    .cluster__periwinkle { grid-column: 1; grid-row: 2; }
+    .cluster__cobalt     { grid-column: 2; grid-row: 2; }
+    .cluster__seafoam    { grid-column: 1; grid-row: 3; }
+    .cluster__rose       { grid-column: 2; grid-row: 3; }
+
+    .trust__shell { grid-template-columns: repeat(3, 1fr); row-gap: 32px; }
+    .audience__pair, .how__grid { grid-template-columns: 1fr; }
+    .audience__intro, .how__head, .cta-out__shell { grid-template-columns: 1fr; gap: 24px; }
+    .cta-out__shell { padding: 48px 32px; }
+  }
+  @media (max-width: 720px) {
+    .hero { padding: 56px 20px 56px; }
+    .hero__duo { font-size: clamp(40px, 9vw, 64px); }
+    .cluster { grid-template-columns: 1fr; grid-template-rows: auto; }
+    .cluster__card--lg, .cluster__periwinkle, .cluster__cobalt,
+    .cluster__seafoam, .cluster__rose {
+      grid-column: 1; grid-row: auto;
+    }
+    .cluster__card--lg { min-height: 320px; }
+    .trust, .audience, .how, .cta-out { padding-left: 20px; padding-right: 20px; }
+    .trust__shell { grid-template-columns: 1fr 1fr; padding: 32px; }
+    .audience__card { padding: 40px 28px; min-height: auto; }
+    .how__card { padding: 28px; min-height: auto; }
+    .cta-out__shell { padding: 40px 24px; gap: 32px; }
   }
 </style>

@@ -1,113 +1,207 @@
 @import '@fontsource-variable/inter';
 
+/* ===========================================================================
+ * IMS Design System — Colors, Type, Spacing
+ *
+ * Tone: dark, vibrant, confident. Heavy saturated card backgrounds on deep
+ * navy paired with cyan-blue trust accent from the IMS logo + tangerine CTA
+ * energy and a saturated accent palette (periwinkle, seafoam, cobalt, rose,
+ * marigold). Inter is the sole typeface — Bold/Semibold for display, Medium
+ * for UI, Regular for body.
+ *
+ * Source: Claude Design handoff bundle 2026-05-12 (ims-dark-website).
+ * ========================================================================= */
+
 :root {
-  /* Backgrounds */
-  --bg:             #ffffff;
-  --bg-alt:         #f5f5f7;
-  --bg-card:        #ffffff;
-  --bg-elevated:    rgba(255, 255, 255, 0.72);
-  --bg-inset:       #f2f2f7;
+  /* ---------- Brand surfaces (hue ~220° deep blue) ---------- */
+  --ims-navy-900: #0B132A;          /* page background */
+  --ims-navy-800: #131C36;
+  --ims-navy-700: #1B2643;          /* default card surface */
+  --ims-navy-600: #243152;          /* raised surface */
+  --ims-navy-500: #2E3D63;          /* hairline / divider */
+  --ims-navy-400: #3D4B73;
+  --ims-cyan-500: #5BC0E8;          /* IMS logo cyan — primary accent */
+  --ims-cyan-400: #7FD0EE;
+  --ims-cyan-300: #A7E0F4;
+  --ims-cyan-600: #2D9CCB;
 
-  /* Text */
-  --text:           #1d1d1f;
-  --text-secondary: rgba(60, 60, 67, 0.6);
-  --text-tertiary:  rgba(60, 60, 67, 0.3);
+  /* ---------- Saturated card palette ---------- */
+  --card-tangerine:  #FF8C3A;       /* primary CTA — vivid sunset */
+  --card-periwinkle: #7B85FF;       /* featured — bright blue-violet */
+  --card-seafoam:    #2BD9B0;       /* verified — bright mint */
+  --card-cobalt:     #4FA3FF;       /* info — bright sky-blue */
+  --card-rose:       #FF6E9C;       /* highlight — vivid pink */
+  --card-marigold:   #FFCD3D;       /* pending — sunny gold */
+  --card-champagne:  #E8D9B6;       /* warm cream — facility-side accent */
 
-  /* Accent */
-  --accent:         #007aff;
-  --accent-hover:   #0071e3;
-  --accent-bg:      rgba(0, 122, 255, 0.08);
+  --card-plum:       #2A1F38;
+  --card-teal:       #15303A;
+  --card-indigo:     #1B2A4A;
+  --card-orchid:     #2C1D38;
 
-  /* Status */
-  --green:          #34c759;
-  --green-bg:       rgba(52, 199, 89, 0.08);
-  --orange:         #ff9500;
-  --orange-bg:      rgba(255, 149, 0, 0.08);
-  --red:            #ff3b30;
-  --red-bg:         rgba(255, 59, 48, 0.08);
-  --purple:         #af52de;
-  --purple-bg:      rgba(175, 82, 222, 0.08);
-  --teal:           #5ac8fa;
-  --yellow:         #ffcc00;
+  --card-tangerine-600:  #E8741F;
+  --card-periwinkle-600: #5D69FF;
+  --card-seafoam-600:    #1FBE99;
+  --card-cobalt-600:     #2D8DEC;
 
-  /* Borders & fills */
-  --border:         rgba(0, 0, 0, 0.08);
-  --border-strong:  rgba(0, 0, 0, 0.16);
-  --fill:           rgba(120, 120, 128, 0.2);
-  --fill-secondary: rgba(120, 120, 128, 0.16);
+  /* ---------- Semantic ---------- */
+  --bg:           var(--ims-navy-900);
+  --bg-alt:       var(--ims-navy-800);
+  --bg-card:      var(--ims-navy-700);
+  --surface:      var(--ims-navy-700);
+  --surface-2:    var(--ims-navy-600);
+  --hairline:     var(--ims-navy-500);
 
-  /* Shadows */
-  --shadow:         0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
-  --shadow-md:      0 2px 12px rgba(0, 0, 0, 0.06);
-  --shadow-lg:      0 8px 30px rgba(0, 0, 0, 0.08);
-  --shadow-elevated:0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04);
+  /* ---------- Text ---------- */
+  --fg-1:         #FAFAFC;
+  --fg-2:         #C7C7DE;
+  --fg-3:         #8E8DA0;
+  --fg-4:         #5A5A77;
+  --text:         var(--fg-1);
+  --text-secondary: var(--fg-2);
+  --text-tertiary:  var(--fg-3);
+  --on-accent:    var(--ims-navy-900);
+  --on-coral:     #FFFFFF;
 
-  /* Border radius */
-  --r-xs:   8px;
-  --r-sm:   12px;
-  --r:      18px;
-  --r-lg:   20px;
-  --r-xl:   28px;
-  --r-pill: 980px;
+  /* ---------- Status ---------- */
+  --status-available:           var(--card-seafoam);
+  --status-shift-now:           var(--card-tangerine);
+  --status-pending:             var(--card-marigold);
+  --status-scheduled:           var(--card-cobalt);
+  --status-credential-ok:       var(--card-seafoam);
+  --status-credential-expiring: var(--card-marigold);
+  --status-credential-expired:  var(--card-tangerine);
 
-  /* Easing */
+  /* ---------- Radii ---------- */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r:    18px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-2xl: 40px;
+  --r-card-ims: 22px;               /* default saturated card radius */
+  --r-pill: 999px;
+
+  /* ---------- Spacing scale (4px base) ---------- */
+  --s-1: 4px;   --s-2: 8px;   --s-3: 12px;  --s-4: 16px;
+  --s-5: 20px;  --s-6: 24px;  --s-8: 32px;  --s-10: 40px;
+  --s-12: 48px; --s-16: 64px; --s-20: 80px; --s-24: 96px;
+
+  /* ---------- Shadow / elevation ---------- */
+  --elev-0: none;
+  --elev-1: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.3);
+  --elev-2: 0 6px 20px rgba(0,0,0,0.35);
+  --elev-3: 0 20px 60px rgba(0,0,0,0.5);
+  --elev-4: 0 40px 120px rgba(0,0,0,0.55);
+  --glow-cyan:      0 0 0 4px rgba(91,192,232,0.18);
+  --glow-tangerine: 0 0 0 4px rgba(255,140,58,0.24);
+
+  /* ---------- Type stack ---------- */
+  --font: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system,
+          'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: var(--font);
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --mono: var(--font-mono);
+
+  /* ---------- Type scale ---------- */
+  --t-display-2xl: 800 88px/0.92 var(--font);
+  --t-display-xl:  700 64px/0.96 var(--font);
+  --t-display-lg:  700 48px/1.00 var(--font);
+  --t-display-md:  700 36px/1.05 var(--font);
+  --t-display-sm:  700 28px/1.10 var(--font);
+  --t-h1: 700 40px/1.10 var(--font);
+  --t-h2: 700 31px/1.15 var(--font);
+  --t-h3: 600 24px/1.25 var(--font);
+  --t-h4: 600 20px/1.30 var(--font);
+  --t-h5: 600 18px/1.35 var(--font);
+  --t-body-lg: 500 18px/1.55 var(--font);
+  --t-body:    500 16px/1.60 var(--font);
+  --t-body-sm: 500 14px/1.55 var(--font);
+  --t-caption: 500 13px/1.45 var(--font);
+  --t-label:   600 12px/1.30 var(--font);
+
+  --tracking-tight: -0.3px;
+  --tracking-display: -0.025em;
+
+  /* ---------- Motion ---------- */
   --ease:        cubic-bezier(0.25, 0.1, 0.25, 1);
-  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:    cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-snap:   cubic-bezier(0.32, 0.72, 0.00, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
 
-  /* Typography */
-  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
-  --mono: 'IBM Plex Mono', 'SF Mono', 'Menlo', monospace;
+  /* ---------- Border / fill ---------- */
+  --border:         rgba(255, 255, 255, 0.05);
+  --border-strong:  rgba(255, 255, 255, 0.12);
+  --fill:           rgba(255, 255, 255, 0.04);
+  --fill-secondary: rgba(255, 255, 255, 0.08);
 
-  /* === Marketing brand tokens (PT-derived, IMS-adjusted — spec §4.1) === */
-  /* Surfaces */
-  --surface-page:        #1E1E1E;
-  --surface-card:        #F2E8DC;
-  --surface-card-2:      #FFFAF3;
-  --surface-warm:        #A79785;
+  /* =====================================================================
+   * LEGACY TOKEN ALIASES (deprecated; kept so verify-build invariants
+   * + any pages still referencing the old cream-card system continue
+   * resolving. Migrate consumers over time, then prune.)
+   * The cream-card design system from spec §4.1 was retired 2026-05-12
+   * after the Claude Design dark-system handoff (ims-dark-website).
+   * =================================================================== */
+  --surface-page:   var(--ims-navy-900);
+  --surface-card:   var(--ims-navy-700);
+  --surface-card-2: var(--ims-navy-800);
+  --surface-warm:   #A79785;
 
-  /* Inks */
-  --ink-on-cream:        #1E1E1E;
-  --ink-on-cream-2:      #7B5E5C;
-  --ink-on-cream-3:      #403F3E;
-  --ink-on-dark:         #F2E8DC;
-  --ink-on-dark-2:       #C8C8C8;
+  --ink-on-cream:    var(--fg-1);
+  --ink-on-cream-2:  var(--fg-3);
+  --ink-on-cream-3:  var(--fg-2);
+  --ink-on-dark:     var(--fg-1);
+  --ink-on-dark-2:   var(--fg-2);
 
-  /* Brand */
-  --brand-blue:          #59BFE7;
-  --brand-blue-deep:     #3898EC;
-  --brand-navy:          #1A2B4A;
-  --brand-gold:          #F0B420;
-  --brand-gold-muted:    #B8975B;
-  --brand-red:           #E73C37;
-  --brand-teal:          #3D6B6F;
-  --brand-green:         #2F4A40;
+  --brand-blue:        var(--ims-cyan-500);
+  --brand-blue-deep:   var(--ims-cyan-600);
+  /* --brand-navy stays semantically "dark navy" — most legacy consumers
+   * use it as a filled-CTA BG with --ink-on-dark white text. Aliasing it
+   * to cyan would break those CTAs (cyan + white fails AA contrast).
+   * Codex r2 [high] revert of r1's cyan alias attempt. Pages that need
+   * a visible cyan outline on dark surfaces (e.g. /jobs apply-trigger)
+   * are patched in-place to use --ims-cyan-* tokens explicitly. */
+  --brand-navy:        var(--ims-navy-900);
+  --brand-gold:        var(--card-marigold);
+  --brand-gold-muted:  var(--card-champagne);
+  --brand-red:         #E73C37;
+  --brand-teal:        var(--ims-cyan-600);
+  --brand-green:       var(--card-seafoam);
 
-  /* Borders (marketing surfaces — distinct from dashboard --border) */
-  --border-hairline:     rgba(30, 30, 30, 0.12);
-  --border-strong-mkt:   rgba(30, 30, 30, 0.32);
+  --border-hairline:   rgba(255, 255, 255, 0.06);
+  --border-strong-mkt: rgba(255, 255, 255, 0.12);
 
-  /* Functional */
-  --success:             #2F6B4A;
-  --warning:             #B87A1F;
-  --error-mkt:           #A33A2C;
+  --success: var(--card-seafoam);
+  --warning: var(--card-marigold);
+  --error-mkt: #FF6E6E;
 
-  /* Marketing radius scale (vw-based card chrome — spec §4.6) */
-  --r-card:              clamp(20px, 5vw, 96px);
-  --r-section:           16px;
-  --r-audience:          24px;
-  --r-pill-mkt:          999px;
-  --r-input:             8px;
-  --r-illustration:      24px;
+  --r-card:         clamp(20px, 5vw, 96px);
+  --r-section:      16px;
+  --r-audience:     24px;
+  --r-pill-mkt:     999px;
+  --r-input:        8px;
+  --r-illustration: 24px;
 
-  /* === Marketing typography (spec §4.2) === */
-  --font-display: 'TAY Basal', 'Inter Variable', 'Source Serif 4', Georgia, serif;
-  --font-body:    'TAY Amaya', 'Inter Variable', 'Inter', system-ui, sans-serif;
-  --font-mono-mkt: ui-monospace, 'JetBrains Mono', Consolas, monospace;
+  /* Legacy font-family aliases — TAY fonts are no longer loaded by default
+   * but the @font-face blocks below remain (verify-build asserts them).
+   * If a page still references --font-display / --font-body, they fall
+   * through to Inter via the loaded variable font. */
+  --font-display: var(--font);
+  --font-body:    var(--font);
+  --font-mono-mkt: var(--font-mono);
 }
 
-/* @font-face declarations live OUTSIDE :root */
+/* ===========================================================================
+ * Legacy TAY @font-face blocks (kept for verify-build assertions). The
+ * fonts no longer load via --font-display / --font-body — they only resolve
+ * if a page explicitly names them, which the new design system never does.
+ * Browsers won't fetch the files unless requested.
+ * ========================================================================= */
 @font-face {
   font-family: 'TAY Basal';
   src: url('/fonts/TAYBasalRegular.woff2') format('woff2'),
@@ -116,7 +210,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'TAY Amaya';
   src: url('/fonts/TAYAmaya.woff2') format('woff2'),
@@ -126,51 +219,85 @@
   font-display: swap;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg:             #000000;
-    --bg-alt:         #1d1d1f;
-    --bg-card:        #1c1c1e;
-    --bg-elevated:    rgba(28, 28, 30, 0.82);
-    --bg-inset:       #1c1c1e;
-
-    --text:           #f5f5f7;
-    --text-secondary: rgba(235, 235, 245, 0.6);
-    --text-tertiary:  rgba(235, 235, 245, 0.3);
-
-    --accent:         #2997ff;
-    --accent-hover:   #40a9ff;
-    --accent-bg:      rgba(41, 151, 255, 0.1);
-
-    --green:          #30d158;
-    --green-bg:       rgba(48, 209, 88, 0.12);
-    --orange:         #ff9f0a;
-    --orange-bg:      rgba(255, 159, 10, 0.12);
-    --red:            #ff453a;
-    --red-bg:         rgba(255, 69, 58, 0.12);
-    --purple:         #bf5af2;
-    --purple-bg:      rgba(191, 90, 242, 0.12);
-    --teal:           #64d2ff;
-    --yellow:         #ffd60a;
-
-    --border:         rgba(255, 255, 255, 0.08);
-    --border-strong:  rgba(84, 84, 88, 0.6);
-    --fill:           rgba(120, 120, 128, 0.36);
-    --fill-secondary: rgba(120, 120, 128, 0.32);
-
-    --shadow:         0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
-    --shadow-md:      0 2px 12px rgba(0, 0, 0, 0.3);
-    --shadow-lg:      0 8px 30px rgba(0, 0, 0, 0.4);
-    --shadow-elevated:0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
-  }
-}
-
+/* ===========================================================================
+ * Element resets + base styles
+ * ========================================================================= */
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {
+  background: var(--ims-navy-900);
+  color: var(--fg-1);
+  font: var(--t-body);
+  letter-spacing: var(--tracking-tight);
   font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, .h1 { font: var(--t-h1); letter-spacing: var(--tracking-display); color: var(--fg-1); margin: 0; }
+h2, .h2 { font: var(--t-h2); letter-spacing: var(--tracking-display); color: var(--fg-1); margin: 0; }
+h3, .h3 { font: var(--t-h3); letter-spacing: var(--tracking-tight);   color: var(--fg-1); margin: 0; }
+h4, .h4 { font: var(--t-h4); letter-spacing: var(--tracking-tight);   color: var(--fg-1); margin: 0; }
+h5, .h5 { font: var(--t-h5); color: var(--fg-1); margin: 0; }
+
+p { font: var(--t-body); color: var(--fg-2); margin: 0; }
+small, .caption { font: var(--t-caption); color: var(--fg-3); }
+.label { font: var(--t-label); text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); }
+
+code, kbd, samp { font-family: var(--font-mono); font-size: 0.9em; color: var(--fg-2); }
+
+a { color: var(--ims-cyan-400); text-decoration: none; }
+a:hover { color: var(--ims-cyan-300); }
+
+img { max-width: 100%; display: block; }
+button { font-family: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
+
+::selection { background: rgba(91,192,232,0.35); color: var(--fg-1); }
+
+/* ===========================================================================
+ * Shared chrome utilities (eyebrow, section container, divider, etc.)
+ * ========================================================================= */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 600 13px/1 var(--font);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ims-cyan-400);
+}
+.eyebrow--tangerine { color: var(--card-tangerine); }
+.eyebrow--champagne { color: var(--card-champagne); }
+.eyebrow--mut       { color: var(--fg-3); }
+.eyebrow__orn       { color: inherit; }
+
+.section {
+  max-width: 1368px;
+  margin: 0 auto;
+  padding: 0 36px;
+}
+.section--lg { padding-top: 120px; padding-bottom: 120px; }
+.section--md { padding-top: 96px;  padding-bottom: 96px; }
+.section--sm { padding-top: 64px;  padding-bottom: 64px; }
+
+.rule {
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 0;
+}
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  width: 100%;
+}
+
+.lnk { color: inherit; text-decoration: none; cursor: pointer; }
+.lnk:hover { color: var(--ims-cyan-300); }
+
+@media (max-width: 900px) {
+  .section { padding: 0 20px; }
+  .section--lg { padding-top: 64px; padding-bottom: 64px; }
+  .section--md { padding-top: 56px; padding-bottom: 56px; }
 }

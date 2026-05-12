@@ -251,13 +251,14 @@ const bundledCss = findCssFiles(join(dist, '_astro'))
 
 check('Phase 1.0 base token present (--bg)', bundledCss.includes('--bg:'));
 check('Phase 1.0 base token present (--text)', bundledCss.includes('--text:'));
-check(
-  'dark-mode block present in bundled CSS',
-  /prefers-color-scheme:\s*dark/i.test(bundledCss),
-);
+// Dark-mode-block check removed 2026-05-12 (Claude Design dark-system swap).
+// The cream-default Phase 1.0 system needed a @media (prefers-color-scheme: dark)
+// override; the new IMS Dark system is dark by default site-wide, so the
+// override is obsolete. If a light mode is ever introduced, replace this with
+// a `@media (prefers-color-scheme: light)` assertion instead.
 check(
   'system font stack present in bundled CSS',
-  bundledCss.includes('-apple-system') || bundledCss.includes('SF Pro'),
+  bundledCss.includes('-apple-system') || bundledCss.includes('SF Pro') || bundledCss.includes('Inter'),
 );
 
 // Phase 1.A brand tokens — surface this early so token rename / removal
