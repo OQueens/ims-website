@@ -38,3 +38,6 @@ dist/
 *.jpeg
 preview.log
 server.log
+
+# Cloudflare adapter runtime artifact
+.wrangler/
