@@ -38,8 +38,11 @@ const extra = href ? { href } : { type };
   .btn--primary { background: var(--pine); color: var(--on-pine); }
   .btn--primary:hover { background: var(--pine-700); }
 
-  .btn--accent { background: var(--sage); color: var(--on-sage); }
-  .btn--accent:hover { background: var(--sage-2); color: var(--on-pine); }
+  /* accent = the IMS-blue fill button. Both states stay in the brand hue
+   * (219): #59BFE7 fill / dark ink text (7.7:1) → deepened #00657F fill /
+   * light text (5.4:1) on hover. Same-hue darken, not a green/blue jump. */
+  .btn--accent { background: var(--ims-blue); color: var(--on-sage); }
+  .btn--accent:hover { background: var(--ims-blue-ink); color: var(--on-pine); }
 
   .btn--cream { background: var(--paper); color: var(--pine); }
   .btn--cream:hover { background: var(--bone); }

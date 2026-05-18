@@ -1,10 +1,11 @@
 ---
-// Nav.astro — sticky cream nav with crest wordmark + editorial links.
+// Nav.astro — sticky cream nav with logo wordmark + editorial links.
 // CSS-only mobile drawer (checkbox toggle, mirrors the Pamphlet flip):
 // Astro is static, so a link navigation is a full page load — the drawer
 // resets closed on its own, no JS needed to close it.
 import Icon from "./Icon.astro";
 import Button from "./Button.astro";
+import Logo from "./Logo.astro";
 interface Props { route?: string }
 const { route = "/" } = Astro.props;
 const items = [
@@ -20,11 +21,7 @@ const items = [
 
   <div class="nav__inner">
     <a href="/" class="brand" aria-label="Innovative Medical Staffing — home">
-      <svg class="crest" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-        <circle cx="20" cy="20" r="19" stroke="var(--ink)" stroke-width="0.9"/>
-        <circle cx="20" cy="20" r="14.5" stroke="var(--brass)" stroke-width="0.9" stroke-dasharray="1.2 2.8"/>
-        <path d="M20 10v20M13 15c4.5 0 4.5 10 7 10s2.5-10 7-10" stroke="var(--sage-2)" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>
+      <Logo />
       <span class="lockup">
         <span class="wm">Innovative Medical Staffing</span>
       </span>
@@ -86,8 +83,13 @@ const items = [
      * Brand/right size to content; links flex-centre in the middle track. */
     display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 24px;
   }
-  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .crest { width: 30px; height: 30px; flex: none; }
+  .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+  /* Logo renders inside Logo.astro's template (its scope id, not Nav's) —
+   * same child-component scope caveat as :global(.apply) below. The real
+   * mark is landscape (~1.89:1): size by height, width auto. It is the
+   * true 2-colour mark: the I self-fills brand blue; `color` drives the
+   * MS, which on this cream ground is the dark ink (dark-MS artwork). */
+  .brand :global(.imslogo) { height: 25px; flex: none; color: var(--ink); }
   .lockup { display: flex; align-items: center; line-height: 1; min-width: 0; }
   .wm {
     font: 400 20px/1 var(--display); letter-spacing: .035em;
@@ -102,7 +104,7 @@ const items = [
   }
   .link::after {
     content: ""; position: absolute; left: 12px; right: 12px; bottom: 2px;
-    height: 1px; background: var(--brass);
+    height: 1px; background: var(--ims-blue-ink);
     transform: scaleX(0); transform-origin: left;
     transition: transform var(--dur-base) var(--ease-out);
   }
@@ -196,6 +198,7 @@ const items = [
    * 1024 block so those rules win at ≤1024. */
   @media (max-width: 1200px) {
     .wm { font-size: 17px; letter-spacing: .03em; }
+    .brand :global(.imslogo) { height: 22px; }
     .phone { display: none; }
     .links { gap: 2px; }
     .link { letter-spacing: .08em; padding: 10px 9px; }
@@ -230,5 +233,6 @@ const items = [
      * so the Apply pill actually hides and stops colliding with the wordmark. */
     .right :global(.apply) { display: none; } /* primary CTA lives in the drawer */
     .wm { font-size: 16px; letter-spacing: .03em; }
+    .brand :global(.imslogo) { height: 20px; }
   }
 </style>

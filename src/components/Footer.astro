@@ -1,6 +1,7 @@
 ---
 // Footer.astro — editorial cream footer: giant serif marquee + 4-col + colophon.
 import Icon from "./Icon.astro";
+import Logo from "./Logo.astro";
 ---
 <footer class="ft">
   <div class="ft__inner">
@@ -9,11 +10,7 @@ import Icon from "./Icon.astro";
     <div class="grid">
       <div class="brandCol">
         <div class="brandRow">
-          <svg class="crest" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-            <circle cx="20" cy="20" r="19" stroke="var(--ink)" stroke-width="0.9"/>
-            <circle cx="20" cy="20" r="14.5" stroke="var(--brass)" stroke-width="0.9" stroke-dasharray="1.2 2.8"/>
-            <path d="M20 10v20M13 15c4.5 0 4.5 10 7 10s2.5-10 7-10" stroke="var(--sage-2)" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
+          <Logo />
           <span class="lockup">
             <span class="bn">Innovative Medical Staffing</span>
             <span class="bs">Est. 2018 · Privately held</span>
@@ -65,7 +62,9 @@ import Icon from "./Icon.astro";
   .ft { background: var(--cream); border-top: 1px solid var(--line); margin-top: clamp(64px,10vw,120px); }
   .ft__inner { max-width: var(--maxw); margin: 0 auto; padding: clamp(56px,8vw,80px) var(--gutter) 28px; }
   .marquee {
-    font: 400 clamp(44px,9vw,132px)/0.94 var(--display);
+    /* /0.94 → /1.06: Anton ink clears + a hair of air when this wraps
+     * (Playwright canvas-ink measured; matches the --t-display-* fix). */
+    font: 400 clamp(44px,9vw,132px)/1.06 var(--display);
     letter-spacing: var(--tracking-display); text-transform: uppercase;
     color: var(--ink); margin: 0; padding-bottom: clamp(36px,5vw,56px);
     border-bottom: 1px solid var(--line); text-wrap: balance;
@@ -76,8 +75,12 @@ import Icon from "./Icon.astro";
     padding: 56px 0; border-bottom: 1px solid var(--line);
   }
   .brandCol { display: flex; flex-direction: column; gap: 20px; max-width: 360px; }
-  .brandRow { display: flex; align-items: center; gap: 12px; }
-  .crest { width: 34px; height: 34px; flex: none; }
+  .brandRow { display: flex; align-items: center; gap: 13px; }
+  /* Logo carries Logo.astro's scope id, not Footer's — reach it via the
+   * Footer-scoped parent + :global() (same caveat as Nav). The 2-colour
+   * mark self-fills the I in brand blue; `color` drives the MS, which on
+   * this cream ground is the dark ink (the dark-MS artwork). */
+  .brandRow :global(.imslogo) { height: 29px; flex: none; color: var(--ink); }
   .lockup { display: flex; flex-direction: column; line-height: 1; }
   .bn { font: 400 19px/1 var(--display); letter-spacing: .03em; text-transform: uppercase; color: var(--ink); }
   .bs { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); margin-top: 8px; font-feature-settings: "smcp" 1; }

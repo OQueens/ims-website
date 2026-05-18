@@ -15,9 +15,13 @@ const { orn = true, tone = "clay", class: cls = "" } = Astro.props;
     font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
     text-transform: uppercase; font-feature-settings: "smcp" 1;
   }
-  .eyebrow--clay  { color: var(--sage-2); }
-  .eyebrow--gold  { color: var(--gold-600); }
-  .eyebrow--onpine{ color: var(--gold-200); }
+  /* The eyebrow is the ceremonial section voice — the one place the brand
+   * blue leads consistently. On a light ground → --ims-blue-ink (the
+   * deepened hue-219 blue, AA 5.8:1); on pine → bright --ims-blue. Both
+   * tones resolve to the same voice; brass survives only as .orn. */
+  .eyebrow--clay  { color: var(--ims-blue-ink); }
+  .eyebrow--gold  { color: var(--ims-blue-ink); }
+  .eyebrow--onpine{ color: var(--ims-blue); }
   /* thin brass rule — Belleval uses hairlines, never heavy glyph ornaments */
   .orn { width: 22px; height: 1px; background: var(--brass-line); flex: none; }
   .eyebrow--onpine .orn { background: var(--line-pine); }

@@ -18,12 +18,35 @@
   /* ---------- Belleval canonical palette (LOCKED) ---------- */
   --band:  #E6DAC2;   /* warm sand-taupe — hero / anchor ground          */
   --bone:  #E8E0CF;   /* warm oat, speckled — seal discs, "stock" stock  */
-  --sage:  #9DAA8A;   /* dusty grey-sage — THE color (organic shapes)    */
-  --sage-2:#7E8C6B;   /* deeper sage — sage/pine are one green family    */
+  --sage:  #9DAA8A;   /* dusty grey-sage — SUPPORT: organic shapes, washes */
+  --sage-2:#7E8C6B;   /* deeper sage — decorative support voice: accent
+                       * dots, seal rings, organic detail. NOT the lead
+                       * accent (IMS blue is); NOT body text (3.1:1).      */
   --brass: #9C824E;   /* warm bronze — HAIRLINE only, never a fill       */
 
+  /* ---------- IMS brand blue — the LEAD accent (rare, ~10%) ----------
+   * Real mark hexes: the logo's .cls-1 is #59BFE7 (OKLCH hue 219, a true
+   * sky-blue). The deepened step holds that SAME hue 219, only lower L —
+   * it reads as "the IMS blue, darkened", not a foreign teal. Belleval's
+   * powder #C0DAE1 is hue 215 (same family), so blue sits coherently on
+   * the cream field — no warm/cool clash. Spend it only where it earns:
+   * the logo, focus rings, the ceremonial eyebrow voice, the one accent
+   * fill button. Decorative texture stays sage; hairlines stay brass.   */
+  --ims-blue:      #59BFE7;  /* brand mark + focus glow + on-pine accent.
+                              * 1.8:1 on cream → never text on a light
+                              * ground; ink-on-blue fill is 9.9:1 (safe). */
+  --ims-blue-ink:  #00657F;  /* hue-219 brand blue, deepened: AA 5.8:1 on
+                              * cream / 6.6:1 on white. The accent TEXT
+                              * voice — eyebrows, links, key labels.      */
+  --ims-blue-wash: #D0EAF2;  /* solid Belleval-powder tint (no alpha) —
+                              * the ramp's surface step; ink on it 16.5:1.
+                              * Reserved: applied only where a blue ground
+                              * is intentional. Unused now, by design —
+                              * blue is kept rare; washes stay sage.      */
+
   /* ---------- Surfaces (legacy names → Belleval values) ---------- */
-  --cream:        #F2ECDF;   /* page ground — the calm dominant field    */
+  --cream:        #F4EFEA;   /* page ground — Belleval cream (the real
+                              * reference hex); the calm dominant field   */
   --cream-2:      var(--band);
   --paper:        #F8F3E9;   /* cards — a whisper above ground, flat      */
   --sand:         var(--bone);
@@ -46,8 +69,10 @@
   --on-sage:      #1B231A;   /* ink on a sage fill                       */
   --on-clay:      var(--on-sage);
 
-  /* ---------- Accents — sage is the only color, brass is hairline ---- */
-  --clay:         var(--sage);     /* legacy "clay" → sage everywhere    */
+  /* ---------- Accents — IMS blue leads via the eyebrow/focus/logo voice
+   * (applied selectively, not through this alias). Legacy "clay" stays
+   * mapped to sage so it can't smear blue across every old call site. -- */
+  --clay:         var(--sage);     /* legacy "clay" → sage support       */
   --clay-600:     var(--sage-2);
   --gold:         var(--brass);    /* legacy "gold" → brass              */
   --gold-200:     #C9B486;         /* lighter brass — legible on pine    */
@@ -69,7 +94,7 @@
   --elev-1: 0 1px 1px rgba(22,21,19,0.04);
   --elev-2: 0 10px 30px -26px rgba(22,21,19,0.22);
   --elev-3: 0 24px 60px -44px rgba(22,21,19,0.30);
-  --glow:   0 0 0 3px rgba(157,170,138,0.34);
+  --glow:   0 0 0 3px rgba(89,191,231,0.42);  /* focus ring — brand blue */
 
   /* ---------- Radii — crisp, varied (tighter inner, softer container) - */
   --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
@@ -84,13 +109,19 @@
   --serif:   "Fraunces", Georgia, "Times New Roman", serif;
   --sans:    "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  /* display = tall heavy condensed grotesque (the BELLEVAL wordmark voice) */
-  --t-display-3xl: 400 clamp(72px,11vw,168px)/0.92 var(--display);
-  --t-display-2xl: 400 clamp(54px,7.6vw,116px)/0.94 var(--display);
-  --t-display-xl:  400 clamp(44px,6.2vw,88px)/0.96  var(--display);
-  --t-display-lg:  400 clamp(36px,4.8vw,64px)/0.98  var(--display);
-  --t-h1: 400 clamp(34px,4.2vw,58px)/1.0  var(--display);
-  --t-h2: 400 clamp(27px,3.4vw,44px)/1.02 var(--display);
+  /* display = tall heavy condensed grotesque (the BELLEVAL wordmark voice)
+   * Leadings RAISED 2026-05-18 [Playwright canvas-ink measured, not guessed]:
+   * Anton's true ink box is ~0.87-0.95em above baseline + ~0.06-0.13em
+   * descender (Q/J/parens), so any wrapped heading collided by ~0.5em/line
+   * at the old sub-1.0 values. ≥1.06 clears ink with a quiet-luxury gap;
+   * single Anton lines (ink ≤0.95em) stay tight, never airy. Graduated:
+   * the largest sizes carry the tightest leading the ink allows. */
+  --t-display-3xl: 400 clamp(72px,11vw,168px)/1.06 var(--display);
+  --t-display-2xl: 400 clamp(54px,7.6vw,116px)/1.07 var(--display);
+  --t-display-xl:  400 clamp(44px,6.2vw,88px)/1.08  var(--display);
+  --t-display-lg:  400 clamp(36px,4.8vw,64px)/1.10  var(--display);
+  --t-h1: 400 clamp(34px,4.2vw,58px)/1.08 var(--display);
+  --t-h2: 400 clamp(27px,3.4vw,44px)/1.10 var(--display);
   --t-h3: 600 clamp(20px,2.3vw,27px)/1.2  var(--sans);
   --t-h4: 600 19px/1.3  var(--sans);
   --t-h5: 600 15px/1.35 var(--sans);
