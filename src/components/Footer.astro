@@ -1,0 +1,98 @@
+---
+// Footer.astro — editorial cream footer: giant serif marquee + 4-col + colophon.
+import Icon from "./Icon.astro";
+---
+<footer class="ft">
+  <div class="ft__inner">
+    <h2 class="marquee">Locums, <span class="it" style="color:var(--clay)">without the loneliness.</span></h2>
+
+    <div class="grid">
+      <div class="brandCol">
+        <div class="brandRow">
+          <svg class="crest" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <circle cx="20" cy="20" r="19" stroke="var(--ink)" stroke-width="0.9"/>
+            <circle cx="20" cy="20" r="14.5" stroke="var(--brass)" stroke-width="0.9" stroke-dasharray="1.2 2.8"/>
+            <path d="M20 10v20M13 15c4.5 0 4.5 10 7 10s2.5-10 7-10" stroke="var(--sage-2)" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          <span class="lockup">
+            <span class="bn">Innovative Medical Staffing</span>
+            <span class="bs">Est. 2018 · Privately held</span>
+          </span>
+        </div>
+        <p class="pitch">
+          We place credentialed physicians and advanced-practice clinicians into
+          locum tenens assignments across every specialty — and we treat every
+          member like the only one we have.
+        </p>
+        <div class="contacts">
+          <a href="tel:18005551040" class="cx lnk"><Icon name="phone" size={14} color="var(--clay)" /> (800) 555-1040</a>
+          <span class="dot">·</span>
+          <a href="mailto:concierge@imstaffing.com" class="cx lnk"><Icon name="mail" size={14} color="var(--clay)" /> concierge@imstaffing.com</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="ch">For clinicians</div>
+        <a href="/clinicians" class="fl">How it works</a>
+        <a href="/jobs" class="fl">Open assignments</a>
+        <a href="/contact" class="fl">Refer a colleague</a>
+        <a href="/story" class="fl">How we credential</a>
+      </div>
+      <div>
+        <div class="ch">For facilities</div>
+        <a href="/facilities" class="fl">Our model</a>
+        <a href="/facilities" class="fl">Specialties</a>
+        <a href="/contact" class="fl">Request a roster</a>
+        <a href="/story" class="fl">Case studies</a>
+      </div>
+      <div>
+        <div class="ch">The firm</div>
+        <a href="/story" class="fl">Our story</a>
+        <a href="/story" class="fl">The team</a>
+        <a href="/contact" class="fl">Press</a>
+        <a href="/contact" class="fl">Careers at IMS</a>
+      </div>
+    </div>
+
+    <div class="colophon">
+      <span>© 2026 Innovative Medical Staffing. Successor in interest to Innovative Anesthesia Staffing (est. 2018).</span>
+      <span class="right"><span class="lnk">Privacy</span><span class="lnk">Terms</span><span class="lnk">Accessibility</span><span class="lnk">HIPAA</span></span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .ft { background: var(--cream); border-top: 1px solid var(--line); margin-top: clamp(64px,10vw,120px); }
+  .ft__inner { max-width: var(--maxw); margin: 0 auto; padding: clamp(56px,8vw,80px) var(--gutter) 28px; }
+  .marquee {
+    font: 400 clamp(44px,9vw,132px)/0.94 var(--display);
+    letter-spacing: var(--tracking-display); text-transform: uppercase;
+    color: var(--ink); margin: 0; padding-bottom: clamp(36px,5vw,56px);
+    border-bottom: 1px solid var(--line); text-wrap: balance;
+  }
+  .marquee .it { text-transform: none; }
+  .grid {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px;
+    padding: 56px 0; border-bottom: 1px solid var(--line);
+  }
+  .brandCol { display: flex; flex-direction: column; gap: 20px; max-width: 360px; }
+  .brandRow { display: flex; align-items: center; gap: 12px; }
+  .crest { width: 34px; height: 34px; flex: none; }
+  .lockup { display: flex; flex-direction: column; line-height: 1; }
+  .bn { font: 400 19px/1 var(--display); letter-spacing: .03em; text-transform: uppercase; color: var(--ink); }
+  .bs { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); margin-top: 8px; font-feature-settings: "smcp" 1; }
+  .pitch { font: var(--t-body-sm); color: var(--ink-2); max-width: 320px; }
+  .contacts { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .cx { display: inline-flex; align-items: center; gap: 8px; font: 600 14px/1 var(--sans); color: var(--pine); }
+  .dot { color: var(--ink-3); }
+  .ch { font: 600 12px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 18px; }
+  .fl { display: block; font: 500 14px/2.1 var(--sans); color: var(--ink-2); }
+  .fl:hover { color: var(--pine); }
+  .colophon {
+    padding-top: 28px; display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; flex-wrap: wrap; font: 500 12px/1.5 var(--sans); color: var(--ink-3);
+  }
+  .colophon .right { display: flex; gap: 22px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr 1fr; gap: 32px; } }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+</style>

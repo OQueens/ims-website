@@ -1,0 +1,49 @@
+---
+import IMSLayout from "../layouts/IMSLayout.astro";
+import Eyebrow from "../components/Eyebrow.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+import Medallion from "../components/Medallion.astro";
+---
+<IMSLayout title="Thank you — Innovative Medical Staffing" route="/contact">
+  <section class="section section--lg ty">
+    <div class="ty__seal"><Medallion initials="IMS" size={96} /></div>
+    <Eyebrow>Received</Eyebrow>
+    <h1 class="ty__h">Thank you — that<br/><span class="it">reached a real desk.</span></h1>
+    <p class="ty__b">
+      A recruiter will be in touch shortly, usually within the hour. We read every
+      note ourselves — no queue, no auto-responder. If it's urgent, call us and
+      we'll pick up.
+    </p>
+    <div class="ty__cta">
+      <Button href="/" variant="primary">Back to the site <Icon name="arrowRight" size={15} color="var(--on-pine)" /></Button>
+      <a href="tel:18005551040" class="ty__phone lnk">
+        <Icon name="phone" size={15} color="var(--clay)" />
+        <span>(800) 555-1040</span>
+      </a>
+    </div>
+  </section>
+</IMSLayout>
+
+<style>
+  .ty { max-width: 720px; text-align: center; }
+  .ty__seal { display: flex; justify-content: center; margin-bottom: 28px; }
+  .ty :global(.eyebrow) { justify-content: center; }
+  .ty__h {
+    font: var(--t-display-lg); letter-spacing: var(--tracking-display);
+    margin-top: 20px; text-wrap: balance;
+  }
+  .ty__b {
+    font: var(--t-body-lg); color: var(--ink-2);
+    margin: 24px auto 0; max-width: 50ch;
+  }
+  .ty__cta {
+    display: flex; gap: 18px; align-items: center; justify-content: center;
+    flex-wrap: wrap; margin-top: 36px;
+  }
+  .ty__phone {
+    display: inline-flex; align-items: center; gap: 9px;
+    font: 600 14px/1 var(--sans); color: var(--ink-2);
+  }
+  .ty__phone:hover { color: var(--pine); }
+</style>

@@ -1,0 +1,468 @@
+---
+// facilities.astro — deep-dive page for hospital/clinic decision-makers.
+// Ports the source Facilities.jsx (Hero · CoverageModel · CredentialingEngine
+// · WeeklyReport · RequestRoster · FacilityFAQ · ClosingCTA) and reskins it
+// from the dark-navy / saturated-card original into Belleval quiet-luxury,
+// matching the patterns in index.astro and clinicians.astro. Voice stays
+// reliability-forward — numbers up front. FAQ is a CSS-only <details>
+// accordion; the roster form is a static illustrative mock (the real form
+// is /contact). No country-club copy (none present in source).
+import IMSLayout from "../layouts/IMSLayout.astro";
+import Eyebrow from "../components/Eyebrow.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+import Medallion from "../components/Medallion.astro";
+
+const heroCards = [
+  { tone: "pine",  e: "Curated, not scraped", h: "Three<br/>names.",   b: "Hand-picked from our roster. Each vetted by a recruiter who's met them." },
+  { tone: "bone",  e: "Emergency desk",       h: "24-hour<br/>SLA.",   b: "Call-out tonight? We've answered before sunrise — for ten holidays running." },
+  { tone: "sage",  e: "Credentialing engine", h: "Days, not<br/>weeks.", b: "Epic, Cerner, Meditech, Athena — privileging on rails for the top 12 systems." },
+  { tone: "paper", e: "Your account lead",    h: "Theo<br/>Caine.",    b: "Six years at IMS. (617) 555-0119. Picks up before the second ring." },
+];
+
+const stats = [
+  { e: "Facility panel", n: "147",     b: "Active hospital & surgicenter partners" },
+  { e: "Avg. tenure",    n: "4.2 yrs", b: "Most partners renew before they have to" },
+  { e: "Day-of cover",   n: "94%",     b: "Of emergency call-outs filled within 24h" },
+  { e: "No-show rate",   n: "0.3%",    b: "Industry avg. is 4–7%" },
+];
+
+const pipe = [
+  { d: "D1",  l: "Roster pull",  b: "We hand-pick three clinicians from our pre-credentialed bench. You see redacted bios within four hours.", m: "Same day" },
+  { d: "D2",  l: "Privileging",  b: "Credentials submitted to your med-staff office in your preferred format — packet, portal, or fax. No reformatting on your end.", m: "24 hours" },
+  { d: "D5",  l: "Verification", b: "NPDB, OIG, AHA cards, license boards, malpractice — all verified by our credentialing lead, not a subcontractor.", m: "3 business days" },
+  { d: "D8",  l: "Orientation",  b: "EHR access, badge, ID, scrub locker — coordinated with your CIO and HR so day-one is paperwork-free.", m: "On-rails" },
+  { d: "D10", l: "Badge-in",     b: "Clinician arrives, badges in, takes report. We're on standby with the charge-nurse pager for the first 12 hours.", m: "Live" },
+];
+const ehrs = ["Epic", "Cerner / Oracle", "Meditech", "Athena", "Allscripts", "NextGen", "eClinicalWorks", "CPSI", "Greenway", "Practice Fusion", "Kareo", "+ 14 more"];
+
+const reportList = [
+  "Hours filled vs. requested, by unit",
+  "Day-of fill rate & emergency response times",
+  "Clinician NPS — your unit, this week",
+  "Upcoming credential renewals (90 days out)",
+  "Next week's roster, with photos & cell #s",
+];
+const reportCells = [
+  { l: "Hours filled", v: "312", s: "/312", d: "100% · ↑ 4% vs LW" },
+  { l: "Day-of fill",  v: "2",   s: "/2",   d: "Avg. response: 38 min" },
+  { l: "Clinician NPS", v: "72", s: "",     d: "n=8 · “warm welcome”" },
+];
+
+const reqMeta = [
+  { icon: "clock",  t: "Average response time: 34 minutes" },
+  { icon: "phone",  t: "Or call us: (800) 555-1040" },
+  { icon: "shield", t: "HIPAA-safe form · no PHI required" },
+];
+const allSpecs = ["Anesthesia", "OB-GYN", "Urology", "EM", "IM", "Surgery", "Radiology", "Psychiatry"];
+const onSpecs = new Set(["Anesthesia", "OB-GYN"]);
+
+const faqs = [
+  { q: "What's your SLA on emergency coverage?", a: "Twenty-four hours for elective swaps, four hours for trauma or surgical coverage. We've answered an after-midnight call-out for ten holidays running, and our overnight desk is staffed every day of the year." },
+  { q: "How do you guarantee credentialing accuracy?", a: "Our credentialing lead — Priya in Salt Lake — owns every packet. NPDB, OIG-LEIE, AHA-issued card validators, and state board verifications run before the packet ever leaves IMS. Most med-staff offices ratify within one cycle." },
+  { q: "What's your no-show rate, and how is it that low?", a: "0.3% in the last 24 months, against an industry average of 4–7%. Small roster, deep relationships, and we treat clinicians like they have a name. Hard to flake on a friend." },
+  { q: "How does your pricing compare to volume firms?", a: "Per-hour rates are in the middle of the market. What we don't charge: portal fees, credentialing surcharges, holiday differentials. Most CFOs find we land 4–8% lower all-in." },
+  { q: "Can you place telehealth and remote coverage?", a: "Yes. Telepsychiatry, teleradiology, tele-ICU, tele-stroke — all handled, with the same credentialing process. We've placed remote-only assignments across 32 states." },
+  { q: "Will I have a single account lead, or a team?", a: "One named lead by default, with a credentialing partner. Larger systems (over $10M annual spend) get a dedicated account team of three. You'll never wonder who to call." },
+];
+---
+<IMSLayout title="For facilities — Innovative Medical Staffing" route="/facilities">
+  <!-- ===================== HERO ===================== -->
+  <section class="hero section">
+    <Eyebrow class="reveal d1">For facilities</Eyebrow>
+    <h1 class="duo hero__h reveal d2">
+      <span class="claim">The roster you can vouch for.</span>{" "}
+      <span class="soft">And the desk that picks up the phone.</span>
+    </h1>
+    <p class="hero__lede reveal d3">
+      We don't volume-staff. We send three clinicians we know personally — because
+      you'll remember the one you wish we hadn't sent. Pre-credentialed, privileged
+      across the major EHRs, and backed by a named account lead with their cell on
+      the back of every business card.
+    </p>
+    <div class="hero__cta reveal d4">
+      <Button href="/contact" variant="primary">Request a roster <Icon name="arrowRight" size={16} color="var(--on-pine)" /></Button>
+      <Button href="tel:18005551040" variant="ghost"><Icon name="phone" size={14} color="var(--ink)" /> (800) 555-1040</Button>
+    </div>
+    <div class="hcl reveal d5">
+      {heroCards.map((c) => (
+        <div class:list={["hc", `hc--${c.tone}`]}>
+          <span class="hc__e">{c.e}</span>
+          <h3 class="hc__h" set:html={c.h}></h3>
+          <p class="hc__b">{c.b}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ===================== COVERAGE MODEL ===================== -->
+  <section class="section section--lg">
+    <div class="cov">
+      <div>
+        <Eyebrow>The coverage model</Eyebrow>
+        <h2 class="cov__h">Small panel.<br/><span class="it">Deep relationships.</span></h2>
+        <p class="cov__b">Most firms maximize roster size. We cap ours at 1,840 clinicians and cap our facility partnerships per region at twelve. Why? Because the twelfth one is where the relationship still works — the thirteenth is where the call goes to voicemail.</p>
+      </div>
+      <div class="cov__stats">
+        {stats.map((s) => (
+          <div class="cstat">
+            <span class="cstat__e">{s.e}</span>
+            <div class="cstat__n">{s.n}</div>
+            <p class="cstat__b">{s.b}</p>
+          </div>
+        ))}
+        <div class="cnote">
+          <span class="cnote__e">The unsaid promise</span>
+          <h4 class="cnote__h">You'll know your account lead by name. They'll know your charge nurses by name.</h4>
+          <p class="cnote__b">The first three weeks of a partnership are spent learning your floor, your scheduling quirks, and which order set you actually use. After that, the staffing runs itself.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CREDENTIALING ENGINE ===================== -->
+  <section class="section section--lg">
+    <div class="ah">
+      <div>
+        <Eyebrow>The credentialing engine</Eyebrow>
+        <h2 class="ah__h">From request to badge-in.<br/><span class="it">Ten days, typically.</span></h2>
+      </div>
+      <p class="ah__s">We've shipped this process across 47 states and 147 partner facilities — the fastest a clinician's ever badged in was 96 hours. Most placements take a working week and a half, end-to-end.</p>
+    </div>
+    <div class="pipe">
+      {pipe.map((s) => (
+        <div class="pstep">
+          <div class="pstep__d">{s.d}</div>
+          <div class="pstep__l">{s.l}</div>
+          <p class="pstep__b">{s.b}</p>
+          <div class="pstep__m"><span class="pstep__dot"></span>{s.m}</div>
+        </div>
+      ))}
+    </div>
+    <div class="ehr">
+      <div class="ehr__hd">
+        <span class="ehr__e">EHR coverage</span>
+        <h3 class="ehr__h">Privileging on rails for 25 systems.</h3>
+      </div>
+      <div class="ehr__chips">
+        {ehrs.map((e) => (<span class="ehrchip"><span class="ehrchip__dot"></span>{e}</span>))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEKLY REPORT ===================== -->
+  <section class="section section--lg">
+    <div class="rep">
+      <div class="rep__l">
+        <Eyebrow>The weekly report</Eyebrow>
+        <h2 class="rep__h">One email.<br/><span class="it">Every Monday morning.</span></h2>
+        <p class="rep__b">Your account lead writes a single email each Monday — what shipped, what didn't, who's coming next week, and which credentials are renewing. Three metrics, three sentences, no portal.</p>
+        <ul class="rep__list">
+          {reportList.map((it) => (<li><span class="rep__dot"></span>{it}</li>))}
+        </ul>
+      </div>
+
+      <div class="mail">
+        <div class="mail__hd">
+          <div class="mail__from">
+            <Medallion initials="TC" size={44} />
+            <div>
+              <div class="mail__fn">Theo Caine</div>
+              <div class="mail__fm">theo@imstaffing.com · IMS Northeast desk</div>
+            </div>
+          </div>
+          <span class="mail__date">Mon, May 11 · 7:42 AM</span>
+        </div>
+        <div class="mail__body">
+          <span class="mail__subj">Subject · Sea Pines Health — week of May 4</span>
+          <h3 class="mail__h">A quiet week. Three notes inside.</h3>
+          <p class="mail__p">Karen — short one this week. Med/Surg ran clean across all four nights; Maya covered for Devon Tuesday after his flight got cancelled (we paid the swap fee, not you). One credential renewal coming up; details below.</p>
+          <div class="mail__grid">
+            {reportCells.map((c) => (
+              <div class="mcell">
+                <div class="mcell__l">{c.l}</div>
+                <div class="mcell__v">{c.v}<span>{c.s}</span></div>
+                <div class="mcell__d">{c.d}</div>
+              </div>
+            ))}
+          </div>
+          <p class="mail__p">Next week's roster attached. Maya's ACLS expires Sept 4 — we're already on it. Call if anything. — Theo</p>
+        </div>
+        <div class="mail__foot">↳ 1 attachment · Next week roster (PDF) · (617) 555-0119 mobile</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== REQUEST A ROSTER ===================== -->
+  <section class="section section--lg">
+    <div class="req">
+      <div class="req__l">
+        <Eyebrow tone="onpine">Request a roster</Eyebrow>
+        <h2 class="req__h">Tell us what you need.<br/><span class="it">We'll reply in an hour.</span></h2>
+        <p class="req__b">Three names, a quiet email, and a credentialing packet started before your coffee gets cold. No demo, no SDR — your account lead replies directly.</p>
+        <div class="req__meta">
+          {reqMeta.map((m) => (
+            <div class="req__mr"><Icon name={m.icon} size={14} color="var(--gold-200)" />{m.t}</div>
+          ))}
+        </div>
+      </div>
+
+      <div class="rqf">
+        <!-- Decorative illustration only — aria-hidden so AT skips the fake
+             fields. The real, focusable CTA below stays OUTSIDE this subtree
+             (a focusable control inside aria-hidden is a WCAG 4.1.2 fail). -->
+        <div class="rqf__mock" aria-hidden="true">
+          <h3 class="rqf__h">Roster request — Sea Pines Health (draft)</h3>
+          <div class="rqf__row">
+            <div class="rqf__f"><span class="rqf__l">Facility</span><div class="rqf__in">Sea Pines Health</div></div>
+            <div class="rqf__f"><span class="rqf__l">Your role</span><div class="rqf__in">Director, Med Staff</div></div>
+          </div>
+          <div class="rqf__f">
+            <span class="rqf__l">Specialties needed</span>
+            <div class="rqf__chips">
+              {allSpecs.map((s) => (
+                <span class:list={["rqf__chip", { on: onSpecs.has(s) }]}>{onSpecs.has(s) ? "✓ " : ""}{s}</span>
+              ))}
+            </div>
+          </div>
+          <div class="rqf__row">
+            <div class="rqf__f"><span class="rqf__l">Start by</span><div class="rqf__in">2026-05-26</div></div>
+            <div class="rqf__f"><span class="rqf__l">Duration</span><div class="rqf__in">13 weeks, possible renew</div></div>
+          </div>
+          <div class="rqf__f"><span class="rqf__l">Notes for your account lead</span><div class="rqf__in">Day shift preference. Q4 call OK if needed.</div></div>
+        </div>
+        <Button href="/contact" variant="primary" class="rqf__send" aria-label="Request a roster — opens the contact form">Send to Theo · response in 34 min avg <Icon name="arrowRight" size={14} color="var(--on-pine)" /></Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FACILITY FAQ (CSS-only accordion) ===================== -->
+  <section class="section section--lg">
+    <div class="faq">
+      <div class="faq__l">
+        <Eyebrow>FAQ</Eyebrow>
+        <h2 class="faq__h">Questions CMOs ask before they sign.</h2>
+        <p class="faq__s">Don't see yours? Call Theo directly: (617) 555-0119. Picks up before the second ring.</p>
+      </div>
+      <div class="faq__list">
+        {faqs.map((f, i) => (
+          <details class="qa" open={i === 0}>
+            <summary class="qa__q">
+              <span>{f.q}</span>
+              <span class="qa__t" aria-hidden="true"></span>
+            </summary>
+            <p class="qa__a">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CLOSING CTA ===================== -->
+  <section class="section section--lg">
+    <div class="cta">
+      <div class="cta__l">
+        <Eyebrow tone="gold">Ready when you are</Eyebrow>
+        <h2 class="cta__h">Coverage by Tuesday? Let's talk today.</h2>
+        <p class="cta__b">Whether you're a chief medical officer who needs a CRNA by Tuesday or a med-staff director planning next quarter — give us a call, send a note, or request a roster. A real human replies within the hour.</p>
+        <div class="cta__row">
+          <Button href="/contact" variant="primary">Request a roster <Icon name="arrowRight" size={16} color="var(--on-pine)" /></Button>
+          <Button href="tel:18005551040" variant="ghost"><Icon name="phone" size={14} color="var(--ink)" /> (800) 555-1040</Button>
+        </div>
+      </div>
+      <div class="cta__card">
+        <h4>This week at IMS</h4>
+        <div class="cr"><span>Open assignments</span><b>142</b></div>
+        <div class="cr"><span>Day-of fill rate (90d)</span><b>94%</b></div>
+        <div class="cr"><span>Avg. response time</span><b>34 min</b></div>
+        <div class="cr"><span>No-show rate (24mo)</span><b>0.3%</b></div>
+      </div>
+    </div>
+  </section>
+</IMSLayout>
+
+<style>
+  /* ---- Hero (mirrors clinicians/index hero) ---- */
+  .hero { padding-top: clamp(56px,8vw,112px); padding-bottom: clamp(48px,7vw,84px); }
+  .hero__h { font: var(--t-display-xl); letter-spacing: var(--tracking-display); max-width: 18ch; margin-top: 30px; text-wrap: balance; }
+  .hero__lede { font: var(--t-body-lg); color: var(--ink-2); margin-top: 28px; max-width: 58ch; }
+  .hero__cta { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+  .hcl { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-top: 56px; }
+  .hc { border-radius: var(--r-xl); padding: 30px 28px; display: flex; flex-direction: column; gap: 12px;
+    min-height: 220px; transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .hc:hover { transform: translateY(-3px); }
+  .hc--pine  { background: var(--pine);  color: var(--on-pine); }
+  .hc--pine:hover { box-shadow: var(--elev-3); }
+  .hc--bone  { background: var(--bone);  color: var(--ink); border: 1px solid var(--brass-line); }
+  .hc--sage  { background: var(--sage);  color: var(--on-sage); }
+  .hc--paper { background: var(--paper); color: var(--ink); border: 1px solid var(--brass-line); }
+  .hc--paper:hover, .hc--bone:hover { box-shadow: var(--elev-2); }
+  .hc__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; opacity: .85; font-feature-settings: "smcp" 1; }
+  .hc__h { font: 400 clamp(26px,2.5vw,32px)/1.0 var(--display); letter-spacing: var(--tracking-display); color: inherit; }
+  .hc__b { font: 400 13px/1.55 var(--sans); opacity: .82; color: inherit; margin-top: auto; }
+
+  /* ---- Section header (mirrors index .ah) ---- */
+  .ah { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 64px; }
+  .ah__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 24px; text-wrap: balance; }
+  .ah__s { font: var(--t-body-lg); color: var(--ink-2); max-width: 46ch; }
+
+  /* ---- Coverage model ---- */
+  .cov { display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(40px,5vw,64px); align-items: center; }
+  .cov__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 24px; text-wrap: balance; }
+  .cov__b { font: var(--t-body-lg); color: var(--ink-2); margin-top: 22px; max-width: 46ch; }
+  .cov__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cstat { background: var(--bone); border: 1px solid var(--brass-line); border-radius: var(--r-lg); padding: 28px 24px; }
+  .cstat__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+  .cstat__n { font: 400 clamp(34px,4vw,48px)/1 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin-top: 14px; }
+  .cstat__b { font: 500 13px/1.45 var(--sans); color: var(--ink-3); margin: 8px 0 0; }
+  .cnote { grid-column: span 2; background: var(--pine); color: var(--on-pine);
+    border-radius: var(--r-lg); padding: 28px; display: flex; flex-direction: column; gap: 8px; }
+  .cnote__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--gold-200); font-feature-settings: "smcp" 1; }
+  .cnote__h { font: 400 clamp(19px,1.9vw,22px)/1.25 var(--display); letter-spacing: var(--tracking-display); color: var(--on-pine); margin: 4px 0 0; }
+  .cnote__b { font: 400 14px/1.55 var(--sans); color: var(--on-pine-2); margin: 0; }
+
+  /* ---- Credentialing engine ---- */
+  .pipe { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; }
+  .pstep { background: var(--paper); border: 1px solid var(--brass-line); border-radius: var(--r-lg);
+    padding: 24px; display: flex; flex-direction: column; gap: 12px; min-height: 230px;
+    transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .pstep:hover { transform: translateY(-3px); box-shadow: var(--elev-2); }
+  .pstep__d { font: 400 clamp(28px,3vw,36px)/1 var(--display); letter-spacing: var(--tracking-display); color: var(--sage-2); }
+  .pstep__l { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ink-2); font-feature-settings: "smcp" 1; }
+  .pstep__b { font: 400 13px/1.55 var(--sans); color: var(--ink-2); margin: 0; }
+  .pstep__m { margin-top: auto; display: flex; align-items: center; gap: 7px;
+    font: 600 11px/1.3 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--sage-2); }
+  .pstep__dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sage-2); flex: none; }
+  .ehr { margin-top: 28px; background: var(--band); border: 1px solid var(--brass-line);
+    border-radius: var(--r-xl); padding: 32px 36px; display: grid; grid-template-columns: auto 1fr;
+    gap: 36px; align-items: center; }
+  .ehr__e { display: block; font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
+    text-transform: uppercase; color: var(--sage-2); margin-bottom: 10px; font-feature-settings: "smcp" 1; }
+  .ehr__h { font: 400 clamp(19px,2vw,22px)/1.2 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin: 0; }
+  .ehr__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ehrchip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
+    font: 500 13px/1 var(--sans); background: var(--paper); color: var(--ink-2); border: 1px solid var(--brass-line); }
+  .ehrchip__dot { width: 6px; height: 6px; border-radius: 999px; background: var(--sage-2); flex: none; }
+
+  /* ---- Weekly report (email mock) ---- */
+  .rep { display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(40px,5vw,56px); align-items: center; }
+  .rep__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 24px; text-wrap: balance; }
+  .rep__b { font: var(--t-body-lg); color: var(--ink-2); margin-top: 22px; max-width: 46ch; }
+  .rep__list { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-direction: column; gap: 11px; }
+  .rep__list li { display: flex; align-items: flex-start; gap: 11px; font: 500 15px/1.5 var(--sans); color: var(--ink-2); }
+  .rep__dot { margin-top: 8px; width: 6px; height: 6px; border-radius: 999px; background: var(--sage-2); flex: none; }
+  .mail { background: var(--paper); border: 1px solid var(--brass-line); border-radius: var(--r-2xl);
+    overflow: hidden; box-shadow: var(--elev-3); }
+  .mail__hd { padding: 18px 26px; border-bottom: 1px solid var(--brass-line);
+    display: flex; gap: 18px; align-items: center; justify-content: space-between; }
+  .mail__from { display: flex; gap: 14px; align-items: center; }
+  .mail__fn { font: 600 14px/1.2 var(--sans); color: var(--ink); }
+  .mail__fm { font: 500 12px/1.4 var(--sans); color: var(--ink-3); margin-top: 4px; }
+  .mail__date { font: 500 12px/1 var(--sans); color: var(--ink-3); white-space: nowrap; }
+  .mail__body { padding: 24px 26px; display: flex; flex-direction: column; gap: 16px; }
+  .mail__subj { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+  .mail__h { font: 400 clamp(20px,2.2vw,24px)/1.2 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin: 0; }
+  .mail__p { font: 400 13px/1.6 var(--sans); color: var(--ink-2); margin: 0; }
+  .mail__grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  .mcell { background: var(--bone); border-radius: var(--r-md); padding: 16px; }
+  .mcell__l { font: 600 10px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--sage-2); }
+  .mcell__v { font: 400 26px/1 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin-top: 8px; }
+  .mcell__v span { font: 600 14px/1 var(--sans); color: var(--ink-3); margin-left: 2px; }
+  .mcell__d { font: 500 11px/1.4 var(--sans); color: var(--ink-3); margin-top: 6px; }
+  .mail__foot { padding: 16px 26px; border-top: 1px solid var(--brass-line);
+    font: 500 12px/1.4 var(--sans); color: var(--ink-3); }
+
+  /* ---- Request a roster (pine shell + paper mock) ---- */
+  .req { background: var(--pine); border: 1px solid var(--line-pine); border-radius: var(--r-2xl);
+    padding: clamp(44px,5vw,60px) clamp(32px,4vw,56px);
+    display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(40px,5vw,56px); align-items: center; }
+  /* grid items default to min-width:auto and won't shrink below their content;
+   * .req__b's 42ch max-width then forced the single mobile column to ~371px
+   * and overflowed. min-width:0 lets the 1fr track shrink to its container. */
+  .req__l, .rqf { min-width: 0; }
+  .req__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); color: var(--on-pine); margin-top: 16px; text-wrap: balance; }
+  .req__b { font: 400 16px/1.55 var(--sans); color: var(--on-pine-2); margin-top: 20px; max-width: 42ch; }
+  .req__meta { display: flex; flex-direction: column; gap: 10px; margin-top: 28px; }
+  .req__mr { display: flex; align-items: center; gap: 10px; font: 500 14px/1.4 var(--sans); color: var(--on-pine-2); }
+  .rqf { background: var(--paper); border: 1px solid var(--brass-line); border-radius: var(--r-xl);
+    padding: 30px; display: flex; flex-direction: column; gap: 16px; }
+  .rqf__mock { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .rqf__h { font: 400 17px/1.2 var(--display); letter-spacing: .02em; text-transform: uppercase; color: var(--ink); margin: 0; }
+  .rqf__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rqf__f { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .rqf__l { font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--sage-2); }
+  .rqf__in { background: var(--cream); border: 1px solid var(--line); border-radius: var(--r-md);
+    padding: 12px 14px; font: 500 14px/1.4 var(--sans); color: var(--ink); }
+  .rqf__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rqf__chip { font: 600 12px/1 var(--sans); padding: 8px 12px; border-radius: 999px;
+    background: var(--bone); color: var(--ink-2); border: 1px solid var(--line-soft); }
+  .rqf__chip.on { background: var(--pine); color: var(--on-pine); border-color: var(--pine); }
+  /* Button is a child component (its scope id, not this page's) — reach via
+   * scoped parent + :global() so the full-width rule actually lands. */
+  .rqf :global(.rqf__send) { width: 100%; justify-content: center; margin-top: 4px; }
+
+  /* ---- FAQ — CSS-only <details> accordion ---- */
+  .faq { display: grid; grid-template-columns: 1fr 1.6fr; gap: 48px; align-items: start; }
+  .faq__l { position: sticky; top: 96px; }
+  .faq__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 24px; text-wrap: balance; }
+  .faq__s { font: 400 15px/1.6 var(--sans); color: var(--ink-3); margin-top: 18px; max-width: 34ch; }
+  .faq__list { display: flex; flex-direction: column; gap: 1px;
+    background: var(--brass-line); border: 1px solid var(--brass-line);
+    border-radius: var(--r-xl); overflow: hidden; }
+  .qa { background: var(--paper); transition: background var(--dur-base) var(--ease-out); }
+  .qa[open] { background: var(--band); }
+  .qa__q { display: flex; justify-content: space-between; align-items: center; gap: 20px;
+    padding: 26px 30px; cursor: pointer; list-style: none;
+    font: 500 17px/1.35 var(--serif); color: var(--ink); }
+  .qa__q::-webkit-details-marker { display: none; }
+  .qa__t { position: relative; width: 26px; height: 26px; border-radius: 999px; flex: none;
+    border: 1px solid var(--brass-line); }
+  .qa__t::before, .qa__t::after { content: ""; position: absolute;
+    background: var(--sage-2); transition: opacity var(--dur-base) var(--ease-out); }
+  .qa__t::before { width: 10px; height: 1px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .qa__t::after  { width: 1px; height: 10px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .qa[open] .qa__t::after { opacity: 0; }
+  .qa__a { font: 400 15px/1.65 var(--sans); color: var(--ink-2); margin: 0;
+    padding: 0 30px 28px; max-width: 64ch; }
+
+  /* ---- Closing CTA (mirrors index .cta) ---- */
+  .cta { background: var(--band); border: 1px solid var(--brass-line); border-radius: var(--r-2xl);
+    padding: clamp(48px,6vw,84px) clamp(36px,5vw,64px); display: grid; grid-template-columns: 1.4fr 1fr;
+    gap: 56px; align-items: center; }
+  .cta__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 18px; color: var(--ink); text-wrap: balance; }
+  .cta__b { font: var(--t-body-lg); color: var(--ink-2); margin-top: 22px; max-width: 48ch; }
+  .cta__row { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+  .cta__card { background: var(--paper); border: 1px solid var(--brass-line);
+    border-radius: var(--r-xl); padding: 30px; display: flex; flex-direction: column; gap: 2px; }
+  .cta__card h4 { font: var(--t-h4); color: var(--ink); margin-bottom: 12px; }
+  .cr { display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--line-soft);
+    font: 500 13px/1.4 var(--sans); color: var(--ink-2); }
+  .cr b { font: 700 13px/1.4 var(--sans); color: var(--ink); }
+
+  /* ---- Responsive (mirrors index/clinicians tiers) ---- */
+  @media (max-width: 1180px) {
+    .ah { gap: 36px; margin-bottom: 52px; }
+    .hcl { gap: 14px; }
+    .pipe { grid-template-columns: repeat(3,1fr); }
+  }
+  @media (max-width: 1024px) {
+    .ah { grid-template-columns: 1fr; gap: 32px; margin-bottom: 44px; }
+    .hcl { grid-template-columns: 1fr 1fr; }
+    .cov, .rep, .req, .faq, .cta { grid-template-columns: 1fr; gap: 32px; }
+    .pipe { grid-template-columns: repeat(2,1fr); }
+    .ehr { grid-template-columns: 1fr; gap: 20px; }
+    .faq__l { position: static; }
+  }
+  @media (max-width: 767px) {
+    .hcl, .cov__stats, .pipe, .mail__grid, .rqf__row { grid-template-columns: 1fr; }
+    .cnote { grid-column: auto; }
+    .hc, .pstep { min-height: 0; padding: 24px; }
+    .mail__hd { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .mail__date { white-space: normal; }
+    .req, .ehr { padding: 32px 24px; }
+    .qa__q { padding: 22px; font-size: 16px; }
+    .qa__a { padding: 0 22px 24px; }
+    .section--lg { padding-block: clamp(56px,11vw,84px); }
+    .hero__h { max-width: 15ch; }
+  }
+</style>

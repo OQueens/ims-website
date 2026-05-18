@@ -1,0 +1,52 @@
+---
+// Button.astro — pill button/anchor. Reskinned variants:
+//   primary  → pine fill / cream text   (was tangerine)
+//   accent   → clay fill / white text   (was cyan)
+//   cream    → cream fill / pine text   (for use on pine sections)
+//   ghost    → transparent + ink hairline
+//   onpine   → transparent + cream hairline (ghost on dark)
+interface Props {
+  variant?: "primary" | "accent" | "cream" | "ghost" | "onpine";
+  href?: string;
+  type?: "button" | "submit";
+  class?: string;
+}
+const { variant = "primary", href, type = "button", class: cls = "" } = Astro.props;
+const Tag = href ? "a" : "button";
+const extra = href ? { href } : { type };
+---
+<Tag class:list={["btn", `btn--${variant}`, cls]} {...extra}>
+  <slot />
+</Tag>
+
+<style>
+  .btn {
+    display: inline-flex; align-items: center; gap: .55em;
+    font: 600 15px/1 var(--sans); letter-spacing: -0.01em;
+    padding: 14px 24px; border-radius: var(--r-full);
+    border: 1px solid transparent; cursor: pointer;
+    transition: transform var(--dur-fast) var(--ease-out),
+                background var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out),
+                color var(--dur-base) var(--ease-out);
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn :global(svg) { transition: transform var(--dur-base) var(--ease-out); }
+  .btn:hover :global(svg) { transform: translateX(4px); }
+
+  .btn--primary { background: var(--pine); color: var(--on-pine); }
+  .btn--primary:hover { background: var(--pine-700); }
+
+  .btn--accent { background: var(--sage); color: var(--on-sage); }
+  .btn--accent:hover { background: var(--sage-2); color: var(--on-pine); }
+
+  .btn--cream { background: var(--paper); color: var(--pine); }
+  .btn--cream:hover { background: var(--bone); }
+
+  .btn--ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn--ghost:hover { border-color: var(--sage-2); background: var(--sage-wash); }
+
+  .btn--onpine { background: transparent; color: var(--on-pine); border-color: var(--line-pine); }
+  .btn--onpine:hover { border-color: var(--on-pine); background: rgba(237,231,214,0.06); }
+</style>

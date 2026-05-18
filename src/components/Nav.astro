@@ -1,0 +1,234 @@
+---
+// Nav.astro — sticky cream nav with crest wordmark + editorial links.
+// CSS-only mobile drawer (checkbox toggle, mirrors the Pamphlet flip):
+// Astro is static, so a link navigation is a full page load — the drawer
+// resets closed on its own, no JS needed to close it.
+import Icon from "./Icon.astro";
+import Button from "./Button.astro";
+interface Props { route?: string }
+const { route = "/" } = Astro.props;
+const items = [
+  { to: "/clinicians", label: "Clinicians" },
+  { to: "/facilities", label: "Facilities" },
+  { to: "/jobs",       label: "Job board" },
+  { to: "/story",      label: "Our story" },
+  { to: "/contact",    label: "Get in touch" },
+];
+---
+<header class="nav">
+  <input type="checkbox" id="navtoggle" class="nav__toggle" aria-label="Open navigation menu" />
+
+  <div class="nav__inner">
+    <a href="/" class="brand" aria-label="Innovative Medical Staffing — home">
+      <svg class="crest" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <circle cx="20" cy="20" r="19" stroke="var(--ink)" stroke-width="0.9"/>
+        <circle cx="20" cy="20" r="14.5" stroke="var(--brass)" stroke-width="0.9" stroke-dasharray="1.2 2.8"/>
+        <path d="M20 10v20M13 15c4.5 0 4.5 10 7 10s2.5-10 7-10" stroke="var(--sage-2)" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <span class="lockup">
+        <span class="wm">Innovative Medical Staffing</span>
+      </span>
+    </a>
+
+    <nav class="links" aria-label="Primary">
+      {items.map((it) => (
+        <a href={it.to} class:list={["link", { active: route === it.to }]}>{it.label}</a>
+      ))}
+    </nav>
+
+    <div class="right">
+      <a href="tel:18005551040" class="phone lnk">
+        <Icon name="phone" size={14} color="var(--clay)" />
+        <span>(800) 555-1040</span>
+      </a>
+      <Button href="/contact" variant="primary" class="apply">Apply now</Button>
+      <label for="navtoggle" class="burger" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </label>
+    </div>
+  </div>
+
+  <label for="navtoggle" class="nav__scrim" aria-hidden="true"></label>
+
+  <div class="nav__drawer" id="navdrawer">
+    <nav class="drawer__links" aria-label="Primary mobile">
+      {items.map((it) => (
+        <a href={it.to} class:list={["drawer__link", { active: route === it.to }]}>
+          <span>{it.label}</span>
+          <Icon name="arrowRight" size={13} color="var(--sage-2)" />
+        </a>
+      ))}
+    </nav>
+    <div class="drawer__foot">
+      <a href="tel:18005551040" class="drawer__phone lnk">
+        <Icon name="phone" size={14} color="var(--clay)" />
+        <span>(800) 555-1040</span>
+      </a>
+      <Button href="/contact" variant="primary" class="drawer__apply">Apply now</Button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    background: rgba(242,236,223,0.82);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .nav__inner {
+    max-width: var(--maxw); margin: 0 auto;
+    padding: 14px var(--gutter);
+    /* auto 1fr auto (not 1fr auto 1fr): the symmetric 1fr starved the wide
+     * wordmark to an equal side-share narrower than its nowrap text, so it
+     * overran the centred links on laptops even when total content fit.
+     * Brand/right size to content; links flex-centre in the middle track. */
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 24px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .crest { width: 30px; height: 30px; flex: none; }
+  .lockup { display: flex; align-items: center; line-height: 1; min-width: 0; }
+  .wm {
+    font: 400 20px/1 var(--display); letter-spacing: .035em;
+    text-transform: uppercase; color: var(--ink); white-space: nowrap;
+  }
+  .links { display: flex; gap: 6px; justify-self: center; }
+  .link {
+    position: relative;
+    font: 600 11.5px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-2); padding: 10px 12px;
+    transition: color var(--dur-base) var(--ease-out);
+  }
+  .link::after {
+    content: ""; position: absolute; left: 12px; right: 12px; bottom: 2px;
+    height: 1px; background: var(--brass);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+  .link:hover { color: var(--ink); }
+  .link.active { color: var(--ink); }
+  .link.active::after, .link:hover::after { transform: scaleX(1); }
+  .right { display: flex; gap: 14px; align-items: center; justify-content: flex-end; }
+  .phone {
+    display: inline-flex; align-items: center; gap: 8px;
+    font: 600 13px/1 var(--sans); color: var(--ink-2); white-space: nowrap;
+  }
+  .phone:hover { color: var(--pine); }
+  /* Button.astro is a child component: Astro puts ITS scope id on the <a>,
+   * not Nav's, so a bare scoped `.apply` selector never matches it. Anchor
+   * on a Nav-template parent (.right keeps Nav's scope id) and reach the
+   * child with :global(). Also raises specificity above Button's own .btn. */
+  .right :global(.apply) { padding: 11px 20px; font-size: 14px; }
+
+  /* ---- CSS-only mobile drawer ---- */
+  /* checkbox: sr-only but keyboard-focusable (Space toggles); the label is
+   * the visible control and toggles it on click regardless of pointer-events */
+  /* sr-only but keyboard-focusable WHEN the burger exists. display:none on
+   * desktop keeps it out of the tab order there (no mobile menu on desktop,
+   * burger is display:none, so a focus ring would point at nothing). */
+  .nav__toggle {
+    display: none;
+    position: absolute; width: 1px; height: 1px; margin: -1px;
+    opacity: 0; pointer-events: none;
+  }
+  .burger {
+    display: none; /* desktop: hidden, links carry nav */
+    width: 42px; height: 42px; flex: none; cursor: pointer;
+    border: 1px solid var(--brass-line); border-radius: var(--r-sm);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 5px;
+    background: transparent;
+    transition: border-color var(--dur-base) var(--ease-out);
+  }
+  .burger:hover { border-color: var(--brass); }
+  .burger span {
+    display: block; width: 18px; height: 1.5px; background: var(--ink);
+    transition: transform var(--dur-base) var(--ease-out),
+                opacity var(--dur-base) var(--ease-out);
+  }
+  .nav__scrim {
+    display: none; position: fixed; inset: 0; z-index: 80;
+    background: rgba(22,21,19,0.34); cursor: pointer;
+  }
+  .nav__drawer {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 90;
+    display: none; flex-direction: column;
+    background: var(--cream); border-bottom: 1px solid var(--brass-line);
+    box-shadow: var(--elev-3);
+    padding: 8px var(--gutter) 24px;
+    /* visibility:hidden when closed pulls drawer links OUT of the tab order
+     * (opacity/pointer-events alone left them keyboard-reachable while
+     * invisible — Codex fold). visibility transitions with the fade so the
+     * close animation isn't cut short. */
+    opacity: 0; transform: translateY(-10px); pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--dur-base) var(--ease-out),
+                transform var(--dur-base) var(--ease-out),
+                visibility var(--dur-base) var(--ease-out);
+  }
+  .drawer__links { display: flex; flex-direction: column; }
+  .drawer__link {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 4px; border-bottom: 1px solid var(--line-soft);
+    font: 400 22px/1 var(--display); letter-spacing: var(--tracking-display);
+    text-transform: uppercase; color: var(--ink-2);
+    transition: color var(--dur-base) var(--ease-out);
+  }
+  .drawer__link:hover, .drawer__link.active { color: var(--ink); }
+  .drawer__link.active { color: var(--pine); }
+  .drawer__foot {
+    display: flex; flex-direction: column; gap: 14px;
+    padding-top: 22px;
+  }
+  .drawer__phone {
+    display: inline-flex; align-items: center; gap: 9px;
+    font: 600 15px/1 var(--sans); color: var(--ink-2);
+  }
+  /* same child-component scope caveat as .apply above — reach via parent */
+  .drawer__foot :global(.drawer__apply) { width: 100%; justify-content: center; padding: 14px 20px; }
+
+  /* ---- Laptop band (1025–1200): full nav still shown, but the wordmark +
+   * 5 tracked links + phone + Apply no longer fit, so the wordmark used to
+   * overrun the first link. Reclaim room before the ≤1024 drawer collapse:
+   * drop the redundant phone (still in footer + drawer), tighten the link
+   * tracking/padding, and shrink the wordmark a touch. Placed above the
+   * 1024 block so those rules win at ≤1024. */
+  @media (max-width: 1200px) {
+    .wm { font-size: 17px; letter-spacing: .03em; }
+    .phone { display: none; }
+    .links { gap: 2px; }
+    .link { letter-spacing: .08em; padding: 10px 9px; }
+  }
+
+  /* ---- Tablet + mobile: links collapse into the drawer ----
+   * The checked-state rules live INSIDE this query on purpose: above 1024px
+   * the drawer mechanism doesn't exist, so .nav__scrim / .nav__drawer fall
+   * back to their display:none defaults even if the checkbox stayed :checked
+   * from before a resize/rotate (no stray fixed scrim over the desktop page). */
+  @media (max-width: 1024px) {
+    .nav__inner { grid-template-columns: auto 1fr; }
+    .links, .phone { display: none; }
+    .nav__toggle { display: block; } /* now focusable — burger is visible */
+    .nav__drawer { display: flex; }
+    .burger { display: flex; }
+
+    .nav__toggle:checked ~ .nav__scrim { display: block; }
+    .nav__toggle:checked ~ .nav__drawer {
+      opacity: 1; transform: none; pointer-events: auto; visibility: visible;
+    }
+    .nav__toggle:checked ~ .nav__inner .burger span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .nav__toggle:checked ~ .nav__inner .burger span:nth-child(2) { opacity: 0; }
+    .nav__toggle:checked ~ .nav__inner .burger span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+    /* surface keyboard focus on the visible control */
+    .nav__toggle:focus-visible ~ .nav__inner .burger { box-shadow: var(--glow); }
+  }
+  @media (max-width: 767px) {
+    /* .apply is on a child Button component (Button's scope id, not Nav's),
+     * so a scoped `.apply` never matches. Reach it via Nav-scoped .right +
+     * :global(); the descendant also outranks Button's own .btn cleanly,
+     * so the Apply pill actually hides and stops colliding with the wordmark. */
+    .right :global(.apply) { display: none; } /* primary CTA lives in the drawer */
+    .wm { font-size: 16px; letter-spacing: .03em; }
+  }
+</style>

@@ -1,0 +1,40 @@
+---
+import "../styles/ims.css";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+  route?: string;
+  noindex?: boolean;
+}
+
+const {
+  title = "Innovative Medical Staffing — locum tenens staffing, every specialty",
+  description = "We place credentialed clinicians into locum tenens assignments across every specialty — one recruiter, their cell, a team that picks up the phone.",
+  route = "/",
+  noindex = true,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#F2ECDF" />
+    <link rel="icon" href="/assets/ims-mark.png" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <Nav route={route} />
+    <main class="page-fade">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

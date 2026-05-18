@@ -1,0 +1,395 @@
+---
+// clinicians.astro — deep-dive page for clinicians considering IMS.
+// Ports the source Clinicians.jsx (Hero · YourDesk · WhatsIncluded ·
+// PayTimeline · ReferColleague · FAQ · ClosingCTA) and reskins it from the
+// dark-navy / saturated-card original into Belleval quiet-luxury, matching
+// the patterns established in index.astro. Country-club copy removed per the
+// locked sitewide decision. FAQ is a CSS-only <details> accordion (no JS).
+import IMSLayout from "../layouts/IMSLayout.astro";
+import Eyebrow from "../components/Eyebrow.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+import Medallion from "../components/Medallion.astro";
+import ConciergeCard from "../components/ConciergeCard.astro";
+
+const heroCards = [
+  { tone: "pine",  e: "Cash flow",     h: "Friday<br/>pay.",        b: "Direct deposit. Not pending. Not 14 days." },
+  { tone: "bone",  e: "Coverage",      h: "$2M /<br/>$4M.",         b: "Occurrence malpractice. A-rated. Zero deductible." },
+  { tone: "sage",  e: "Travel",        h: "Keys at<br/>the curb.",  b: "We negotiate, book, and hand over the keys on day one." },
+  { tone: "paper", e: "Credentialing", h: "Days,<br/>not weeks.",   b: "Licensure, privileging, NPDB — handled by a real human." },
+];
+
+const recruiters = [
+  { i: "MV", n: "Marcus Vega",    r: "Founder & MP · 12 yrs",       c: "(404) 555-0117" },
+  { i: "PD", n: "Priya Desai",    r: "Mountain West · 7 yrs",        c: "(801) 555-0184" },
+  { i: "JM", n: "Jordan Morales", r: "Founder & CRNA Lead · 12 yrs", c: "(615) 555-0203" },
+  { i: "TC", n: "Theo Caine",     r: "Northeast · 6 yrs",            c: "(617) 555-0119" },
+];
+
+const included = [
+  { tone: "pine",  e: "Compensation",     h: "$1.04 per mile.",  b: "Mileage at the IRS rate, paid weekly. We don't round down.", bot: "+ per-diem when applicable" },
+  { tone: "bone",  e: "Malpractice",      h: "$2M / $4M.",       b: "Occurrence-based. A-rated carrier. Tail coverage for 7 years included.", bot: "Zero deductible · A.M. Best A" },
+  { tone: "sage",  e: "Travel",           h: "We book.",         b: "Whatever the facility covers — flight, hotel, rental, stipend — we book it, negotiate it, and hand you the keys.", bot: "Including the Traveler's Issue, every city" },
+  { tone: "paper", e: "Credentialing",    h: "Real human.",      b: "License, privileging, NPDB. One credentialing lead per region, by name, with their cell.", bot: "Renewals tracked 90 days out" },
+  { tone: "bone",  e: "Tax & retirement", h: "1099 done right.", b: "Quarterly tax estimator emailed to you. Solo-401(k) referral network. We don't pretend to be your CPA — we point you at one we trust.", bot: "Or W-2 — your call" },
+  { tone: "pine",  e: "Continuity",       h: "92% come back.",   b: "After your first assignment, we line up the next one before your check is cut. Most clinicians stay with the same desk for 4+ years.", bot: "Same recruiter, same number" },
+];
+
+const paySteps = [
+  { icon: "cal",    day: "Sun", label: "Submit",  b: "Timesheet auto-prefills from the EHR. You confirm, one tap." },
+  { icon: "check",  day: "Mon", label: "Approve",  b: "Facility approves by noon. We'll chase them if not." },
+  { icon: "clock",  day: "Wed", label: "Process",  b: "ACH cuts. Direct-deposit batch leaves IMS Wednesday." },
+  { icon: "dollar", day: "Fri", label: "Deposit",  b: "Money in your account by close of business Friday." },
+];
+
+const payout = [
+  ["Referral submitted", "$0"],
+  ["They sign with IMS", "$500"],
+  ["They finish their first assignment", "$1,000"],
+  ["Both of you, dinner anywhere", "Yes."],
+];
+
+const faqs = [
+  { q: "Do I have to commit to a long contract?", a: "No. Most of our assignments run 4–13 weeks, but we'll happily place you for a single weekend if that's what you need. The handshake is the contract; we don't ask for exclusivity." },
+  { q: "What if I don't get along with my recruiter?", a: "Tell us. We'll move you to a different desk by the end of the week, no questions asked. We're a small firm and our recruiters know they're matched to you — not the other way around." },
+  { q: "Will I be 1099 or W-2?", a: "Your call. Most of our clinicians prefer 1099 for the tax treatment, but if you want to be W-2 — full benefits, retirement match, the works — we offer that too. Switching mid-relationship is fine." },
+  { q: "What if I need to back out of an assignment?", a: "Things happen. Call us as early as you can; the earlier, the easier. We've handled family emergencies, surprise pregnancies, and one CRNA who decided to take a sabbatical to surf. We didn't blink." },
+  { q: "Who pays for travel and housing?", a: "The facility, in almost every case. We negotiate the package on your behalf, then book the hotel or rental and arrange the rental car. You'll see the cost breakdown before you sign — never a surprise." },
+  { q: "Is the malpractice really included?", a: "Yes. $2M per claim / $4M aggregate, occurrence-based (not claims-made), with tail coverage included for seven years. A-rated carrier. No deductible. It's the same policy our founders carry." },
+];
+---
+<IMSLayout title="For clinicians — Innovative Medical Staffing" route="/clinicians">
+  <!-- ===================== HERO ===================== -->
+  <section class="hero section">
+    <Eyebrow class="reveal d1">For clinicians</Eyebrow>
+    <h1 class="duo hero__h reveal d2">
+      <span class="claim">One recruiter. Their cell.</span>{" "}
+      <span class="soft">We answer the call. We learn your name.</span>
+    </h1>
+    <p class="hero__lede reveal d3">
+      Working with IMS isn't a portal and a Slack channel. It's a recruiter who picks
+      up the phone, a credentialing team who answers their email, and a Friday paycheck
+      that lands like clockwork. The boring stuff handled — so the work stays the work.
+    </p>
+    <div class="hero__cta reveal d4">
+      <Button href="/contact" variant="primary">Apply now <Icon name="arrowRight" size={16} color="var(--on-pine)" /></Button>
+      <Button href="/jobs" variant="ghost">Browse open assignments <Icon name="arrowRight" size={16} color="var(--ink)" /></Button>
+    </div>
+    <div class="hcl reveal d5">
+      {heroCards.map((c) => (
+        <div class:list={["hc", `hc--${c.tone}`]}>
+          <span class="hc__e">{c.e}</span>
+          <h3 class="hc__h" set:html={c.h}></h3>
+          <p class="hc__b">{c.b}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ===================== YOUR DESK ===================== -->
+  <section class="section section--lg">
+    <div class="ah">
+      <div>
+        <Eyebrow>The desk</Eyebrow>
+        <h2 class="ah__h">One name. One cell.<br/><span class="it">For years, not weeks.</span></h2>
+      </div>
+      <p class="ah__s">Every clinician at IMS works with a single recruiter — and we cap each recruiter's caseload at 150 so it actually stays personal. Below: the team you'd meet in your first month.</p>
+    </div>
+    <div class="desk">
+      <ConciergeCard />
+      <div class="desk__r">
+        <div class="bnote">
+          <span class="bnote__e">The backup</span>
+          <h3 class="bnote__h">You also get a backup recruiter — their cell is on the back of your IMS card.</h3>
+          <p class="bnote__b">If your primary is on the slopes or out with a sick kid, you don't hit a queue. The desk lead picks up. Both numbers travel with you, every assignment, every year.</p>
+        </div>
+        <div class="recs">
+          {recruiters.map((r) => (
+            <div class="rec">
+              <Medallion initials={r.i} size={52} />
+              <div>
+                <h4 class="rec__n">{r.n}</h4>
+                <div class="rec__r">{r.r}</div>
+                <div class="rec__c">{r.c}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WHAT'S INCLUDED ===================== -->
+  <section class="section section--lg">
+    <div class="ah">
+      <div>
+        <Eyebrow>What's included</Eyebrow>
+        <h2 class="ah__h">Every assignment.<br/><span class="it">Every line item.</span></h2>
+      </div>
+      <p class="ah__s">No hidden fees, no fine-print clawbacks. The list below is the entire deal — we'd rather under-promise and over-deliver than the other way around.</p>
+    </div>
+    <div class="inc">
+      {included.map((it) => (
+        <div class:list={["ic2", `ic2--${it.tone}`]}>
+          <span class="ic2__e">{it.e}</span>
+          <h3 class="ic2__h">{it.h}</h3>
+          <p class="ic2__b">{it.b}</p>
+          <div class="ic2__bot">{it.bot}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ===================== PAY TIMELINE ===================== -->
+  <section class="section section--lg">
+    <div class="pay">
+      <div class="pay__l">
+        <Eyebrow tone="onpine">The pay timeline</Eyebrow>
+        <h2 class="pay__h">Submit Sunday.<br/><span class="it">Paid Friday.</span></h2>
+        <p class="pay__b">We've cut a check on a Friday every Friday since 2018. The same ACH window for everyone, no holds, no clearances. If a facility is slow, that's our problem, not yours.</p>
+      </div>
+      <div class="tl">
+        <div class="tl__track" aria-hidden="true"></div>
+        <div class="tl__steps">
+          {paySteps.map((s) => (
+            <div class="tl__s">
+              <div class="tl__dot"><Icon name={s.icon} size={18} color="var(--pine)" /></div>
+              <div class="tl__lbl">{s.label}</div>
+              <div class="tl__day">{s.day}</div>
+              <div class="tl__b">{s.b}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== REFER A COLLEAGUE ===================== -->
+  <section class="section section--lg">
+    <div class="ref">
+      <div class="ref__l">
+        <Eyebrow tone="onpine">Refer a colleague</Eyebrow>
+        <h2 class="ref__h">$1,500 for every CRNA you send our way.</h2>
+        <p class="ref__b">And — because this is IMS — a steak dinner for both of you the next time you're in the same city. We mean it. Send the receipt, we cover it.</p>
+        <div class="ref__cta">
+          <Button href="/contact" variant="cream">Refer someone now <Icon name="arrowRight" size={15} color="var(--pine)" /></Button>
+          <a href="/contact" class="reflink">How the bonus works <Icon name="arrowUpRight" size={13} color="var(--gold-200)" /></a>
+        </div>
+      </div>
+      <div class="ref__card">
+        <h3 class="ref__ch">How it pays out</h3>
+        {payout.map(([l, v]) => (
+          <div class="ref__row"><span>{l}</span><b>{v}</b></div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FAQ (CSS-only accordion) ===================== -->
+  <section class="section section--lg">
+    <div class="faq">
+      <div class="faq__l">
+        <Eyebrow>FAQ</Eyebrow>
+        <h2 class="faq__h">Questions clinicians ask before they sign.</h2>
+        <p class="faq__s">Don't see yours? Call Allison directly: (843) 555-0193. She'll answer or call you back within the hour.</p>
+      </div>
+      <div class="faq__list">
+        {faqs.map((f, i) => (
+          <details class="qa" open={i === 0}>
+            <summary class="qa__q">
+              <span>{f.q}</span>
+              <span class="qa__t" aria-hidden="true"></span>
+            </summary>
+            <p class="qa__a">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CLOSING CTA ===================== -->
+  <section class="section section--lg">
+    <div class="cta">
+      <div class="cta__l">
+        <Eyebrow tone="gold">Ready when you are</Eyebrow>
+        <h2 class="cta__h">Tell us where you want to work next.</h2>
+        <p class="cta__b">Whether you're between assignments or just want to know what's open in a city you've been curious about — give us a call, send a note, or fill the form. A real human replies within the hour.</p>
+        <div class="cta__row">
+          <Button href="/contact" variant="primary">Apply now <Icon name="arrowRight" size={16} color="var(--on-pine)" /></Button>
+          <Button href="/jobs" variant="ghost">Browse assignments <Icon name="arrowRight" size={14} color="var(--ink)" /></Button>
+        </div>
+      </div>
+      <div class="cta__card">
+        <h4>This week at IMS</h4>
+        <div class="cr"><span>Open assignments</span><b>142</b></div>
+        <div class="cr"><span>Clinicians placed (YTD)</span><b>318</b></div>
+        <div class="cr"><span>Avg. response time</span><b>34 min</b></div>
+        <div class="cr"><span>Calls answered this month</span><b>100% (1,204)</b></div>
+      </div>
+    </div>
+  </section>
+</IMSLayout>
+
+<style>
+  /* ---- Hero (mirrors index.astro hero) ---- */
+  .hero { padding-top: clamp(56px,8vw,112px); padding-bottom: clamp(48px,7vw,84px); }
+  .hero__h { font: var(--t-display-xl); letter-spacing: var(--tracking-display); max-width: 18ch; margin-top: 30px; text-wrap: balance; }
+  .hero__lede { font: var(--t-body-lg); color: var(--ink-2); margin-top: 28px; max-width: 56ch; }
+  .hero__cta { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+  .hcl { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-top: 56px; }
+  .hc { border-radius: var(--r-xl); padding: 30px 28px; display: flex; flex-direction: column; gap: 12px;
+    min-height: 220px; transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .hc:hover { transform: translateY(-3px); }
+  .hc--pine  { background: var(--pine);  color: var(--on-pine); }
+  .hc--pine:hover { box-shadow: var(--elev-3); }
+  .hc--bone  { background: var(--bone);  color: var(--ink); border: 1px solid var(--brass-line); }
+  .hc--sage  { background: var(--sage);  color: var(--on-sage); }
+  .hc--paper { background: var(--paper); color: var(--ink); border: 1px solid var(--brass-line); }
+  .hc--paper:hover, .hc--bone:hover { box-shadow: var(--elev-2); }
+  .hc__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; opacity: .85; font-feature-settings: "smcp" 1; }
+  .hc__h { font: 400 clamp(26px,2.5vw,32px)/1.0 var(--display); letter-spacing: var(--tracking-display); color: inherit; }
+  .hc__b { font: 400 13px/1.55 var(--sans); opacity: .82; color: inherit; margin-top: auto; }
+
+  /* ---- Section header (mirrors index.astro .ah) ---- */
+  .ah { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 64px; }
+  .ah__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 24px; text-wrap: balance; }
+  .ah__s { font: var(--t-body-lg); color: var(--ink-2); max-width: 46ch; }
+
+  /* ---- Your desk ---- */
+  .desk { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .desk__r { display: flex; flex-direction: column; gap: 14px; }
+  .bnote { background: var(--pine); color: var(--on-pine); border-radius: var(--r-xl);
+    padding: 32px 30px; display: flex; flex-direction: column; gap: 12px; }
+  .bnote__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase;
+    color: var(--gold-200); font-feature-settings: "smcp" 1; }
+  .bnote__h { font: 400 clamp(20px,2vw,24px)/1.2 var(--display); letter-spacing: var(--tracking-display); color: var(--on-pine); margin: 0; }
+  .bnote__b { font: 400 14px/1.55 var(--sans); color: var(--on-pine-2); margin: 0; }
+  .recs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .rec { background: var(--bone); border: 1px solid var(--brass-line); border-radius: var(--r-lg);
+    padding: 20px; display: flex; gap: 14px; align-items: center; }
+  .rec__n { font: 400 15px/1.15 var(--display); letter-spacing: .02em; text-transform: uppercase; color: var(--ink); margin: 0; }
+  .rec__r { font: 500 12px/1.4 var(--sans); color: var(--ink-3); margin-top: 5px; }
+  .rec__c { font: 500 12px/1.3 var(--sans); color: var(--sage-2); margin-top: 6px; }
+
+  /* ---- What's included ---- */
+  .inc { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .ic2 { border-radius: var(--r-xl); padding: 30px; display: flex; flex-direction: column; gap: 13px;
+    min-height: 270px; transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .ic2:hover { transform: translateY(-3px); }
+  .ic2--pine  { background: var(--pine);  color: var(--on-pine); }
+  .ic2--pine:hover { box-shadow: var(--elev-3); }
+  .ic2--bone  { background: var(--bone);  color: var(--ink); border: 1px solid var(--brass-line); }
+  .ic2--sage  { background: var(--sage);  color: var(--on-sage); }
+  .ic2--paper { background: var(--paper); color: var(--ink); border: 1px solid var(--brass-line); }
+  .ic2--bone:hover, .ic2--paper:hover { box-shadow: var(--elev-2); }
+  .ic2__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; opacity: .85; font-feature-settings: "smcp" 1; }
+  .ic2__h { font: 400 clamp(26px,2.6vw,32px)/1.0 var(--display); letter-spacing: var(--tracking-display); color: inherit; }
+  .ic2__b { font: 400 14px/1.55 var(--sans); opacity: .85; color: inherit; }
+  .ic2__bot { margin-top: auto; padding-top: 14px; font: 600 11px/1.3 var(--sans); letter-spacing: .06em;
+    text-transform: uppercase; opacity: .7; }
+
+  /* ---- Pay timeline ---- */
+  .pay { background: var(--pine); border: 1px solid var(--line-pine); border-radius: var(--r-2xl);
+    padding: clamp(40px,5vw,64px) clamp(32px,4vw,56px);
+    display: grid; grid-template-columns: 1fr 1.4fr; gap: clamp(40px,5vw,56px); align-items: center; }
+  .pay__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); color: var(--on-pine); margin-top: 16px; text-wrap: balance; }
+  .pay__b { font: 400 16px/1.55 var(--sans); color: var(--on-pine-2); margin-top: 18px; max-width: 40ch; }
+  .tl { position: relative; padding: 8px 0; }
+  .tl__track { position: absolute; top: 28px; left: 24px; right: 24px; height: 1px; background: var(--line-pine); }
+  .tl__steps { position: relative; display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; }
+  .tl__s { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+  .tl__dot { width: 56px; height: 56px; border-radius: 999px; background: var(--bone);
+    display: flex; align-items: center; justify-content: center; border: 4px solid var(--pine); }
+  .tl__lbl { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase;
+    color: var(--gold-200); font-feature-settings: "smcp" 1; }
+  .tl__day { font: 400 22px/1 var(--display); letter-spacing: var(--tracking-display); color: var(--on-pine); }
+  .tl__b { font: 400 12px/1.45 var(--sans); color: var(--on-pine-2); }
+
+  /* ---- Refer a colleague (the one bold moment — pine + gold) ---- */
+  .ref { background: var(--pine); color: var(--on-pine); border: 1px solid var(--line-pine);
+    border-radius: var(--r-2xl); padding: clamp(48px,6vw,72px) clamp(36px,5vw,64px);
+    display: grid; grid-template-columns: 1.4fr 1fr; gap: clamp(40px,5vw,56px); align-items: center;
+    position: relative; overflow: hidden; }
+  .ref::after { content: ""; position: absolute; top: -40px; right: -30px; width: 240px; height: 270px;
+    background: var(--sage); opacity: .12; pointer-events: none;
+    border-radius: 62% 38% 55% 45% / 48% 56% 44% 52%; transform: rotate(-10deg); }
+  .ref__l, .ref__card { position: relative; z-index: 1; }
+  .ref__h { font: 400 clamp(34px,4.4vw,60px)/1.0 var(--display); letter-spacing: var(--tracking-display);
+    color: var(--on-pine); margin-top: 16px; text-wrap: balance; }
+  .ref__b { font: 400 16px/1.55 var(--sans); color: var(--on-pine-2); margin-top: 18px; max-width: 44ch; }
+  .ref__cta { display: flex; gap: 16px; margin-top: 30px; align-items: center; flex-wrap: wrap; }
+  .reflink { display: inline-flex; align-items: center; gap: 6px; font: 600 14px/1 var(--sans);
+    color: var(--gold-200); }
+  .ref__card { background: var(--pine-deep); border: 1px solid var(--line-pine); border-radius: var(--r-xl);
+    padding: 28px; display: flex; flex-direction: column; gap: 2px; }
+  .ref__ch { font: 400 17px/1.2 var(--display); letter-spacing: .02em; text-transform: uppercase;
+    color: var(--on-pine); margin: 0 0 8px; }
+  .ref__row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0;
+    border-top: 1px solid var(--line-pine); font: 500 13px/1.4 var(--sans); color: var(--on-pine-2); }
+  .ref__row b { font: 700 13px/1.4 var(--sans); color: var(--gold-200); }
+
+  /* ---- FAQ — CSS-only <details> accordion ---- */
+  .faq { display: grid; grid-template-columns: 1fr 1.6fr; gap: 48px; align-items: start; }
+  .faq__l { position: sticky; top: 96px; }
+  .faq__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 24px; text-wrap: balance; }
+  .faq__s { font: 400 15px/1.6 var(--sans); color: var(--ink-3); margin-top: 18px; max-width: 34ch; }
+  .faq__list { display: flex; flex-direction: column; gap: 1px;
+    background: var(--brass-line); border: 1px solid var(--brass-line);
+    border-radius: var(--r-xl); overflow: hidden; }
+  .qa { background: var(--paper); transition: background var(--dur-base) var(--ease-out); }
+  .qa[open] { background: var(--band); }
+  .qa__q { display: flex; justify-content: space-between; align-items: center; gap: 20px;
+    padding: 26px 30px; cursor: pointer; list-style: none;
+    font: 500 17px/1.35 var(--serif); color: var(--ink); }
+  .qa__q::-webkit-details-marker { display: none; }
+  .qa__t { position: relative; width: 26px; height: 26px; border-radius: 999px; flex: none;
+    border: 1px solid var(--brass-line); }
+  .qa__t::before, .qa__t::after { content: ""; position: absolute; inset: 0;
+    background: var(--sage-2); transition: opacity var(--dur-base) var(--ease-out); }
+  .qa__t::before { width: 10px; height: 1px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .qa__t::after  { width: 1px; height: 10px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .qa[open] .qa__t::after { opacity: 0; }
+  .qa__a { font: 400 15px/1.65 var(--sans); color: var(--ink-2); margin: 0;
+    padding: 0 30px 28px; max-width: 64ch; }
+
+  /* ---- Closing CTA (mirrors index.astro .cta) ---- */
+  .cta { background: var(--band); border: 1px solid var(--brass-line); border-radius: var(--r-2xl);
+    padding: clamp(48px,6vw,84px) clamp(36px,5vw,64px); display: grid; grid-template-columns: 1.4fr 1fr;
+    gap: 56px; align-items: center; }
+  .cta__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 18px; color: var(--ink); text-wrap: balance; }
+  .cta__b { font: var(--t-body-lg); color: var(--ink-2); margin-top: 22px; max-width: 48ch; }
+  .cta__row { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+  .cta__card { background: var(--paper); border: 1px solid var(--brass-line);
+    border-radius: var(--r-xl); padding: 30px; display: flex; flex-direction: column; gap: 2px; }
+  .cta__card h4 { font: var(--t-h4); color: var(--ink); margin-bottom: 12px; }
+  .cr { display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--line-soft);
+    font: 500 13px/1.4 var(--sans); color: var(--ink-2); }
+  .cr b { font: 700 13px/1.4 var(--sans); color: var(--ink); }
+
+  /* ---- Responsive (mirrors index.astro tiers) ---- */
+  @media (max-width: 1180px) {
+    .ah { gap: 36px; margin-bottom: 52px; }
+    .hcl, .inc { gap: 14px; }
+  }
+  @media (max-width: 1024px) {
+    .ah { grid-template-columns: 1fr; gap: 32px; margin-bottom: 44px; }
+    .hcl { grid-template-columns: 1fr 1fr; }
+    .desk, .pay, .ref, .faq, .cta { grid-template-columns: 1fr; gap: 32px; }
+    .inc { grid-template-columns: 1fr 1fr; }
+    .faq__l { position: static; }
+    .ref__card { order: 2; }
+  }
+  @media (max-width: 767px) {
+    .hcl, .inc, .recs, .tl__steps { grid-template-columns: 1fr; }
+    .hc, .ic2 { min-height: 0; padding: 26px; }
+    .tl__track { display: none; }
+    .tl__s { flex-direction: row; text-align: left; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+    .tl__dot { width: 48px; height: 48px; }
+    .tl__b { flex-basis: 100%; }
+    .pay, .ref { padding: 36px 26px; }
+    .qa__q { padding: 22px; font-size: 16px; }
+    .qa__a { padding: 0 22px 24px; }
+    .section--lg { padding-block: clamp(56px,11vw,84px); }
+    .hero__h { max-width: 14ch; }
+  }
+</style>

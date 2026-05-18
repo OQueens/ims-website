@@ -1,0 +1,252 @@
+/* ===========================================================================
+ * IMS — Belleval design system (quiet-luxury cream / sage / pine)
+ *
+ * Refined from the real Hôtel Belleval gallery (Behance 221703563). A warm
+ * monochrome editorial system: soft cream grounds, dusty sage as the single
+ * color, deep muted pine + warm near-black ink for anchors, a thin brass
+ * hairline for fine rules — never fills. Type is a 3-voice system: a tall
+ * heavy CONDENSED display (Anton), a fine letterspaced serif for ceremonial
+ * labels + italic captions (Fraunces), and a quiet refined grotesk for body
+ * (Hanken). Token NAMES mirror the source design system so ported sections
+ * map mechanically; only the VALUES + type are reskinned. Vast negative
+ * space, flat surfaces, no gradients-as-decoration, restraint over spectacle.
+ * ========================================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap");
+
+:root {
+  /* ---------- Belleval canonical palette (LOCKED) ---------- */
+  --band:  #E6DAC2;   /* warm sand-taupe — hero / anchor ground          */
+  --bone:  #E8E0CF;   /* warm oat, speckled — seal discs, "stock" stock  */
+  --sage:  #9DAA8A;   /* dusty grey-sage — THE color (organic shapes)    */
+  --sage-2:#7E8C6B;   /* deeper sage — sage/pine are one green family    */
+  --brass: #9C824E;   /* warm bronze — HAIRLINE only, never a fill       */
+
+  /* ---------- Surfaces (legacy names → Belleval values) ---------- */
+  --cream:        #F2ECDF;   /* page ground — the calm dominant field    */
+  --cream-2:      var(--band);
+  --paper:        #F8F3E9;   /* cards — a whisper above ground, flat      */
+  --sand:         var(--bone);
+  --sand-deep:    #DACDB2;
+  --pine:         #29382C;   /* dark sections / primary action           */
+  --pine-700:     #20302A;
+  --pine-deep:    #18241F;
+
+  --bg:           var(--cream);
+  --surface:      var(--paper);
+  --surface-2:    var(--band);
+
+  /* ---------- Text (secondary/tertiary = opacities of ink) ---------- */
+  --ink:          #161513;   /* near-black, faintly warm — primary       */
+  --ink-2:        rgba(22,21,19,0.62);  /* secondary                     */
+  --ink-3:        rgba(22,21,19,0.42);  /* tertiary / duotone "soft"     */
+  --ink-4:        rgba(22,21,19,0.24);  /* faint / disabled              */
+  --on-pine:      #EDE7D6;   /* warm bone-light text on pine             */
+  --on-pine-2:    rgba(237,231,214,0.66);
+  --on-sage:      #1B231A;   /* ink on a sage fill                       */
+  --on-clay:      var(--on-sage);
+
+  /* ---------- Accents — sage is the only color, brass is hairline ---- */
+  --clay:         var(--sage);     /* legacy "clay" → sage everywhere    */
+  --clay-600:     var(--sage-2);
+  --gold:         var(--brass);    /* legacy "gold" → brass              */
+  --gold-200:     #C9B486;         /* lighter brass — legible on pine    */
+  --gold-600:     #806A3F;
+  --moss:         var(--sage-2);
+
+  /* duotone headline: claim leads, explanation recedes — one breath */
+  --duo-claim:    var(--ink);
+  --duo-soft:     var(--ink-3);
+
+  /* ---------- Lines / fills ---------- */
+  --line:         rgba(22,21,19,0.14);
+  --line-soft:    rgba(22,21,19,0.08);
+  --line-pine:    rgba(237,231,214,0.16);
+  --brass-line:   rgba(156,130,78,0.42);  /* the fine warm bronze rule   */
+  --sage-wash:    rgba(157,170,138,0.20);  /* organic-shape ground wash   */
+
+  /* ---------- Shadow — Belleval is flat; elevation is barely there --- */
+  --elev-1: 0 1px 1px rgba(22,21,19,0.04);
+  --elev-2: 0 10px 30px -26px rgba(22,21,19,0.22);
+  --elev-3: 0 24px 60px -44px rgba(22,21,19,0.30);
+  --glow:   0 0 0 3px rgba(157,170,138,0.34);
+
+  /* ---------- Radii — crisp, varied (tighter inner, softer container) - */
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
+  --r-2xl: 26px; --r-full: 999px;
+
+  /* ---------- Spacing (4px base) ---------- */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px;
+  --s-8:32px; --s-10:40px; --s-12:48px; --s-16:64px; --s-20:80px; --s-24:96px;
+
+  /* ---------- Type — 3-voice Belleval system ---------- */
+  --display: "Anton", "Oswald", "Arial Narrow", system-ui, sans-serif;
+  --serif:   "Fraunces", Georgia, "Times New Roman", serif;
+  --sans:    "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* display = tall heavy condensed grotesque (the BELLEVAL wordmark voice) */
+  --t-display-3xl: 400 clamp(72px,11vw,168px)/0.92 var(--display);
+  --t-display-2xl: 400 clamp(54px,7.6vw,116px)/0.94 var(--display);
+  --t-display-xl:  400 clamp(44px,6.2vw,88px)/0.96  var(--display);
+  --t-display-lg:  400 clamp(36px,4.8vw,64px)/0.98  var(--display);
+  --t-h1: 400 clamp(34px,4.2vw,58px)/1.0  var(--display);
+  --t-h2: 400 clamp(27px,3.4vw,44px)/1.02 var(--display);
+  --t-h3: 600 clamp(20px,2.3vw,27px)/1.2  var(--sans);
+  --t-h4: 600 19px/1.3  var(--sans);
+  --t-h5: 600 15px/1.35 var(--sans);
+
+  --t-body-lg: 400 18px/1.62 var(--sans);
+  --t-body:    400 16px/1.62 var(--sans);
+  --t-body-sm: 400 14px/1.55 var(--sans);
+  --t-caption: 400 13px/1.45 var(--serif);
+  --t-label:   600 12px/1.3  var(--sans);
+  /* ceremonial = fine letterspaced serif small-caps (engraved label) */
+  --t-ceremonial: 500 12px/1.3 var(--serif);
+
+  --tracking-display: 0.005em;   /* Anton is condensed — do NOT jam it  */
+  --tracking-tight:   -0.004em;
+  --tracking-label:   0.22em;
+  --tracking-cer:     0.26em;
+
+  /* ---------- Motion — invisible, fast, custom curves (emil) -------- */
+  --ease-out:    cubic-bezier(0.23,1,0.32,1);
+  --ease-in-out: cubic-bezier(0.77,0,0.175,1);
+  --ease-emph:   cubic-bezier(0.16,1,0.3,1);
+  --dur-fast: 140ms; --dur-base: 220ms; --dur-slow: 460ms;
+
+  /* layout */
+  --maxw: 1320px;
+  --gutter: clamp(20px, 5vw, 64px);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: var(--t-body);
+  letter-spacing: var(--tracking-tight);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* warm oat speckle — Belleval "bone" surfaces have visible grain. A faint
+ * plain grayscale film: NO mix-blend-mode. A fixed full-viewport blended
+ * layer forces the compositor to re-blend the entire screen every scroll/
+ * anim frame (the scroll "catch"); plain opacity composites once and is
+ * cached. The SVG's own rect opacity (.16) keeps it a whisper at .5. */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none; opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+
+/* Headlines = Anton condensed display, near-black ink, heavy + intentional */
+h1,h2,h3,h4 { margin: 0; color: var(--ink); }
+h1,h2 { font-family: var(--display); font-weight: 400; letter-spacing: var(--tracking-display); }
+h1 { font: var(--t-h1); letter-spacing: var(--tracking-display); }
+h2 { font: var(--t-h2); letter-spacing: var(--tracking-display); }
+h3 { font: var(--t-h3); letter-spacing: -0.005em; }
+h4 { font: var(--t-h4); }
+p  { font: var(--t-body); color: var(--ink-2); margin: 0; text-wrap: pretty; }
+a  { color: inherit; text-decoration: none; }
+small, .caption { font: var(--t-caption); color: var(--ink-3); font-style: italic; }
+img, svg { max-width: 100%; display: block; }
+button { font-family: inherit; }
+::selection { background: rgba(157,170,138,0.36); color: var(--ink); }
+:focus-visible { outline: none; box-shadow: var(--glow); border-radius: var(--r-xs); }
+
+/* ---------- Shared editorial utilities ---------- */
+/* italic serif = the editorial caption voice — the one serif survivor in
+ * display moments (signatures, accent words against the Anton claim) */
+.it { font-family: var(--serif); font-style: italic; font-weight: 500; letter-spacing: 0; }
+
+/* ceremonial label = fine letterspaced serif, engraved + delicate */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 12px;
+  font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
+  text-transform: uppercase; color: var(--sage-2);
+  font-feature-settings: "smcp" 1;
+}
+.eyebrow .orn { color: var(--brass); }
+.eyebrow--gold { color: var(--gold-600); }
+.eyebrow--mut  { color: var(--ink-3); }
+
+.idx { font-family: var(--serif); font-style: italic; color: var(--sage-2); font-size: .9rem; }
+
+/* duotone display headline: claim leads, explanation recedes — one breath */
+.duo .claim { color: var(--duo-claim); }
+.duo .soft  { color: var(--duo-soft); }
+
+.rule { border: 0; border-top: 1px solid var(--line); margin: 0; }
+.rule-pine { border-top-color: var(--line-pine); }
+.rule-brass { border-top-color: var(--brass-line); }
+
+.lnk { color: inherit; cursor: pointer; transition: color var(--dur-base) var(--ease-out); }
+.lnk:hover { color: var(--sage-2); }
+
+.section { max-width: var(--maxw); margin: 0 auto; padding-inline: var(--gutter); }
+.section--lg { padding-block: clamp(80px,12vw,148px); }
+.section--md { padding-block: clamp(60px,9vw,104px); }
+.section--sm { padding-block: clamp(44px,6vw,68px); }
+
+/* tasteful image slot — flat bone with a hand-painted sage organic shape
+ * (the "human-like drawing" Belleval is loved for); no fake stock photo */
+.imgslot {
+  position: relative; overflow: hidden; border-radius: var(--r-lg);
+  background: var(--bone);
+}
+.imgslot::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(closest-side at 74% 30%, var(--sage-wash), transparent),
+    radial-gradient(closest-side at 24% 82%, var(--sage-wash), transparent);
+}
+.portrait {
+  background: var(--pine); position: relative; overflow: hidden;
+}
+.portrait::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(closest-side at 50% 40%, rgba(157,170,138,0.26), transparent),
+    radial-gradient(closest-side at 50% 104%, rgba(0,0,0,0.34), transparent);
+}
+
+/* hand-painted flat organic shape — sage on cream, flat (not line art) */
+.deco-blob {
+  position: absolute; pointer-events: none; z-index: 0;
+  color: var(--sage); opacity: 0.5;
+}
+.deco-blob svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+
+/* circular seal / medallion — monogram on speckled bone disc, ringed by
+ * letterspaced serif caps (the recurring Belleval mark) */
+.seal {
+  position: relative; display: inline-grid; place-items: center;
+  width: 84px; height: 84px; border-radius: 999px;
+  background: var(--bone); color: var(--ink);
+  border: 1px solid var(--brass-line);
+}
+.seal__mono { font: 400 30px/1 var(--display); letter-spacing: 0.01em; }
+.seal__ring { position: absolute; inset: 0; }
+.seal__ring text {
+  font: 500 7px/1 var(--serif); letter-spacing: 0.22em;
+  text-transform: uppercase; fill: var(--sage-2);
+}
+
+/* page route transition */
+.page-fade { animation: pageFade var(--dur-slow) var(--ease-emph) both; }
+@keyframes pageFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* staggered reveal — gentle, never mount everything at once (emil/minimal) */
+.reveal { opacity: 0; transform: translateY(14px); animation: rise .8s var(--ease-emph) forwards; }
+@keyframes rise { to { opacity: 1; transform: none; } }
+.d1{animation-delay:.04s}.d2{animation-delay:.12s}.d3{animation-delay:.20s}
+.d4{animation-delay:.28s}.d5{animation-delay:.36s}.d6{animation-delay:.44s}

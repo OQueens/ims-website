@@ -19,8 +19,15 @@
 const SECURITY_HEADERS = {
   "X-Robots-Tag": "noindex, nofollow",
   "Strict-Transport-Security": "max-age=15768000; includeSubDomains",
+  // form-action 'self' (was 'none'): the Get In Touch form POSTs same-origin
+  // to /api/contact. No script-src is added — the site ships zero JS (the
+  // result UX is a server 303 to the static /thank-you and /couldnt-send
+  // pages). fonts.googleapis.com in style-src + fonts.gstatic.com in font-src
+  // are required by the Belleval @import (Anton/Fraunces/Hanken) in ims.css;
+  // self-hosting the woff2 and dropping back to 'self' is the permanent-site
+  // hardening. Policy stays maximally strict otherwise.
   "Content-Security-Policy":
-    "default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
+    "default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
   "Permissions-Policy":
     "camera=(), microphone=(), geolocation=(), interest-cohort=()",
   "Referrer-Policy": "strict-origin-when-cross-origin",

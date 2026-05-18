@@ -1,0 +1,24 @@
+---
+// Eyebrow.astro — ceremonial section label. Belleval: fine letterspaced
+// serif small-caps with a thin brass hairline ornament (engraved label).
+interface Props { orn?: boolean; tone?: "clay" | "gold" | "onpine"; class?: string; }
+const { orn = true, tone = "clay", class: cls = "" } = Astro.props;
+---
+<span class:list={["eyebrow", `eyebrow--${tone}`, cls]}>
+  {orn && <span class="orn" aria-hidden="true"></span>}
+  <slot />
+</span>
+
+<style>
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 14px;
+    font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
+    text-transform: uppercase; font-feature-settings: "smcp" 1;
+  }
+  .eyebrow--clay  { color: var(--sage-2); }
+  .eyebrow--gold  { color: var(--gold-600); }
+  .eyebrow--onpine{ color: var(--gold-200); }
+  /* thin brass rule — Belleval uses hairlines, never heavy glyph ornaments */
+  .orn { width: 22px; height: 1px; background: var(--brass-line); flex: none; }
+  .eyebrow--onpine .orn { background: var(--line-pine); }
+</style>

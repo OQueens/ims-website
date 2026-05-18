@@ -31,3 +31,10 @@ pnpm-debug.log*
 
 # Claude Code session state (review-gate stamps, etc.)
 .claude/
+
+# build + preview artifacts
+dist/
+.astro/
+*.jpeg
+preview.log
+server.log

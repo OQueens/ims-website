@@ -1,0 +1,41 @@
+---
+import IMSLayout from "../layouts/IMSLayout.astro";
+import Eyebrow from "../components/Eyebrow.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+---
+<IMSLayout title="That didn't go through — Innovative Medical Staffing" route="/contact">
+  <section class="section section--lg cs">
+    <Eyebrow tone="gold">A small hiccup</Eyebrow>
+    <h1 class="cs__h">That note didn't<br/><span class="it">go through.</span></h1>
+    <p class="cs__b">
+      Something on our end glitched, or the form was missing a detail — your message
+      did <strong>not</strong> reach us. Please try again, or just call the desk
+      directly and we'll take it from there. We'd rather hear from you twice than
+      not at all.
+    </p>
+    <div class="cs__cta">
+      <Button href="/contact" variant="primary">Try the form again <Icon name="arrowRight" size={15} color="var(--on-pine)" /></Button>
+      <a href="tel:18005551040" class="cs__phone lnk">
+        <Icon name="phone" size={15} color="var(--clay)" />
+        <span>(800) 555-1040</span>
+      </a>
+    </div>
+  </section>
+</IMSLayout>
+
+<style>
+  .cs { max-width: 720px; }
+  .cs__h {
+    font: var(--t-display-lg); letter-spacing: var(--tracking-display);
+    margin-top: 20px; text-wrap: balance;
+  }
+  .cs__b { font: var(--t-body-lg); color: var(--ink-2); margin-top: 24px; max-width: 54ch; }
+  .cs__b strong { color: var(--ink); font-weight: 600; }
+  .cs__cta { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-top: 36px; }
+  .cs__phone {
+    display: inline-flex; align-items: center; gap: 9px;
+    font: 600 14px/1 var(--sans); color: var(--ink-2);
+  }
+  .cs__phone:hover { color: var(--pine); }
+</style>

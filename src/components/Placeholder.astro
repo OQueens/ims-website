@@ -1,0 +1,118 @@
+---
+// Placeholder.astro — ported from the source Placeholder.jsx. Branded,
+// dignified, not a 404. Reskinned to cream Country-Club.
+import Eyebrow from "./Eyebrow.astro";
+import Button from "./Button.astro";
+import Icon from "./Icon.astro";
+
+interface Props { route: string }
+const { route } = Astro.props;
+
+const SECTIONS: Record<string, { eyebrow: string; h1: string; lede: string; items: string[] }> = {
+  "/clinicians": {
+    eyebrow: "For clinicians",
+    h1: "What it's like to work with us.",
+    lede: "The Clinicians page expands on the homepage — concierge, travel, malpractice, the pamphlet, your recruiter — with the full benefit breakdown and a roster of named recruiters. Designed next.",
+    items: [
+      "The concierge desk — every member, every recruiter, their cell",
+      "Housing, travel, and the pamphlet — the traveler-not-tourist promise",
+      "Credentialing & malpractice — what's included, what's expedited",
+      "Friday-pay terms & relocation stipends",
+      "Refer-a-clinician — what you earn and how",
+    ],
+  },
+  "/facilities": {
+    eyebrow: "For facilities",
+    h1: "The roster you can vouch for.",
+    lede: "The Facilities page outlines our partner model — small caseload, named account leads, the 24-hour emergency desk, and the specialty coverages we lead with. Coming next.",
+    items: [
+      "Our coverage model — small panel, deep relationships",
+      "Credentialing engine — privileging on rails across major EHRs",
+      "Account leads — your dedicated team & after-hours desk",
+      "Quality & retention — how we report on the placements",
+      "Request a roster — the intake form & SLA",
+    ],
+  },
+  "/story": {
+    eyebrow: "Our story",
+    h1: "Started in anesthesia. Built for every clinician.",
+    lede: "Our founders' note — why IAS became IMS, what we kept, what we changed — followed by the team and the year-by-year through-line from 2018 to today.",
+    items: [
+      "The founders' letter — by Marcus & Jordan",
+      "Why IAS became IMS — the rebrand explained",
+      "The team — illustrated medallions, real numbers",
+      "Year-by-year — 2018 → today",
+      "What we still believe — values, in plain English",
+    ],
+  },
+  "/contact": {
+    eyebrow: "Get in touch",
+    h1: "Apply now & request a roster.",
+    lede: "Two doors: a clinician application (referral or open) and a facility roster request. Both routed to a real human inside an hour.",
+    items: [
+      "Apply now — clinician form, referral-aware",
+      "Request a roster — facility form, specialty + region",
+      "Direct lines — your nearest desk by region",
+      "Press & speaking — for the few we say yes to",
+      "Careers at IMS — we hire one recruiter a quarter",
+    ],
+  },
+  "/jobs": {
+    eyebrow: "Job board",
+    h1: "A filter, a map, and a real recruiter on the other side.",
+    lede: "Pick a specialty and see open assignments — by city, by length, by pay floor. A map view sits alongside the list. Every listing has a recruiter attached; nothing is auto-scraped.",
+    items: [
+      "Specialty + region + length + pay filters",
+      "Map view — open assignments by city, US-wide",
+      "Listing detail — pay, schedule, license, who to call",
+      "Save searches — alerts via text, not email blast",
+      "Refer-a-shift — clinicians can refer roles to colleagues",
+    ],
+  },
+};
+const data = SECTIONS[route] ?? SECTIONS["/clinicians"];
+---
+<section class="ph section section--lg">
+  <div class="ph__left">
+    <span class="badge"><Icon name="sparkle" size={12} color="var(--brass)" /> {data.eyebrow} · in design</span>
+    <h1>{data.h1}</h1>
+    <p class="lede">{data.lede}</p>
+    <div class="cta">
+      <Button href="/" variant="primary"><Icon name="arrowLeft" size={15} color="var(--on-pine)" /> Back to home</Button>
+      <Button href="/contact" variant="ghost">Talk to us anyway <Icon name="arrowRight" size={14} color="var(--ink)" /></Button>
+    </div>
+  </div>
+  <aside class="ph__card">
+    <Eyebrow orn={false} tone="gold">This page will include</Eyebrow>
+    <h3>Section outline</h3>
+    {data.items.map((it) => (
+      <div class="row"><span class="dot"></span><div><div class="t">{it}</div><div class="m">To be designed in the next round.</div></div></div>
+    ))}
+  </aside>
+</section>
+
+<style>
+  .ph { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px;
+    border-radius: var(--r-full); background: transparent;
+    border: 1px solid var(--brass-line); font: var(--t-label);
+    letter-spacing: .18em; text-transform: uppercase; color: var(--gold-600);
+    width: fit-content; margin-bottom: 24px;
+  }
+  .ph h1 { font: var(--t-display-lg); letter-spacing: var(--tracking-display); color: var(--ink); }
+  .lede { font: var(--t-body-lg); color: var(--ink-2); margin-top: 24px; max-width: 46ch; }
+  .cta { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+  .ph__card {
+    background: var(--paper); border: 1px solid var(--line);
+    border-radius: var(--r-xl); padding: 36px; display: flex; flex-direction: column; gap: 14px;
+  }
+  .ph__card h3 { font: var(--t-h3); margin-top: 4px; }
+  .row { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: flex-start;
+    padding: 14px 0; border-top: 1px solid var(--line-soft); }
+  .row:first-of-type { border-top: 0; }
+  .dot { width: 6px; height: 6px; border-radius: 999px; margin-top: 9px; background: var(--clay); }
+  .t { font: 500 15px/1.5 var(--sans); color: var(--ink); }
+  .m { font: 500 12px/1.4 var(--sans); color: var(--ink-3); margin-top: 3px; }
+  @media (max-width: 900px) { .ph { grid-template-columns: 1fr; gap: 40px; } }
+</style>

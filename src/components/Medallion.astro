@@ -1,0 +1,50 @@
+---
+// Medallion.astro — the Belleval member seal (ports the source MemberMedallion).
+// A stamped circular badge: speckled bone disc, thin brass ring, Anton monogram,
+// and a circumscribed ring of fine letterspaced serif caps. Flat, illustrative,
+// never a stock headshot. Reused by PullQuote, TeamTeaser, ConciergeCard.
+interface Props { initials?: string; size?: number; ring?: string; }
+const { initials = "AP", size = 112, ring = "INNOVATIVE MEDICAL STAFFING · EST. 2018 · " } = Astro.props;
+// stable per-instance id so multiple medallions don't collide on the textPath
+const uid = "med-" + Math.random().toString(36).slice(2, 8);
+---
+<svg
+  class="medallion"
+  viewBox="0 0 120 120"
+  width={size}
+  height={size}
+  role="img"
+  aria-label={`Member seal — ${initials}`}
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <path id={`${uid}-arc`} d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0" />
+  </defs>
+  <!-- speckled bone disc -->
+  <circle cx="60" cy="60" r="58" fill="var(--bone)" />
+  <circle cx="60" cy="60" r="58" fill="none" stroke="var(--brass)" stroke-width="0.75" opacity="0.7" />
+  <!-- circumscribed ceremonial text ring -->
+  <text class="med-ring" fill="var(--sage-2)">
+    <textPath href={`#${uid}-arc`} startOffset="0">{ring + ring}</textPath>
+  </text>
+  <!-- inner hairline + field -->
+  <circle cx="60" cy="60" r="37" fill="none" stroke="var(--brass)" stroke-width="0.6" opacity="0.55" />
+  <circle cx="60" cy="60" r="34.5" fill="var(--paper)" />
+  <!-- a single hand-painted sage quarter — the organic motif, flattened -->
+  <path d="M 60 27 A 33 33 0 0 1 93 60 L 60 60 Z" fill="var(--sage)" opacity="0.34" />
+  <!-- monogram -->
+  <text x="60" y="72" text-anchor="middle" class="med-mono" fill="var(--ink)">{initials}</text>
+</svg>
+
+<style>
+  .medallion { display: block; border-radius: 999px; }
+  .med-mono {
+    font-family: var(--display, "Anton", sans-serif);
+    font-size: 30px; letter-spacing: 0.02em;
+  }
+  .med-ring {
+    font-family: var(--serif, Georgia, serif);
+    font-size: 6.2px; font-weight: 500;
+    letter-spacing: 1.4px; text-transform: uppercase;
+  }
+</style>

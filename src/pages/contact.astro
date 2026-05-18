@@ -1,0 +1,226 @@
+---
+import IMSLayout from "../layouts/IMSLayout.astro";
+import Eyebrow from "../components/Eyebrow.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+import Medallion from "../components/Medallion.astro";
+---
+<IMSLayout title="Get in touch — Innovative Medical Staffing" route="/contact">
+  <section class="section section--lg gt" id="getintouch">
+    <div class="gt__head">
+      <Eyebrow>Get in touch</Eyebrow>
+      <h1 class="gt__h">A real human<br/><span class="it">replies within the hour.</span></h1>
+      <p class="gt__lede">
+        Whether you're a clinician between assignments or a chief medical officer
+        who needs coverage by Tuesday — tell us what you need. No portal, no queue,
+        no auto-responder. The note below reaches a recruiter's desk directly.
+      </p>
+    </div>
+
+    <div class="gt__grid">
+      <aside class="gt__aside">
+        <div class="gt__seal">
+          <Medallion initials="IMS" size={84} />
+        </div>
+        <div class="gt__chan">
+          <span class="gt__ce">Prefer to talk?</span>
+          <a href="tel:18005551040" class="gt__phone lnk">
+            <Icon name="phone" size={15} color="var(--clay)" />
+            <span>(800) 555-1040</span>
+          </a>
+          <p class="gt__cnote">
+            Day or night. The same desk that answers the phone reads this form —
+            you won't be re-routed.
+          </p>
+        </div>
+        <ul class="gt__assure">
+          <li><span class="gt__dot"></span>One recruiter, their cell — not a 1-800 maze</li>
+          <li><span class="gt__dot"></span>We never sell or share your details</li>
+          <li><span class="gt__dot"></span>Reply within the hour, most days much faster</li>
+        </ul>
+      </aside>
+
+      <div class="gt__panel">
+        <form class="cf" method="post" action="/api/contact">
+          <!-- honeypot: off-screen, hidden from assistive tech, and a name no
+               real-world autofill / password manager targets (Codex fold) -->
+          <div class="cf__hp" aria-hidden="true">
+            <label for="cf-hp">Leave this field empty</label>
+            <input id="cf-hp" type="text" name="hp_url" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <fieldset class="cf__seg">
+            <legend>I'm reaching out as</legend>
+            <input type="radio" name="intent" id="i-cli" value="clinician" checked />
+            <label for="i-cli">A clinician</label>
+            <input type="radio" name="intent" id="i-fac" value="facility" />
+            <label for="i-fac">A facility</label>
+            <input type="radio" name="intent" id="i-oth" value="other" />
+            <label for="i-oth">Something else</label>
+          </fieldset>
+
+          <div class="cf__row">
+            <div class="cf__field">
+              <label for="cf-name">Your name</label>
+              <input id="cf-name" name="name" type="text" required maxlength="120"
+                autocomplete="name" placeholder="Maya Reyes" />
+            </div>
+            <div class="cf__field">
+              <label for="cf-email">Email</label>
+              <input id="cf-email" name="email" type="email" required maxlength="160"
+                autocomplete="email" placeholder="you@example.com" />
+            </div>
+          </div>
+
+          <div class="cf__row">
+            <div class="cf__field">
+              <label for="cf-phone">Phone <span class="cf__opt">(optional)</span></label>
+              <input id="cf-phone" name="phone" type="tel" maxlength="40"
+                autocomplete="tel" placeholder="(843) 555-0193" />
+            </div>
+            <div class="cf__field">
+              <label for="cf-org">Organization / facility <span class="cf__opt">(optional)</span></label>
+              <input id="cf-org" name="org" type="text" maxlength="160"
+                autocomplete="organization" placeholder="Sea Pines Health" />
+            </div>
+          </div>
+
+          <div class="cf__field">
+            <label for="cf-message">How can we help?</label>
+            <textarea id="cf-message" name="message" required maxlength="4000" rows="5"
+              placeholder="Specialty, location, timing — or just say hello and we'll take it from there."></textarea>
+          </div>
+
+          <div class="cf__foot">
+            <Button type="submit" variant="primary" class="cf__submit">
+              Send it to a recruiter <Icon name="arrowRight" size={15} color="var(--on-pine)" />
+            </Button>
+            <p class="cf__fine">No account, no portal. We reply within the hour and never share your details.</p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</IMSLayout>
+
+<style>
+  .gt__head { max-width: 60ch; }
+  .gt__h {
+    font: var(--t-display-lg); letter-spacing: var(--tracking-display);
+    margin-top: 22px; text-wrap: balance;
+  }
+  .gt__lede { font: var(--t-body-lg); color: var(--ink-2); margin-top: 22px; max-width: 56ch; }
+
+  .gt__grid {
+    display: grid; grid-template-columns: 0.82fr 1.18fr; gap: clamp(32px, 5vw, 72px);
+    margin-top: clamp(40px, 6vw, 72px); align-items: start;
+  }
+
+  /* ---- left rail ---- */
+  .gt__aside { display: flex; flex-direction: column; gap: 28px; }
+  .gt__seal { display: flex; }
+  .gt__chan {
+    display: flex; flex-direction: column; gap: 10px;
+    padding-bottom: 26px; border-bottom: 1px solid var(--brass-line);
+  }
+  .gt__ce {
+    font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
+    text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1;
+  }
+  .gt__phone {
+    display: inline-flex; align-items: center; gap: 10px;
+    font: 400 clamp(22px, 2.4vw, 30px)/1 var(--display);
+    letter-spacing: var(--tracking-display); color: var(--ink);
+  }
+  .gt__phone:hover { color: var(--pine); }
+  .gt__cnote { font: 400 14px/1.55 var(--sans); color: var(--ink-3); max-width: 34ch; }
+  .gt__assure { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+  .gt__assure li {
+    display: flex; align-items: flex-start; gap: 11px;
+    font: 500 14px/1.5 var(--sans); color: var(--ink-2);
+  }
+  .gt__dot {
+    margin-top: 7px; width: 5px; height: 5px; border-radius: 999px;
+    background: var(--sage-2); flex: none;
+  }
+
+  /* ---- form panel ---- */
+  .gt__panel {
+    background: var(--paper); border: 1px solid var(--brass-line);
+    border-radius: var(--r-2xl); padding: clamp(28px, 4vw, 52px);
+    box-shadow: var(--elev-2);
+  }
+  .cf { display: flex; flex-direction: column; gap: 22px; }
+  .cf__hp {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+
+  .cf__seg { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .cf__seg legend {
+    font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
+    text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1;
+    padding: 0; margin-bottom: 12px;
+  }
+  /* sr-only block (mirrors Nav's .nav__toggle): explicit 1px box so the
+   * generic .cf input rule below can never resolve width:100% against the
+   * initial containing block — that blew the page out to ~2153px wide. */
+  .cf__seg input {
+    position: absolute; width: 1px; height: 1px;
+    margin: -1px; padding: 0; border: 0; overflow: hidden;
+    opacity: 0; pointer-events: none;
+  }
+  .cf__seg label {
+    cursor: pointer; padding: 10px 18px; border-radius: var(--r-full);
+    border: 1px solid var(--line); background: transparent;
+    font: 600 13px/1 var(--sans); letter-spacing: .02em; color: var(--ink-2);
+    transition: color var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out),
+                background var(--dur-base) var(--ease-out);
+  }
+  .cf__seg label:hover { border-color: var(--sage-2); color: var(--ink); }
+  .cf__seg input:checked + label {
+    background: var(--pine); color: var(--on-pine); border-color: var(--pine);
+  }
+  .cf__seg input:focus-visible + label { box-shadow: var(--glow); }
+
+  .cf__row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .cf__field { display: flex; flex-direction: column; gap: 8px; }
+  .cf__field label {
+    font: 600 12px/1.3 var(--sans); letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-2);
+  }
+  .cf__opt { color: var(--ink-4); letter-spacing: .04em; text-transform: none; font-weight: 500; }
+  /* :not([type="radio"]) keeps the full-bleed field styling off the sr-only
+   * intent toggles — they're absolutely positioned and would otherwise take
+   * width:100% of the viewport (source-order beat the .cf__seg rule). */
+  .cf input:not([type="radio"]),
+  .cf textarea {
+    width: 100%; font: 400 15px/1.5 var(--sans); color: var(--ink);
+    background: var(--cream); border: 1px solid var(--line);
+    border-radius: var(--r-md); padding: 13px 15px;
+    transition: border-color var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out);
+  }
+  .cf input::placeholder,
+  .cf textarea::placeholder { color: var(--ink-4); }
+  .cf input:focus,
+  .cf textarea:focus {
+    outline: none; border-color: var(--sage-2); box-shadow: var(--glow);
+  }
+  .cf textarea { resize: vertical; min-height: 120px; }
+
+  .cf__foot { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+  .cf__submit { align-self: flex-start; padding: 15px 28px; }
+  .cf__fine { font: 400 13px/1.5 var(--sans); color: var(--ink-3); }
+
+  @media (max-width: 1024px) {
+    .gt__grid { grid-template-columns: 1fr; gap: 40px; }
+    .gt__aside { order: 2; }
+  }
+  @media (max-width: 600px) {
+    .cf__row { grid-template-columns: 1fr; }
+    .gt__panel { padding: 26px 22px; }
+  }
+</style>
