@@ -21,6 +21,7 @@ import {
   validatePayloadShape,
   type LSWebhookPayload,
 } from '../../lib/locumsmart-webhook-logic';
+import { env as cfEnv } from 'cloudflare:workers';
 
 export const prerender = false;
 
@@ -30,22 +31,22 @@ interface PagesEnv {
   LOCUMSMART_WEBHOOK_SECRET?: string;
 }
 
-function readEnv(locals: App.Locals): PagesEnv {
-  // Cloudflare Pages exposes env at locals.runtime.env when @astrojs/cloudflare
-  // adapter is active. In a dev/test context locals.runtime is undefined and
-  // we fall back to import.meta.env so misconfiguration fails as 500 rather
-  // than as a runtime crash.
-  const cf = (locals as { runtime?: { env?: PagesEnv } }).runtime?.env;
-  if (cf) return cf;
+function readEnv(): PagesEnv {
+  // Astro 6 + @astrojs/cloudflare: env comes from the cloudflare:workers
+  // virtual module — Astro.locals.runtime.env was REMOVED in Astro v6.
+  // Missing keys read back undefined (not a throw), so a misconfigured
+  // deploy still degrades to the intentional 500 below instead of an
+  // uncaught Worker crash (LS retries 5xx, so it self-heals post-config).
+  const e = cfEnv as Partial<PagesEnv>;
   return {
-    SUPABASE_URL: import.meta.env.SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
-    LOCUMSMART_WEBHOOK_SECRET: import.meta.env.LOCUMSMART_WEBHOOK_SECRET,
+    SUPABASE_URL: e.SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: e.SUPABASE_SERVICE_ROLE_KEY,
+    LOCUMSMART_WEBHOOK_SECRET: e.LOCUMSMART_WEBHOOK_SECRET,
   };
 }
 
-export const POST: APIRoute = async ({ request, locals }) => {
-  const env = readEnv(locals);
+export const POST: APIRoute = async ({ request }) => {
+  const env = readEnv();
 
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY || !env.LOCUMSMART_WEBHOOK_SECRET) {
     // Intentional 500 (not 401) for misconfig: LS retries 5xx but not 4xx, so

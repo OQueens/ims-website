@@ -23,13 +23,13 @@ import {
   cardTitle,
   type JobsEnv,
 } from "../lib/ims-jobs-read";
+import { env as cfEnv } from "cloudflare:workers";
 
 export const prerender = false;
 
-const cfEnv = (Astro.locals as { runtime?: { env?: JobsEnv } }).runtime?.env;
-const env: JobsEnv = cfEnv ?? {
-  SUPABASE_URL: import.meta.env.SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+const env: JobsEnv = {
+  SUPABASE_URL: (cfEnv as Partial<JobsEnv>).SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY: (cfEnv as Partial<JobsEnv>).SUPABASE_SERVICE_ROLE_KEY,
 };
 
 const jobs = await fetchActiveJobs(env);
