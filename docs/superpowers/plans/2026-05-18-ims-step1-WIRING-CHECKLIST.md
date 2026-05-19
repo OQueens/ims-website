@@ -111,21 +111,40 @@ it never executes the Supabase read). Verify once wired:
       DB error logs carry only structured Postgres codes, never raw messages.
 - [x] **Nothing pushed.** Tree clean at `9829d87`.
 
-### ⏳ Verified-by-construction, NOT yet end-to-end (honest caveat)
+### ✅ Data path runtime-PROVEN against a stand-in PostgREST stub (no-corners diligence, 2026-05-19)
 
-- [ ] **The bundled `.ts` keystone DATA path has never executed.** Every local
-      runtime gate runs with **no Supabase env**, so it returns at the
-      `unconfigured` branch *before* any imported `src/lib` query runs. The
-      local gate proves the modules **bundle/import** under `wrangler pages
-      dev` and that the empty-state UX is correct — it does **not** prove the
-      bundled Supabase read, the card injection, the timeout/`degraded` paths,
-      or the webhook upsert execute correctly in the Workers runtime.
-      `.abortSignal` is confirmed present in the installed
-      `@supabase/postgrest-js` typings; the discriminated union is type-sound
-      by construction; 69/69 logic unit tests cover auth/map/freshness in
-      Node. **But the genuine end-to-end proof is the first real wired LS
-      event (section 3 above)** — do not record Step 1 as fully
-      production-proven until that passes.
+The earlier "never executed" caveat has been **closed** by a throwaway local
+PostgREST-style stub harness (outside the repo; zero product-code change, no
+commits) that fed the bundled `.ts` data path representative data through real
+`wrangler pages dev` (workerd). All five proofs PASSED:
+
+- [x] **P1 `/jobs` happy** — stub rows → 2 real `.jc` cards, headline rewritten,
+      public label/city present, **0 `<script>`**, byte-exact ghost CTA, CSP
+      intact, no `x-jobs-data` on the happy path.
+- [x] **P1 runtime privacy (keystone)** — stub rows deliberately carried a
+      sentinel `SECRET-Mercy-Internal-DoNotShow` in **every** internal column
+      (`facility_name`/`facility_names`/`description`/`raw_payload`/
+      `organization`/`organization_id`); the sentinel is **absent from the
+      rendered HTML** — the allowlist strips internal columns at runtime, not
+      just in the static assertion test.
+- [x] **P2 `/jobs` degraded** — stub `500` → `200` + `x-jobs-data: degraded`
+      header + dignified shell + distinct `DATA READ DEGRADED` log, 0 cards.
+- [x] **P3 `/jobs` timeout** — stub stalls 6 s; the `AbortController` fires at
+      **exactly 2500 ms** (server-side 2505–2518 ms; explicit `timed out after
+      2500ms` log) → `200` + `x-jobs-data: degraded`. `.abortSignal` executes
+      in workerd, not just type-checks.
+- [x] **P4 webhook happy** — `POST` valid token → `200`, `inserted` log;
+      payload-carried sentinel internal fields are **absent from the entire
+      wrangler log** (runtime log-privacy proven).
+- [x] **P5 webhook 23505 conflict** — insert → stub `409/23505` → narrow
+      id-reselect → exists → `PATCH` → `200` (`updated` log): the A4-R1
+      disambiguation **executes** in workerd, not just type-checks.
+
+**Residual (unchanged in principle, materially smaller):** the only thing not
+yet exercised is the **real production Supabase** (a stub is not the real DB).
+Re-confirm the same paths against live `ims_jobs` at the **first wired LS
+event** (section 3). Step 1 is "code-complete + runtime-proven against a
+stand-in"; mark **fully production-proven** only after that first real event.
 
 ---
 
