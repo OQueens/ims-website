@@ -15,7 +15,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^13.5.2",
     "@supabase/supabase-js": "^2.105.4",
     "astro": "^6.3.0"
   },
