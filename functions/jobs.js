@@ -52,32 +52,32 @@ function cardHtml(j) {
 
 export const onRequestGet = async (context) => {
   const { env } = context;
-  let result;
-  try {
-    result = await fetchActiveJobs({
+  // Fetch the prerendered shell and the (timeout-bounded) job data
+  // concurrently — the data read must never serialize ahead of, or stall,
+  // delivery of the static shell. fetchActiveJobs bounds itself with an
+  // internal AbortController (JOBS_READ_TIMEOUT_MS), so this Promise.all
+  // resolves within that bound even if Supabase stalls (Codex A4-R2).
+  // context.next() resolves the prerendered static /jobs asset and does not
+  // reject for a built asset; the keystone never throws (it returns a
+  // discriminated result) but the .catch is last-resort defense-in-depth.
+  const [result, shell] = await Promise.all([
+    fetchActiveJobs({
       SUPABASE_URL: env.SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
-    });
-  } catch (e) {
-    // The keystone is designed not to throw (it returns a discriminated
-    // result); this is last-resort defense-in-depth for an unexpected
-    // import/runtime throw. Treat as a degraded read, never true-empty.
-    console.error("[/jobs fn] keystone read crash:", e instanceof Error ? e.message : String(e));
-    result = { ok: false, reason: "client_crash" };
-  }
-
-  // context.next() resolves the prerendered static /jobs asset; on a built
-  // static asset it does not reject, so the data read above is the only
-  // guarded failure mode — every failure falls through to the dignified shell.
-  const shell = await context.next();
+    }).catch((e) => {
+      console.error("[/jobs fn] keystone read crash:", e instanceof Error ? e.message : String(e));
+      return { ok: false, reason: "client_crash" };
+    }),
+    context.next(),
+  ]);
 
   if (!result.ok) {
     // 'unconfigured' is the EXPECTED pre-wiring state (Supabase not wired
-    // yet) → serve the baked empty-state silently. 'query_error'/'client_
-    // crash' mean the read DEGRADED while configured: still serve the
-    // dignified shell (UX unchanged) but emit an operator-distinct
-    // alertable log + an x-jobs-data:degraded response header so uptime
-    // checks can tell degradation from a genuinely empty board.
+    // yet) → serve the baked empty-state silently. 'query_error' /
+    // 'timeout' / 'client_crash' mean the read DEGRADED while configured:
+    // still serve the dignified shell (UX unchanged) but emit an operator-
+    // distinct alertable log + an x-jobs-data:degraded response header so
+    // uptime checks can tell degradation from a genuinely empty board.
     if (result.reason === "unconfigured") {
       return new Response(shell.body, shell);
     }

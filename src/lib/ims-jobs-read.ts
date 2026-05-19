@@ -62,28 +62,38 @@ export const cardTitle = (j: JobRow): string =>
 /**
  * Read active public job rows through the PUBLIC allowlist (the only
  * ims_jobs read path). Returns a DISCRIMINATED result so the caller can
- * distinguish a genuinely-empty board from a degraded read (Codex A4-R1):
+ * distinguish a genuinely-empty board from a degraded read (Codex A4):
  *   { ok:true,  jobs }                  — query succeeded ([] = truly empty)
- *   { ok:false, reason:'unconfigured' } — Supabase env not set yet; this is
- *                                         the EXPECTED pre-wiring state, NOT
- *                                         an outage
+ *   { ok:false, reason:'unconfigured' } — Supabase env not set yet; the
+ *                                         EXPECTED pre-wiring state, NOT an
+ *                                         outage — returned SILENTLY (no log)
  *   { ok:false, reason:'query_error' }  — env set but the read failed (DEGRADED)
+ *   { ok:false, reason:'timeout' }      — read exceeded JOBS_READ_TIMEOUT_MS
+ *                                         (a stalled Supabase; DEGRADED)
  *   { ok:false, reason:'client_crash' } — unexpected exception (DEGRADED)
- * The page still renders the dignified shell on every !ok branch; the
- * distinction exists so a degraded read is operator-visible rather than
- * masquerading as "no live assignments". Error logs carry only the
- * structured code, never raw messages. LIMIT 1000 matches the PostgREST
+ * The page renders the dignified shell on every !ok branch; the distinction
+ * exists so a degraded read is operator-visible rather than masquerading as
+ * "no live assignments". The read is bounded by an AbortController so a
+ * stalled Supabase cannot hang /jobs (Codex A4-R2). Error logs carry only
+ * the structured code, never raw messages. LIMIT 1000 matches the PostgREST
  * default server max (Phase 1.A scale is tens-to-low-hundreds of rows).
  */
 export type JobsReadResult =
   | { ok: true; jobs: JobRow[] }
-  | { ok: false; reason: 'unconfigured' | 'query_error' | 'client_crash' };
+  | { ok: false; reason: 'unconfigured' | 'query_error' | 'timeout' | 'client_crash' };
+
+/** Wall-clock bound on the /jobs Supabase read; a stalled DB degrades fast
+ *  to the dignified shell rather than hanging until the platform timeout. */
+export const JOBS_READ_TIMEOUT_MS = 2500;
 
 export async function fetchActiveJobs(env: JobsEnv): Promise<JobsReadResult> {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.warn('[/jobs] env not configured — rendering empty state');
+    // EXPECTED pre-wiring state — silent: the discriminated result IS the
+    // signal; logging here would spam every request before Supabase is wired.
     return { ok: false, reason: 'unconfigured' };
   }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), JOBS_READ_TIMEOUT_MS);
   try {
     const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -93,14 +103,25 @@ export async function fetchActiveJobs(env: JobsEnv): Promise<JobsReadResult> {
       .select(PUBLIC_JOB_COLUMNS)
       .eq('status', 'active')
       .order('ls_last_modified', { ascending: false, nullsFirst: false })
-      .limit(1000);
+      .limit(1000)
+      .abortSignal(controller.signal);
     if (error) {
+      if (controller.signal.aborted) {
+        console.error('[/jobs] supabase read timed out after ' + JOBS_READ_TIMEOUT_MS + 'ms');
+        return { ok: false, reason: 'timeout' };
+      }
       console.error('[/jobs] supabase read failed — code=' + (error.code ?? 'unknown'));
       return { ok: false, reason: 'query_error' };
     }
     return { ok: true, jobs: (data as JobRow[] | null) ?? [] };
   } catch (e) {
+    if (controller.signal.aborted) {
+      console.error('[/jobs] supabase read timed out after ' + JOBS_READ_TIMEOUT_MS + 'ms');
+      return { ok: false, reason: 'timeout' };
+    }
     console.error('[/jobs] supabase client crash:', e instanceof Error ? e.message : String(e));
     return { ok: false, reason: 'client_crash' };
+  } finally {
+    clearTimeout(timer);
   }
 }
