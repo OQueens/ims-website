@@ -1,7 +1,7 @@
 /**
  * Pure-logic helpers for the LocumSmart webhook receiver.
  *
- * Kept separate from src/pages/api/locumsmart-webhook.ts so vitest can cover
+ * Kept separate from functions/api/locumsmart-webhook.js so vitest can cover
  * token verification, field mapping, and derivations without mocking the
  * Supabase client or the Cloudflare Pages runtime.
  *

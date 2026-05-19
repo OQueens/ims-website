@@ -71,16 +71,30 @@ export const onRequestPost = async (context) => {
 
   // Postgres unique_violation = '23505'. Two unique constraints exist on
   // ims_jobs: ims_jobs_pkey (on id) and ims_jobs_assignment_number_key
-  // (on assignment_number). Only fall through to UPDATE when the conflict
-  // is on the PK — a conflict on assignment_number means LS sent the same
-  // assignmentNumber with a different assignmentId (would be an integrity
-  // problem worth surfacing as 500, not silently no-opping as "stale").
+  // (on assignment_number). Disambiguate by a NARROW id re-select rather
+  // than the PostgREST-version-fragile constraint-name substring match
+  // (Codex A4-R1): if a row with this id already exists the conflict is
+  // the PK and we fall through to the conditional freshness UPDATE; if no
+  // such row exists the conflict is on assignment_number (LS sent the same
+  // assignmentNumber under a different assignmentId) — an integrity problem
+  // surfaced as 500, never silently no-opped as "stale". Error logs carry
+  // only the structured Postgres code, never the raw message (which can
+  // echo rejected internal row values into Workers logs — Codex A4-R1).
   if (insertErr.code !== '23505') {
-    console.error('[ls-webhook] insert failed:', payload.assignmentId, insertErr.message);
+    console.error('[ls-webhook] insert failed:', payload.assignmentId, 'code=' + (insertErr.code ?? 'unknown'));
     return new Response('Database error', { status: 500 });
   }
-  if (!insertErr.message.includes('ims_jobs_pkey')) {
-    console.error('[ls-webhook] insert failed (non-pk unique violation):', payload.assignmentId, insertErr.message);
+  const { data: existingRow, error: reselectErr } = await supabase
+    .from('ims_jobs')
+    .select('id')
+    .eq('id', payload.assignmentId)
+    .maybeSingle();
+  if (reselectErr) {
+    console.error('[ls-webhook] post-conflict re-select failed:', payload.assignmentId, 'code=' + (reselectErr.code ?? 'unknown'));
+    return new Response('Database error', { status: 500 });
+  }
+  if (!existingRow) {
+    console.error('[ls-webhook] non-pk unique violation (assignment_number integrity):', payload.assignmentId);
     return new Response('Database error', { status: 500 });
   }
 
@@ -116,7 +130,7 @@ export const onRequestPost = async (context) => {
   const { error: updateErr, count } = await updateBuilder;
 
   if (updateErr) {
-    console.error('[ls-webhook] update failed:', payload.assignmentId, updateErr.message);
+    console.error('[ls-webhook] update failed:', payload.assignmentId, 'code=' + (updateErr.code ?? 'unknown'));
     return new Response('Database error', { status: 500 });
   }
 

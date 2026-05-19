@@ -6,6 +6,7 @@ import {
   facilityHeadline,
   bodyParts,
   cardTitle,
+  fetchActiveJobs,
   type JobRow,
 } from './ims-jobs-read';
 
@@ -40,5 +41,12 @@ describe('privacy contract', () => {
     ].join(' | ');
     expect(rendered).toContain('Level 1 Trauma Center');
     expect(rendered).not.toMatch(/Mercy|Hospital A|555-|raw_payload/i);
+  });
+});
+
+describe('fetchActiveJobs degraded-vs-empty contract (Codex A4-R1)', () => {
+  it('returns a discriminated unconfigured result when env is missing (not [])', async () => {
+    const r = await fetchActiveJobs({});
+    expect(r).toEqual({ ok: false, reason: 'unconfigured' });
   });
 });

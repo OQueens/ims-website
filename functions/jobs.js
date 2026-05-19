@@ -52,22 +52,43 @@ function cardHtml(j) {
 
 export const onRequestGet = async (context) => {
   const { env } = context;
-  let jobs = [];
+  let result;
   try {
-    jobs = await fetchActiveJobs({
+    result = await fetchActiveJobs({
       SUPABASE_URL: env.SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
     });
   } catch (e) {
-    console.error("[/jobs fn] keystone read crash:", e);
-    jobs = [];
+    // The keystone is designed not to throw (it returns a discriminated
+    // result); this is last-resort defense-in-depth for an unexpected
+    // import/runtime throw. Treat as a degraded read, never true-empty.
+    console.error("[/jobs fn] keystone read crash:", e instanceof Error ? e.message : String(e));
+    result = { ok: false, reason: "client_crash" };
   }
 
   // context.next() resolves the prerendered static /jobs asset; on a built
-  // static asset it does not reject, so the keystone try/catch above is the
-  // only guarded failure mode — any data failure falls through to this shell.
+  // static asset it does not reject, so the data read above is the only
+  // guarded failure mode — every failure falls through to the dignified shell.
   const shell = await context.next();
-  if (!jobs.length) return new Response(shell.body, shell); // baked empty-state
+
+  if (!result.ok) {
+    // 'unconfigured' is the EXPECTED pre-wiring state (Supabase not wired
+    // yet) → serve the baked empty-state silently. 'query_error'/'client_
+    // crash' mean the read DEGRADED while configured: still serve the
+    // dignified shell (UX unchanged) but emit an operator-distinct
+    // alertable log + an x-jobs-data:degraded response header so uptime
+    // checks can tell degradation from a genuinely empty board.
+    if (result.reason === "unconfigured") {
+      return new Response(shell.body, shell);
+    }
+    console.error("[/jobs fn] DATA READ DEGRADED (serving baked shell, NOT true-empty inventory) — reason=" + result.reason);
+    const dh = new Headers(shell.headers);
+    dh.set("x-jobs-data", "degraded");
+    return new Response(shell.body, { status: shell.status, statusText: shell.statusText, headers: dh });
+  }
+
+  const jobs = result.jobs;
+  if (!jobs.length) return new Response(shell.body, shell); // genuinely empty inventory
 
   const total = jobs.length;
   const grid = `<div class="jobs__grid">${jobs.map(cardHtml).join("")}</div>`;

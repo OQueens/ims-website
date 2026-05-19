@@ -60,15 +60,29 @@ export const cardTitle = (j: JobRow): string =>
   j.specialty_name ?? specialtyLabel(j.specialty_slug);
 
 /**
- * Read active public job rows. Returns [] on any misconfig/error so the page
- * renders the dignified empty state rather than throwing. LIMIT 1000 matches
- * the PostgREST default server max (Phase 1.A scale is tens-to-low-hundreds
- * of active rows); range pagination is a later step if scale exceeds it.
+ * Read active public job rows through the PUBLIC allowlist (the only
+ * ims_jobs read path). Returns a DISCRIMINATED result so the caller can
+ * distinguish a genuinely-empty board from a degraded read (Codex A4-R1):
+ *   { ok:true,  jobs }                  — query succeeded ([] = truly empty)
+ *   { ok:false, reason:'unconfigured' } — Supabase env not set yet; this is
+ *                                         the EXPECTED pre-wiring state, NOT
+ *                                         an outage
+ *   { ok:false, reason:'query_error' }  — env set but the read failed (DEGRADED)
+ *   { ok:false, reason:'client_crash' } — unexpected exception (DEGRADED)
+ * The page still renders the dignified shell on every !ok branch; the
+ * distinction exists so a degraded read is operator-visible rather than
+ * masquerading as "no live assignments". Error logs carry only the
+ * structured code, never raw messages. LIMIT 1000 matches the PostgREST
+ * default server max (Phase 1.A scale is tens-to-low-hundreds of rows).
  */
-export async function fetchActiveJobs(env: JobsEnv): Promise<JobRow[]> {
+export type JobsReadResult =
+  | { ok: true; jobs: JobRow[] }
+  | { ok: false; reason: 'unconfigured' | 'query_error' | 'client_crash' };
+
+export async function fetchActiveJobs(env: JobsEnv): Promise<JobsReadResult> {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('[/jobs] env not configured — rendering empty state');
-    return [];
+    return { ok: false, reason: 'unconfigured' };
   }
   try {
     const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
@@ -81,12 +95,12 @@ export async function fetchActiveJobs(env: JobsEnv): Promise<JobRow[]> {
       .order('ls_last_modified', { ascending: false, nullsFirst: false })
       .limit(1000);
     if (error) {
-      console.error('[/jobs] supabase read failed:', error.message);
-      return [];
+      console.error('[/jobs] supabase read failed — code=' + (error.code ?? 'unknown'));
+      return { ok: false, reason: 'query_error' };
     }
-    return (data as JobRow[] | null) ?? [];
+    return { ok: true, jobs: (data as JobRow[] | null) ?? [] };
   } catch (e) {
-    console.error('[/jobs] supabase client crash:', e);
-    return [];
+    console.error('[/jobs] supabase client crash:', e instanceof Error ? e.message : String(e));
+    return { ok: false, reason: 'client_crash' };
   }
 }
