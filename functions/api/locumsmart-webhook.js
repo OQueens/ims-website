@@ -16,6 +16,9 @@ export const onRequestPost = async (context) => {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY || !env.LOCUMSMART_WEBHOOK_SECRET) {
     // Intentional 500 (not 401): LS retries 5xx but not 4xx, so a transient
     // missing-secret window during deploy self-heals on the next retry.
+    // The 500-vs-401 body-shape difference is a deploy-state oracle in theory,
+    // accepted: LS is the only legitimate caller, bounded by IP + the Webhook
+    // Key (resilience over stealth). Oracle behaviour tracked for the A4 Codex round.
     console.error("[ls-webhook] env misconfigured");
     return new Response("Server misconfigured", { status: 500 });
   }
@@ -32,7 +35,7 @@ export const onRequestPost = async (context) => {
     console.warn("[ls-webhook] shape invalid:", shape.reason);
     return new Response("Bad payload", { status: 400 });
   }
-  const payload = raw;
+  const payload = raw; // shape validated above; alias kept for diff-parity with the canonical TS source
 
   if (!constantTimeEquals(payload.key, env.LOCUMSMART_WEBHOOK_SECRET)) {
     console.warn("[ls-webhook] unauthorized — token mismatch for", payload.assignmentId);
