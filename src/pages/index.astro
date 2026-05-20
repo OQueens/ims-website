@@ -10,18 +10,12 @@ const proof = [
   "$2M / $4M occurrence malpractice",
   "47 states · every specialty",
 ];
-// `to` = numeric target for the count-up animation; `n` = literal text for
-// non-numeric stats (kept static, no counter). Suffix renders both before
-// and during animation so the cell width doesn't reflow mid-count.
-const stats: Array<
-  | { to: number; suffix?: string; l: string; a?: boolean }
-  | { n: string;  l: string; a?: boolean }
-> = [
-  { to: 1840, suffix: "+", l: "clinicians on the roster", a: true },
-  { to: 47,                l: "states & D.C., licensed" },
-  { n: "every",            l: "specialty placed" },
-  { n: "<1 hr",            l: "average reply, day or night", a: true },
-  { to: 92, suffix: "%",   l: "of clinicians come back" },
+const stats = [
+  { n: "1,840+", l: "clinicians on the roster", a: true },
+  { n: "47", l: "states & D.C., licensed" },
+  { n: "every", l: "specialty placed" },
+  { n: "<1 hr", l: "average reply, day or night", a: true },
+  { n: "92%", l: "of clinicians come back" },
 ];
 const clinBullets = [
   ["One recruiter. Their cell.", "Texting, calling, weekends — your person, not a queue."],
@@ -172,29 +166,14 @@ const team = [
   <div class="trust">
     <div class="section trust__row">
       {stats.map((s) => (
-        <div class="st">
-          <div class:list={["st__n", { accent: s.a }]}>
-            {"to" in s
-              ? (() => {
-                  const finalText = `${s.to.toLocaleString("en-US")}${s.suffix ?? ""}`;
-                  return (
-                    <>
-                      <span class="sr-only">{finalText}</span>
-                      <span aria-hidden="true" data-count={s.to} data-suffix={s.suffix ?? ""}>{finalText}</span>
-                    </>
-                  );
-                })()
-              : s.n}
-          </div>
-          <div class="st__l">{s.l}</div>
-        </div>
+        <div class="st"><div class:list={["st__n", { accent: s.a }]}>{s.n}</div><div class="st__l">{s.l}</div></div>
       ))}
     </div>
   </div>
 
   <!-- ===================== AUDIENCE SPLIT ===================== -->
   <section class="section section--lg">
-    <div class="ah reveal-onview">
+    <div class="ah">
       <div>
         <Eyebrow>Two sides of the same handshake</Eyebrow>
         <h2 class="ah__h">We work for <span class="it" style="color:var(--clay)">clinicians.</span><br/>We work with <span class="it" style="color:var(--clay)">facilities.</span></h2>
@@ -225,7 +204,7 @@ const team = [
 
   <!-- ===================== HOW WE WORK ===================== -->
   <section class="section section--lg">
-    <div class="ah reveal-onview">
+    <div class="ah">
       <div>
         <Eyebrow>How we work</Eyebrow>
         <h2 class="ah__h">One team, from offer<br/>to <span class="it">final shift.</span></h2>
@@ -248,7 +227,7 @@ const team = [
 
   <!-- ===================== TRAVELER'S PAMPHLET (the flip) ===================== -->
   <section class="section section--lg">
-    <div class="ah reveal-onview">
+    <div class="ah">
       <div>
         <Eyebrow>The Traveler's Issue</Eyebrow>
         <h2 class="ah__h">Every assignment comes with a <span class="it" style="color:var(--clay)">pamphlet.</span></h2>
@@ -313,7 +292,7 @@ const team = [
 
   <!-- ===================== SPECIALTIES ===================== -->
   <section class="section section--lg">
-    <div class="ah reveal-onview">
+    <div class="ah">
       <div>
         <Eyebrow>Every specialty</Eyebrow>
         <h2 class="ah__h">Six we live in.<br/><span class="it">Forty-plus we know cold.</span></h2>
@@ -338,7 +317,7 @@ const team = [
 
   <!-- ===================== PULL QUOTE ===================== -->
   <section class="section section--lg">
-    <div class="pq reveal-onview">
+    <div class="pq">
       <div class="pq__body">
         <span class="pq__mark">&ldquo;</span>
         <p class="pq__q">
@@ -371,7 +350,7 @@ const team = [
 
   <!-- ===================== PLACEMENT ===================== -->
   <section class="section section--lg">
-    <div class="ah reveal-onview">
+    <div class="ah">
       <div>
         <Eyebrow>How a placement works</Eyebrow>
         <h2 class="ah__h">Four steps.<br/><span class="it">No portal hell.</span></h2>
@@ -392,7 +371,7 @@ const team = [
 
   <!-- ===================== FEATURED ASSIGNMENTS ===================== -->
   <section class="section section--lg">
-    <div class="fh reveal-onview">
+    <div class="fh">
       <div>
         <Eyebrow>Featured this week</Eyebrow>
         <h2 class="ah__h">Three of 142 open assignments.</h2>
@@ -418,7 +397,7 @@ const team = [
 
   <!-- ===================== TEAM TEASER ===================== -->
   <section class="section section--lg">
-    <div class="ah reveal-onview">
+    <div class="ah">
       <div>
         <Eyebrow>Who's at the desk</Eyebrow>
         <h2 class="ah__h">We're real.<br/><span class="it">And we'll prove it.</span></h2>
@@ -440,7 +419,7 @@ const team = [
 
   <!-- ===================== CLOSING CTA ===================== -->
   <section class="section section--lg">
-    <div class="cta reveal-onview">
+    <div class="cta">
       <div class="cta__l">
         <Eyebrow tone="gold">Ready when you are</Eyebrow>
         <h2 class="cta__h">Tell us where you want to work next.</h2>
@@ -459,71 +438,6 @@ const team = [
       </div>
     </div>
   </section>
-
-  <!-- trust-strip count-up animation. The HTML already carries final values
-       for no-JS / reduced-motion / above-fold paths — animation only kicks
-       in when the strip is BELOW the initial viewport, so cold-load and
-       restored-scroll users never see the "0+" placeholder flicker.
-       Counter spans are aria-hidden; an sr-only sibling holds the final
-       text for assistive tech, so mid-animation values aren't announced. -->
-  <script is:inline>
-    (function () {
-      var strip = document.querySelector(".trust");
-      if (!strip) return;
-      var spans = strip.querySelectorAll("[data-count]");
-      if (!spans.length) return;
-      var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduce || !("IntersectionObserver" in window) || !("requestAnimationFrame" in window)) return;
-      // If the strip is already in (or above) the initial viewport, skip the
-      // count-up entirely — the user has already seen the final number, and
-      // restarting at 0 would feel promotional. Animation is a scroll reward,
-      // not a page-load device. 95% threshold gives a hair of slack at the
-      // bottom-of-fold case where a sliver counts as "in view."
-      var rect = strip.getBoundingClientRect();
-      if (rect.top < window.innerHeight * 0.95) return;
-      // en-US locale: site copy is en-US; other locales would render "1.840+"
-      // which collides with the original mark style.
-      var nf = (typeof Intl !== "undefined" && Intl.NumberFormat)
-        ? new Intl.NumberFormat("en-US")
-        : { format: function (n) { return String(Math.round(n)); } };
-      var fmt = function (n, suf) { return nf.format(Math.round(n)) + suf; };
-      var targets = [];
-      for (var i = 0; i < spans.length; i++) {
-        var suf = spans[i].getAttribute("data-suffix") || "";
-        targets.push({
-          el: spans[i],
-          to: parseInt(spans[i].getAttribute("data-count"), 10) || 0,
-          suf: suf
-        });
-        // Snap to zero BEFORE the strip enters the viewport so the count-up
-        // starts cleanly. Safe — strip is off-screen at this point.
-        spans[i].textContent = fmt(0, suf);
-      }
-      // ease: approximates cubic-bezier(0.16, 1, 0.3, 1) — emphasized ease-out
-      var ease = function (t) { var u = 1 - t; return 1 - u * u * u * u; };
-      var fired = false;
-      var run = function () {
-        if (fired) return; fired = true;
-        var start = performance.now();
-        var dur = 1100;
-        var tick = function (now) {
-          var t = (now - start) / dur; if (t > 1) t = 1;
-          var e = ease(t);
-          for (var i = 0; i < targets.length; i++) {
-            targets[i].el.textContent = fmt(targets[i].to * e, targets[i].suf);
-          }
-          if (t < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-      };
-      var io = new IntersectionObserver(function (entries) {
-        for (var j = 0; j < entries.length; j++) {
-          if (entries[j].isIntersecting) { run(); io.disconnect(); break; }
-        }
-      }, { threshold: 0.4 });
-      io.observe(strip);
-    })();
-  </script>
 </IMSLayout>
 
 <style>
