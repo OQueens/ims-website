@@ -26,7 +26,11 @@ const {
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="generator" content={Astro.generator} />
-    <meta name="theme-color" content="#F4EFEA" />
+    {/* IAS Design System: white on light, black on dark — the browser chrome
+       follows the user's OS color scheme to match the page background. */}
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#000000" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/assets/ims-mark.png" />
     <title>{title}</title>
   </head>
