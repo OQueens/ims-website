@@ -458,7 +458,11 @@ const team = [
   .cl--lg { grid-column: 1; grid-row: 1 / span 2; min-height: 460px; padding: 40px 36px; }
   .cl--pine, .cl--pine2 { background: var(--pine); color: var(--on-pine); }
   .cl--pine:hover, .cl--pine2:hover { box-shadow: var(--elev-3); }
-  .cl--clay { background: var(--sage); color: var(--on-sage); grid-column: 2; grid-row: 1; }
+  /* Demoted sage → powder blue per 2026-05-20 mood-board palette swap:
+   * "you can use green but not to this extent". The big audience-cluster
+   * card was the most dominant sage surface; powder blue is the new
+   * accent voice that takes its place. */
+  .cl--clay { background: var(--ims-blue); color: var(--ink); grid-column: 2; grid-row: 1; }
   .cl--paper { background: var(--paper); color: var(--ink); border: 1px solid var(--brass-line); grid-column: 3; grid-row: 1; }
   .cl--paper:hover { box-shadow: var(--elev-2); }
   .cl--sand { background: var(--bone); color: var(--ink); grid-column: 2; grid-row: 2; }
@@ -610,7 +614,8 @@ const team = [
   .pl:hover { transform: translateY(-3px); }
   .pl--pine { background: var(--pine); color: var(--on-pine); }
   .pl--bone { background: var(--bone); color: var(--ink); border: 1px solid var(--brass-line); }
-  .pl--sage { background: var(--sage); color: var(--on-sage); }
+  /* Demoted sage → powder blue (mood-board palette swap 2026-05-20). */
+  .pl--sage { background: var(--ims-blue); color: var(--ink); }
   .pl__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; opacity: .8; font-feature-settings: "smcp" 1; }
   .pl__h { font: 400 clamp(26px,2.7vw,34px)/1.06 var(--display); letter-spacing: var(--tracking-display); color: inherit; }
   .pl__b { font: 400 15px/1.55 var(--sans); opacity: .86; color: inherit; }

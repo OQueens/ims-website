@@ -15,62 +15,73 @@
 @import url("https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap");
 
 :root {
-  /* ---------- Belleval canonical palette (LOCKED) ---------- */
+  /* ---------- Hôtel Belleval canonical palette (LOCKED 2026-05-20) -----
+   * The 5 mood-board hex codes Zach delivered, used per their mood-board
+   * role:
+   *   #020202 ink   — page text, headlines, accent dots, botanical cutouts
+   *   #AFB59F sage  — SUPPORT only (organic shapes, dots, ring text);
+   *                   never a dominant ground
+   *   #C0DAE1 blue  — powder-blue: the new ACCENT for backgrounds, washes,
+   *                   decorative shapes, hover surfaces. The hue-219 IMS
+   *                   cyan is gone (intentional brand mismatch per Zach:
+   *                   "this light blue doesn't match the IAS logo blue
+   *                    and that's fine, it doesn't have to.")
+   *   #F5EFEB cream — page ground (the calm dominant field, ~all surfaces)
+   *   #FFFFFF white — sparingly, brightest cards / form fills
+   * ---------------------------------------------------------------- */
   --band:  #E6DAC2;   /* warm sand-taupe — hero / anchor ground          */
   --bone:  #E8E0CF;   /* warm oat, speckled — seal discs, "stock" stock  */
-  --sage:  #9DAA8A;   /* dusty grey-sage — SUPPORT: organic shapes, washes */
-  --sage-2:#7E8C6B;   /* deeper sage — decorative support voice: accent
-                       * dots, seal rings, organic detail. NOT the lead
-                       * accent (IMS blue is); NOT body text (3.1:1).      */
+  --sage:  #AFB59F;   /* mood-board muted sage — SUPPORT: organic shapes,
+                       * washes, dots. NOT a dominant card ground anymore
+                       * (the big .cl--clay / .pl--sage surfaces moved to
+                       * powder blue per "don't do that green everywhere") */
+  --sage-2:#8B9479;   /* deeper sage, derived darker. Decorative support
+                       * voice: accent dots, seal rings, organic detail.
+                       * Still NEVER body text.                            */
   --brass: #9C824E;   /* warm bronze — HAIRLINE only, never a fill       */
 
-  /* ---------- IMS brand blue — the LEAD accent voice ------------------
-   * Real mark hexes: the logo's .cls-1 is #59BFE7 (OKLCH hue 219, a true
-   * sky-blue). The deepened step holds that SAME hue 219, only lower L —
-   * it reads as "the IMS blue, darkened", not a foreign teal. The powder
-   * wash token #D0EAF2 is hue 215 (same family), so blue sits coherently
-   * on the cream field — no warm/cool clash.
-   *
-   * 2026-05-20 brand correction: blue LEADS the accent voice (eyebrows,
-   * idx labels, link hovers, italic hero accents, focus rings, icon
-   * accents in nav/footer). Sage stays in its decorative role only —
-   * organic blob washes, small dot indicators, selection halos that ride
-   * on sage-wash grounds. Brass remains hairline-only, never a fill.    */
-  --ims-blue:      #59BFE7;  /* brand mark + focus glow + on-pine accent.
-                              * 1.8:1 on cream → never text on a light
-                              * ground; ink-on-blue fill is 9.9:1 (safe). */
-  --ims-blue-ink:  #00657F;  /* hue-219 brand blue, deepened: AA 5.8:1 on
-                              * cream / 6.6:1 on white. The accent TEXT
-                              * voice — eyebrows, links, key labels.      */
-  --ims-blue-wash: #D0EAF2;  /* solid Belleval-powder tint (no alpha) —
-                              * the ramp's surface step; ink on it 16.5:1.
-                              * Reserved: applied only where a blue ground
-                              * is intentional. Unused now, by design —
-                              * blue is kept rare; washes stay sage.      */
+  /* ---------- Powder blue accent (Hôtel Belleval mood board) ----------
+   * Replaces the prior IMS-cyan brand blue. The mood-board powder blue
+   * is a BACKGROUND voice (the painted blob behind "HÔTEL BELLEVAL", the
+   * decorative shape washes), NOT a text voice. Text accents fall back to
+   * ink, matching the mood board where every label / monogram / mark is
+   * black on cream. */
+  --ims-blue:      #C0DAE1;  /* mood-board powder blue — backgrounds, washes,
+                              * focus glow, decorative shape fills. Contrast
+                              * on cream ~1.1:1 → NEVER text.              */
+  --ims-blue-ink:  #020202;  /* the accent TEXT voice IS ink — matches the
+                              * mood board (black eyebrows, black mark on
+                              * cream, black botanical cutouts). The legacy
+                              * "deepened blue" text use is gone.          */
+  --ims-blue-wash: #C0DAE1;  /* powder-blue ground tint — same hex as base
+                              * (the mood-board powder blue is already a
+                              * pastel; no further alpha needed). Hover
+                              * surfaces, focus glow underlay.             */
 
   /* ---------- Surfaces (legacy names → Belleval values) ---------- */
-  --cream:        #F4EFEA;   /* page ground — Belleval cream (the real
-                              * reference hex); the calm dominant field   */
+  --cream:        #F5EFEB;   /* page ground — mood-board cream             */
   --cream-2:      var(--band);
-  --paper:        #F8F3E9;   /* cards — a whisper above ground, flat      */
+  --paper:        #FFFFFF;   /* cards — mood-board white whisper above cream */
   --sand:         var(--bone);
   --sand-deep:    #DACDB2;
-  --pine:         #29382C;   /* dark sections / primary action           */
-  --pine-700:     #20302A;
-  --pine-deep:    #18241F;
+  --pine:         #020202;   /* dark sections / primary action — mood-board
+                              * BLACK (was dark-pine green; "don't do that
+                              * green everywhere" applies to pine too).    */
+  --pine-700:     #1A1A1A;
+  --pine-deep:    #000000;
 
   --bg:           var(--cream);
   --surface:      var(--paper);
   --surface-2:    var(--band);
 
   /* ---------- Text (secondary/tertiary = opacities of ink) ---------- */
-  --ink:          #161513;   /* near-black, faintly warm — primary       */
-  --ink-2:        rgba(22,21,19,0.62);  /* secondary                     */
-  --ink-3:        rgba(22,21,19,0.42);  /* tertiary / duotone "soft"     */
-  --ink-4:        rgba(22,21,19,0.24);  /* faint / disabled              */
-  --on-pine:      #EDE7D6;   /* warm bone-light text on pine             */
-  --on-pine-2:    rgba(237,231,214,0.66);
-  --on-sage:      #1B231A;   /* ink on a sage fill                       */
+  --ink:          #020202;   /* mood-board true-black (was warm #161513)  */
+  --ink-2:        rgba(2,2,2,0.62);   /* secondary                       */
+  --ink-3:        rgba(2,2,2,0.42);   /* tertiary / duotone "soft"        */
+  --ink-4:        rgba(2,2,2,0.24);   /* faint / disabled                 */
+  --on-pine:      #F5EFEB;   /* mood-board cream on black                 */
+  --on-pine-2:    rgba(245,239,235,0.66);
+  --on-sage:      #020202;   /* ink on a sage / powder-blue fill          */
   /* --on-clay removed 2026-05-20: had no call sites and was stale —
    * clay now maps to ims-blue-ink (deep, an accent TEXT/icon voice, never
    * a background), so a paired "on-clay" foreground would be ambiguous. */
@@ -92,17 +103,19 @@
   --duo-soft:     var(--ink-3);
 
   /* ---------- Lines / fills ---------- */
-  --line:         rgba(22,21,19,0.14);
-  --line-soft:    rgba(22,21,19,0.08);
-  --line-pine:    rgba(237,231,214,0.16);
+  --line:         rgba(2,2,2,0.14);
+  --line-soft:    rgba(2,2,2,0.08);
+  --line-pine:    rgba(245,239,235,0.16);
   --brass-line:   rgba(156,130,78,0.42);  /* the fine warm bronze rule   */
-  --sage-wash:    rgba(157,170,138,0.20);  /* organic-shape ground wash   */
+  --sage-wash:    rgba(175,181,159,0.20); /* mood-board sage wash         */
+  --blue-wash:    rgba(192,218,225,0.35); /* mood-board powder-blue wash —
+                                            * organic shape backgrounds.   */
 
   /* ---------- Shadow — Belleval is flat; elevation is barely there --- */
-  --elev-1: 0 1px 1px rgba(22,21,19,0.04);
-  --elev-2: 0 10px 30px -26px rgba(22,21,19,0.22);
-  --elev-3: 0 24px 60px -44px rgba(22,21,19,0.30);
-  --glow:   0 0 0 3px rgba(89,191,231,0.42);  /* focus ring — brand blue */
+  --elev-1: 0 1px 1px rgba(2,2,2,0.04);
+  --elev-2: 0 10px 30px -26px rgba(2,2,2,0.22);
+  --elev-3: 0 24px 60px -44px rgba(2,2,2,0.30);
+  --glow:   0 0 0 3px rgba(192,218,225,0.6);  /* focus ring — powder blue */
 
   /* ---------- Radii — crisp, varied (tighter inner, softer container) - */
   --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
@@ -199,7 +212,7 @@ a  { color: inherit; text-decoration: none; }
 small, .caption { font: var(--t-caption); color: var(--ink-3); font-style: italic; }
 img, svg { max-width: 100%; display: block; }
 button { font-family: inherit; }
-::selection { background: rgba(89,191,231,0.36); color: var(--ink); }
+::selection { background: rgba(192,218,225,0.55); color: var(--ink); }
 :focus-visible { outline: none; box-shadow: var(--glow); border-radius: var(--r-xs); }
 
 /* ---------- Shared editorial utilities ---------- */
