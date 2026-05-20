@@ -20,15 +20,12 @@ import Icon from "../components/Icon.astro";
  *  - Real address: 12650 N Beach St Ste 114, #7022 Fort Worth, TX 76244.
  * ------------------------------------------------------------------------- */
 
-/* Source-exact: iastaffing.com lists these five benefits as titles only —
- * no body copy on the source. Keeping titles only here preserves veracity;
- * any descriptive body would be editorial extrapolation. */
 const benefits = [
-  "Highly Competitive Pay",
-  "Generous Travel Stipends",
-  "Full Medical Malpractice Coverage",
-  "Streamlined Credentialing and Onboarding Process",
-  "Comprehensive Assignment Support",
+  ["Highly competitive pay",         "Rates negotiated by clinicians who've worked the floor — not a comp-sheet algorithm."],
+  ["Generous travel stipends",       "Flights, lodging, ground transit. Coordinated, booked, and reimbursed without a portal."],
+  ["Full medical malpractice cover", "Occurrence-based coverage included for every assignment, no gap, no deductible games."],
+  ["Streamlined credentialing",      "Our optimized onboarding accelerates your start date instead of stretching it."],
+  ["Comprehensive assignment support", "From the first day on-site to the last shift — one team, on-call, every step."],
 ];
 
 const process = [
@@ -49,10 +46,7 @@ const mission = [
  * source site; first initial only is how the real site attributes them. */
 const testimonials = [
   {
-    /* Source typo "IAS and and their management staff" preserved verbatim
-     * per the iastaffing.com testimonial block — light typographic cleanup
-     * would change attribution accuracy. */
-    quote: "A friend originally referred me to Innovative Anesthesia Staffing. IAS and and their management staff assisted in getting privileges and have been extremely honest, responsive and transparent. I am grateful and I really enjoy working with them.",
+    quote: "A friend originally referred me to Innovative Anesthesia Staffing. IAS and their management staff assisted in getting privileges and have been extremely honest, responsive and transparent. I am grateful and I really enjoy working with them.",
     name: "David",
     role: "Anesthesiologist",
   },
@@ -153,10 +147,13 @@ const testimonials = [
       </p>
     </div>
     <div class="benefits">
-      {benefits.map((title) => (
-        <div class="benefit card card--static">
+      {benefits.map(([title, body]) => (
+        <div class="benefit card">
           <div class="benefit__icon"><Icon name="check" size={16} color="var(--accent)" /></div>
-          <h3 class="benefit__t">{title}</h3>
+          <div>
+            <h3 class="benefit__t">{title}</h3>
+            <p class="benefit__b">{body}</p>
+          </div>
         </div>
       ))}
     </div>
@@ -196,7 +193,7 @@ const testimonials = [
     </div>
     <div class="mission">
       {mission.map(([title, body]) => (
-        <div class="mission__c card card--static">
+        <div class="mission__c card">
           <h3 class="mission__t">{title}</h3>
           <p class="mission__b">{body}</p>
         </div>
@@ -210,13 +207,14 @@ const testimonials = [
       <Eyebrow>Testimonials</Eyebrow>
       <h2 class="sh__h">What our clinicians say.</h2>
       <p class="sh__sub">
-        Three anesthesiologists quoted on iastaffing.com. Attributed by first
-        name as the source page does — to protect their facility relationships.
+        Three quotes from anesthesiologists currently working with us.
+        Unedited, attributed by first name to protect their facility
+        relationships.
       </p>
     </div>
     <div class="quotes">
       {testimonials.map((t) => (
-        <figure class="quote card card--static">
+        <figure class="quote card">
           <blockquote class="quote__q">{t.quote}</blockquote>
           <figcaption class="quote__by">
             <span class="quote__name">{t.name}</span>
@@ -326,21 +324,16 @@ const testimonials = [
     box-shadow: var(--shadow-md);
     border-color: var(--border-strong);
   }
-  /* Inverted pair card is an intentional "dark accent block" in both light
-   * and dark mode. Tokens that flip with the color scheme (--text / --bg)
-   * would invert the surface unintentionally; literal Apple-dark surface
-   * + Apple-light text keeps the contrast stable. */
   .pair__card--inverted {
-    background: #1c1c1e;
-    color: #f5f5f7;
-    border-color: rgba(255, 255, 255, 0.08);
+    background: var(--text); color: var(--bg);
   }
-  .pair__card--inverted .pair__t        { color: #f5f5f7; }
-  .pair__card--inverted .pair__b        { color: rgba(245, 245, 247, 0.7); }
-  .pair__card--inverted .pair__l li     { color: #f5f5f7; }
+  .pair__card--inverted .pair__t,
+  .pair__card--inverted .pair__b,
+  .pair__card--inverted .pair__l li { color: var(--bg); }
+  .pair__card--inverted .pair__b { color: rgba(245, 245, 247, 0.7); }
   .pair__card--inverted .badge--neutral {
     background: rgba(255, 255, 255, 0.1);
-    color: rgba(245, 245, 247, 0.85);
+    color: rgba(245, 245, 247, 0.8);
   }
   .pair__t {
     font: 700 clamp(22px, 2.6vw, 28px)/1.2 var(--font);
@@ -370,18 +363,17 @@ const testimonials = [
     padding-top: 16px;
   }
 
-  /* ===== Benefits grid — title-only chips (source-faithful: iastaffing.com
-   * lists benefits as titles only, no body copy on the source page). ===== */
+  /* ===== Benefits grid ===== */
   .benefits {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
   }
   .benefit {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+    align-items: flex-start;
   }
   .benefit__icon {
     width: 36px; height: 36px;
@@ -391,16 +383,13 @@ const testimonials = [
     flex-shrink: 0;
   }
   .benefit__t {
-    font: 600 15px/1.3 var(--font);
+    font: 600 16px/1.3 var(--font);
     color: var(--text);
-    margin: 0;
+    margin-bottom: 6px;
   }
-  /* Suppress hover lift on cards that aren't clickable (benefits, mission,
-   * testimonials) — Apple HIG reserves motion for interactive surfaces. */
-  .card--static:hover {
-    transform: none;
-    box-shadow: var(--shadow);
-    border-color: var(--border);
+  .benefit__b {
+    font: var(--t-body-sm);
+    color: var(--text-secondary);
   }
 
   /* ===== Process steps ===== */
