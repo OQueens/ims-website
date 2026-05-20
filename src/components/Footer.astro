@@ -1,12 +1,10 @@
 ---
-// Footer.astro — editorial cream footer: giant serif marquee + 4-col + colophon.
+// Footer.astro — cream footer: brand row + 4-col + colophon.
 import Icon from "./Icon.astro";
 import Logo from "./Logo.astro";
 ---
 <footer class="ft">
   <div class="ft__inner">
-    <h2 class="marquee">Locums, <span class="it" style="color:var(--clay)">without the loneliness.</span></h2>
-
     <div class="grid">
       <div class="brandCol">
         <div class="brandRow">
@@ -61,15 +59,6 @@ import Logo from "./Logo.astro";
 <style>
   .ft { background: var(--cream); border-top: 1px solid var(--line); margin-top: clamp(64px,10vw,120px); }
   .ft__inner { max-width: var(--maxw); margin: 0 auto; padding: clamp(56px,8vw,80px) var(--gutter) 28px; }
-  .marquee {
-    /* /0.94 → /1.06: Anton ink clears + a hair of air when this wraps
-     * (Playwright canvas-ink measured; matches the --t-display-* fix). */
-    font: 400 clamp(44px,9vw,132px)/1.06 var(--display);
-    letter-spacing: var(--tracking-display); text-transform: uppercase;
-    color: var(--ink); margin: 0; padding-bottom: clamp(36px,5vw,56px);
-    border-bottom: 1px solid var(--line); text-wrap: balance;
-  }
-  .marquee .it { text-transform: none; }
   .grid {
     display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px;
     padding: 56px 0; border-bottom: 1px solid var(--line);
@@ -83,7 +72,7 @@ import Logo from "./Logo.astro";
   .brandRow :global(.imslogo) { height: 29px; flex: none; color: var(--ink); }
   .lockup { display: flex; flex-direction: column; line-height: 1; }
   .bn { font: 400 19px/1 var(--display); letter-spacing: .03em; text-transform: uppercase; color: var(--ink); }
-  .bs { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); margin-top: 8px; font-feature-settings: "smcp" 1; }
+  .bs { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); margin-top: 8px; font-feature-settings: "smcp" 1; }
   .pitch { font: var(--t-body-sm); color: var(--ink-2); max-width: 320px; }
   .contacts { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .cx { display: inline-flex; align-items: center; gap: 8px; font: 600 14px/1 var(--sans); color: var(--pine); }

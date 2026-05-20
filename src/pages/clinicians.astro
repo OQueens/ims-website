@@ -1,10 +1,7 @@
 ---
 // clinicians.astro — deep-dive page for clinicians considering IMS.
-// Ports the source Clinicians.jsx (Hero · YourDesk · WhatsIncluded ·
-// PayTimeline · ReferColleague · FAQ · ClosingCTA) and reskins it from the
-// dark-navy / saturated-card original into Belleval quiet-luxury, matching
-// the patterns established in index.astro. Country-club copy removed per the
-// locked sitewide decision. FAQ is a CSS-only <details> accordion (no JS).
+// Sections: Hero · YourDesk · WhatsIncluded · PayTimeline · ReferColleague ·
+// FAQ · ClosingCTA. FAQ is a CSS-only <details> accordion (no JS).
 import IMSLayout from "../layouts/IMSLayout.astro";
 import Eyebrow from "../components/Eyebrow.astro";
 import Button from "../components/Button.astro";
@@ -269,7 +266,7 @@ const faqs = [
     padding: 20px; display: flex; gap: 14px; align-items: center; }
   .rec__n { font: 400 15px/1.15 var(--display); letter-spacing: .02em; text-transform: uppercase; color: var(--ink); margin: 0; }
   .rec__r { font: 500 12px/1.4 var(--sans); color: var(--ink-3); margin-top: 5px; }
-  .rec__c { font: 500 12px/1.3 var(--sans); color: var(--sage-2); margin-top: 6px; }
+  .rec__c { font: 500 12px/1.3 var(--sans); color: var(--ims-blue-ink); margin-top: 6px; }
 
   /* ---- What's included ---- */
   .inc { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
@@ -345,7 +342,7 @@ const faqs = [
   .qa__t { position: relative; width: 26px; height: 26px; border-radius: 999px; flex: none;
     border: 1px solid var(--brass-line); }
   .qa__t::before, .qa__t::after { content: ""; position: absolute; inset: 0;
-    background: var(--sage-2); transition: opacity var(--dur-base) var(--ease-out); }
+    background: var(--ims-blue-ink); transition: opacity var(--dur-base) var(--ease-out); }
   .qa__t::before { width: 10px; height: 1px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
   .qa__t::after  { width: 1px; height: 10px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
   .qa[open] .qa__t::after { opacity: 0; }

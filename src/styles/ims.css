@@ -24,14 +24,18 @@
                        * accent (IMS blue is); NOT body text (3.1:1).      */
   --brass: #9C824E;   /* warm bronze — HAIRLINE only, never a fill       */
 
-  /* ---------- IMS brand blue — the LEAD accent (rare, ~10%) ----------
+  /* ---------- IMS brand blue — the LEAD accent voice ------------------
    * Real mark hexes: the logo's .cls-1 is #59BFE7 (OKLCH hue 219, a true
    * sky-blue). The deepened step holds that SAME hue 219, only lower L —
-   * it reads as "the IMS blue, darkened", not a foreign teal. Belleval's
-   * powder #C0DAE1 is hue 215 (same family), so blue sits coherently on
-   * the cream field — no warm/cool clash. Spend it only where it earns:
-   * the logo, focus rings, the ceremonial eyebrow voice, the one accent
-   * fill button. Decorative texture stays sage; hairlines stay brass.   */
+   * it reads as "the IMS blue, darkened", not a foreign teal. The powder
+   * wash token #D0EAF2 is hue 215 (same family), so blue sits coherently
+   * on the cream field — no warm/cool clash.
+   *
+   * 2026-05-20 brand correction: blue LEADS the accent voice (eyebrows,
+   * idx labels, link hovers, italic hero accents, focus rings, icon
+   * accents in nav/footer). Sage stays in its decorative role only —
+   * organic blob washes, small dot indicators, selection halos that ride
+   * on sage-wash grounds. Brass remains hairline-only, never a fill.    */
   --ims-blue:      #59BFE7;  /* brand mark + focus glow + on-pine accent.
                               * 1.8:1 on cream → never text on a light
                               * ground; ink-on-blue fill is 9.9:1 (safe). */
@@ -67,17 +71,21 @@
   --on-pine:      #EDE7D6;   /* warm bone-light text on pine             */
   --on-pine-2:    rgba(237,231,214,0.66);
   --on-sage:      #1B231A;   /* ink on a sage fill                       */
-  --on-clay:      var(--on-sage);
+  /* --on-clay removed 2026-05-20: had no call sites and was stale —
+   * clay now maps to ims-blue-ink (deep, an accent TEXT/icon voice, never
+   * a background), so a paired "on-clay" foreground would be ambiguous. */
 
-  /* ---------- Accents — IMS blue leads via the eyebrow/focus/logo voice
-   * (applied selectively, not through this alias). Legacy "clay" stays
-   * mapped to sage so it can't smear blue across every old call site. -- */
-  --clay:         var(--sage);     /* legacy "clay" → sage support       */
-  --clay-600:     var(--sage-2);
+  /* ---------- Accents — IMS blue is the lead accent voice. The legacy
+   * "clay" alias is now wired to ims-blue-ink: italic hero accent spans,
+   * arrowlink colors, phone/mail icon glyphs in nav/footer/contact, and
+   * any old call site that reaches for "the accent" gets blue (formerly
+   * sage). gold stays mapped to brass (hairline-only).                    */
+  --clay:         var(--ims-blue-ink);  /* legacy "clay" → blue accent   */
+  --clay-600:     var(--ims-blue-ink);
   --gold:         var(--brass);    /* legacy "gold" → brass              */
   --gold-200:     #C9B486;         /* lighter brass — legible on pine    */
   --gold-600:     #806A3F;
-  --moss:         var(--sage-2);
+  --moss:         var(--ims-blue-ink);
 
   /* duotone headline: claim leads, explanation recedes — one breath */
   --duo-claim:    var(--ink);
@@ -191,7 +199,7 @@ a  { color: inherit; text-decoration: none; }
 small, .caption { font: var(--t-caption); color: var(--ink-3); font-style: italic; }
 img, svg { max-width: 100%; display: block; }
 button { font-family: inherit; }
-::selection { background: rgba(157,170,138,0.36); color: var(--ink); }
+::selection { background: rgba(89,191,231,0.36); color: var(--ink); }
 :focus-visible { outline: none; box-shadow: var(--glow); border-radius: var(--r-xs); }
 
 /* ---------- Shared editorial utilities ---------- */
@@ -203,14 +211,14 @@ button { font-family: inherit; }
 .eyebrow {
   display: inline-flex; align-items: center; gap: 12px;
   font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
-  text-transform: uppercase; color: var(--sage-2);
+  text-transform: uppercase; color: var(--ims-blue-ink);
   font-feature-settings: "smcp" 1;
 }
 .eyebrow .orn { color: var(--brass); }
 .eyebrow--gold { color: var(--gold-600); }
 .eyebrow--mut  { color: var(--ink-3); }
 
-.idx { font-family: var(--serif); font-style: italic; color: var(--sage-2); font-size: .9rem; }
+.idx { font-family: var(--serif); font-style: italic; color: var(--ims-blue-ink); font-size: .9rem; }
 
 /* duotone display headline: claim leads, explanation recedes — one breath */
 .duo .claim { color: var(--duo-claim); }
@@ -221,7 +229,7 @@ button { font-family: inherit; }
 .rule-brass { border-top-color: var(--brass-line); }
 
 .lnk { color: inherit; cursor: pointer; transition: color var(--dur-base) var(--ease-out); }
-.lnk:hover { color: var(--sage-2); }
+.lnk:hover { color: var(--ims-blue-ink); }
 
 .section { max-width: var(--maxw); margin: 0 auto; padding-inline: var(--gutter); }
 .section--lg { padding-block: clamp(80px,12vw,148px); }
@@ -269,7 +277,7 @@ button { font-family: inherit; }
 .seal__ring { position: absolute; inset: 0; }
 .seal__ring text {
   font: 500 7px/1 var(--serif); letter-spacing: 0.22em;
-  text-transform: uppercase; fill: var(--sage-2);
+  text-transform: uppercase; fill: var(--ims-blue-ink);
 }
 
 /* page route transition */

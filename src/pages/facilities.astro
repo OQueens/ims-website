@@ -1,12 +1,9 @@
 ---
 // facilities.astro — deep-dive page for hospital/clinic decision-makers.
-// Ports the source Facilities.jsx (Hero · CoverageModel · CredentialingEngine
-// · WeeklyReport · RequestRoster · FacilityFAQ · ClosingCTA) and reskins it
-// from the dark-navy / saturated-card original into Belleval quiet-luxury,
-// matching the patterns in index.astro and clinicians.astro. Voice stays
-// reliability-forward — numbers up front. FAQ is a CSS-only <details>
-// accordion; the roster form is a static illustrative mock (the real form
-// is /contact). No country-club copy (none present in source).
+// Sections: Hero · CoverageModel · CredentialingEngine · WeeklyReport ·
+// RequestRoster · FacilityFAQ · ClosingCTA. Voice stays reliability-forward —
+// numbers up front. FAQ is a CSS-only <details> accordion; the roster form
+// is a static illustrative mock (the real form is /contact).
 import IMSLayout from "../layouts/IMSLayout.astro";
 import Eyebrow from "../components/Eyebrow.astro";
 import Button from "../components/Button.astro";
@@ -312,7 +309,7 @@ const faqs = [
   .cov__b { font: var(--t-body-lg); color: var(--ink-2); margin-top: 22px; max-width: 46ch; }
   .cov__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .cstat { background: var(--bone); border: 1px solid var(--brass-line); border-radius: var(--r-lg); padding: 28px 24px; }
-  .cstat__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+  .cstat__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
   .cstat__n { font: 400 clamp(34px,4vw,48px)/1 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin-top: 14px; }
   .cstat__b { font: 500 13px/1.45 var(--sans); color: var(--ink-3); margin: 8px 0 0; }
   .cnote { grid-column: span 2; background: var(--pine); color: var(--on-pine);
@@ -327,17 +324,17 @@ const faqs = [
     padding: 24px; display: flex; flex-direction: column; gap: 12px; min-height: 230px;
     transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
   .pstep:hover { transform: translateY(-3px); box-shadow: var(--elev-2); }
-  .pstep__d { font: 400 clamp(28px,3vw,36px)/1 var(--display); letter-spacing: var(--tracking-display); color: var(--sage-2); }
+  .pstep__d { font: 400 clamp(28px,3vw,36px)/1 var(--display); letter-spacing: var(--tracking-display); color: var(--ims-blue-ink); }
   .pstep__l { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ink-2); font-feature-settings: "smcp" 1; }
   .pstep__b { font: 400 13px/1.55 var(--sans); color: var(--ink-2); margin: 0; }
   .pstep__m { margin-top: auto; display: flex; align-items: center; gap: 7px;
-    font: 600 11px/1.3 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--sage-2); }
-  .pstep__dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sage-2); flex: none; }
+    font: 600 11px/1.3 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ims-blue-ink); }
+  .pstep__dot { width: 5px; height: 5px; border-radius: 999px; background: var(--ims-blue-ink); flex: none; }
   .ehr { margin-top: 28px; background: var(--band); border: 1px solid var(--brass-line);
     border-radius: var(--r-xl); padding: 32px 36px; display: grid; grid-template-columns: auto 1fr;
     gap: 36px; align-items: center; }
   .ehr__e { display: block; font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
-    text-transform: uppercase; color: var(--sage-2); margin-bottom: 10px; font-feature-settings: "smcp" 1; }
+    text-transform: uppercase; color: var(--ims-blue-ink); margin-bottom: 10px; font-feature-settings: "smcp" 1; }
   .ehr__h { font: 400 clamp(19px,2vw,22px)/1.2 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin: 0; }
   .ehr__chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .ehrchip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
@@ -360,12 +357,12 @@ const faqs = [
   .mail__fm { font: 500 12px/1.4 var(--sans); color: var(--ink-3); margin-top: 4px; }
   .mail__date { font: 500 12px/1 var(--sans); color: var(--ink-3); white-space: nowrap; }
   .mail__body { padding: 24px 26px; display: flex; flex-direction: column; gap: 16px; }
-  .mail__subj { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+  .mail__subj { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
   .mail__h { font: 400 clamp(20px,2.2vw,24px)/1.2 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin: 0; }
   .mail__p { font: 400 13px/1.6 var(--sans); color: var(--ink-2); margin: 0; }
   .mail__grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
   .mcell { background: var(--bone); border-radius: var(--r-md); padding: 16px; }
-  .mcell__l { font: 600 10px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--sage-2); }
+  .mcell__l { font: 600 10px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ims-blue-ink); }
   .mcell__v { font: 400 26px/1 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin-top: 8px; }
   .mcell__v span { font: 600 14px/1 var(--sans); color: var(--ink-3); margin-left: 2px; }
   .mcell__d { font: 500 11px/1.4 var(--sans); color: var(--ink-3); margin-top: 6px; }
@@ -390,7 +387,7 @@ const faqs = [
   .rqf__h { font: 400 17px/1.2 var(--display); letter-spacing: .02em; text-transform: uppercase; color: var(--ink); margin: 0; }
   .rqf__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .rqf__f { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-  .rqf__l { font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--sage-2); }
+  .rqf__l { font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ims-blue-ink); }
   .rqf__in { background: var(--cream); border: 1px solid var(--line); border-radius: var(--r-md);
     padding: 12px 14px; font: 500 14px/1.4 var(--sans); color: var(--ink); }
   .rqf__chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -418,7 +415,7 @@ const faqs = [
   .qa__t { position: relative; width: 26px; height: 26px; border-radius: 999px; flex: none;
     border: 1px solid var(--brass-line); }
   .qa__t::before, .qa__t::after { content: ""; position: absolute;
-    background: var(--sage-2); transition: opacity var(--dur-base) var(--ease-out); }
+    background: var(--ims-blue-ink); transition: opacity var(--dur-base) var(--ease-out); }
   .qa__t::before { width: 10px; height: 1px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
   .qa__t::after  { width: 1px; height: 10px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
   .qa[open] .qa__t::after { opacity: 0; }

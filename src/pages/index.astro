@@ -207,7 +207,7 @@ const team = [
     <div class="ah">
       <div>
         <Eyebrow>How we work</Eyebrow>
-        <h2 class="ah__h">A staffing firm that acts<br/>like a <span class="it">private club.</span></h2>
+        <h2 class="ah__h">One team, from offer<br/>to <span class="it">final shift.</span></h2>
       </div>
       <p class="ah__s">You aren't a number on a portal. You work with us — and the care we put in matches the kind of clinician we want on a Sunday-night call. Three pillars, all included.</p>
     </div>
@@ -232,7 +232,7 @@ const team = [
         <Eyebrow>The Traveler's Issue</Eyebrow>
         <h2 class="ah__h">Every assignment comes with a <span class="it" style="color:var(--clay)">pamphlet.</span></h2>
       </div>
-      <p class="ah__s">When you accept an assignment, your concierge sends a digital booklet — curated for the city, the season, and the kind of clinician you are. You are a traveler, not a tourist.</p>
+      <p class="ah__s">When you accept an assignment, your concierge sends a digital booklet — curated for the city, the season, and the kind of clinician you are.</p>
     </div>
 
     <div class="pamphlet">
@@ -311,7 +311,7 @@ const team = [
     <div class="spc__div"><span class="spc__line"></span><span class="spc__dl">and the long tail</span><span class="spc__line"></span></div>
     <div class="cloud">
       {longTail.map((s) => (<a href="/jobs" class="cl-chip"><span class="cl-dot"></span>{s}</a>))}
-      <span class="cl-chip cl-chip--add">+ your specialty here <Icon name="arrowRight" size={12} color="var(--sage-2)" /></span>
+      <span class="cl-chip cl-chip--add">+ your specialty here <Icon name="arrowRight" size={12} color="var(--ims-blue-ink)" /></span>
     </div>
   </section>
 
@@ -473,13 +473,13 @@ const team = [
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .chip { font: 600 11px/1 var(--sans); letter-spacing: .04em; padding: 6px 11px; border-radius: 999px; background: rgba(237,231,214,0.14); color: var(--on-pine); white-space: nowrap; }
   .cl__f { margin-top: auto; display: inline-flex; align-items: center; gap: 7px; font: 600 12px/1.4 var(--sans); letter-spacing: .03em; opacity: .82; }
-  .cl__f--live { opacity: 1; color: var(--sage-2); font-weight: 700; }
-  .live { width: 6px; height: 6px; border-radius: 999px; background: var(--sage-2); box-shadow: 0 0 0 4px var(--sage-wash); }
+  .cl__f--live { opacity: 1; color: var(--ims-blue-ink); font-weight: 700; }
+  .live { width: 6px; height: 6px; border-radius: 999px; background: var(--ims-blue); box-shadow: 0 0 0 4px var(--ims-blue-wash); }
 
   .trust { border-top: 1px solid var(--brass-line); border-bottom: 1px solid var(--brass-line); background: var(--band); }
   .trust__row { display: grid; grid-template-columns: repeat(5,1fr); gap: 28px; padding-block: 48px; }
   .st__n { font: 400 clamp(32px,3.6vw,52px)/1 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); }
-  .st__n.accent { color: var(--sage-2); }
+  .st__n.accent { color: var(--ims-blue-ink); }
   .st__l { font: 500 12px/1.45 var(--sans); letter-spacing: .03em; color: var(--ink-3); margin-top: 12px; }
 
   .ah { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 64px; }
@@ -512,7 +512,7 @@ const team = [
   .pamphlet__shell { background: var(--band); border: 1px solid var(--brass-line); border-radius: var(--r-2xl);
     padding: 22px; box-shadow: var(--elev-3); }
   .pamphlet__bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px 18px; }
-  .pb__l { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+  .pb__l { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
   .pb__open { font: 600 12px/1 var(--sans); letter-spacing: .03em; color: var(--ink-2); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
   .pflip__toggle { position: absolute; opacity: 0; pointer-events: none; }
   .spread { position: relative; border-radius: var(--r-xl); overflow: hidden;
@@ -526,20 +526,20 @@ const team = [
   .inside__col--side { background: var(--band); border-left: 1px solid var(--brass-line); }
   .side-mast { display: flex; flex-direction: column; gap: 12px; padding-bottom: 22px;
     border-bottom: 1px solid var(--brass-line); }
-  .sm-e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+  .sm-e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
   .sm-h { font: 400 clamp(28px,3.2vw,42px)/1.06 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin: 0; }
   .sm-b { font: 400 14px/1.5 var(--sans); color: var(--ink-2); }
   .inside__h { display: flex; justify-content: space-between; font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
-    text-transform: uppercase; color: var(--sage-2); padding-bottom: 14px; border-bottom: 1px solid var(--brass-line); font-feature-settings: "smcp" 1; }
+    text-transform: uppercase; color: var(--ims-blue-ink); padding-bottom: 14px; border-bottom: 1px solid var(--brass-line); font-feature-settings: "smcp" 1; }
   .isect { display: flex; flex-direction: column; gap: 8px; }
   .il { display: flex; align-items: center; gap: 12px; font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
-    text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+    text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
   .ir { flex: 1; height: 1px; background: var(--brass-line); }
   .irow { display: grid; grid-template-columns: 24px 1fr auto; gap: 14px; align-items: flex-start; padding: 9px 0; }
-  .inum { font: var(--t-caption); font-style: italic; color: var(--sage-2); }
+  .inum { font: var(--t-caption); font-style: italic; color: var(--ims-blue-ink); }
   .iname { font: 500 16px/1.25 var(--serif); color: var(--ink); }
   .inote { font: 400 13px/1.45 var(--sans); color: var(--ink-2); margin-top: 4px; }
-  .ineigh { font: 600 10px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--sage-2); }
+  .ineigh { font: 600 10px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ims-blue-ink); }
   .itag { font: 600 10px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--bone);
     background: var(--ink); padding: 5px 9px; border-radius: 999px; white-space: nowrap; }
   .inote-card { margin-top: auto; background: var(--pine); color: var(--on-pine); border-radius: var(--r-md);
@@ -625,20 +625,20 @@ const team = [
     transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
   .spc__c:hover { transform: translateY(-3px); box-shadow: var(--elev-2); }
   .spc__top { display: flex; justify-content: space-between; align-items: flex-start; }
-  .spc__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+  .spc__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
   .spc__n { font: 600 11px/1 var(--sans); letter-spacing: .04em; color: var(--ink-3); }
   .spc__t { font: 400 clamp(28px,3vw,38px)/1.06 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); }
   .spc__r { font: 500 14px/1.45 var(--sans); color: var(--ink-2); margin-top: auto; }
   .spc__div { display: flex; align-items: center; gap: 18px; margin: 36px 0 28px; }
   .spc__line { flex: 1; height: 1px; background: var(--brass-line); }
-  .spc__dl { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+  .spc__dl { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
   .cloud { display: flex; flex-wrap: wrap; gap: 10px; }
   .cl-chip { display: inline-flex; align-items: center; gap: 9px; font: 500 14px/1 var(--sans);
     padding: 11px 18px; border-radius: 999px; background: var(--bone); color: var(--ink-2);
     border: 1px solid var(--line-soft); transition: color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
   .cl-chip:hover { color: var(--ink); border-color: var(--brass-line); }
   .cl-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sage-2); flex: none; }
-  .cl-chip--add { background: transparent; color: var(--sage-2); border: 1px dashed var(--brass-line); }
+  .cl-chip--add { background: transparent; color: var(--ims-blue-ink); border: 1px dashed var(--brass-line); }
 
   /* ---- Pull quote ---- */
   .pq { background: var(--pine); border: 1px solid var(--line-pine); border-radius: var(--r-2xl);
@@ -657,10 +657,10 @@ const team = [
     padding: 16px 20px; font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; font-feature-settings: "smcp" 1; }
   .cc__seal { display: grid; place-items: center; padding: 30px 0 22px; }
   .cc__foot { padding: 0 24px 26px; display: flex; flex-direction: column; gap: 5px; }
-  .cc__lbl { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--sage-2); font-feature-settings: "smcp" 1; }
+  .cc__lbl { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
   .cc__nm { font: 500 16px/1.2 var(--serif); color: var(--ink); }
   .cc__mt { font: 500 12px/1.4 var(--sans); color: var(--ink-2); }
-  .cc__act { font: 600 11px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--sage-2); margin-top: 8px; }
+  .cc__act { font: 600 11px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ims-blue-ink); margin-top: 8px; }
 
   /* ---- Placement flow ---- */
   .flow { display: grid; grid-template-columns: repeat(4,1fr); gap: 22px; }
@@ -695,7 +695,7 @@ const team = [
     border-top: 1px solid var(--line-soft); }
   .fd__n { font: 400 26px/1 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); }
   .fd__u { font: 600 13px/1 var(--sans); color: var(--ink-3); margin-left: 6px; }
-  .fd__open { font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--sage-2); align-self: center; }
+  .fd__open { font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ims-blue-ink); align-self: center; }
 
   /* ---- Team teaser ---- */
   .team { display: grid; grid-template-columns: repeat(5,1fr); gap: 18px; }
@@ -707,7 +707,7 @@ const team = [
     color: var(--gold-600); padding: 3px 8px; border-radius: var(--r-xs); border: 1px solid var(--brass-line); }
   .tm__n { font: 400 17px/1.15 var(--display); letter-spacing: .02em; text-transform: uppercase; color: var(--ink); margin-top: 2px; }
   .tm__r { font: 500 12px/1.4 var(--sans); color: var(--ink-2); }
-  .tm__c { font: 500 13px/1.4 var(--sans); color: var(--sage-2); margin-top: 4px; }
+  .tm__c { font: 500 13px/1.4 var(--sans); color: var(--ims-blue-ink); margin-top: 4px; }
 
   /* =====================================================================
    * Responsive system — coherent tiers, not scattered cutoffs:
