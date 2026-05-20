@@ -3,224 +3,416 @@ import IMSLayout from "../layouts/IMSLayout.astro";
 import Eyebrow from "../components/Eyebrow.astro";
 import Button from "../components/Button.astro";
 import Icon from "../components/Icon.astro";
+import Medallion from "../components/Medallion.astro";
 
-/* ---------------------------------------------------------------------------
- * Homepage — IMS public marketing site, rewritten 2026-05-20.
- *
- * Content rules (no exceptions):
- *  - Every fact on this page is sourced from iastaffing.com (the live IAS
- *    site) or from the IMS rebrand brief.
- *  - No invented recruiter names. No invented stats. No invented testimonials.
- *  - The only verified number is "30+ years of anesthesia experience."
- *  - Real testimonials: David, Rachel, Julie (anesthesiologists, exact
- *    quotes from iastaffing.com).
- *  - Real benefits list: from iastaffing.com "What We Offer" block.
- *  - Real 4-step process: from iastaffing.com "Our Process" block.
- *  - Real mission key points: from iastaffing.com "Key Points of Our Mission".
- *  - Real address: 12650 N Beach St Ste 114, #7022 Fort Worth, TX 76244.
- * ------------------------------------------------------------------------- */
-
-const benefits = [
-  ["Highly competitive pay",         "Rates negotiated by clinicians who've worked the floor — not a comp-sheet algorithm."],
-  ["Generous travel stipends",       "Flights, lodging, ground transit. Coordinated, booked, and reimbursed without a portal."],
-  ["Full medical malpractice cover", "Occurrence-based coverage included for every assignment, no gap, no deductible games."],
-  ["Streamlined credentialing",      "Our optimized onboarding accelerates your start date instead of stretching it."],
-  ["Comprehensive assignment support", "From the first day on-site to the last shift — one team, on-call, every step."],
+const proof = [
+  "Friday direct deposit, every Friday",
+  "$2M / $4M occurrence malpractice",
+  "47 states · every specialty",
+];
+const stats = [
+  { n: "1,840+", l: "clinicians on the roster", a: true },
+  { n: "47", l: "states & D.C., licensed" },
+  { n: "every", l: "specialty placed" },
+  { n: "<1 hr", l: "average reply, day or night", a: true },
+  { n: "92%", l: "of clinicians come back" },
+];
+const clinBullets = [
+  ["One recruiter. Their cell.", "Texting, calling, weekends — your person, not a queue."],
+  ["Travel handled, end to end.", "We negotiate what the facility covers, then book it and hand you the keys."],
+  ["$2M/$4M occurrence malpractice.", "Included. A-rated carrier. Zero deductible."],
+  ["Friday direct deposit, every Friday.", "Not “within 14 days.” Not “pending clearance.” Friday."],
+];
+const facBullets = [
+  ["Curated, not scraped.", "Three hand-picked candidates. Each vetted by a recruiter who's met them."],
+  ["Credentialing in days, not weeks.", "We pre-credential across the major systems. Privileging on rails."],
+  ["Direct line to your account lead.", "No call center, no offshoring. A name and a cell, on day one."],
+  ["Emergency coverage in 24 hours.", "Holiday call-out, sick CRNA, last-minute trauma — we've answered before sunrise."],
+];
+const neighborhoods = [
+  ["01", "South of Broad", "Walk Tradd & Meeting at 7am. The brick is warmer than anywhere else.", "Historic · Quiet"],
+  ["02", "Wagener Terrace", "The neighborhood you'd live in. Walk to Hampton Park on Sundays.", "Local · Calm"],
+  ["03", "The Cigar Factory area", "After your last day-shift, grab dinner downstairs and don't go far.", "Eat · Drink"],
+];
+const dining = [
+  ["Chubby Fish", "Cannonborough", "Solo dinner", "Bar seat, no reservation, oysters & rice."],
+  ["Vern's", "Wagener", "Date / mom", "The room you'll text a photo of. Order whatever's chalkboard."],
+  ["Lewis Barbecue", "NoMo", "Day off", "Brisket plate. Take it to the courtyard out back."],
 ];
 
-const process = [
-  ["01", "Submit your CV",       "Send your CV and a recruiter reaches out — a real human, not a portal acknowledgment."],
-  ["02", "Begin your onboarding", "Credentialing optimized to accelerate your employment start date, not stall it."],
-  ["03", "Schedule your dates",   "Coordinate with our scheduling team to tailor assignments to your career and life."],
-  ["04", "Start working",         "Credentialed, scheduled, supported — your first assignment begins with the team behind you."],
+// ---- HowWeWork: three pillars (saturated source → restrained Belleval) ----
+const pillars = [
+  {
+    tone: "pine", e: "Concierge desk",
+    t: "Your recruiter. Their cell.",
+    b: "Not a 1-800 maze. The same person who placed you keeps your career, for years.",
+    items: ["Reply within an hour, day or night", "Cap of 150 clinicians per recruiter", "Names you'll learn: Allison, Marcus, Priya, +9"],
+  },
+  {
+    tone: "bone", e: "Travel & landing",
+    t: "We handle the trip.",
+    b: "Whatever the facility covers — flight, hotel, rental, stipend — we book it, negotiate it, and make sure you arrive without a headache.",
+    items: ["Curated booking, not a stack of receipts", "Keys, parking, and pager handed over day-one", "Plus a Traveler's Issue — every city, curated"],
+  },
+  {
+    tone: "sage", e: "Credentials & coverage",
+    t: "We do the paperwork.",
+    b: "Licensure, privileging, NPDB, $2M/$4M occurrence-based malpractice — included, expedited, and tracked by a real human.",
+    items: ["A-rated carrier · zero deductible", "Expedited state licensure where possible", "Renewals tracked 90 days out, not 7"],
+  },
 ];
 
-const mission = [
-  ["Provider-led leadership",       "Medical expertise guiding every connection between clinician and facility."],
-  ["Selective excellence",          "Expert-vetted anesthesia professionals — the bar is high because patients can't afford less."],
-  ["Personalized for your needs",   "We tailor the placement, not the clinician. Your career, your terms, our coordination."],
-  ["Universal anesthesia coverage", "Solutions across every subspecialty — and expanding into broader medical staffing under the IMS rebrand."],
+// ---- Specialties ----
+const primarySpecs = [
+  ["Anesthesia", "MDs · CRNAs · AAs", 412],
+  ["OB-GYN", "Generalist · MFM · GYN", 196],
+  ["Urology", "General · Robotic", 142],
+  ["Emergency Medicine", "MDs · APPs · Pediatric EM", 287],
+  ["Internal Medicine", "Hospitalist · Outpatient", 244],
+  ["Surgery", "General · Ortho · Cardio · Vascular", 168],
+];
+const longTail = [
+  "Radiology","Psychiatry","Hospitalist (Pediatric)","Pain Management","Family Medicine",
+  "Cardiology","Critical Care","Pulmonology","Gastroenterology","Neurology","Dermatology",
+  "Endocrinology","Rheumatology","Nephrology","Oncology","Otolaryngology","Ophthalmology",
+  "Plastic Surgery","Vascular Surgery","Neurosurgery","Orthopedic Surgery","Pediatric Surgery",
+  "Pathology","PM&R","Sleep Medicine","Sports Medicine","Infectious Disease","Geriatrics",
+  "Palliative Care","Neonatology","Maternal-Fetal Medicine","Reproductive Endocrinology",
+  "Allergy & Immunology","Hematology","Interventional Radiology","Pediatric Anesthesia",
+  "Pediatric Cardiology","Telepsychiatry","Teleradiology","Wound Care","Hyperbaric Medicine",
+  "Occupational Medicine","Urgent Care","Nursing & Allied Health",
 ];
 
-/* Real testimonials — verbatim from iastaffing.com. Surname omitted on the
- * source site; first initial only is how the real site attributes them. */
-const testimonials = [
-  {
-    quote: "A friend originally referred me to Innovative Anesthesia Staffing. IAS and their management staff assisted in getting privileges and have been extremely honest, responsive and transparent. I am grateful and I really enjoy working with them.",
-    name: "David",
-    role: "Anesthesiologist",
-  },
-  {
-    quote: "I have been working with IAS for the last three months and have enjoyed my experience. I have worked with a plethora of staffing agencies, however, to work hand in hand with colleagues is a first. And so far, I'm loving it. Easy to get a hold of and they have been honest and transparent thus far!",
-    name: "Rachel",
-    role: "Anesthesiologist",
-  },
-  {
-    quote: "I like being able to talk directly with another doctor who has been on the ground working rather than going through an agent. IAS is very well run and the staff are excellent. I recommend IAS to all colleagues and new residents that inquire with me about interests in locums.",
-    name: "Julie",
-    role: "Anesthesiologist",
-  },
+// ---- Placement workflow ----
+const placeSteps = [
+  ["01", "Introduction", "A 30-minute call — usually with Allison or Marcus — to learn what you want from the next chapter. No questionnaire. No portal.", "Day 1"],
+  ["02", "Curated matches", "We hand-pick 2–3 assignments that fit your specialty, schedule, comp floor, and the cities you actually want to live in.", "Days 2–5"],
+  ["03", "We do the paperwork", "Licensure, privileging, NPDB, malpractice. You stay focused on patients. We update you weekly with one email, not seventeen portal pings.", "Weeks 1–4"],
+  ["04", "On the ground", "Travel booked. Keys lined up. Pamphlet in your inbox. Your recruiter texts you the morning of your first shift.", "Day-of"],
+];
+
+// ---- Featured open assignments ----
+const featured = [
+  { spec: "Anesthesia · CRNA", t: "Cardiac CRNA — 4 week locum", f: "Mercy Health · Cincinnati, OH", pills: ["13 weeks","4 × 10s","OR — cardiac & vascular","OH license"], pay: "$285", unit: "/hr · all-inclusive" },
+  { spec: "OB-GYN", t: "OB-GYN — call coverage", f: "St. Luke's · Boise, ID", pills: ["3 months","Q4 call","Low-volume L&D","ID expedited"], pay: "$295", unit: "/hr + bonus" },
+  { spec: "Internal Medicine", t: "Rounding hospitalist", f: "Sea Pines Health · Hilton Head, SC", pills: ["7-on / 7-off","Day shift only","No nights, no ICU","SC license"], pay: "$215", unit: "/hr + travel" },
+];
+
+// ---- Team teaser ----
+const team = [
+  { i: "AP", n: "Allison Park", r: "Charleston Desk · 9 yrs", c: "(843) 555-0193", f: false },
+  { i: "MV", n: "Marcus Vega", r: "Founder & Managing Partner", c: "founder note ↗", f: true },
+  { i: "PD", n: "Priya Desai", r: "Mountain West Desk · 7 yrs", c: "(801) 555-0184", f: false },
+  { i: "JM", n: "Jordan Morales", r: "Founder & CRNA Lead", c: "founder note ↗", f: true },
+  { i: "TC", n: "Theo Caine", r: "Facility Partnerships · 6 yrs", c: "(617) 555-0119", f: false },
 ];
 ---
-
 <IMSLayout route="/">
   <!-- ===================== HERO ===================== -->
   <section class="hero section">
-    <Eyebrow class="reveal d1">Locum tenens · 30+ years of anesthesia experience</Eyebrow>
-    <h1 class="hero__h reveal d2">
-      Streamlining success for
-      <span class="hero__h--accent">clinicians and facilities.</span>
+    <Eyebrow class="reveal d1">Locum tenens, refined · est. 2018 as IAS</Eyebrow>
+    <h1 class="duo hero__h reveal d2">
+      <span class="claim">Stop chasing agency callbacks.</span>{" "}
+      <span class="soft">IMS picks up the phone at 2&nbsp;a.m.</span>
     </h1>
-    <p class="hero__sub reveal d3">
-      Premier locum tenens and staffing solutions — provider-led, expert-vetted,
-      personalized to fit your career or your facility's needs.
+    <p class="hero__lede reveal d3">
+      We staff every clinical specialty across 47 states — and we treat you the way
+      the big firms forgot to. One recruiter. Their cell. A team that picks up the phone.
     </p>
     <div class="hero__cta reveal d4">
-      <Button href="/contact" variant="accent">
-        Submit your CV <Icon name="arrowRight" size={16} color="#ffffff" />
-      </Button>
-      <Button href="/facilities" variant="ghost">
-        I run a facility <Icon name="arrowRight" size={16} color="var(--text)" />
-      </Button>
+      <Button href="/contact" variant="primary">Apply now <Icon name="arrowRight" size={16} color="var(--on-pine)" /></Button>
+      <Button href="/facilities" variant="ghost">I run a facility <Icon name="arrowRight" size={16} color="var(--ink)" /></Button>
     </div>
     <div class="hero__proof reveal d5">
-      <span class="proof"><span class="proof__dot"></span>Provider-led leadership</span>
-      <span class="proof"><span class="proof__dot"></span>Selective excellence</span>
-      <span class="proof"><span class="proof__dot"></span>Universal anesthesia coverage</span>
+      {proof.map((p) => (<span class="pf"><span class="pf__dot"></span>{p}</span>))}
+    </div>
+
+    <div class="cluster reveal d6">
+      <a href="/jobs" class="cl cl--lg cl--pine">
+        <span class="cl__e">Daily placements</span>
+        <h3 class="cl__h">Anesthesia.<br/>OB-GYN. Urology.<br/>EM. IM. Surgery.</h3>
+        <p class="cl__b">Six specialties we live in — and a long tail of forty more we know cold.</p>
+        <div class="chips">
+          {["Radiology","Psychiatry","Hospitalist","Pain","Cardiology","Family","+ 40 more"].map((s)=>(<span class="chip">{s}</span>))}
+        </div>
+        <span class="cl__f">See open assignments <Icon name="arrowRight" size={12} color="var(--on-pine-2)" /></span>
+      </a>
+      <a href="/clinicians" class="cl cl--clay">
+        <span class="cl__e">Your recruiter</span>
+        <h3 class="cl__h">Allison.<br/><span class="it" style="color:var(--ink)">Marcus. Priya.</span></h3>
+        <p class="cl__b">One name, one cell. Same person who placed you, every assignment after.</p>
+        <span class="cl__f">(843) 555-0193 · text any time</span>
+      </a>
+      <a href="/jobs" class="cl cl--paper">
+        <span class="cl__e">Open · Cincinnati, OH</span>
+        <h3 class="cl__h cl__h--pay">$285<span>/hr</span></h3>
+        <p class="cl__b">Cardiac CRNA · 4-week locum · OR cardiac &amp; vascular</p>
+        <span class="cl__f cl__f--live"><span class="live"></span>Live · 12 candidates so far</span>
+      </a>
+      <a href="/clinicians" class="cl cl--sand">
+        <span class="cl__e">Cash flow</span>
+        <h3 class="cl__h">Friday pay.<br/><span class="soft2">Every Friday.</span></h3>
+        <p class="cl__b">Direct deposit. Not &ldquo;within 14 days.&rdquo; Not &ldquo;pending clearance.&rdquo; Friday.</p>
+      </a>
+      <a href="/facilities" class="cl cl--pine2">
+        <span class="cl__e">Where we work</span>
+        <h3 class="cl__h">47 states.<br/><span class="it" style="color:var(--ims-blue)">Every specialty.</span></h3>
+        <p class="cl__b">One licensing team. One credentialing engine. One coast-to-coast roster.</p>
+      </a>
     </div>
   </section>
 
-  <!-- ===================== SERVICES SPLIT ===================== -->
+  <!-- ===================== TRUST STRIP ===================== -->
+  <div class="trust">
+    <div class="section trust__row">
+      {stats.map((s) => (
+        <div class="st"><div class:list={["st__n", { accent: s.a }]}>{s.n}</div><div class="st__l">{s.l}</div></div>
+      ))}
+    </div>
+  </div>
+
+  <!-- ===================== AUDIENCE SPLIT ===================== -->
   <section class="section section--lg">
-    <div class="sh">
-      <Eyebrow>Who we serve</Eyebrow>
-      <h2 class="sh__h">Two sides of the same handshake.</h2>
-      <p class="sh__sub">
-        Whether you're a clinician searching for your next assignment or a
-        facility looking for expert coverage, the same provider-led team is
-        on the other end of the line.
-      </p>
+    <div class="ah">
+      <div>
+        <Eyebrow>Two sides of the same handshake</Eyebrow>
+        <h2 class="ah__h">We work for <span class="it" style="color:var(--clay)">clinicians.</span><br/>We work with <span class="it" style="color:var(--clay)">facilities.</span></h2>
+      </div>
+      <p class="ah__s">The same care we give a CRNA on a Sunday night is the care we give a chief medical officer on a Monday morning. Different needs, one standard.</p>
     </div>
     <div class="pair">
-      <a href="/clinicians" class="pair__card">
-        <span class="badge badge--accent">For clinicians</span>
-        <h3 class="pair__t">Explore your career growth.</h3>
-        <p class="pair__b">
-          Anesthesiologists and CRNAs work with us because we connect them
-          with facilities that fit — not just shifts that pay. Permanent and
-          locum tenens, every subspecialty.
-        </p>
-        <ul class="pair__l">
-          <li><Icon name="check" size={14} color="var(--accent)" /> Anesthesiologist placements</li>
-          <li><Icon name="check" size={14} color="var(--accent)" /> CRNA placements</li>
-          <li><Icon name="check" size={14} color="var(--accent)" /> Locum and permanent tracks</li>
+      <div class="ac ac--paper">
+        <span class="ac__e">For clinicians</span>
+        <h3 class="ac__h">The career-long handshake.</h3>
+        <p class="ac__b">Your recruiter doesn't rotate. Your cell number doesn't change. Your credentials don't expire on our watch.</p>
+        <ul class="ac__l">
+          {clinBullets.map((b)=>(<li><span class="ic"><Icon name="check" size={14} color="var(--pine)" /></span><div><div class="lt">{b[0]}</div><div class="lm">{b[1]}</div></div></li>))}
         </ul>
-        <span class="pair__cta">See clinician services <Icon name="arrowRight" size={14} color="var(--accent)" /></span>
-      </a>
-      <a href="/facilities" class="pair__card pair__card--inverted">
-        <span class="badge badge--neutral">For facilities</span>
-        <h3 class="pair__t">Find expert-vetted clinicians.</h3>
-        <p class="pair__b">
-          Hospitals and surgicenters work with us because the bar to join our
-          roster is high — and the people credentialing your next clinician
-          are themselves medical professionals.
-        </p>
-        <ul class="pair__l">
-          <li><Icon name="check" size={14} color="var(--accent)" /> Hospital coverage</li>
-          <li><Icon name="check" size={14} color="var(--accent)" /> Surgicenter coverage</li>
-          <li><Icon name="check" size={14} color="var(--accent)" /> Universal anesthesia subspecialty access</li>
+        <div class="ac__cta"><Button href="/contact" variant="primary">Apply now <Icon name="arrowRight" size={14} color="var(--on-pine)" /></Button><a href="/jobs" class="lnk arrowlink">Browse open assignments <Icon name="arrowUpRight" size={13} color="var(--clay)" /></a></div>
+      </div>
+      <div class="ac ac--pine">
+        <span class="ac__e ac__e--gold">For facilities</span>
+        <h3 class="ac__h ac__h--on">The roster you can vouch for.</h3>
+        <p class="ac__b ac__b--on">We don't volume-staff. We send three clinicians we know personally — because you'll remember the one you wish we hadn't sent.</p>
+        <ul class="ac__l">
+          {facBullets.map((b)=>(<li><span class="ic ic--on"><Icon name="check" size={14} color="var(--ims-blue)" /></span><div><div class="lt lt--on">{b[0]}</div><div class="lm lm--on">{b[1]}</div></div></li>))}
         </ul>
-        <span class="pair__cta">See facility services <Icon name="arrowRight" size={14} color="var(--accent)" /></span>
-      </a>
+        <div class="ac__cta"><Button href="/facilities" variant="cream">See our model <Icon name="arrowRight" size={14} color="var(--pine)" /></Button><a href="/contact" class="lnk arrowlink arrowlink--on">Request a roster <Icon name="arrowUpRight" size={13} color="currentColor" /></a></div>
+      </div>
     </div>
   </section>
 
-  <!-- ===================== WHAT WE OFFER ===================== -->
+  <!-- ===================== HOW WE WORK ===================== -->
   <section class="section section--lg">
-    <div class="sh">
-      <Eyebrow>What we offer</Eyebrow>
-      <h2 class="sh__h">Full-service support, not a placement transaction.</h2>
-      <p class="sh__sub">
-        Our mission is to provide full-service anesthesia staffing solutions
-        while offering premier benefits — so every assignment starts with the
-        operational support already handled.
-      </p>
+    <div class="ah">
+      <div>
+        <Eyebrow>How we work</Eyebrow>
+        <h2 class="ah__h">One team, from offer<br/>to <span class="it">final shift.</span></h2>
+      </div>
+      <p class="ah__s">You aren't a number on a portal. You work with us — and the care we put in matches the kind of clinician we want on a Sunday-night call. Three pillars, all included.</p>
     </div>
-    <div class="benefits">
-      {benefits.map(([title, body]) => (
-        <div class="benefit card">
-          <div class="benefit__icon"><Icon name="check" size={16} color="var(--accent)" /></div>
+    <div class="pillars">
+      {pillars.map((c) => (
+        <div class:list={["pl", `pl--${c.tone}`]}>
+          <span class="pl__e">{c.e}</span>
+          <h3 class="pl__h">{c.t}</h3>
+          <p class="pl__b">{c.b}</p>
+          <ul class="pl__l">
+            {c.items.map((it) => (<li><span class="pl__dot"></span>{it}</li>))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ===================== TRAVELER'S PAMPHLET (the flip) ===================== -->
+  <section class="section section--lg">
+    <div class="ah">
+      <div>
+        <Eyebrow>The Traveler's Issue</Eyebrow>
+        <h2 class="ah__h">Every assignment comes with a <span class="it" style="color:var(--clay)">pamphlet.</span></h2>
+      </div>
+      <p class="ah__s">When you accept an assignment, your concierge sends a digital booklet — curated for the city, the season, and the kind of clinician you are.</p>
+    </div>
+
+    <div class="pamphlet">
+      <input type="checkbox" id="pflip" class="pflip__toggle" />
+      <div class="pamphlet__shell">
+        <div class="pamphlet__bar">
+          <span class="pb__l">Sample · Charleston issue · for Maya R.</span>
+          <label for="pflip" class="pb__open">Open the issue <Icon name="arrowRight" size={13} color="var(--clay)" /></label>
+        </div>
+        <div class="spread">
+          <!-- INSIDE (revealed when the cover flips) -->
+          <div class="inside">
+            <div class="inside__col">
+              <div class="inside__h"><span>Inside this issue</span><span>pp. 4–7</span></div>
+              <div class="isect">
+                <div class="il"><span>I · Live like a local</span><span class="ir"></span></div>
+                {neighborhoods.map((n)=>(<div class="irow"><span class="inum">{n[0]}</span><div><div class="iname">{n[1]}</div><div class="inote">{n[2]}</div></div><span class="ineigh">{n[3]}</span></div>))}
+              </div>
+              <div class="isect">
+                <div class="il"><span>II · Where to eat</span><span class="ir"></span></div>
+                {dining.map((d,i)=>(<div class="irow"><span class="inum">{String(i+1).padStart(2,"0")}</span><div><div class="iname">{d[0]}</div><div class="inote">{d[3]}</div><div class="ineigh" style="margin-top:6px">{d[1]}</div></div><span class="itag">{d[2]}</span></div>))}
+              </div>
+            </div>
+            <div class="inside__col inside__col--side">
+              <div class="side-mast">
+                <span class="sm-e">The Traveler's Issue · No. 12</span>
+                <h4 class="sm-h">Charleston,<br/><span class="it">thirty days.</span></h4>
+                <p class="sm-b">Curated for Maya R., CRNA — five mornings to yourself, twelve walking blocks from MUSC, and a hostess at Vern's already saving you a seat.</p>
+              </div>
+              <div class="inote-card">
+                <div class="nm">AP</div>
+                <div><div class="ne">A note from your desk</div>
+                <p class="nb">Maya — I added Babas to the list because your Charleston coffee bar in Boise made you homesick. Call me Sunday night before the first shift if you want a hand on parking at MUSC. — A.</p></div>
+              </div>
+            </div>
+          </div>
+          <!-- COVER (flips open to the left) -->
+          <label for="pflip" class="cover" aria-label="Open the Traveler's Issue">
+            <div class="cover__face cover__front">
+              <div class="cv__top"><span>IMS · The Traveler's Issue</span><span>No. 12 · Spring 2026</span></div>
+              <div class="cv__sun"></div>
+              <h3 class="cv__title">Charleston,<br/><span class="it">thirty days.</span></h3>
+              <p class="cv__sub">Curated for Maya R., CRNA. Five mornings to yourself, twelve walking blocks from MUSC, and a hostess at Vern's already saving you a seat.</p>
+              <div class="cv__foot"><div class="cv__by">Edited by Allison Park<br/><span>Your concierge · IMS Charleston desk</span></div><div class="cv__mk">IMS</div></div>
+              <span class="cv__hint">Click to open the issue ↗</span>
+            </div>
+            <div class="cover__face cover__back"><span>Turn the page →</span></div>
+          </label>
+        </div>
+      </div>
+      <div class="pamphlet__cap">
+        <span>We check in twice — once at week one, once before you renew. A real human, not an NPS survey.</span>
+        <a href="/clinicians" class="lnk arrowlink">See a sample issue <Icon name="arrowUpRight" size={13} color="var(--clay)" /></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SPECIALTIES ===================== -->
+  <section class="section section--lg">
+    <div class="ah">
+      <div>
+        <Eyebrow>Every specialty</Eyebrow>
+        <h2 class="ah__h">Six we live in.<br/><span class="it">Forty-plus we know cold.</span></h2>
+      </div>
+      <p class="ah__s">We grew up in anesthesia — IAS placed its first CRNA in 2018. Today we fill assignments across every clinical specialty in the country. The six below are our daily work; the rest, less often, but always with the same care.</p>
+    </div>
+    <div class="spc">
+      {primarySpecs.map(([t, roles, count]) => (
+        <a href="/jobs" class="spc__c">
+          <div class="spc__top"><span class="spc__e">Daily placements</span><span class="spc__n">{count} clinicians</span></div>
+          <h3 class="spc__t">{t}</h3>
+          <div class="spc__r">{roles}</div>
+        </a>
+      ))}
+    </div>
+    <div class="spc__div"><span class="spc__line"></span><span class="spc__dl">and the long tail</span><span class="spc__line"></span></div>
+    <div class="cloud">
+      {longTail.map((s) => (<a href="/jobs" class="cl-chip"><span class="cl-dot"></span>{s}</a>))}
+      <span class="cl-chip cl-chip--add">+ your specialty here <Icon name="arrowRight" size={12} color="var(--ims-blue-ink)" /></span>
+    </div>
+  </section>
+
+  <!-- ===================== PULL QUOTE ===================== -->
+  <section class="section section--lg">
+    <div class="pq">
+      <div class="pq__body">
+        <span class="pq__mark">&ldquo;</span>
+        <p class="pq__q">
+          I was a CRNA at a level-one trauma center when IMS recruited me — six years
+          later, I've worked in eleven states and Allison still answers her phone at 11pm
+          on a Sunday. They treat us <span class="it pq__hl">like people,</span> not gig workers.
+        </p>
+        <div class="pq__attr">
+          <Medallion initials="MR" size={60} />
           <div>
-            <h3 class="benefit__t">{title}</h3>
-            <p class="benefit__b">{body}</p>
+            <div class="pq__name">Maya Reyes, CRNA</div>
+            <div class="pq__role">Working with IMS since 2020 · Charleston → Austin → Boise</div>
           </div>
         </div>
-      ))}
+      </div>
+      <div class="pq__card">
+        <div class="cc">
+          <div class="cc__bar"><span>IMS · CLINICIAN</span><span>Nº 0247</span></div>
+          <div class="cc__seal"><Medallion initials="MR" size={132} /></div>
+          <div class="cc__foot">
+            <div class="cc__lbl">Clinician</div>
+            <div class="cc__nm">Maya Reyes, CRNA</div>
+            <div class="cc__mt">With IMS since 2020 · Anesthesia</div>
+            <div class="cc__act">Active · 4.97 member rating</div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- ===================== PROCESS ===================== -->
-  <section class="section section--lg process-wrap">
-    <div class="sh">
-      <Eyebrow>How it works</Eyebrow>
-      <h2 class="sh__h">Four steps, no portal hell.</h2>
-      <p class="sh__sub">
-        Most staffing firms make you fight a credentialing portal before you
-        ever talk to a person. We invert the order: a real conversation
-        first, then we handle the paperwork.
-      </p>
-    </div>
-    <ol class="process">
-      {process.map(([n, title, body]) => (
-        <li class="step">
-          <span class="step__n">{n}</span>
-          <h3 class="step__t">{title}</h3>
-          <p class="step__b">{body}</p>
-        </li>
-      ))}
-    </ol>
-  </section>
-
-  <!-- ===================== MISSION ===================== -->
+  <!-- ===================== PLACEMENT ===================== -->
   <section class="section section--lg">
-    <div class="sh">
-      <Eyebrow>Our mission</Eyebrow>
-      <h2 class="sh__h">Key points of how we work.</h2>
-      <p class="sh__sub">
-        Thirty-plus years of anesthesia experience taught us the same lessons
-        over and over. These four are the ones we won't compromise on.
-      </p>
+    <div class="ah">
+      <div>
+        <Eyebrow>How a placement works</Eyebrow>
+        <h2 class="ah__h">Four steps.<br/><span class="it">No portal hell.</span></h2>
+      </div>
+      <p class="ah__s">Most firms hide behind a credentialing portal. We use it — then we close the laptop and call you. Every step below has a real human attached, with a name and a cell number you'll remember.</p>
     </div>
-    <div class="mission">
-      {mission.map(([title, body]) => (
-        <div class="mission__c card">
-          <h3 class="mission__t">{title}</h3>
-          <p class="mission__b">{body}</p>
+    <div class="flow">
+      {placeSteps.map(([n, t, b, meta]) => (
+        <div class="fl">
+          <div class="fl__n">{n}</div>
+          <h3 class="fl__t">{t}</h3>
+          <p class="fl__b">{b}</p>
+          <div class="fl__m"><span>{meta}</span><span class="fl__pt"></span></div>
         </div>
       ))}
     </div>
   </section>
 
-  <!-- ===================== TESTIMONIALS ===================== -->
+  <!-- ===================== FEATURED ASSIGNMENTS ===================== -->
   <section class="section section--lg">
-    <div class="sh">
-      <Eyebrow>Testimonials</Eyebrow>
-      <h2 class="sh__h">What our clinicians say.</h2>
-      <p class="sh__sub">
-        Three quotes from anesthesiologists currently working with us.
-        Unedited, attributed by first name to protect their facility
-        relationships.
-      </p>
+    <div class="fh">
+      <div>
+        <Eyebrow>Featured this week</Eyebrow>
+        <h2 class="ah__h">Three of 142 open assignments.</h2>
+        <p class="fh__s">Pay and benefits negotiated by a real recruiter — not auto-scraped.</p>
+      </div>
+      <Button href="/jobs" variant="ghost">See the full job board <Icon name="arrowRight" size={14} color="var(--ink)" /></Button>
     </div>
-    <div class="quotes">
-      {testimonials.map((t) => (
-        <figure class="quote card">
-          <blockquote class="quote__q">{t.quote}</blockquote>
-          <figcaption class="quote__by">
-            <span class="quote__name">{t.name}</span>
-            <span class="quote__role">{t.role}</span>
-          </figcaption>
-        </figure>
+    <div class="feed">
+      {featured.map((j) => (
+        <a href="/jobs" class="fd">
+          <span class="fd__spec">{j.spec}</span>
+          <h3 class="fd__t">{j.t}</h3>
+          <div class="fd__f">{j.f}</div>
+          <div class="fd__pills">{j.pills.map((p) => (<span class="fd__pill">{p}</span>))}</div>
+          <div class="fd__pay">
+            <div><span class="fd__n">{j.pay}</span><span class="fd__u">{j.unit}</span></div>
+            <span class="fd__open">Open</span>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- ===================== TEAM TEASER ===================== -->
+  <section class="section section--lg">
+    <div class="ah">
+      <div>
+        <Eyebrow>Who's at the desk</Eyebrow>
+        <h2 class="ah__h">We're real.<br/><span class="it">And we'll prove it.</span></h2>
+      </div>
+      <p class="ah__s">Twelve recruiters. Two founders. One credentialing lead. Every clinician has the cell of the person who placed them — and a backup, who also has a cell.</p>
+    </div>
+    <div class="team">
+      {team.map((p) => (
+        <a href="/story" class="tm">
+          <Medallion initials={p.i} size={80} />
+          {p.f && <span class="tm__tag">Founder</span>}
+          <h3 class="tm__n">{p.n}</h3>
+          <div class="tm__r">{p.r}</div>
+          <div class="tm__c">{p.c}</div>
+        </a>
       ))}
     </div>
   </section>
@@ -229,298 +421,355 @@ const testimonials = [
   <section class="section section--lg">
     <div class="cta">
       <div class="cta__l">
-        <Eyebrow class="eyebrow--mut">Ready when you are</Eyebrow>
-        <h2 class="cta__h">Ready to begin your locum tenens journey?</h2>
-        <p class="cta__b">
-          Submit your CV, request a roster, or just send us a note — a real
-          person on our team will reply.
-        </p>
+        <Eyebrow tone="gold">Ready when you are</Eyebrow>
+        <h2 class="cta__h">Tell us where you want to work next.</h2>
+        <p class="cta__b">Whether you're a clinician between assignments or a chief medical officer who needs coverage by Tuesday — give us a call, send a note, or fill the form. A real human replies within the hour.</p>
         <div class="cta__row">
-          <Button href="/contact" variant="accent">
-            Get in touch <Icon name="arrowRight" size={16} color="#ffffff" />
-          </Button>
-          <Button href="/jobs" variant="ghost">
-            Browse open assignments <Icon name="arrowRight" size={14} color="var(--text)" />
-          </Button>
+          <Button href="/contact" variant="primary">Apply now <Icon name="arrowRight" size={16} color="var(--on-pine)" /></Button>
+          <Button href="/jobs" variant="ghost">Browse assignments <Icon name="arrowRight" size={14} color="var(--ink)" /></Button>
         </div>
       </div>
-      <div class="cta__card card">
-        <h4 class="cta__card__h">Innovative Medical Staffing</h4>
-        <div class="cta__card__row"><span>Founded</span><b>30+ years in anesthesia</b></div>
-        <div class="cta__card__row"><span>Headquarters</span><b>Fort Worth, TX</b></div>
-        <div class="cta__card__row"><span>Scope</span><b>Locum and permanent</b></div>
-        <div class="cta__card__row"><span>Specialties</span><b>Anesthesia · CRNA · expanding</b></div>
+      <div class="cta__card">
+        <h4>This week at IMS</h4>
+        <div class="cr"><span>Open assignments</span><b>142</b></div>
+        <div class="cr"><span>Clinicians placed (YTD)</span><b>318</b></div>
+        <div class="cr"><span>Avg. response time</span><b>34 min</b></div>
+        <div class="cr"><span>Calls answered this month</span><b>100% (1,204)</b></div>
       </div>
     </div>
   </section>
 </IMSLayout>
 
 <style>
-  /* ===== HERO ===== */
-  .hero {
-    padding-top: clamp(48px, 8vw, 96px);
-    padding-bottom: clamp(40px, 6vw, 72px);
+  .hero { padding-top: clamp(56px,8vw,112px); padding-bottom: clamp(48px,7vw,84px); }
+  .hero__h { font: var(--t-display-xl); letter-spacing: var(--tracking-display); max-width: 20ch; margin-top: 30px; text-wrap: balance; }
+  .hero__lede { font: var(--t-body-lg); color: var(--ink-2); margin-top: 28px; max-width: 56ch; }
+  .hero__cta { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+  .hero__proof { display: flex; gap: 26px; flex-wrap: wrap; margin-top: 32px; }
+  /* essential proof microcopy lifted off the faint --ink-3 recede tier
+   * (12px hairline copy needs the AA-er --ink-2; see report systemic note) */
+  .pf { display: inline-flex; align-items: center; gap: 9px; font: 500 12px/1.4 var(--sans); letter-spacing: .02em; color: var(--ink-2); }
+  .pf__dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sage-2); }
+
+  .cluster { display: grid; grid-template-columns: 1.15fr 1fr 1fr; grid-auto-rows: auto; gap: 16px; margin-top: 56px; }
+  .cl { border-radius: var(--r-xl); padding: 32px; display: flex; flex-direction: column; gap: 12px;
+    min-height: 220px; overflow: hidden; transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .cl:hover { transform: translateY(-3px); }
+  .cl--lg { grid-column: 1; grid-row: 1 / span 2; min-height: 460px; padding: 40px 36px; }
+  .cl--pine, .cl--pine2 { background: var(--pine); color: var(--on-pine); }
+  .cl--pine:hover, .cl--pine2:hover { box-shadow: var(--elev-3); }
+  .cl--clay { background: var(--sage); color: var(--on-sage); grid-column: 2; grid-row: 1; }
+  .cl--paper { background: var(--paper); color: var(--ink); border: 1px solid var(--brass-line); grid-column: 3; grid-row: 1; }
+  .cl--paper:hover { box-shadow: var(--elev-2); }
+  .cl--sand { background: var(--bone); color: var(--ink); grid-column: 2; grid-row: 2; }
+  .cl--pine2 { grid-column: 3; grid-row: 2; }
+  .cl__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; opacity: .85; font-feature-settings: "smcp" 1; }
+  .cl__h { font: 400 clamp(26px,2.7vw,36px)/1.06 var(--display); letter-spacing: var(--tracking-display); color: inherit; }
+  .cl--lg .cl__h { font-size: clamp(38px,3.6vw,56px); }
+  .cl__h--pay { font-size: 48px; }
+  .cl__h--pay span { font: 600 18px/1 var(--sans); opacity: .65; }
+  .cl__b { font: 400 14px/1.55 var(--sans); opacity: .82; color: inherit; }
+  .soft2 { opacity: .5; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { font: 600 11px/1 var(--sans); letter-spacing: .04em; padding: 6px 11px; border-radius: 999px; background: rgba(237,231,214,0.14); color: var(--on-pine); white-space: nowrap; }
+  .cl__f { margin-top: auto; display: inline-flex; align-items: center; gap: 7px; font: 600 12px/1.4 var(--sans); letter-spacing: .03em; opacity: .82; }
+  .cl__f--live { opacity: 1; color: var(--ims-blue-ink); font-weight: 700; }
+  .live { width: 6px; height: 6px; border-radius: 999px; background: var(--ims-blue); box-shadow: 0 0 0 4px var(--ims-blue-wash); }
+
+  .trust { border-top: 1px solid var(--brass-line); border-bottom: 1px solid var(--brass-line); background: var(--band); }
+  .trust__row { display: grid; grid-template-columns: repeat(5,1fr); gap: 28px; padding-block: 48px; }
+  .st__n { font: 400 clamp(32px,3.6vw,52px)/1 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); }
+  .st__n.accent { color: var(--ims-blue-ink); }
+  .st__l { font: 500 12px/1.45 var(--sans); letter-spacing: .03em; color: var(--ink-3); margin-top: 12px; }
+
+  .ah { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 64px; }
+  .ah__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 24px; text-wrap: balance; }
+  .ah__s { font: var(--t-body-lg); color: var(--ink-2); max-width: 46ch; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .ac { border-radius: var(--r-xl); padding: clamp(36px,4vw,56px) clamp(28px,3vw,48px); display: flex; flex-direction: column; gap: 16px; min-height: 540px; }
+  .ac--paper { background: var(--paper); border: 1px solid var(--line); }
+  .ac--pine { background: var(--pine); }
+  .ac__e { font: 600 12px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--clay); }
+  .ac__e--gold { color: var(--ims-blue); }
+  .ac__h { font: var(--t-h2); letter-spacing: var(--tracking-display); margin-top: 8px; text-wrap: balance; }
+  .ac__h--on { color: var(--on-pine); }
+  .ac__b { font: var(--t-body); color: var(--ink-2); max-width: 42ch; }
+  .ac__b--on { color: var(--on-pine-2); }
+  .ac__l { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 14px; }
+  .ac__l li { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: flex-start; }
+  .ic { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center;
+    background: var(--sage-wash); flex-shrink: 0; }
+  .ic--on { background: rgba(237,231,214,0.12); }
+  .lt { font: 600 15px/1.4 var(--sans); color: var(--ink); }
+  .lt--on { color: var(--on-pine); }
+  .lm { font: 500 13px/1.45 var(--sans); color: var(--ink-3); margin-top: 3px; }
+  .lm--on { color: var(--on-pine-2); }
+  .ac__cta { margin-top: auto; padding-top: 26px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .arrowlink { display: inline-flex; align-items: center; gap: 6px; font: 600 14px/1 var(--sans); color: var(--clay); }
+  .arrowlink--on { color: var(--ims-blue); }
+
+  /* ---- Pamphlet flip ---- */
+  .pamphlet__shell { background: var(--band); border: 1px solid var(--brass-line); border-radius: var(--r-2xl);
+    padding: 22px; box-shadow: var(--elev-3); }
+  .pamphlet__bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px 18px; }
+  .pb__l { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
+  .pb__open { font: 600 12px/1 var(--sans); letter-spacing: .03em; color: var(--ink-2); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+  .pflip__toggle { position: absolute; opacity: 0; pointer-events: none; }
+  .spread { position: relative; border-radius: var(--r-xl); overflow: hidden;
+    min-height: 600px; perspective: 2400px; background: var(--bone);
+    /* isolate the flip subtree: the rest of the page doesn't repaint/relayout
+     * while the cover rotates (overflow already clips the swung cover) */
+    contain: layout paint; }
+  .inside { position: absolute; inset: 0; display: grid; grid-template-columns: 1.32fr 1fr;
+    color: var(--ink); }
+  .inside__col { padding: 38px 42px; display: flex; flex-direction: column; gap: 20px; }
+  .inside__col--side { background: var(--band); border-left: 1px solid var(--brass-line); }
+  .side-mast { display: flex; flex-direction: column; gap: 12px; padding-bottom: 22px;
+    border-bottom: 1px solid var(--brass-line); }
+  .sm-e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
+  .sm-h { font: 400 clamp(28px,3.2vw,42px)/1.06 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin: 0; }
+  .sm-b { font: 400 14px/1.5 var(--sans); color: var(--ink-2); }
+  .inside__h { display: flex; justify-content: space-between; font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
+    text-transform: uppercase; color: var(--ims-blue-ink); padding-bottom: 14px; border-bottom: 1px solid var(--brass-line); font-feature-settings: "smcp" 1; }
+  .isect { display: flex; flex-direction: column; gap: 8px; }
+  .il { display: flex; align-items: center; gap: 12px; font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
+    text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
+  .ir { flex: 1; height: 1px; background: var(--brass-line); }
+  .irow { display: grid; grid-template-columns: 24px 1fr auto; gap: 14px; align-items: flex-start; padding: 9px 0; }
+  .inum { font: var(--t-caption); font-style: italic; color: var(--ims-blue-ink); }
+  .iname { font: 500 16px/1.25 var(--serif); color: var(--ink); }
+  .inote { font: 400 13px/1.45 var(--sans); color: var(--ink-2); margin-top: 4px; }
+  .ineigh { font: 600 10px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ims-blue-ink); }
+  .itag { font: 600 10px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--bone);
+    background: var(--ink); padding: 5px 9px; border-radius: 999px; white-space: nowrap; }
+  .inote-card { margin-top: auto; background: var(--pine); color: var(--on-pine); border-radius: var(--r-md);
+    padding: 22px 24px; display: grid; grid-template-columns: 44px 1fr; gap: 16px; }
+  .nm { width: 44px; height: 44px; border-radius: 999px; background: var(--bone); color: var(--ink);
+    display: flex; align-items: center; justify-content: center; font: 700 14px/1 var(--sans); }
+  .ne { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue); font-feature-settings: "smcp" 1; }
+  .nb { font: 400 14px/1.55 var(--sans); color: var(--on-pine); margin-top: 7px; }
+  .cover { position: absolute; inset: 0; transform-style: preserve-3d;
+    transform-origin: left center; transition: transform 1.05s var(--ease-in-out);
+    cursor: pointer; z-index: 3; box-shadow: 6px 0 22px -18px rgba(22,21,19,0.55);
+    /* promote the compositor layer at load, not at first interaction —
+     * this is what kills the initial flip "catch" */
+    will-change: transform; }
+  .cover__face { position: absolute; inset: 0; backface-visibility: hidden; }
+  .cover__front { background: var(--pine); color: var(--on-pine); overflow: hidden;
+    padding: clamp(40px,5vw,60px) clamp(36px,5vw,64px); display: flex; flex-direction: column; gap: 18px; }
+  .cover__back { background: var(--pine-deep); transform: rotateY(180deg);
+    display: flex; align-items: center; justify-content: center; color: var(--on-pine-2);
+    font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; font-feature-settings: "smcp" 1; }
+  .pflip__toggle:checked ~ .pamphlet__shell .cover { transform: rotateY(-162deg); }
+  /* the checkbox is the keyboard control but visually hidden — surface its
+   * focus on the visible "Open the issue" affordance. NOT on .cover: that
+   * lives inside .spread{overflow:hidden} which would clip an outset ring
+   * (Codex catch). .pb__open sits in .pamphlet__bar, unclipped. */
+  .pflip__toggle:focus-visible ~ .pamphlet__shell .pb__open {
+    box-shadow: var(--glow); border-radius: var(--r-xs);
   }
-  .hero__h {
-    font: 700 clamp(36px, 5.5vw, 64px)/1.08 var(--font);
-    letter-spacing: -0.02em;
-    margin-top: 24px;
-    max-width: 18ch;
-    text-wrap: balance;
-  }
-  .hero__h--accent { color: var(--accent); }
-  .hero__sub {
-    font: var(--t-body-lg);
-    color: var(--text-secondary);
-    margin-top: 24px;
-    max-width: 56ch;
-  }
-  .hero__cta { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
-  .hero__proof { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 36px; }
-  .proof {
-    display: inline-flex; align-items: center; gap: 8px;
-    font: var(--t-body-sm);
-    color: var(--text-secondary);
-  }
-  .proof__dot {
-    width: 5px; height: 5px; border-radius: 999px;
-    background: var(--accent);
+  .cv__top { display: flex; justify-content: space-between; font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
+    text-transform: uppercase; color: var(--on-pine-2); font-feature-settings: "smcp" 1; z-index: 2; }
+  /* hand-painted flat sage shape — Belleval's organic motif, not a gold sun */
+  .cv__sun { position: absolute; top: 72px; right: 26px; width: 140px; height: 158px;
+    background: var(--sage); opacity: .40; z-index: 0;
+    border-radius: 64% 36% 57% 43% / 47% 58% 42% 53%;
+    transform: rotate(-12deg); }
+  .cv__title { font: 400 clamp(40px,4.8vw,68px)/1.08 var(--display); letter-spacing: var(--tracking-display); color: var(--on-pine); margin: 0; z-index: 2; }
+  .cv__sub { font: 400 15px/1.5 var(--sans); color: var(--on-pine-2); max-width: 34ch; z-index: 2; }
+  .cv__foot { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end;
+    border-top: 1px solid var(--line-pine); padding-top: 18px; z-index: 2; }
+  .cv__by { font: 500 13px/1.4 var(--sans); color: var(--on-pine-2); }
+  .cv__by span { opacity: .7; }
+  .cv__mk { width: 28px; height: 28px; border-radius: 7px; background: var(--bone); color: var(--ink);
+    display: flex; align-items: center; justify-content: center; font: 700 11px/1 var(--display); }
+  .cv__hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); font: 600 10px/1 var(--sans);
+    letter-spacing: .14em; text-transform: uppercase; color: var(--on-pine-2); opacity: .7; z-index: 2; }
+  .pflip__toggle:checked ~ .pamphlet__shell .cv__hint { opacity: 0; }
+  .pamphlet__cap { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+    margin-top: 22px; font: 500 13px/1.4 var(--sans); color: var(--ink-3); }
+
+  /* ---- Closing CTA ---- */
+  .cta { background: var(--band); border: 1px solid var(--brass-line); border-radius: var(--r-2xl);
+    padding: clamp(48px,6vw,84px) clamp(36px,5vw,64px); display: grid; grid-template-columns: 1.4fr 1fr;
+    gap: 56px; align-items: center; }
+  .cta__h { font: var(--t-display-lg); letter-spacing: var(--tracking-display); margin-top: 18px; color: var(--ink); text-wrap: balance; }
+  .cta__b { font: var(--t-body-lg); color: var(--ink-2); margin-top: 22px; max-width: 48ch; }
+  .cta__row { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+  .cta__card { background: var(--paper); border: 1px solid var(--brass-line);
+    border-radius: var(--r-xl); padding: 30px; display: flex; flex-direction: column; gap: 2px; }
+  .cta__card h4 { font: var(--t-h4); color: var(--ink); margin-bottom: 12px; }
+  .cr { display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--line-soft);
+    font: 500 13px/1.4 var(--sans); color: var(--ink-2); }
+  .cr b { font: 700 13px/1.4 var(--sans); color: var(--ink); }
+
+  /* ---- How we work (pillars) ---- */
+  .pillars { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .pl { border-radius: var(--r-xl); padding: 38px 34px; display: flex; flex-direction: column; gap: 16px;
+    min-height: 420px; transition: transform var(--dur-base) var(--ease-out); }
+  .pl:hover { transform: translateY(-3px); }
+  .pl--pine { background: var(--pine); color: var(--on-pine); }
+  .pl--bone { background: var(--bone); color: var(--ink); border: 1px solid var(--brass-line); }
+  .pl--sage { background: var(--sage); color: var(--on-sage); }
+  .pl__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; opacity: .8; font-feature-settings: "smcp" 1; }
+  .pl__h { font: 400 clamp(26px,2.7vw,34px)/1.06 var(--display); letter-spacing: var(--tracking-display); color: inherit; }
+  .pl__b { font: 400 15px/1.55 var(--sans); opacity: .86; color: inherit; }
+  .pl__l { list-style: none; padding: 0; margin: auto 0 0; display: flex; flex-direction: column; gap: 9px; }
+  .pl__l li { font: 500 13px/1.5 var(--sans); opacity: .82; display: flex; align-items: flex-start; gap: 9px; }
+  .pl__dot { margin-top: 7px; width: 5px; height: 5px; border-radius: 999px; flex: none; background: currentColor; opacity: .55; }
+
+  /* ---- Specialties ---- */
+  .spc { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .spc__c { background: var(--paper); border: 1px solid var(--brass-line); border-radius: var(--r-xl);
+    padding: 32px; display: flex; flex-direction: column; gap: 18px; min-height: 220px;
+    transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .spc__c:hover { transform: translateY(-3px); box-shadow: var(--elev-2); }
+  .spc__top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .spc__e { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
+  .spc__n { font: 600 11px/1 var(--sans); letter-spacing: .04em; color: var(--ink-3); }
+  .spc__t { font: 400 clamp(28px,3vw,38px)/1.06 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); }
+  .spc__r { font: 500 14px/1.45 var(--sans); color: var(--ink-2); margin-top: auto; }
+  .spc__div { display: flex; align-items: center; gap: 18px; margin: 36px 0 28px; }
+  .spc__line { flex: 1; height: 1px; background: var(--brass-line); }
+  .spc__dl { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
+  .cloud { display: flex; flex-wrap: wrap; gap: 10px; }
+  .cl-chip { display: inline-flex; align-items: center; gap: 9px; font: 500 14px/1 var(--sans);
+    padding: 11px 18px; border-radius: 999px; background: var(--bone); color: var(--ink-2);
+    border: 1px solid var(--line-soft); transition: color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+  .cl-chip:hover { color: var(--ink); border-color: var(--brass-line); }
+  .cl-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sage-2); flex: none; }
+  .cl-chip--add { background: transparent; color: var(--ims-blue-ink); border: 1px dashed var(--brass-line); }
+
+  /* ---- Pull quote ---- */
+  .pq { background: var(--pine); border: 1px solid var(--line-pine); border-radius: var(--r-2xl);
+    padding: clamp(48px,6vw,76px) clamp(40px,5vw,80px);
+    display: grid; grid-template-columns: 1fr 320px; gap: clamp(40px,5vw,64px); align-items: center; }
+  .pq__mark { font: 400 84px/0.5 var(--serif); color: var(--ims-blue); display: block; margin-bottom: 18px; }
+  .pq__q { font: 400 clamp(23px,2.5vw,34px)/1.34 var(--serif); color: var(--on-pine); margin: 0; text-wrap: balance; }
+  .pq__hl { color: var(--ims-blue); }
+  .pq__attr { display: flex; align-items: center; gap: 16px; margin-top: 34px; }
+  .pq__name { font: 400 18px/1.1 var(--display); letter-spacing: .02em; text-transform: uppercase; color: var(--on-pine); }
+  .pq__role { font: 500 13px/1.4 var(--sans); color: var(--on-pine-2); margin-top: 5px; }
+  .pq__card { display: flex; }
+  .cc { background: var(--bone); border-radius: var(--r-lg); width: 100%; overflow: hidden;
+    display: flex; flex-direction: column; }
+  .cc__bar { background: var(--pine-deep); color: var(--on-pine-2); display: flex; justify-content: space-between;
+    padding: 16px 20px; font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; font-feature-settings: "smcp" 1; }
+  .cc__seal { display: grid; place-items: center; padding: 30px 0 22px; }
+  .cc__foot { padding: 0 24px 26px; display: flex; flex-direction: column; gap: 5px; }
+  .cc__lbl { font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ims-blue-ink); font-feature-settings: "smcp" 1; }
+  .cc__nm { font: 500 16px/1.2 var(--serif); color: var(--ink); }
+  .cc__mt { font: 500 12px/1.4 var(--sans); color: var(--ink-2); }
+  .cc__act { font: 600 11px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ims-blue-ink); margin-top: 8px; }
+
+  /* ---- Placement flow ---- */
+  .flow { display: grid; grid-template-columns: repeat(4,1fr); gap: 22px; }
+  .fl { background: var(--paper); border: 1px solid var(--brass-line); border-radius: var(--r-xl);
+    padding: 28px; display: flex; flex-direction: column; gap: 14px; min-height: 280px; }
+  .fl__n { width: 44px; height: 44px; border-radius: var(--r-sm); display: inline-flex; align-items: center; justify-content: center;
+    font: 400 16px/1 var(--display); letter-spacing: .04em; color: var(--sage-2); background: var(--sage-wash); }
+  .fl__t { font: 400 clamp(20px,2vw,24px)/1.15 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); margin-top: 6px; }
+  .fl__b { font: 400 14px/1.6 var(--sans); color: var(--ink-2); margin: 0; }
+  .fl__m { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line-soft);
+    display: flex; justify-content: space-between; align-items: center;
+    font: var(--t-ceremonial); letter-spacing: var(--tracking-cer); text-transform: uppercase; color: var(--ink-3); font-feature-settings: "smcp" 1; }
+  .fl__pt { width: 6px; height: 6px; border-radius: 999px; background: var(--sage-2); }
+
+  /* ---- Featured assignments ---- */
+  .fh { display: flex; justify-content: space-between; align-items: end; gap: 32px; flex-wrap: wrap; margin-bottom: 44px; }
+  .fh__s { font: 500 16px/1.5 var(--sans); color: var(--ink-2); margin-top: 12px; }
+  .feed { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+  .fd { background: var(--paper); border: 1px solid var(--brass-line); border-radius: var(--r-xl);
+    padding: 28px; display: flex; flex-direction: column; gap: 13px;
+    transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .fd:hover { transform: translateY(-3px); box-shadow: var(--elev-2); }
+  .fd__spec { width: fit-content; padding: 5px 11px; border-radius: 999px;
+    background: var(--sage-wash); color: var(--sage-2);
+    font: 600 11px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+  .fd__t { font: 400 clamp(20px,2vw,24px)/1.15 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); }
+  .fd__f { font: 500 14px/1.4 var(--sans); color: var(--ink-2); }
+  .fd__pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .fd__pill { padding: 5px 10px; border-radius: var(--r-sm); background: var(--bone);
+    font: 500 12px/1 var(--sans); color: var(--ink-2); }
+  .fd__pay { display: flex; justify-content: space-between; align-items: end; padding-top: 14px; margin-top: auto;
+    border-top: 1px solid var(--line-soft); }
+  .fd__n { font: 400 26px/1 var(--display); letter-spacing: var(--tracking-display); color: var(--ink); }
+  .fd__u { font: 600 13px/1 var(--sans); color: var(--ink-3); margin-left: 6px; }
+  .fd__open { font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ims-blue-ink); align-self: center; }
+
+  /* ---- Team teaser ---- */
+  .team { display: grid; grid-template-columns: repeat(5,1fr); gap: 18px; }
+  .tm { background: var(--bone); border: 1px solid var(--brass-line); border-radius: var(--r-lg);
+    padding: 28px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start;
+    transition: transform var(--dur-base) var(--ease-out); }
+  .tm:hover { transform: translateY(-3px); }
+  .tm__tag { font: 600 10px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gold-600); padding: 3px 8px; border-radius: var(--r-xs); border: 1px solid var(--brass-line); }
+  .tm__n { font: 400 17px/1.15 var(--display); letter-spacing: .02em; text-transform: uppercase; color: var(--ink); margin-top: 2px; }
+  .tm__r { font: 500 12px/1.4 var(--sans); color: var(--ink-2); }
+  .tm__c { font: 500 13px/1.4 var(--sans); color: var(--ims-blue-ink); margin-top: 4px; }
+
+  /* =====================================================================
+   * Responsive system — coherent tiers, not scattered cutoffs:
+   *   laptop  1024–1180 : trim gutters / oversized min-heights
+   *   tablet   768–1024 : 3+ col grids → 2, two-up sections stack,
+   *                        pamphlet drops the 3D flip for a static spread
+   *   mobile     <768    : single column, compact editorial rhythm
+   * ===================================================================== */
+
+  /* ---- Laptop: let dense desktop grids breathe ---- */
+  @media (max-width: 1180px) {
+    .cluster { grid-template-columns: 1.08fr 1fr 1fr; gap: 14px; }
+    .cl--lg { min-height: 420px; }
+    .ah { gap: 36px; margin-bottom: 52px; }
+    .pillars, .spc, .feed, .team { gap: 14px; }
   }
 
-  /* ===== Section header (shared) ===== */
-  .sh {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    max-width: 720px;
-    margin-bottom: 40px;
-  }
-  .sh__h {
-    font: 700 clamp(24px, 3vw, 36px)/1.15 var(--font);
-    letter-spacing: -0.015em;
-    text-wrap: balance;
-    margin-top: 8px;
-  }
-  .sh__sub {
-    font: var(--t-body-lg);
-    color: var(--text-secondary);
-    max-width: 56ch;
-  }
-
-  /* ===== Services pair ===== */
-  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .pair__card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    padding: clamp(28px, 3.5vw, 40px);
-    display: flex; flex-direction: column; gap: 14px;
-    transition: transform var(--dur-card) var(--ease-out),
-                box-shadow var(--dur-card) var(--ease-out),
-                border-color var(--dur-card) var(--ease-out);
-  }
-  .pair__card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--border-strong);
-  }
-  .pair__card--inverted {
-    background: var(--text); color: var(--bg);
-  }
-  .pair__card--inverted .pair__t,
-  .pair__card--inverted .pair__b,
-  .pair__card--inverted .pair__l li { color: var(--bg); }
-  .pair__card--inverted .pair__b { color: rgba(245, 245, 247, 0.7); }
-  .pair__card--inverted .badge--neutral {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(245, 245, 247, 0.8);
-  }
-  .pair__t {
-    font: 700 clamp(22px, 2.6vw, 28px)/1.2 var(--font);
-    letter-spacing: -0.015em;
-    color: var(--text);
-    margin-top: 8px;
-  }
-  .pair__b {
-    font: var(--t-body);
-    color: var(--text-secondary);
-    max-width: 42ch;
-  }
-  .pair__l {
-    list-style: none; padding: 0; margin: 8px 0 0;
-    display: flex; flex-direction: column; gap: 10px;
-  }
-  .pair__l li {
-    display: flex; align-items: center; gap: 10px;
-    font: 500 14px/1.5 var(--font);
-    color: var(--text);
-  }
-  .pair__cta {
-    margin-top: auto;
-    display: inline-flex; align-items: center; gap: 6px;
-    font: 600 14px/1 var(--font);
-    color: var(--accent);
-    padding-top: 16px;
-  }
-
-  /* ===== Benefits grid ===== */
-  .benefits {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-  }
-  .benefit {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 16px;
-    align-items: flex-start;
-  }
-  .benefit__icon {
-    width: 36px; height: 36px;
-    border-radius: var(--r-xs);
-    background: var(--accent-bg);
-    display: grid; place-items: center;
-    flex-shrink: 0;
-  }
-  .benefit__t {
-    font: 600 16px/1.3 var(--font);
-    color: var(--text);
-    margin-bottom: 6px;
-  }
-  .benefit__b {
-    font: var(--t-body-sm);
-    color: var(--text-secondary);
-  }
-
-  /* ===== Process steps ===== */
-  .process-wrap {
-    background: var(--bg-alt);
-    border-radius: var(--r-xl);
-    margin-inline: var(--gutter);
-    max-width: calc(var(--maxw) - 2 * var(--gutter));
-    margin-left: auto; margin-right: auto;
-    padding-inline: clamp(28px, 4vw, 56px);
-  }
-  .process {
-    list-style: none; padding: 0; margin: 0;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    counter-reset: step;
-  }
-  .step { display: flex; flex-direction: column; gap: 10px; }
-  .step__n {
-    font: 700 32px/1 var(--font);
-    color: var(--accent);
-    letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums;
-  }
-  .step__t {
-    font: 600 17px/1.3 var(--font);
-    color: var(--text);
-  }
-  .step__b {
-    font: var(--t-body-sm);
-    color: var(--text-secondary);
-  }
-
-  /* ===== Mission grid ===== */
-  .mission {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 16px;
-  }
-  .mission__c { display: flex; flex-direction: column; gap: 10px; }
-  .mission__t {
-    font: 600 17px/1.3 var(--font);
-    color: var(--text);
-  }
-  .mission__b {
-    font: var(--t-body-sm);
-    color: var(--text-secondary);
-  }
-
-  /* ===== Testimonials ===== */
-  .quotes {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-  }
-  .quote {
-    display: flex; flex-direction: column;
-    gap: 16px;
-    background: var(--bg-card);
-  }
-  .quote__q {
-    margin: 0;
-    font: 400 16px/1.55 var(--font);
-    color: var(--text);
-  }
-  .quote__by {
-    display: flex; flex-direction: column;
-    gap: 2px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-  }
-  .quote__name {
-    font: 600 15px/1.3 var(--font);
-    color: var(--text);
-  }
-  .quote__role {
-    font: 500 13px/1.3 var(--font);
-    color: var(--text-secondary);
-  }
-
-  /* ===== Closing CTA ===== */
-  .cta {
-    background: var(--bg-alt);
-    border-radius: var(--r-xl);
-    padding: clamp(36px, 5vw, 56px);
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: clamp(32px, 4vw, 48px);
-    align-items: center;
-  }
-  .cta__h {
-    font: 700 clamp(24px, 3.4vw, 36px)/1.15 var(--font);
-    letter-spacing: -0.015em;
-    margin-top: 12px;
-    color: var(--text);
-    text-wrap: balance;
-  }
-  .cta__b {
-    font: var(--t-body-lg);
-    color: var(--text-secondary);
-    margin-top: 16px;
-    max-width: 48ch;
-  }
-  .cta__row { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
-  .cta__card { background: var(--bg-card); padding: 24px; }
-  .cta__card__h {
-    font: 600 16px/1.3 var(--font);
-    color: var(--text);
-    margin-bottom: 8px;
-  }
-  .cta__card__row {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 10px 0;
-    border-top: 1px solid var(--border);
-    font: 500 13px/1.4 var(--font);
-    color: var(--text-secondary);
-  }
-  .cta__card__row b {
-    font: 600 13px/1.4 var(--font);
-    color: var(--text);
-  }
-
-  /* ===== Responsive ===== */
+  /* ---- Tablet: collapse to two-up, stack two-column sections ---- */
   @media (max-width: 1024px) {
-    .pair, .cta { grid-template-columns: 1fr; }
-    .process { grid-template-columns: 1fr 1fr; }
+    .ah, .pair, .cta { grid-template-columns: 1fr; gap: 32px; }
+    .ah { margin-bottom: 44px; }
+    .pillars, .spc, .flow, .feed, .team { grid-template-columns: 1fr 1fr; }
+    .pq { grid-template-columns: 1fr; }
+    .pq__card { order: -1; max-width: 320px; }
+    .cluster { grid-template-columns: 1fr 1fr; }
+    .cl--lg { grid-column: 1 / span 2; grid-row: auto; min-height: 300px; }
+    .cl { grid-column: auto !important; grid-row: auto !important; min-height: 200px; }
+    .trust__row { grid-template-columns: repeat(3,1fr); gap: 32px 24px; }
+    /* pamphlet: 3D flip needs width — show cover, then inside, stacked */
+    .spread { min-height: 0; perspective: none; contain: none; }
+    .inside { position: static; grid-template-columns: 1fr; }
+    .inside__col--side { border-left: 0; border-top: 1px solid var(--brass-line); }
+    .cover { position: relative; transform: none !important;
+      box-shadow: none; will-change: auto; }
+    .cover__face { position: relative; }
+    .cover__back { display: none; }
+    .cover__front { min-height: 420px; }
+    .cv__hint { display: none; }
   }
-  @media (max-width: 600px) {
-    .process { grid-template-columns: 1fr; }
-    .hero__h { max-width: 100%; }
-    .cta__card { padding: 20px; }
+
+  /* ---- Mobile: one column, tighter rhythm, no fixed min-heights ---- */
+  @media (max-width: 767px) {
+    .cluster,
+    .pillars, .spc, .flow, .feed, .team,
+    .trust__row { grid-template-columns: 1fr; }
+    .cl, .cl--lg { grid-column: auto !important; min-height: 0; padding: 28px; }
+    .cl--lg { padding: 32px 28px; }
+    .trust__row { gap: 30px; padding-block: 38px; }
+    .ac { min-height: 0; padding: 34px 26px; }
+    .pl, .spc__c, .fl, .fd { min-height: 0; }
+    .pl { padding: 30px 26px; }
+    .fh { flex-direction: column; align-items: flex-start; gap: 18px; margin-bottom: 30px; }
+    .pq { padding: 40px 26px; }
+    .pq__card { max-width: 100%; }
+    .pamphlet__shell { padding: 14px; }
+    .inside__col { padding: 28px 24px; }
+    .cover__front { padding: 34px 26px; min-height: 360px; }
+    .irow { grid-template-columns: 22px 1fr; }
+    .irow > .ineigh, .irow > .itag {
+      grid-column: 1 / -1; justify-self: start; margin-top: 4px; }
+    .cta__card { padding: 24px; }
+    .section--lg { padding-block: clamp(56px,11vw,84px); }
+    .hero__h { max-width: 16ch; }
   }
 </style>

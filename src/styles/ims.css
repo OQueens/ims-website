@@ -1,411 +1,291 @@
 /* ===========================================================================
- * IMS — IAS Design System (canonical brand spec)
+ * IMS — Belleval design system (quiet-luxury cream / sage / pine)
  *
- * Apple HIG aesthetic: clean, spacious, depth-aware, dark-mode first.
- * Source of truth: docs/IAS-Design-System.md — the hex codes, type scale,
- * radii, motion curves, and component patterns are all from there.
- *
- * This stylesheet replaces the prior Belleval magazine system. Belleval
- * token NAMES are kept as aliases at the bottom of :root so legacy class
- * references in shared components (Button / Nav / Footer / Eyebrow) and
- * the not-yet-rewritten pages (clinicians / facilities / contact) keep
- * resolving to defensible Apple-HIG values during the per-surface pivot.
- * Each surface should remove its aliases as it gets the canonical pass.
+ * Refined from the real Hôtel Belleval gallery (Behance 221703563). A warm
+ * monochrome editorial system: soft cream grounds, dusty sage as the single
+ * color, deep muted pine + warm near-black ink for anchors, a thin brass
+ * hairline for fine rules — never fills. Type is a 3-voice system: a tall
+ * heavy CONDENSED display (Anton), a fine letterspaced serif for ceremonial
+ * labels + italic captions (Fraunces), and a quiet refined grotesk for body
+ * (Hanken). Token NAMES mirror the source design system so ported sections
+ * map mechanically; only the VALUES + type are reskinned. Vast negative
+ * space, flat surfaces, no gradients-as-decoration, restraint over spectacle.
  * ========================================================================= */
 
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap");
+
 :root {
-  /* ================== LIGHT MODE (default) ================== */
+  /* ---------- Belleval canonical palette (LOCKED) ---------- */
+  --band:  #E6DAC2;   /* warm sand-taupe — hero / anchor ground          */
+  --bone:  #E8E0CF;   /* warm oat, speckled — seal discs, "stock" stock  */
+  --sage:  #9DAA8A;   /* dusty grey-sage — SUPPORT: organic shapes, washes */
+  --sage-2:#7E8C6B;   /* deeper sage — decorative support voice: accent
+                       * dots, seal rings, organic detail. NOT the lead
+                       * accent (IMS blue is); NOT body text (3.1:1).      */
+  --brass: #9C824E;   /* warm bronze — HAIRLINE only, never a fill       */
 
-  /* Backgrounds */
-  --bg:             #ffffff;
-  --bg-alt:         #f5f5f7;
-  --bg-card:        #ffffff;
-  --bg-elevated:    rgba(255, 255, 255, 0.72);
-  --bg-inset:       #f2f2f7;
+  /* ---------- IMS brand blue — the LEAD accent voice ------------------
+   * Real mark hexes: the logo's .cls-1 is #59BFE7 (OKLCH hue 219, a true
+   * sky-blue). The deepened step holds that SAME hue 219, only lower L —
+   * it reads as "the IMS blue, darkened", not a foreign teal. The powder
+   * wash token #D0EAF2 is hue 215 (same family), so blue sits coherently
+   * on the cream field — no warm/cool clash.
+   *
+   * 2026-05-20 brand correction: blue LEADS the accent voice (eyebrows,
+   * idx labels, link hovers, italic hero accents, focus rings, icon
+   * accents in nav/footer). Sage stays in its decorative role only —
+   * organic blob washes, small dot indicators, selection halos that ride
+   * on sage-wash grounds. Brass remains hairline-only, never a fill.    */
+  --ims-blue:      #59BFE7;  /* brand mark + focus glow + on-pine accent.
+                              * 1.8:1 on cream → never text on a light
+                              * ground; ink-on-blue fill is 9.9:1 (safe). */
+  --ims-blue-ink:  #00657F;  /* hue-219 brand blue, deepened: AA 5.8:1 on
+                              * cream / 6.6:1 on white. The accent TEXT
+                              * voice — eyebrows, links, key labels.      */
+  --ims-blue-wash: #D0EAF2;  /* solid Belleval-powder tint (no alpha) —
+                              * the ramp's surface step; ink on it 16.5:1.
+                              * Reserved: applied only where a blue ground
+                              * is intentional. Unused now, by design —
+                              * blue is kept rare; washes stay sage.      */
 
-  /* Text */
-  --text:           #1d1d1f;
-  --text-secondary: rgba(60, 60, 67, 0.6);
-  --text-tertiary:  rgba(60, 60, 67, 0.3);
+  /* ---------- Surfaces (legacy names → Belleval values) ---------- */
+  --cream:        #F4EFEA;   /* page ground — Belleval cream (the real
+                              * reference hex); the calm dominant field   */
+  --cream-2:      var(--band);
+  --paper:        #F8F3E9;   /* cards — a whisper above ground, flat      */
+  --sand:         var(--bone);
+  --sand-deep:    #DACDB2;
+  --pine:         #29382C;   /* dark sections / primary action           */
+  --pine-700:     #20302A;
+  --pine-deep:    #18241F;
 
-  /* Accent — SF blue (Apple HIG) */
-  --accent:         #007aff;
-  --accent-hover:   #0071e3;
-  --accent-bg:      rgba(0, 122, 255, 0.08);
+  --bg:           var(--cream);
+  --surface:      var(--paper);
+  --surface-2:    var(--band);
 
-  /* Status colors — always paired with their soft bg variant */
-  --green:    #34c759;  --green-bg:   rgba(52, 199, 89, 0.08);
-  --orange:   #ff9500;  --orange-bg:  rgba(255, 149, 0, 0.08);
-  --red:      #ff3b30;  --red-bg:     rgba(255, 59, 48, 0.08);
-  --purple:   #af52de;  --purple-bg:  rgba(175, 82, 222, 0.08);
-  --teal:     #5ac8fa;
-  --yellow:   #ffcc00;
+  /* ---------- Text (secondary/tertiary = opacities of ink) ---------- */
+  --ink:          #161513;   /* near-black, faintly warm — primary       */
+  --ink-2:        rgba(22,21,19,0.62);  /* secondary                     */
+  --ink-3:        rgba(22,21,19,0.42);  /* tertiary / duotone "soft"     */
+  --ink-4:        rgba(22,21,19,0.24);  /* faint / disabled              */
+  --on-pine:      #EDE7D6;   /* warm bone-light text on pine             */
+  --on-pine-2:    rgba(237,231,214,0.66);
+  --on-sage:      #1B231A;   /* ink on a sage fill                       */
+  /* --on-clay removed 2026-05-20: had no call sites and was stale —
+   * clay now maps to ims-blue-ink (deep, an accent TEXT/icon voice, never
+   * a background), so a paired "on-clay" foreground would be ambiguous. */
 
-  /* Borders + fills */
-  --border:         rgba(0, 0, 0, 0.08);
-  --border-strong:  rgba(0, 0, 0, 0.16);
-  --fill:           rgba(120, 120, 128, 0.2);
-  --fill-secondary: rgba(120, 120, 128, 0.16);
+  /* ---------- Accents — IMS blue is the lead accent voice. The legacy
+   * "clay" alias is now wired to ims-blue-ink: italic hero accent spans,
+   * arrowlink colors, phone/mail icon glyphs in nav/footer/contact, and
+   * any old call site that reaches for "the accent" gets blue (formerly
+   * sage). gold stays mapped to brass (hairline-only).                    */
+  --clay:         var(--ims-blue-ink);  /* legacy "clay" → blue accent   */
+  --clay-600:     var(--ims-blue-ink);
+  --gold:         var(--brass);    /* legacy "gold" → brass              */
+  --gold-200:     #C9B486;         /* lighter brass — legible on pine    */
+  --gold-600:     #806A3F;
+  --moss:         var(--ims-blue-ink);
 
-  /* Shadows — Apple-style soft */
-  --shadow:           0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
-  --shadow-md:        0 2px 12px rgba(0, 0, 0, 0.06);
-  --shadow-lg:        0 8px 30px rgba(0, 0, 0, 0.08);
-  --shadow-elevated:  0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04);
+  /* duotone headline: claim leads, explanation recedes — one breath */
+  --duo-claim:    var(--ink);
+  --duo-soft:     var(--ink-3);
 
-  /* ================== TYPOGRAPHY — single voice (system) ================== */
-  --font:  -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
-  --mono:  'IBM Plex Mono', 'SF Mono', 'Menlo', monospace;
+  /* ---------- Lines / fills ---------- */
+  --line:         rgba(22,21,19,0.14);
+  --line-soft:    rgba(22,21,19,0.08);
+  --line-pine:    rgba(237,231,214,0.16);
+  --brass-line:   rgba(156,130,78,0.42);  /* the fine warm bronze rule   */
+  --sage-wash:    rgba(157,170,138,0.20);  /* organic-shape ground wash   */
 
-  --t-page:    700 clamp(28px, 4vw, 48px)/1.1  var(--font);
-  --t-h2:      600 clamp(20px, 2.5vw, 28px)/1.2 var(--font);
-  --t-h3:      600 clamp(17px, 2vw, 21px)/1.3  var(--font);
-  --t-body:    400 15px/1.5 var(--font);
-  --t-body-lg: 400 17px/1.55 var(--font);
-  --t-body-sm: 400 14px/1.5 var(--font);
-  --t-label:   500 12px/1.4 var(--font);
-  --t-stat:    700 32px/1.1 var(--font);
+  /* ---------- Shadow — Belleval is flat; elevation is barely there --- */
+  --elev-1: 0 1px 1px rgba(22,21,19,0.04);
+  --elev-2: 0 10px 30px -26px rgba(22,21,19,0.22);
+  --elev-3: 0 24px 60px -44px rgba(22,21,19,0.30);
+  --glow:   0 0 0 3px rgba(89,191,231,0.42);  /* focus ring — brand blue */
 
-  /* ================== SPACING / RADII / LAYOUT ================== */
-  --r-xs:   8px;     /* inputs, small controls, badges */
-  --r-sm:   12px;    /* secondary cards, tooltips     */
-  --r:      18px;    /* primary cards, containers     */
-  --r-lg:   20px;    /* hero sections, modal dialogs  */
-  --r-xl:   28px;    /* page-level featured cards     */
-  --r-pill: 980px;   /* buttons, pills, tags          */
+  /* ---------- Radii — crisp, varied (tighter inner, softer container) - */
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
+  --r-2xl: 26px; --r-full: 999px;
 
-  --s-1: 4px;  --s-2: 8px;   --s-3: 12px;  --s-4: 16px;
-  --s-5: 20px; --s-6: 24px;  --s-8: 32px;  --s-10: 40px;
-  --s-12: 48px; --s-16: 64px; --s-20: 80px; --s-24: 96px;
+  /* ---------- Spacing (4px base) ---------- */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px;
+  --s-8:32px; --s-10:40px; --s-12:48px; --s-16:64px; --s-20:80px; --s-24:96px;
 
-  --maxw:   1200px;
-  --gutter: clamp(24px, 4vw, 40px);
+  /* ---------- Type — 3-voice Belleval system ---------- */
+  --display: "Anton", "Oswald", "Arial Narrow", system-ui, sans-serif;
+  --serif:   "Fraunces", Georgia, "Times New Roman", serif;
+  --sans:    "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  /* ================== MOTION (Apple HIG) ================== */
-  --ease:        cubic-bezier(0.25, 0.1, 0.25, 1);    /* standard smooth      */
-  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);        /* deceleration         */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);    /* spring/bounce        */
-  --ease-snap:   cubic-bezier(0.32, 0.72, 0.00, 1);    /* snappy/decisive      */
+  /* display = tall heavy condensed grotesque (the BELLEVAL wordmark voice)
+   * Leadings RAISED 2026-05-18 [Playwright canvas-ink measured, not guessed]:
+   * Anton's true ink box is ~0.87-0.95em above baseline + ~0.06-0.13em
+   * descender (Q/J/parens), so any wrapped heading collided by ~0.5em/line
+   * at the old sub-1.0 values. ≥1.06 clears ink with a quiet-luxury gap;
+   * single Anton lines (ink ≤0.95em) stay tight, never airy. Graduated:
+   * the largest sizes carry the tightest leading the ink allows. */
+  --t-display-3xl: 400 clamp(72px,11vw,168px)/1.06 var(--display);
+  --t-display-2xl: 400 clamp(54px,7.6vw,116px)/1.07 var(--display);
+  --t-display-xl:  400 clamp(44px,6.2vw,88px)/1.08  var(--display);
+  --t-display-lg:  400 clamp(36px,4.8vw,64px)/1.10  var(--display);
+  --t-h1: 400 clamp(34px,4.2vw,58px)/1.08 var(--display);
+  --t-h2: 400 clamp(27px,3.4vw,44px)/1.10 var(--display);
+  --t-h3: 600 clamp(20px,2.3vw,27px)/1.2  var(--sans);
+  --t-h4: 600 19px/1.3  var(--sans);
+  --t-h5: 600 15px/1.35 var(--sans);
 
-  --dur-button: 0.15s;
-  --dur-hover:  0.2s;
-  --dur-card:   0.3s;
-  --dur-enter:  0.55s;
-  --dur-modal:  0.35s;
+  --t-body-lg: 400 18px/1.62 var(--sans);
+  --t-body:    400 16px/1.62 var(--sans);
+  --t-body-sm: 400 14px/1.55 var(--sans);
+  --t-caption: 400 13px/1.45 var(--serif);
+  --t-label:   600 12px/1.3  var(--sans);
+  /* ceremonial = fine letterspaced serif small-caps (engraved label) */
+  --t-ceremonial: 500 12px/1.3 var(--serif);
 
-  /* ================== LEGACY ALIASES — Belleval → IAS ==================
-   * Components (Button.astro, Nav.astro, Footer.astro, Eyebrow.astro,
-   * Medallion.astro, Placeholder.astro) and the not-yet-rewritten pages
-   * (clinicians.astro, facilities.astro, contact.astro, story.astro,
-   * jobs.astro, couldnt-send.astro, thank-you.astro) still call these
-   * Belleval token names. Mapped to defensible IAS equivalents until
-   * each surface gets its own canonical rewrite. */
+  --tracking-display: 0.005em;   /* Anton is condensed — do NOT jam it  */
+  --tracking-tight:   -0.004em;
+  --tracking-label:   0.22em;
+  --tracking-cer:     0.26em;
 
-  /* Surfaces */
-  --cream:        var(--bg);
-  --cream-2:      var(--bg-alt);
-  --paper:        var(--bg-card);
-  --sand:         var(--bg-alt);
-  --sand-deep:    var(--bg-inset);
-  --band:         var(--bg-alt);
-  --bone:         var(--bg-alt);
-  --pine:         var(--text);
-  --pine-700:     var(--text);
-  --pine-deep:    #000000;
-  --surface:      var(--bg-card);
-  --surface-2:    var(--bg-alt);
+  /* ---------- Motion — invisible, fast, custom curves (emil) -------- */
+  --ease-out:    cubic-bezier(0.23,1,0.32,1);
+  --ease-in-out: cubic-bezier(0.77,0,0.175,1);
+  --ease-emph:   cubic-bezier(0.16,1,0.3,1);
+  --dur-fast: 140ms; --dur-base: 220ms; --dur-slow: 460ms;
 
-  /* Text */
-  --ink:          var(--text);
-  --ink-2:        var(--text-secondary);
-  --ink-3:        var(--text-tertiary);
-  --ink-4:        rgba(60, 60, 67, 0.18);
-  --on-pine:      #ffffff;
-  --on-pine-2:    rgba(255, 255, 255, 0.66);
-  --on-sage:      #ffffff;
-
-  /* Accent aliases */
-  --clay:         var(--accent);
-  --clay-600:     var(--accent-hover);
-  --moss:         var(--accent);
-  --gold:         var(--accent);
-  --gold-200:     var(--accent);
-  --gold-600:     var(--accent-hover);
-
-  --ims-blue:      var(--accent);
-  --ims-blue-ink:  var(--accent-hover);
-  --ims-blue-wash: var(--accent-bg);
-
-  --sage:         var(--border-strong);
-  --sage-2:       var(--text-secondary);
-  --brass:        var(--border-strong);
-
-  /* Lines */
-  --line:         var(--border);
-  --line-soft:    var(--border);
-  --line-pine:    rgba(255, 255, 255, 0.16);
-  --brass-line:   var(--border);
-  --sage-wash:    var(--accent-bg);
-
-  /* Elevation aliases */
-  --elev-1:       var(--shadow);
-  --elev-2:       var(--shadow-md);
-  --elev-3:       var(--shadow-lg);
-  --glow:         0 0 0 4px var(--accent-bg);
-
-  /* Type aliases — all map to the system font; Belleval's 3-voice system
-   * collapses to one quiet voice per the IAS spec ("clarity over decoration"). */
-  --display:      var(--font);
-  --serif:        var(--font);
-  --sans:         var(--font);
-  --t-display-3xl: 700 clamp(56px, 9vw, 120px)/1.05 var(--font);
-  --t-display-2xl: 700 clamp(48px, 7vw, 96px)/1.05 var(--font);
-  --t-display-xl:  700 clamp(40px, 5vw, 72px)/1.06 var(--font);
-  --t-display-lg:  700 clamp(32px, 4vw, 56px)/1.08 var(--font);
-  --t-h1:          var(--t-page);
-  --t-h4:          600 17px/1.3  var(--font);
-  --t-h5:          600 15px/1.35 var(--font);
-  --t-caption:     400 13px/1.45 var(--font);
-  --t-ceremonial:  500 12px/1.4  var(--font);
-
-  --tracking-display: -0.01em;
-  --tracking-tight:   -0.005em;
-  --tracking-label:   0.04em;
-  --tracking-cer:     0.06em;
-
-  --r-md:   12px;
-  --r-2xl:  24px;
-  --r-full: 980px;
-
-  --dur-fast: 0.15s;
-  --dur-base: 0.2s;
-  --dur-slow: 0.3s;
-  --ease-in-out: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --ease-emph:   cubic-bezier(0.16, 1, 0.3, 1);
-
-  --duo-claim:    var(--text);
-  --duo-soft:     var(--text-secondary);
+  /* layout */
+  --maxw: 1320px;
+  --gutter: clamp(20px, 5vw, 64px);
 }
 
-/* ================== DARK MODE — first-class per IAS spec ================== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg:             #000000;
-    --bg-alt:         #1d1d1f;
-    --bg-card:        #1c1c1e;
-    --bg-elevated:    rgba(28, 28, 30, 0.82);
-    --bg-inset:       #1c1c1e;
-
-    --text:           #f5f5f7;
-    --text-secondary: rgba(235, 235, 245, 0.6);
-    --text-tertiary:  rgba(235, 235, 245, 0.3);
-
-    --accent:         #2997ff;
-    --accent-hover:   #40a9ff;
-    --accent-bg:      rgba(41, 151, 255, 0.1);
-
-    --green:    #30d158;  --green-bg:   rgba(48, 209, 88, 0.12);
-    --orange:   #ff9f0a;  --orange-bg:  rgba(255, 159, 10, 0.12);
-    --red:      #ff453a;  --red-bg:     rgba(255, 69, 58, 0.12);
-    --purple:   #bf5af2;  --purple-bg:  rgba(191, 90, 242, 0.12);
-    --teal:     #64d2ff;
-    --yellow:   #ffd60a;
-
-    --border:         rgba(255, 255, 255, 0.08);
-    --border-strong:  rgba(84, 84, 88, 0.6);
-    --fill:           rgba(120, 120, 128, 0.36);
-    --fill-secondary: rgba(120, 120, 128, 0.32);
-
-    --shadow:           0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
-    --shadow-md:        0 2px 12px rgba(0, 0, 0, 0.3);
-    --shadow-lg:        0 8px 30px rgba(0, 0, 0, 0.4);
-    --shadow-elevated:  0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
-
-    /* Re-pin pine alias to the dark text color so legacy callers stay readable
-     * on dark mode (white ink instead of light-mode #1d1d1f). */
-    --pine:         var(--text);
-    --pine-700:     var(--text);
-    --pine-deep:    #000000;
-    --on-pine:      var(--bg);
-    --on-pine-2:    rgba(245, 245, 247, 0.66);
-  }
-}
-
-/* ================== BASE ================== */
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
-html {
-  scroll-behavior: smooth;
-  color-scheme: light dark;   /* OS-controlled scrollbars + form widgets */
-}
+html { scroll-behavior: smooth; }
 body {
   background: var(--bg);
-  color: var(--text);
+  color: var(--ink);
   font: var(--t-body);
-  letter-spacing: -0.005em;
+  letter-spacing: var(--tracking-tight);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
+
+/* warm oat speckle — Belleval "bone" surfaces have visible grain. A faint
+ * plain grayscale film: NO mix-blend-mode. A fixed full-viewport blended
+ * layer forces the compositor to re-blend the entire screen every scroll/
+ * anim frame (the scroll "catch"); plain opacity composites once and is
+ * cached. The SVG's own rect opacity (.16) keeps it a whisper at .5. */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none; opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after {
-    animation-duration: .001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .001ms !important;
-  }
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }
 
-h1, h2, h3, h4 { margin: 0; color: var(--text); letter-spacing: -0.015em; }
-h1 { font: var(--t-page); }
-h2 { font: var(--t-h2); }
-h3 { font: var(--t-h3); }
+/* Headlines = Anton condensed display, near-black ink, heavy + intentional */
+h1,h2,h3,h4 { margin: 0; color: var(--ink); }
+h1,h2 { font-family: var(--display); font-weight: 400; letter-spacing: var(--tracking-display); }
+h1 { font: var(--t-h1); letter-spacing: var(--tracking-display); }
+h2 { font: var(--t-h2); letter-spacing: var(--tracking-display); }
+h3 { font: var(--t-h3); letter-spacing: -0.005em; }
 h4 { font: var(--t-h4); }
-p  { font: var(--t-body); color: var(--text-secondary); margin: 0; text-wrap: pretty; }
+p  { font: var(--t-body); color: var(--ink-2); margin: 0; text-wrap: pretty; }
 a  { color: inherit; text-decoration: none; }
-small, .caption { font: var(--t-body-sm); color: var(--text-tertiary); }
+small, .caption { font: var(--t-caption); color: var(--ink-3); font-style: italic; }
 img, svg { max-width: 100%; display: block; }
 button { font-family: inherit; }
+::selection { background: rgba(89,191,231,0.36); color: var(--ink); }
+:focus-visible { outline: none; box-shadow: var(--glow); border-radius: var(--r-xs); }
 
-::selection { background: var(--accent-bg); color: var(--text); }
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: var(--r-xs);
-}
+/* ---------- Shared editorial utilities ---------- */
+/* italic serif = the editorial caption voice — the one serif survivor in
+ * display moments (signatures, accent words against the Anton claim) */
+.it { font-family: var(--serif); font-style: italic; font-weight: 500; letter-spacing: 0; }
 
-/* ================== SHARED UTILITIES ================== */
-
-/* Italic span — legacy .it survives as plain italic for in-line accents */
-.it { font-style: italic; color: inherit; }
-
-/* Eyebrow — compact letterspaced label */
+/* ceremonial label = fine letterspaced serif, engraved + delicate */
 .eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font: var(--t-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--accent);
+  display: inline-flex; align-items: center; gap: 12px;
+  font: var(--t-ceremonial); letter-spacing: var(--tracking-cer);
+  text-transform: uppercase; color: var(--ims-blue-ink);
+  font-feature-settings: "smcp" 1;
 }
-.eyebrow .orn { width: 16px; height: 1px; background: var(--border-strong); }
-.eyebrow--mut  { color: var(--text-secondary); }
-.eyebrow--gold { color: var(--accent); }
+.eyebrow .orn { color: var(--brass); }
+.eyebrow--gold { color: var(--gold-600); }
+.eyebrow--mut  { color: var(--ink-3); }
 
-/* Legacy italic-index — now just italic accent text */
-.idx { font-style: italic; color: var(--accent); font-size: 0.9rem; }
+.idx { font-family: var(--serif); font-style: italic; color: var(--ims-blue-ink); font-size: .9rem; }
 
-/* Duotone display (legacy class structure preserved) */
-.duo .claim { color: var(--text); }
-.duo .soft  { color: var(--text-secondary); }
+/* duotone display headline: claim leads, explanation recedes — one breath */
+.duo .claim { color: var(--duo-claim); }
+.duo .soft  { color: var(--duo-soft); }
 
-/* Rules */
-.rule { border: 0; border-top: 1px solid var(--border); margin: 0; }
-.rule-pine, .rule-brass { border-top-color: var(--border); }
+.rule { border: 0; border-top: 1px solid var(--line); margin: 0; }
+.rule-pine { border-top-color: var(--line-pine); }
+.rule-brass { border-top-color: var(--brass-line); }
 
-/* Link */
-.lnk { color: inherit; cursor: pointer; transition: color var(--dur-hover) var(--ease); }
-.lnk:hover { color: var(--accent); }
+.lnk { color: inherit; cursor: pointer; transition: color var(--dur-base) var(--ease-out); }
+.lnk:hover { color: var(--ims-blue-ink); }
 
-/* Section container */
-.section {
-  max-width: var(--maxw);
-  margin: 0 auto;
-  padding-inline: var(--gutter);
-}
-.section--lg { padding-block: clamp(64px, 9vw, 112px); }
-.section--md { padding-block: clamp(48px, 7vw, 80px); }
-.section--sm { padding-block: clamp(32px, 5vw, 56px); }
+.section { max-width: var(--maxw); margin: 0 auto; padding-inline: var(--gutter); }
+.section--lg { padding-block: clamp(80px,12vw,148px); }
+.section--md { padding-block: clamp(60px,9vw,104px); }
+.section--sm { padding-block: clamp(44px,6vw,68px); }
 
-/* Image slot (legacy — flat surface, no decorative blobs) */
+/* tasteful image slot — flat bone with a hand-painted sage organic shape
+ * (the "human-like drawing" Belleval is loved for); no fake stock photo */
 .imgslot {
-  position: relative; overflow: hidden; border-radius: var(--r);
-  background: var(--bg-alt);
+  position: relative; overflow: hidden; border-radius: var(--r-lg);
+  background: var(--bone);
+}
+.imgslot::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(closest-side at 74% 30%, var(--sage-wash), transparent),
+    radial-gradient(closest-side at 24% 82%, var(--sage-wash), transparent);
 }
 .portrait {
-  background: var(--text); color: var(--bg);
-  position: relative; overflow: hidden;
-  border-radius: var(--r);
+  background: var(--pine); position: relative; overflow: hidden;
+}
+.portrait::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(closest-side at 50% 40%, rgba(157,170,138,0.26), transparent),
+    radial-gradient(closest-side at 50% 104%, rgba(0,0,0,0.34), transparent);
 }
 
-/* Decorative blob (Belleval-era) — disabled under IAS spec */
-.deco-blob { display: none; }
+/* hand-painted flat organic shape — sage on cream, flat (not line art) */
+.deco-blob {
+  position: absolute; pointer-events: none; z-index: 0;
+  color: var(--sage); opacity: 0.5;
+}
+.deco-blob svg { width: 100%; height: 100%; display: block; fill: currentColor; }
 
-/* Seal / medallion */
+/* circular seal / medallion — monogram on speckled bone disc, ringed by
+ * letterspaced serif caps (the recurring Belleval mark) */
 .seal {
   position: relative; display: inline-grid; place-items: center;
   width: 84px; height: 84px; border-radius: 999px;
-  background: var(--bg-alt); color: var(--text);
-  border: 1px solid var(--border);
+  background: var(--bone); color: var(--ink);
+  border: 1px solid var(--brass-line);
 }
-.seal__mono { font: 700 30px/1 var(--font); letter-spacing: -0.01em; }
+.seal__mono { font: 400 30px/1 var(--display); letter-spacing: 0.01em; }
+.seal__ring { position: absolute; inset: 0; }
 .seal__ring text {
-  font: 500 7px/1 var(--font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  fill: var(--accent);
+  font: 500 7px/1 var(--serif); letter-spacing: 0.22em;
+  text-transform: uppercase; fill: var(--ims-blue-ink);
 }
 
-/* Card primitive — Apple HIG with hover lift, dark-mode aware via tokens */
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: clamp(20px, 3vw, 28px);
-  transition: transform var(--dur-card) var(--ease-out),
-              box-shadow var(--dur-card) var(--ease-out),
-              border-color var(--dur-card) var(--ease-out);
-}
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-strong);
-}
+/* page route transition */
+.page-fade { animation: pageFade var(--dur-slow) var(--ease-emph) both; }
+@keyframes pageFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-/* Stat primitive */
-.stat { display: flex; flex-direction: column; gap: 4px; }
-.stat__label {
-  font: var(--t-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-.stat__value {
-  font: var(--t-stat);
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Badge — paired status color + soft bg per IAS rule */
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px;
-  border-radius: var(--r-pill);
-  font: 600 12px/1 var(--font);
-  letter-spacing: 0.02em;
-}
-.badge--accent  { background: var(--accent-bg); color: var(--accent); }
-.badge--green   { background: var(--green-bg);  color: var(--green); }
-.badge--orange  { background: var(--orange-bg); color: var(--orange); }
-.badge--neutral { background: var(--fill);      color: var(--text-secondary); }
-
-/* Page route transition — single page-mount fade */
-.page-fade { animation: pageFade var(--dur-enter) var(--ease-out) both; }
-@keyframes pageFade {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* Staggered reveal — used by hero for page-mount cadence; CSS-only.
- * d1..d6 cascade with 80ms steps so the eye reads top-to-bottom. */
-.reveal {
-  opacity: 0; transform: translateY(14px);
-  animation: rise 0.6s var(--ease-out) forwards;
-}
+/* staggered reveal — gentle, never mount everything at once (emil/minimal) */
+.reveal { opacity: 0; transform: translateY(14px); animation: rise .8s var(--ease-emph) forwards; }
 @keyframes rise { to { opacity: 1; transform: none; } }
-.d1 { animation-delay: 0.04s; }
-.d2 { animation-delay: 0.12s; }
-.d3 { animation-delay: 0.20s; }
-.d4 { animation-delay: 0.28s; }
-.d5 { animation-delay: 0.36s; }
-.d6 { animation-delay: 0.44s; }
+.d1{animation-delay:.04s}.d2{animation-delay:.12s}.d3{animation-delay:.20s}
+.d4{animation-delay:.28s}.d5{animation-delay:.36s}.d6{animation-delay:.44s}
