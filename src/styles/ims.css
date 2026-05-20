@@ -119,10 +119,13 @@
   --ink:          var(--text);
   --ink-2:        var(--text-secondary);
   --ink-3:        var(--text-tertiary);
-  --ink-4:        rgba(60, 60, 67, 0.18);
-  --on-pine:      #ffffff;
-  --on-pine-2:    rgba(255, 255, 255, 0.66);
-  --on-sage:      #ffffff;
+  --ink-4:        rgba(60, 60, 67, 0.18);   /* redefined in dark @media */
+  --on-pine:      #f5f5f7;                  /* light text on always-dark pine */
+  --on-pine-2:    rgba(245, 245, 247, 0.66);
+  /* on-sage retargeted: legacy callers (ic--on backgrounds, etc.) want text
+   * that reads on a soft tinted bg, not pure white — accent on accent-bg is
+   * the IAS pattern for badge-style fills. */
+  --on-sage:      var(--accent);
 
   /* Accent aliases */
   --clay:         var(--accent);
@@ -136,8 +139,12 @@
   --ims-blue-ink:  var(--accent-hover);
   --ims-blue-wash: var(--accent-bg);
 
-  --sage:         var(--border-strong);
-  --sage-2:       var(--text-secondary);
+  /* Legacy "sage" was a chip-fill / soft-tint surface in Belleval. Map to
+   * accent-bg so legacy `.fd__spec` / `.fl__n` / `.ic` style callers get a
+   * soft Apple-blue tint instead of a flat charcoal border that looks broken.
+   * --sage-2 (legacy text-on-soft-tint) maps to the accent text voice. */
+  --sage:         var(--accent-bg);
+  --sage-2:       var(--accent);
   --brass:        var(--border-strong);
 
   /* Lines */
@@ -221,14 +228,33 @@
     --shadow-lg:        0 8px 30px rgba(0, 0, 0, 0.4);
     --shadow-elevated:  0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
 
-    /* Re-pin pine alias to the dark text color so legacy callers stay readable
-     * on dark mode (white ink instead of light-mode #1d1d1f). */
-    --pine:         var(--text);
-    --pine-700:     var(--text);
+    /* Re-declare legacy aliases that didn't auto-flip via primary tokens. */
+    --ink-4:        rgba(235, 235, 245, 0.18);
+
+    /* Pine kept STABLE across modes: it's the legacy "always-dark surface"
+     * (intentional dark accent block inside both light and dark layouts).
+     * Hard-pin to Apple's dark elevated card surface, with light text on top.
+     * Without this, --pine would flip with --text and the "dark accent block"
+     * pattern would invert into a near-white block with vanishing white text. */
+    --pine:         #1c1c1e;
+    --pine-700:     #2c2c2e;
     --pine-deep:    #000000;
-    --on-pine:      var(--bg);
+    --on-pine:      #f5f5f7;
     --on-pine-2:    rgba(245, 245, 247, 0.66);
   }
+}
+
+/* Light-mode counterpart for the always-dark pine surface: same hard pin,
+ * declared outside the dark @media so it survives both modes. The :root
+ * block above maps --pine to var(--text) for back-compat with sections that
+ * want "follow the text color" — this override wins for the always-dark
+ * intentional callers. To opt INTO the always-dark behavior, components
+ * use --pine; to opt OUT, they use --text directly. */
+:root {
+  --pine:         #1c1c1e;
+  --pine-700:     #2c2c2e;
+  --on-pine:      #f5f5f7;
+  --on-pine-2:    rgba(245, 245, 247, 0.66);
 }
 
 /* ================== BASE ================== */
