@@ -289,3 +289,31 @@ button { font-family: inherit; }
 @keyframes rise { to { opacity: 1; transform: none; } }
 .d1{animation-delay:.04s}.d2{animation-delay:.12s}.d3{animation-delay:.20s}
 .d4{animation-delay:.28s}.d5{animation-delay:.36s}.d6{animation-delay:.44s}
+
+/* scroll-triggered reveal — one-shot when element enters viewport. Used on
+ * section heads down the page so movement compounds as you scroll. Wired by
+ * an IntersectionObserver in IMSLayout.astro; the `.is-in` class is added
+ * once and never removed (no scroll-out flicker). */
+.reveal-onview {
+  opacity: 0; transform: translateY(18px);
+  transition: opacity .7s var(--ease-emph), transform .7s var(--ease-emph);
+  will-change: opacity, transform;
+}
+.reveal-onview.is-in { opacity: 1; transform: none; will-change: auto; }
+/* no-JS fallback: if the IntersectionObserver script never runs, content
+ * stays visible. <html class="no-js"> is the static default; an inline head
+ * script removes it (synchronous, before paint) when JS is enabled. */
+.no-js .reveal-onview { opacity: 1; transform: none; }
+/* reduced-motion fallback: the global @media rule zeroes transitions, but
+ * the JS path could still paint sections hidden for a few frames before the
+ * observer stamps .is-in on cold/restored scrolls. Belt-and-braces. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-onview { opacity: 1; transform: none; transition: none; }
+}
+
+/* visually-hidden — used by [data-count] spans to expose the final value to
+ * screen readers while the visible span animates (and is aria-hidden). */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
