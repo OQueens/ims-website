@@ -44,10 +44,13 @@ design-imports/
 # the browser_navigate / browser_take_screenshot tools during live-site
 # verification. These accumulate in the worktree root and trigger the
 # review-gate hook on every turn even though they're not source edits.
+#
+# Broad rule (catch-all): any .png or .yml at the WORKTREE ROOT is a
+# verification artifact — real PNG assets live under public/ or src/assets/,
+# and real .yml config lives under .github/ or similar nested paths.
+# The leading "/" anchors to root, so src/**/*.png stays trackable.
 .playwright-mcp/
-*-pivot-*.png
-*-after-*.png
-*-moodboard-*.png
-*-fullpage.png
-*-viewport.png
+/*.png
+/*.yml
+/*.yaml
 iastaffing-snapshot.md
