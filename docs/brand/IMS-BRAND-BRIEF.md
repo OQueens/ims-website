@@ -1,9 +1,10 @@
 # IMS Brand Brief — Marketing Site v2 (chromia + warm-accents)
 
-**Status:** v1 · 2026-05-26 · derived from the moodboard pick session, verified against the live reference sites
+**Status:** v2 · 2026-05-26 · all open questions resolved · **READY FOR CLAUDE DESIGN HAND-OFF**
 **Moodboard:** [ims-finalists.pages.dev/design-board/](https://ims-finalists.pages.dev/design-board/) (11 dimensions × 8 picks each — 4 Mobbin + 4 ref-site facets)
+**This brief (web-fetchable):** [ims-finalists.pages.dev/design-board/brief/](https://ims-finalists.pages.dev/design-board/brief/) — same allowlisted CF Pages domain as the moodboard
 **Scope:** Marketing site only (`innovativemedicalstaffing.com`). Internal dashboards (LocumSmart Analytics, Rate Calculator, etc.) continue using the existing **IAS Apple HIG** system in `docs/IAS-Design-System.md` unchanged.
-**Hand-off target:** Claude Design (CF Pages domain already allowlisted)
+**Hand-off target:** Claude Design
 
 ---
 
@@ -341,14 +342,17 @@ All combinations pass WCAG AAA (≥7:1) for normal text and AA (≥4.5:1) for la
 ```
 ┌─── eyebrow (tracked all-caps) ─────────────────┐
 │                                                 │
-│  [bracketed display serif headline,            │
-│   1-2 lines, with one italic emphasis word]    │
+│   A More Personal Way to Staff Care.            │
+│   (bracketed display serif, "Personal" italic   │
+│    in --ink-aubergine, 2-line wrap on desktop)  │
 │                                                 │
-│   sub-headline · 1-2 sentences · ink-soft       │
+│   We bring a boutique, family-style approach    │
+│   to locum staffing — connecting clinicians     │
+│   and facilities with the care, speed, and      │
+│   concierge support they deserve.               │
 │                                                 │
-│  ┌─ MULTI-PILL ACTION ROW ──────────────────┐  │
-│  │  (For Facilities)  (For Clinicians)      │  │
-│  │  See open jobs     About IMS              │  │
+│  ┌─ TWO-PILL AUDIENCE ROW ──────────────────┐  │
+│  │  (For Facilities)   (For Clinicians)     │  │
 │  └──────────────────────────────────────────┘  │
 │                                                 │
 │  ╲   small pastel character accent (max 1-2)   │
@@ -356,6 +360,8 @@ All combinations pass WCAG AAA (≥7:1) for normal text and AA (≥4.5:1) for la
 └─────────────────────────────────────────────────┘
        │ dot-grid background persists │
 ```
+
+**Note:** only **two pills** in the hero action row. No secondary "See open jobs" / "About IMS" pills — those routes are already in the top nav. The hero stays focused on the audience split.
 
 **Spec:**
 
@@ -403,13 +409,12 @@ All combinations pass WCAG AAA (≥7:1) for normal text and AA (≥4.5:1) for la
 }
 ```
 
-**Headline copy direction:** declarative, type-led, NEVER imperative-bro. Examples to test:
+**LOCKED hero copy:**
 
-- "Place clinicians. Care for facilities."
-- "Healthcare staffing, *considered*."
-- "Locum tenens, *done right*."
-
-(Finalize via [§9](#9--voice--microcopy) tests.)
+- **Headline:** `A More <em>Personal</em> Way to Staff Care.`
+  - Title case · 7 words · "Personal" italic-emphasized in `--ink-aubergine` per the brief's italic-emphasis-pair pattern. "Personal" is the brand differentiator vs traditional agencies — that's why it gets the emphasis.
+- **Supporting line:** "We bring a boutique, family-style approach to locum staffing — connecting clinicians and facilities with the care, speed, and concierge support they deserve."
+  - 32 words · ~190 chars · two lines at desktop `max-width: 60ch`
 
 ### 8.3 Audience CTA pair (6E split — the primary action)
 
@@ -462,11 +467,12 @@ Two pills in the hero action row, side-by-side. Both use chromia primary pill st
 }
 ```
 
-**Audience-pair anatomy:**
-- **Identical styling** (both primary `--ink` pills) so neither audience reads as secondary
-- **Labels in parentheses** — soft, audience-routing chip read, not imperative action
-- **No icons in v1** (label-only); evaluate adding hospital/stethoscope marks in v2 after measuring CTR
+**Audience-pair anatomy (LOCKED):**
+- **Identical styling** — both primary `--ink` pills so neither audience reads as secondary
+- **Labels in parentheses** — `(For Facilities)` and `(For Clinicians)` — soft, audience-routing chip read, not imperative action
+- **Label-only** — no icons. Decision locked v1, do not propose adding.
 - **Always paired** — never show "For Facilities" without "For Clinicians" adjacent; the parity is the brand moment
+- **Plausible attribution:** add `data-cta="facilities"` and `data-cta="clinicians"` so click-through can be split by audience
 
 ### 8.4 Contact form (Origin 5B)
 
@@ -867,7 +873,7 @@ These add to the existing `scripts/voice-lint.mjs` BANNED set.
 | 7 | `HomeConcierge.astro` | Restyle — bold quote/headline panel; possibly aftermetoo-warm voice patch |
 | 8 | `HomePhilosophy.astro` | Restyle — single-column long-form serif paragraph |
 | 9 | `HomeValues.astro` | Restyle — 3-up values cards |
-| 10 | `HomeFinalCta.astro` | **Fold into the warm footer** OR keep as a final card-row before the footer. Recommend folding to avoid double-close. Confirm before removing the file. |
+| 10 | `HomeFinalCta.astro` | **FOLD (locked)** — eliminate this section. The aftermetoo warm footer with the sign-off "Let's place you *somewhere good*." IS the final CTA. Remove the file or convert it to a thin re-export of `<SiteFooter />` if any pages import it elsewhere — verify no off-home imports before deleting. |
 
 ---
 
@@ -958,8 +964,7 @@ Mobile-first. Base styles target mobile, media queries scale up.
 |---|---|---|---|---|
 | Top nav | Hamburger menu + wordmark only | Hamburger + wordmark + CTA pill | Full pill nav (no labels collapse) | Full pill nav |
 | Hero headline | 56-64px clamp | 64-80px | 80-96px | 88-120px (full clamp) |
-| Hero CTA row | Stacked, full-width pills | Stacked or 2-up | Wrap 2+2 | 4-up single line |
-| Audience pill pair | Stacked, full-width | Side-by-side | Side-by-side | Side-by-side |
+| Hero audience pill pair | Stacked, full-width | Side-by-side | Side-by-side | Side-by-side |
 | Card grid | 1 column | 1-2 cols | 2-3 cols | 3-4 cols |
 | Footer sitemap | 1 column | 1 column | 3 cols | 3 cols |
 | Contact form | 1 column | 1 column | 2 cols (paired fields) | 2 cols |
@@ -986,7 +991,7 @@ All `--t-display-*` tokens use `clamp(min, vw, max)`. Body sizes stay fixed (16p
 - `src/components/brand/LogoOnDark.astro` — light variant, on-dark surfaces (top nav)
 - Plus 8 functional icons under `src/components/icons/`
 
-**No redesign in v1.** The IMS mark stays. Wordmark treatment is the open question — see [§19](#19--open-questions).
+**No redesign in v1.** The IMS mark stays. Wordmark treatment in v1: the existing SVG mark + "Innovative Medical Staffing" set in **Fraunces 700** (the locked display font). v2 may commission a custom Battlefin-style display wordmark if budget approved later.
 
 **Usage matrix:**
 
@@ -995,7 +1000,7 @@ All `--t-display-*` tokens use `clamp(min, vw, max)`. Body sizes stay fixed (16p
 | Top nav (dark pill bg) | `LogoOnDark` | Cream fill, 22px tall |
 | Page bodies (cream bg) | `LogoDefault` | Inline contexts: footer header, contact form, hero (optional) |
 | Footer bottom strip | `LogoMono` | Single-color, ink, 24px tall |
-| Loading screen | Custom hand-sketch SVG | New asset — see [§19 #5](#19--open-questions) |
+| Loading screen | Custom hand-sketch SVG | New asset — Claude Design proposes the hand-sketch IMS mark as part of the loading-screen step in [§18](#18--build-sequence-for-claude-design) |
 | Favicons + OG image | Existing assets | Audit for consistency post-rebrand |
 
 **Wordmark exploration (v2 candidate):** Chromia's Battlefin display serif wordmark sets a benchmark. If we treat the IMS wordmark as just the SVG mark + "Innovative Medical Staffing" set in Fraunces 700, that's the safe v1. v2 might commission a custom display wordmark.
@@ -1078,38 +1083,42 @@ Ship in this order for the cleanest incremental state. Each step deploys to prev
 2. **Font swap.** Self-host Fraunces via `@fontsource-variable/fraunces`. Update `--font-display`. Verify TAY `@font-face` blocks stay (verify-build asserts them).
 3. **`MarketingLayout.astro`** chrome — swap from IMS Dark navy shell to cream + dot-grid.
 4. **`SiteNav.astro`** — rebuild as chromia floating pill.
-5. **`HomeHero.astro`** — rebuild per [§8.2](#82-hero-chromia-1e--audience-cta-split) with the two-audience pill pair.
+5. **`HomeHero.astro`** — rebuild per [§8.2](#82-hero-chromia-1e--audience-cta-split). Headline `A More <em>Personal</em> Way to Staff Care.` + locked supporting line + the **two-audience pill pair only**.
 6. **Card system** — write `.card` base + variant classes. Apply across `HomeProcess`, `HomeSpecialties`, `HomeValues`.
 7. **`SiteFooter.astro`** — rebuild as aftermetoo warm close with blobs.
 8. **Contact form / `/contact`** — apply Origin 5B pattern; preserve `/api/contact` wiring.
 9. **Specialty + audience pages** — restyle `/facilities`, `/clinicians`, `/specialties`, `/how-it-works`, `/about`.
 10. **`/jobs` listings + `/jobs/[slug]`** — restyle existing Supabase-driven views.
 11. **State patterns** — apply [§11](#11--state-patterns) across forms + the jobs page.
-12. **Loading screen** — add Manus brand-mark SVG + animation.
+12. **Loading screen** — Claude Design proposes the hand-sketch IMS mark SVG + draws the stroke-dasharray animation per [§8.7](#87-loading-screen-manus-9c).
 13. **Motion layer** — apply [§15](#15--motion-rules) globally last so individual components are correct first.
 14. **Accessibility audit + Lighthouse pass** — gates green before considering v1 done.
 15. **Voice-lint update** — add new BANNED tokens from [§9.2](#92-banned-voice-patterns) to `scripts/voice-lint.mjs`.
+16. **Cleanup pass.** Delete `HomeFinalCta.astro` after confirming no imports outside the home page. Trim legacy IMS-Dark token aliases from `tokens.css` once no page references them.
 
 **Per-step Codex review:** every non-trivial step gets the in-band peer-review loop (existing standing order).
 
 ---
 
-## 19 · Open questions
+## 19 · Resolved decisions log (formerly open questions)
 
-These need a Zach call or Claude Design proposal before locking.
+All v1 open questions answered by Zach 2026-05-26. Documented here so Claude Design can see the rationale, not just the output.
 
-1. **Display font commercial vs free.** Fraunces (free, recommended for v1) or Battlefin/Migra (paid, exact chromia match)? Battlefin is ~$300 license one-time.
-2. **Pastel accent saturation.** Use Tolan's literal pastels (`#F4B8C7`, `#9ED4D0`, `#B5D0A8`, `#D4C2EE`) or desaturate ~15% for healthcare context?
-3. **Audience-pill iconography.** Add hospital/stethoscope icons left of label, or keep label-only? Recommend label-only v1; measure CTR; revisit v2.
-4. **Hero secondary action pills (positions 3-4).** Proposed "See open jobs" + "About IMS". Confirm or replace.
-5. **Loading mark design.** Manus 9C direction locked, but the actual IMS hand-sketch SVG needs to be drawn. Claude Design proposes or external illustrator?
-6. **Headline copy direction.** Test three: "Healthcare staffing, *considered*." / "Locum tenens, *done right*." / "Place clinicians. Care for facilities." — A/B or pick by feel?
-7. **`HomeFinalCta.astro` fate.** Fold into the warm footer or keep as a final card row? Recommend fold (avoid double-close).
-8. **Wordmark treatment.** v1 = IMS mark SVG + "Innovative Medical Staffing" set in Fraunces 700. v2 = commission a custom Battlefin-style display wordmark — budget required.
-9. **CTR attribution on audience pills.** Add `data-cta="facilities" / "clinicians"` for Plausible custom events? Recommend yes — cheap signal.
-10. **Testimonials/social proof source.** The home `HomeConcierge` / `HomeValues` sections need real testimonials. From iastaffing.com restored content or new collection? Surface to Zach before content lock.
-11. **`/jobs` empty-state copy.** Currently blocked by Webhook Key setup ([memory: project_phase1_a_step3_jobs_swap_landed_2026-05-11]). Copy under [§11.2](#112-empty) — confirm tone matches.
-12. **Email domain + sender identity.** `/api/contact` route uses Resend ([memory: phase1_a state]); the rebrand's voice extends to transactional email — does sender name change? "Innovative Medical Staffing" or "IMS Team" or named human?
+| # | Question | Resolution |
+|---|---|---|
+| 1 | Display font: Fraunces (free) or Battlefin (paid ~$300)? | **Fraunces (free).** Upgrade to Battlefin in v2 if budget approved. |
+| 2 | Pastel accent saturation: Tolan-literal or desaturated? | **Tolan-literal** — `#F4B8C7` pink · `#9ED4D0` teal · `#B5D0A8` sage · `#D4C2EE` lavender. Reassess only if Claude Design flags a healthcare-context concern. |
+| 3 | Audience-pill icons or label-only? | **Label-only.** Locked v1. No icons. |
+| 4 | Hero secondary pills (positions 3-4)? | **None.** Hero gets exactly the two audience pills `(For Facilities)` + `(For Clinicians)`. Top nav already routes to "See open jobs" + "About". |
+| 5 | Loading mark SVG: who draws? | **Claude Design** proposes the hand-sketch IMS mark as part of build step 12. External illustrator only if Claude Design's draft doesn't land. |
+| 6 | Hero headline copy. | **`A More Personal Way to Staff Care.`** with "Personal" italic-emphasized in `--ink-aubergine`. |
+| 6b | Hero supporting line. | "We bring a boutique, family-style approach to locum staffing — connecting clinicians and facilities with the care, speed, and concierge support they deserve." |
+| 7 | `HomeFinalCta.astro` fate. | **Fold.** Eliminate the section. The aftermetoo warm footer with "Let's place you *somewhere good*." IS the final CTA. See build step 16. |
+| 8 | Wordmark treatment v1. | IMS mark SVG + "Innovative Medical Staffing" set in **Fraunces 700**. v2 may commission a custom display wordmark. |
+| 9 | CTR attribution on audience pills. | **Yes.** Add `data-cta="facilities"` and `data-cta="clinicians"` to the hero pills so Plausible can split audience clicks. |
+| 10 | Testimonials source. | **Pull from old iastaffing.com for v1 launch.** Plan a fresh-collection round post-launch for v2. Mark v1 testimonials as `data-source="legacy"` so they're easy to swap. |
+| 11 | `/jobs` empty-state copy. | Already drafted in [§11.2](#112-empty) — tone matches. Will only render until Webhook Key setup unblocks. |
+| 12 | Email sender identity for transactional. | **`IMS Team <Recruiter@imstaffing.com>`** for v1. The functional inbox already exists. Personalize to a named human ("Olive @ IMS" style) only when a specific person owns it. |
 
 ---
 
@@ -1131,8 +1140,9 @@ These need a Zach call or Claude Design proposal before locking.
 
 ## 21 · Changelog
 
+- **v2 · 2026-05-26** — all 12 open questions resolved by Zach (see [§19](#19--resolved-decisions-log-formerly-open-questions)). Hero headline + supporting line locked. Hero reduced from 4-pill row to 2-pill row. `HomeFinalCta.astro` marked for deletion. Email sender locked to `IMS Team <Recruiter@imstaffing.com>`. Testimonials sourced from legacy iastaffing.com for v1 with `data-source="legacy"`. Status flipped to READY FOR CLAUDE DESIGN HAND-OFF.
 - **v1 · 2026-05-26** — initial brief drafted from moodboard pick session. Verified ref-site hex values + fonts via Playwright. Reconciled with IAS Apple HIG + IMS Dark System predecessors.
 
 ---
 
-*Brief v1 · curated 2026-05-26 · awaiting Zach approval before Claude Design hand-off.*
+*Brief v2 · curated 2026-05-26 · all decisions locked · ready for Claude Design hand-off.*
