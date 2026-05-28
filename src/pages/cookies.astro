@@ -1,155 +1,23 @@
 ---
-// /cookies — cookies notice (spec §0.5.8 + plan T27 step 2).
-//
-// Phase 1.A stance per spec §0.5.8: Plausible Cloud (no tracking cookies,
-// no cross-site identifiers) replaces traditional analytics. No cookie
-// consent banner needed under EU PECR / GDPR for this telemetry.
-//
-// The single cookie we set is __cf_bm (Cloudflare bot-management functional
-// cookie), which is exempt from EU consent requirements as a strictly-
-// necessary cookie under PECR. This page explains both points.
-//
-// Zach legal review is the SG15 Pre-Launch Checklist gate (spec §10 item 5).
+/*
+ * /cookies — Chromia-Cream legal page (kit Legal.jsx, kind="cookies").
+ *
+ * FLAG (content pass): replaces the prior page's real cookie notice (Plausible
+ * stance, __cf_bm) with the kit's placeholder. Replicated per the exact-
+ * replication directive, gated from indexed production — restore real notice
+ * before launch.
+ */
 import MarketingLayout from '../layouts/MarketingLayout.astro';
 import SiteNav from '../components/nav/SiteNav.astro';
 import SiteFooter from '../components/footer/SiteFooter.astro';
-import ScrollReveal from '../components/util/ScrollReveal.astro';
-
-const LAST_UPDATED = '2026-05-07';
+import LegalPage from '../components/sections/LegalPage.astro';
 ---
 <MarketingLayout
   title="Cookies — Innovative Medical Staffing"
-  description="What cookies this site sets, why, and why there is no consent banner."
+  description="We use cookies for the boring necessary things — no tracking pixels, no ad networks."
+  inCard={false}
 >
   <SiteNav slot="nav" />
-
-  <ScrollReveal as="article" id="cookies" class="legal" aria-labelledby="cookies-heading">
-    <div class="legal__inner">
-      <p class="eyebrow">COOKIES</p>
-      <h1 id="cookies-heading" class="headline">Cookies Notice</h1>
-      <p class="lead">
-        We do not use tracking cookies, cross-site identifiers, or third-party
-        advertising tags. Site usage telemetry runs through Plausible Cloud,
-        which is cookieless by design.
-      </p>
-
-      <h2>What cookies are set</h2>
-      <p>
-        One cookie is set when you visit this site: <code>__cf_bm</code>.
-        It is set by Cloudflare for bot-management and security. Lifetime is
-        30 minutes from the most recent request. No personal data is stored
-        in the cookie body.
-      </p>
-      <p>
-        Under EU PECR, <code>__cf_bm</code> is treated as a strictly-necessary
-        functional cookie (it protects the site from automated abuse), so
-        consent is not required. It is exempt under the equivalent provisions
-        of US state-law frameworks for the same reason.
-      </p>
-
-      <h2>Why no consent banner</h2>
-      <p>
-        Consent banners are required when a site sets non-essential cookies
-        or uses cross-site tracking. We do neither. Site analytics run on
-        Plausible Cloud, which uses no cookies and no persistent identifiers
-        — visit counts are aggregated at the request level using a daily-
-        rotating salted hash that cannot identify a returning visitor.
-      </p>
-
-      <h2>Where to learn more</h2>
-      <p>
-        Our broader handling of personal data — what we collect through forms,
-        retention, deletion-request flow, and sub-processors — is documented
-        in the <a href="/privacy">Privacy Notice</a>. The Plausible Cloud
-        approach is documented at <a href="https://plausible.io/data-policy" rel="external noopener">plausible.io/data-policy</a>.
-      </p>
-
-      <p class="updated">Last updated {LAST_UPDATED}.</p>
-    </div>
-  </ScrollReveal>
-
+  <LegalPage kind="cookies" />
   <SiteFooter slot="footer" />
 </MarketingLayout>
-
-<style>
-  .eyebrow {
-    font-family: var(--font-display);
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--brand-gold-muted);
-    margin: 0 0 16px;
-  }
-  .legal {
-    padding: clamp(64px, 12vh, 120px) clamp(24px, 5vw, 80px);
-  }
-  .legal__inner {
-    max-width: 760px;
-    margin: 0 auto;
-  }
-  .legal .headline {
-    font-family: var(--font-display);
-    font-size: clamp(40px, 6vw, 56px);
-    line-height: 1.1;
-    color: var(--ink-on-cream);
-    margin: 0 0 24px;
-    letter-spacing: -0.01em;
-  }
-  .legal .lead {
-    font-family: var(--font-body);
-    font-size: 18px;
-    line-height: 1.6;
-    color: var(--ink-on-cream-3);
-    margin: 0 0 40px;
-    max-width: 64ch;
-  }
-  .legal h2 {
-    font-family: var(--font-display);
-    font-size: clamp(22px, 2.6vw, 28px);
-    line-height: 1.25;
-    color: var(--ink-on-cream);
-    margin: 40px 0 12px;
-    letter-spacing: -0.005em;
-  }
-  .legal p {
-    font-family: var(--font-body);
-    font-size: 16px;
-    line-height: 1.65;
-    color: var(--ink-on-cream-3);
-    margin: 0 0 12px;
-    max-width: 64ch;
-  }
-  .legal a {
-    color: var(--brand-navy);
-    text-decoration: none;
-    border-bottom: 1px solid var(--brand-navy);
-    padding-bottom: 1px;
-    transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
-  }
-  .legal a:hover {
-    color: var(--brand-blue-deep);
-    border-color: var(--brand-blue-deep);
-  }
-  .legal a:focus-visible {
-    outline: 2px solid var(--brand-navy);
-    outline-offset: 3px;
-    border-color: transparent;
-  }
-  .legal code {
-    font-family: var(--mono);
-    font-size: 14px;
-    color: var(--ink-on-cream);
-    background: color-mix(in srgb, var(--ink-on-cream) 5%, transparent);
-    padding: 1px 6px;
-    border-radius: 4px;
-  }
-  .updated {
-    margin-top: 56px;
-    color: var(--ink-on-cream-2);
-    font-size: 14px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .legal a { transition: none; }
-  }
-</style>

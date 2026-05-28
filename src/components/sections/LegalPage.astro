@@ -1,0 +1,94 @@
+---
+/*
+ * LegalPage — cream legal-content layout (kit Legal.jsx). Renders Privacy,
+ * Terms, or Cookies by `kind`. Styling from kit.css (.legal-page*). The kit's
+ * <main> wrapper is dropped (MarketingLayout provides <main id="main">); the
+ * .legal-page class moves to a wrapping <div>.
+ *
+ * NOTE (content pass): placeholder emails (privacy@imsmed.example /
+ * legal@imsmed.example) are kit demo content — replicated per the
+ * exact-replication directive; reconcile with real addresses later.
+ */
+interface Props { kind: 'privacy' | 'terms' | 'cookies'; }
+const { kind } = Astro.props;
+
+const LEGAL_CONTENT = {
+  privacy: {
+    eyebrow: 'Last updated · January 2026',
+    title: { lead: 'Your information,', em: 'handled with care', trail: '.' },
+    intro: "Innovative Medical Staffing collects only what's needed to match clinicians with assignments and to support facilities through the credentialing process. We don't sell your data. We don't share it with anyone outside the staffing relationship without your consent.",
+    sections: [
+      { h: 'What we collect', body: 'For clinicians: name, contact details, license numbers, work history, credentialing documents, references, and the assignment preferences you share with your account lead. For facilities: organization details, billing contacts, EMR notes, and the role requirements you submit through staffing requests.' },
+      { h: 'How we use it', body: "To verify credentials with primary sources, present clinicians to facilities, manage assignments, process payroll and invoicing, and stay in touch about new opportunities. That's the full list." },
+      { h: 'Who can see it', body: 'Your dedicated account lead and the credentialing team. Facilities only see the candidates we present to them, and only the information clinicians have agreed to share. We use a small number of vetted vendors (payroll, e-signature, background checks) under written confidentiality agreements.' },
+      { h: 'How long we keep it', body: "Clinician records are retained as required by Joint Commission and state staffing regulations, typically six years from the last assignment. You can request a copy of your file, or ask us to delete what we're not legally required to keep, by writing to privacy@imsmed.example." },
+      { h: 'Your rights', body: 'You can access, correct, or request deletion of your information at any time. We respond within 30 days. Residents of California, Colorado, Virginia, and similar jurisdictions have additional rights under state law, contact us for the full state-specific notice.' },
+    ],
+    contact: { lead: 'Questions or requests:', address: 'privacy@imsmed.example', mail: 'Privacy Office, Innovative Medical Staffing, Fort Worth, TX' },
+  },
+  terms: {
+    eyebrow: 'Last updated · January 2026',
+    title: { lead: 'The rules of the road,', em: 'in plain English', trail: '.' },
+    intro: 'These terms apply to anyone using imsmed.example or working with Innovative Medical Staffing under a clinician or facility agreement. Your separate signed agreement (clinician contract, master services agreement) controls if anything here conflicts.',
+    sections: [
+      { h: 'Using the site', body: "You can browse without signing in. When you submit a staffing request or apply to a role, you confirm the information you provide is accurate and you have the right to share it. Don't try to break, scrape, or abuse the site, we'll cut access if you do." },
+      { h: 'Clinician relationships', body: "Clinicians are independent contractors unless their signed agreement says otherwise. We don't supervise clinical work, the facility does. Each clinician is responsible for maintaining their own license, DEA, and continuing education in good standing." },
+      { h: 'Facility relationships', body: 'Facilities engage IMS under a Master Services Agreement that covers credentialing standards, billing terms (Net-15 default), malpractice coverage ($2M provided), and conversion fees. The MSA controls, this page is a summary.' },
+      { h: 'Content + intellectual property', body: "Site copy, designs, the IMS mark, and the surrounding visual system are owned by Innovative Medical Staffing. Don't repost them as your own. You retain ownership of anything you submit (resumes, role descriptions) and grant us a license to use it for the staffing relationship." },
+      { h: 'Limits + liability', body: "We provide staffing services, not medical advice. We're not liable for indirect, incidental, or consequential damages beyond the fees paid in the prior six months. Some jurisdictions don't allow these limits, where that applies, the limits don't apply." },
+      { h: 'Disputes', body: "We'd rather talk it out. Email legal@imsmed.example first. If that doesn't resolve it, disputes are heard in Tarrant County, Texas, under Texas law. Class actions are waived where allowed." },
+    ],
+    contact: { lead: 'Legal questions:', address: 'legal@imsmed.example', mail: 'Innovative Medical Staffing, Fort Worth, TX' },
+  },
+  cookies: {
+    eyebrow: 'Last updated · January 2026',
+    title: { lead: 'We use cookies for', em: 'the boring necessary things', trail: '.' },
+    intro: 'No tracking pixels following you around the internet. No advertising networks. The cookies we set keep the site working and help us see which pages people actually read.',
+    sections: [
+      { h: 'Strictly necessary', body: "Session cookies that keep you signed in if you log in to the clinician portal, and the security tokens that prevent form spam. These can't be turned off, the site won't work without them." },
+      { h: 'Analytics', body: 'A single first-party analytics cookie that records anonymized page views, session length, and which pages lead to staffing requests. We use the numbers to decide what to write more of. No individual identification, no cross-site tracking, no resale.' },
+      { h: "What we don't do", body: "We don't run third-party advertising cookies, social-media pixels, or behavioral targeting. We don't sell, share, or hand over cookie data to anyone outside our analytics provider." },
+      { h: 'Your choices', body: "Your browser controls cookies, you can block or delete them at any time. Disabling strictly-necessary cookies breaks login and forms. Disabling analytics doesn't break anything for you, it just means we see less about how the site is used." },
+    ],
+    contact: { lead: 'Questions:', address: 'privacy@imsmed.example', mail: 'Privacy Office, Innovative Medical Staffing, Fort Worth, TX' },
+  },
+} as const;
+
+const c = LEGAL_CONTENT[kind] ?? LEGAL_CONTENT.privacy;
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+---
+<div class="legal-page">
+  <div class="container">
+    <a class="legal-page__back" href="/">
+      <span aria-hidden="true">←</span> Back to home
+    </a>
+
+    <header class="legal-page__head">
+      <span class="eyebrow legal-page__eyebrow">
+        <span class="eyebrow__dot"></span>{c.eyebrow}
+      </span>
+      <h1 class="legal-page__title">
+        {c.title.lead} <span class="em">{c.title.em}</span>{c.title.trail}
+      </h1>
+      <p class="legal-page__intro">{c.intro}</p>
+    </header>
+
+    <div class="legal-page__body">
+      {c.sections.map((s, i) => (
+        <section class="legal-section">
+          <div class="legal-section__num"><span>{pad(i)}</span></div>
+          <div class="legal-section__content">
+            <h2 class="legal-section__h">{s.h}</h2>
+            <p class="legal-section__body">{s.body}</p>
+          </div>
+        </section>
+      ))}
+    </div>
+
+    <aside class="legal-page__contact">
+      <span class="eyebrow"><span class="eyebrow__dot"></span>{c.contact.lead}</span>
+      <a class="legal-page__contact-email" href={`mailto:${c.contact.address}`}>{c.contact.address}</a>
+      <p class="legal-page__contact-mail">{c.contact.mail}</p>
+    </aside>
+  </div>
+</div>
