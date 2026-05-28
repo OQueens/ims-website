@@ -1,0 +1,92 @@
+---
+/*
+ * ContactPanel — dark-ink contact-b panel + form (kit ContactForm.jsx).
+ * Reused on home (inline) + /contact. Styling from kit.css (.contact-b*).
+ *
+ * Zero-JS: the kit's client "sent" toggle is dropped; the form does a native
+ * POST to /api/contact. NOTE (Task 11): endpoint wiring + Turnstile + the
+ * success state are finalized on the /contact page and propagate here via this
+ * shared partial. Contact details (hello@imsstaffing.com, (817) 555-0140) are
+ * kit demo content — replicated per the exact-replication directive.
+ */
+---
+<section class="section section--cream contact-b-section" id="contact" aria-labelledby="contact-anchor">
+  <div class="container">
+    <div class="contact-b__panel">
+      <div class="contact-b__glow contact-b__glow--magenta" aria-hidden="true"></div>
+      <div class="contact-b__glow contact-b__glow--rose" aria-hidden="true"></div>
+
+      <div class="contact-b__left">
+        <span class="eyebrow contact-b__eyebrow">
+          <span class="eyebrow__dot"></span>Get in touch
+        </span>
+        <h2 class="contact-b__headline" id="contact-anchor">
+          Let's <span class="em">talk</span>.
+        </h2>
+        <p class="contact-b__sub">
+          A real conversation goes farther than a form. Pick whichever way is fastest, we'll be ready.
+        </p>
+
+        <dl class="contact-b__info">
+          <div class="contact-b__info-row">
+            <dt class="contact-b__info-label">Email</dt>
+            <dd class="contact-b__info-value">
+              <a href="mailto:hello@imsstaffing.com">hello@imsstaffing.com</a>
+              <span class="contact-b__info-meta">Replies within one business day</span>
+            </dd>
+          </div>
+          <div class="contact-b__info-row">
+            <dt class="contact-b__info-label">Phone</dt>
+            <dd class="contact-b__info-value">
+              <a href="tel:8175550140">(817) 555-0140</a>
+              <span class="contact-b__info-meta">Mon to Fri, 8a to 6p Central</span>
+            </dd>
+          </div>
+          <div class="contact-b__info-row">
+            <dt class="contact-b__info-label">Office</dt>
+            <dd class="contact-b__info-value">
+              Fort Worth, TX
+              <span class="contact-b__info-meta">One floor, about 40 people</span>
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <form class="contact-b__form" method="post" action="/api/contact">
+        <div class="contact-b__form-head">
+          <span class="contact-b__form-tag">Or send a note</span>
+          <span class="contact-b__form-meta">We read every one.</span>
+        </div>
+        <input class="input" name="name" placeholder="Your name" required aria-label="Your name" />
+        <input class="input" type="email" name="email" placeholder="Email" required aria-label="Email" />
+        <select class="input full" name="audience" required aria-label="I am a...">
+          <option value="" disabled selected>I am a…</option>
+          <option value="facility">Facility</option>
+          <option value="clinician">Clinician</option>
+          <option value="other">Something else</option>
+        </select>
+        <input class="input full" name="role" placeholder="Role or specialty (optional)" aria-label="Role or specialty" />
+        <textarea class="input full" name="message" rows="4" placeholder="What can we help with?" aria-label="What can we help with?"></textarea>
+        <div class="full">
+          <button class="pill pill--swing pill--swing--magenta" type="submit">
+            Send it
+            <span class="pill__puck" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Custom select chevron (kit inlined this as a style prop; moved to scoped
+   * CSS). Single-quoted SVG + %23 for the # so it survives the attribute. */
+  .contact-b__form select.input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%231F1A23' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+  }
+</style>

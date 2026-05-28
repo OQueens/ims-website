@@ -1,0 +1,39 @@
+---
+/*
+ * MarqueeStrip — scrolling "trusted at" facility strip (kit MarqueeStrip.jsx).
+ * Reused on home + facilities. The CSS marquee animation lives in kit.css
+ * (.marquee, .marquee__track). Pure CSS, no JS.
+ *
+ * NOTE (content pass): the facility names + "200+ facilities" are kit demo
+ * content (named health systems = fabricated client claims). Replicated per the
+ * exact-replication directive; gated from indexed production until reconciled.
+ */
+const facilities = [
+  'Mercy Health',
+  "St. Luke's · Houston",
+  'Cedars Network',
+  'Methodist · Dallas',
+  'Sutter Health',
+  'BJC HealthCare',
+  'CommonSpirit',
+  'Trinity Health',
+  'Sentara',
+  'Banner · Phoenix',
+];
+const items = [...facilities, ...facilities]; // double for a seamless loop
+---
+<section class="section section--sm marquee-section" aria-label="Facilities we've staffed">
+  <div class="marquee-eyebrow">
+    <span class="eyebrow"><span class="eyebrow__dot"></span>Trusted at 200+ facilities, in 47 states</span>
+  </div>
+  <div class="marquee">
+    <div class="marquee__track">
+      {items.map((f) => (
+        <span class="marquee__item">
+          <span class="marquee__dot" aria-hidden="true">✦</span>
+          {f}
+        </span>
+      ))}
+    </div>
+  </div>
+</section>

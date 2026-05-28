@@ -1023,6 +1023,33 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   transform: translateX(-50%) translateY(0) rotate(0);
 }
 
+/* Zero-JS rotating word (Astro port): the kit toggled .is-active via JS. Here
+ * the four stacked words cycle with a staggered keyframe — one visible at a
+ * time, 4 × 2.4s = 9.6s, with a 3% crossfade so there's no dead gap. Defined
+ * here (global) rather than in a scoped Astro <style> so it reliably matches
+ * the .map()-rendered word spans. */
+.hero__rotator-word {
+  animation: heroWordCycle 9.6s var(--ease-out) infinite;
+}
+.hero__rotator-word:nth-of-type(1) { animation-delay: 0s; }
+.hero__rotator-word:nth-of-type(2) { animation-delay: 2.4s; }
+.hero__rotator-word:nth-of-type(3) { animation-delay: 4.8s; }
+.hero__rotator-word:nth-of-type(4) { animation-delay: 7.2s; }
+@keyframes heroWordCycle {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(40%) rotate(-3deg); }
+  3%   { opacity: 1; transform: translateX(-50%) translateY(0) rotate(0); }
+  25%  { opacity: 1; transform: translateX(-50%) translateY(0) rotate(0); }
+  28%  { opacity: 0; transform: translateX(-50%) translateY(-40%) rotate(2deg); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-40%) rotate(2deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__rotator-word { animation: none; }
+  .hero__rotator-word:nth-of-type(1) {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) rotate(0);
+  }
+}
+
 /* ============================================================
  * Marquee strip
  * ============================================================ */
