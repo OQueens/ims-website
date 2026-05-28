@@ -1,0 +1,395 @@
+/* =============================================================
+ * IMS Design System — Colors, Type, Spacing, Motion
+ *
+ * Direction: "Chromia-Cream" — chromia chassis (dot-grid texture,
+ * dark-on-cream, floating pill nav, bracketed display serif,
+ * restraint) warmed by Tolan pastel character accents and
+ * aftermetoo organic coral/lavender blob decorations + warm
+ * teal/aubergine ink in the footer + contact form.
+ *
+ * Source: docs/brand/IMS-BRAND-BRIEF.md @ feat/ims-phase-1a-content
+ * Companion: uploads/IMS-DESIGN.md (project knowledge brief)
+ * ============================================================= */
+
+/* ---------- Fonts ---------- */
+/* Display: Battlefin (Pangram Pangram, paid — self-hosted /fonts/) for upright
+ *   weights 700–900; Fraunces handles italic emphasis since Battlefin ships
+ *   upright-only.
+ * Body:    Inter (variable). Mono: JetBrains Mono.
+ *
+ * Self-hosted to satisfy CSP `font-src 'self'` — the Google Fonts @import is
+ * blocked in production. Fraunces + Inter + JetBrains Mono are imported as
+ * @fontsource packages in MarketingLayout.astro; Battlefin + TAY are the
+ * @font-face blocks below, served from /fonts/.
+ */
+
+@font-face {
+  font-family: 'Battlefin';
+  src: url('/fonts/Battlefin-Bold.woff2') format('woff2'),
+       url('/fonts/Battlefin-Bold.woff') format('woff'),
+       url('/fonts/Battlefin-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Battlefin';
+  src: url('/fonts/Battlefin-Black.woff2') format('woff2'),
+       url('/fonts/Battlefin-Black.woff') format('woff'),
+       url('/fonts/Battlefin-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Legacy TAY @font-face blocks kept on disk per brand brief §2.
+ * They no longer load by default — declared here for parity with
+ * the marketing site's verify-build assertions. */
+@font-face {
+  font-family: 'TAY Basal';
+  src: url('/fonts/TAYBasalRegular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TAY Amaya';
+  src: url('/fonts/TAYAmaya.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ─────────── Color · Cream system (backgrounds) ─────────── */
+  --cream:           #F6EFE8;  /* page bg — between chromia & aftermetoo */
+  --cream-soft:      #FBF6EE;  /* cards, modals */
+  --cream-warm:      #F4ECDF;  /* footer, hero panels */
+  --bone:            #F4F2E7;  /* tolan accent bg */
+
+  /* ─────────── Color · Ink system (type + UI) ─────────── */
+  --ink:             #1F1A23;  /* deep plum-black — primary type, CTAs */
+  --ink-soft:        rgba(31, 26, 35, 0.68);  /* secondary body */
+  --ink-mute:        rgba(31, 26, 35, 0.42);  /* captions, eyebrows */
+  --ink-emphasis:    #C44569;  /* the one color-shifted word per headline.
+                                  Deep rose-magenta — high contrast against
+                                  cream surfaces. Swap to any --pop-* token
+                                  and it cascades everywhere. */
+
+  /* ─────────── Color · Pop accents (saturated, alive) ─────────── */
+  /* High-chroma accent system inspired by chromia.com / superlist.com.
+   * Tuned for color-theory harmony — each pop sits at ~75% saturation
+   * relative to its hue's peak, so the family reads as one palette rather
+   * than seven competing primaries. */
+  --pop-coral:       #F0846B;
+  --pop-rose:        #E891B0;
+  --pop-butter:      #F2C84B;
+  --pop-mint:        #7AC9A8;
+  --pop-sky:         #7BB8DC;
+  --pop-lilac:       #B5A0E8;
+  --pop-magenta:     #D14B6E;
+
+  /* Soft variants for large surfaces (sections, card bgs) */
+  --soft-coral:      #FBD8C8;
+  --soft-rose:       #F8DCE7;
+  --soft-butter:     #FAEBB8;
+  --soft-mint:       #D2EFE0;
+  --soft-sky:        #D2E5F2;
+  --soft-lilac:      #E0D6F5;
+
+  /* Legacy aliases — kept; now point at pop palette */
+  --accent-pink:     var(--pop-rose);
+  --accent-teal:     var(--pop-mint);
+  --accent-sage:     var(--pop-mint);
+  --accent-lavender: var(--pop-lilac);
+
+  /* ─────────── Color · Decorative blobs ─────────── */
+  --blob-coral:      var(--pop-coral);
+  --blob-lavender:   var(--pop-lilac);
+
+  /* ─────────── Color · IMS mark cyan (ISOLATED to logo) ─────────── */
+  --ims-cyan:        #59BFE7;
+
+  /* ─────────── Color · Lines, fills, shadows ─────────── */
+  --rule:            rgba(31, 26, 35, 0.10);
+  --rule-strong:     rgba(31, 26, 35, 0.20);
+  --shadow-pill:     0 6px 30px rgba(31, 26, 35, 0.18);
+  --shadow-card:     0 8px 32px rgba(31, 26, 35, 0.06);
+  --shadow-lift:     0 12px 40px rgba(31, 26, 35, 0.10);
+
+  /* ─────────── Texture · the chromia dot-grid signature ─────────── */
+  --dot-color:       rgba(31, 26, 35, 0.07);
+  --dot-pitch:       22px;
+  --dot-size:        1px;
+
+  /* ─────────── Semantic foreground / background aliases ─────────── */
+  --bg:              var(--cream);
+  --bg-soft:         var(--cream-soft);
+  --bg-warm:         var(--cream-warm);
+  --fg-1:            var(--ink);
+  --fg-2:            var(--ink-soft);
+  --fg-3:            var(--ink-mute);
+  --accent-ink:      var(--ink-aubergine);
+
+  /* Emphasis inks the kit references (link :hover, ::selection, .section--ink
+   * em) but never declares in :root. Mapped to the Magenta Noir family so they
+   * resolve; palette-active.css may further override. */
+  --ink-aubergine:   var(--pop-magenta);
+  --ink-teal:        var(--pop-magenta);
+
+  /* verify-build compatibility aliases (scripts/verify-build.mjs design-token
+   * assertions) — keep the build gate green after the dark→cream pivot. */
+  --text:            var(--ink);
+  --surface-card:    var(--cream-soft);
+  --surface-page:    var(--cream);
+  --brand-blue:      var(--ims-cyan);
+  --ink-on-cream:    var(--ink);
+  --ink-on-dark:     var(--cream-soft);
+
+  /* ─────────── Typography · families ─────────── */
+  /* Battlefin is upright-only. Italic emphasis in headlines uses
+   * --font-display-italic so it falls through to Fraunces, not
+   * synthetic-italic Battlefin. */
+  --font-display:        "Battlefin", "Fraunces", "Migra", Georgia, serif;
+  --font-display-italic: "Fraunces", "Migra", Georgia, serif;
+  --font-body:           "Inter", "Inter Variable", system-ui, -apple-system, sans-serif;
+  --font-mono:           "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ─────────── Typography · fluid display scale ─────────── */
+  --t-display-xxl:   clamp(56px, 9vw, 120px);  /* hero headline */
+  --t-display-xl:    clamp(44px, 6vw, 88px);   /* section anchors */
+  --t-display-l:     clamp(36px, 4vw, 64px);   /* major card headlines */
+  --t-display-m:     clamp(28px, 3vw, 44px);   /* sub-anchors */
+
+  /* ─────────── Typography · fixed scale ─────────── */
+  --t-h1:            32px;
+  --t-h2:            24px;
+  --t-h3:            20px;
+  --t-body-lg:       18px;
+  --t-body:          16px;
+  --t-body-sm:       14px;
+  --t-label:         12px;   /* tracked uppercase 0.16em only */
+
+  /* ─────────── Typography · tracking ─────────── */
+  --tracking-display: -0.02em;
+  --tracking-tight:   -0.01em;
+  --tracking-label:   0.16em;
+
+  /* ─────────── Spacing · 8-pt scale ─────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  24px;
+  --space-6:  32px;
+  --space-7:  48px;
+  --space-8:  64px;
+  --space-9:  96px;
+  --space-10: 128px;
+
+  /* ─────────── Radius ─────────── */
+  --radius-pill:     999px;     /* CTAs, badges, social, newsletter */
+  --radius-card:     16px;      /* generic card */
+  --radius-card-lg:  22px;      /* hero / audience / concierge panels */
+  --radius-input:    12px;      /* form fields */
+  --radius-modal:    20px;
+  --radius-xs:       8px;       /* badges, micro-controls */
+
+  /* ─────────── Motion · easing ─────────── */
+  --ease-out:        cubic-bezier(0.22, 0.61, 0.36, 1);  /* default */
+  --ease-snap:       cubic-bezier(0.32, 0.72, 0.00, 1);  /* page xitions */
+  --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);  /* reserved */
+  --dur-fast:        150ms;
+  --dur-base:        280ms;
+  --dur-slow:        520ms;
+
+  /* ─────────── Layout ─────────── */
+  --container-max:   1320px;
+  --container-pad:   32px;
+  --container-pad-mobile: 20px;
+}
+
+/* =============================================================
+ * Semantic resets — page background + dot-grid texture + type
+ * ============================================================= */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html,
+body { margin: 0; padding: 0; }
+
+body {
+  background-color: var(--cream);
+  background-image: radial-gradient(var(--dot-color) var(--dot-size), transparent var(--dot-size));
+  background-size: var(--dot-pitch) var(--dot-pitch);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  letter-spacing: var(--tracking-tight);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ─────────── Display headings ─────────── */
+h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--t-display-xxl);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-display);
+  color: var(--ink);
+  margin: 0;
+}
+h2, .h2 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--t-display-xl);
+  line-height: 1.00;
+  letter-spacing: var(--tracking-display);
+  color: var(--ink);
+  margin: 0;
+}
+h3, .h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--t-display-l);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-display);
+  color: var(--ink);
+  margin: 0;
+}
+h4, .h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--t-display-m);
+  line-height: 1.10;
+  color: var(--ink);
+  margin: 0;
+}
+h5, .h5 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--t-h2);
+  line-height: 1.20;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* Emphasis pattern: one accent-colored word per headline. NO italic, NO
+ * font swap — single typeface throughout. The emphasis hue is driven by
+ * --ink-emphasis so picking a color in one place cascades everywhere.
+ * Both <em> and <span class="em"> work as the emphasis hook. */
+h1, h2, h3, h4, .h1, .h2, .h3, .h4 {
+  font-synthesis: none;
+}
+h1 em, h2 em, h3 em, h4 em,
+.h1 em, .h2 em, .h3 em, .h4 em,
+h1 .em, h2 .em, h3 .em, h4 .em,
+.h1 .em, .h2 .em, .h3 .em, .h4 .em {
+  font-family: inherit;
+  font-style: normal;
+  font-weight: inherit;
+  color: var(--ink-emphasis);
+}
+
+p, .body {
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0;
+}
+.body-lg {
+  font-size: var(--t-body-lg);
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.body-sm {
+  font-size: var(--t-body-sm);
+  line-height: 1.50;
+  color: var(--ink-soft);
+}
+
+/* Tracked uppercase eyebrow / label */
+.eyebrow,
+.label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--t-label);
+  line-height: 1.40;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+small,
+.caption {
+  font-size: var(--t-body-sm);
+  color: var(--ink-mute);
+}
+
+code, kbd, samp, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+/* Tabular numerals on stats */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Links — body inline; pills/CTAs are .pill */
+a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--rule-strong);
+  transition: color var(--dur-fast) var(--ease-out),
+              text-decoration-color var(--dur-fast) var(--ease-out);
+}
+a:hover {
+  color: var(--ink-aubergine);
+  text-decoration-color: var(--ink-aubergine);
+}
+
+::selection {
+  background: var(--ink-aubergine);
+  color: var(--cream-soft);
+}
+
+img { max-width: 100%; display: block; }
+
+/* =============================================================
+ * Section variants (apply for warmth + separation; 2-3 per page)
+ * ============================================================= */
+.section--bone {
+  background-color: var(--bone);
+  background-image: radial-gradient(var(--dot-color) var(--dot-size), transparent var(--dot-size));
+  background-size: var(--dot-pitch) var(--dot-pitch);
+}
+.section--warm {
+  background-color: var(--cream-warm);
+  background-image: radial-gradient(var(--dot-color) var(--dot-size), transparent var(--dot-size));
+  background-size: var(--dot-pitch) var(--dot-pitch);
+}
+.section--ink {
+  background-color: var(--ink);
+  color: var(--cream-soft);
+}
+.section--ink h1 em,
+.section--ink h2 em,
+.section--ink h3 em,
+.section--ink h4 em { color: var(--accent-teal); }
+/* Respect reduced motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,136 @@
+/* ════════════════════════════════════════════════════════════════
+   Active palette · Nº 11 · MAGENTA NOIR
+   ════════════════════════════════════════════════════════════════
+   Foundation: Magenta Marine, with the marine blue replaced by
+   Coral Noir's true black. Cream + deep magenta + true black,
+   warmed with butter and rose, sparked once with IMS cyan.
+
+   Color roles (use these, not random hues):
+
+     MAGENTA  #C44569   primary emphasis, CTAs, accent text,
+                        marquee + cta band fills, eyebrow dots
+     BLACK    #0A0A0F   dark grounding: footer, contact panel,
+                        audience cards, dark sections
+     BUTTER   #E8C465   warm pop: badges, step accents, secondary
+                        chips. Soft variant #F2E5B8 for surfaces.
+     ROSE     #D88B9F   soft bridge: avatar fills, gentle pops,
+                        hero blobs, secondary cards
+     CYAN     #59BFE7   ONE ROLE ONLY: confirmation / success /
+                        "today" / check marks. Never decorative.
+     CREAM    #F4ECDF   page background
+
+   Pattern for groups of 3+ items (avatars, candidate cards,
+   step badges, value cards): rotate MAGENTA → BUTTER → ROSE.
+   Never repeat the same hue within a visible group.
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  --pop-coral: #C44569 !important;
+  --pop-rose: #D88B9F !important;
+  --pop-butter: #E8C465 !important;
+  --pop-mint: #0A0A0F !important;
+  --pop-sky: #2A2A2F !important;
+  --pop-lilac: #3A2D33 !important;
+  --pop-magenta: #C44569 !important;
+  --soft-coral: #F2D6DC !important;
+  --soft-rose: #EFD9DE !important;
+  --soft-butter: #F2E5B8 !important;
+  --soft-mint: #D4D2D5 !important;
+  --soft-sky: #D8D6D9 !important;
+  --soft-lilac: #DDD2D0 !important;
+  --cream: #F4ECDF !important;
+
+  /* Active palette tokens (use these in new code) */
+  --mn-magenta: #C44569;
+  --mn-black:   #0A0A0F;
+  --mn-butter:  #E8C465;
+  --mn-rose:    #D88B9F;
+  --mn-cyan:    #59BFE7;
+  --mn-cream:   #F4ECDF;
+}
+
+/* ── Section-level fills ─────────────────────────────────────── */
+.marquee-section.section--ink { background: var(--mn-magenta) !important; }
+.marquee-section .marquee__item { color: var(--mn-cream) !important; }
+.marquee-section .marquee__dot { color: var(--mn-black) !important; }
+.cta-band.section--butter { background: var(--mn-magenta) !important; }
+.cta-band__headline { color: var(--mn-cream) !important; }
+.cta-band__headline .em { color: var(--mn-black) !important; }
+.cta-band__sub { color: color-mix(in srgb, var(--mn-cream) 90%, transparent) !important; }
+.process-section.section--lilac { background: #F2D6DC !important; }
+.process-section .step__num { color: var(--mn-magenta) !important; }
+.audience-card--butter,
+.audience-card--mint { background: var(--mn-black) !important; color: var(--mn-cream) !important; }
+.audience-card--butter .audience-card__title,
+.audience-card--mint .audience-card__title { color: var(--mn-cream) !important; }
+.audience-card--butter .audience-card__body,
+.audience-card--mint .audience-card__body { color: color-mix(in srgb, var(--mn-cream) 90%, transparent) !important; }
+.audience-card--butter .audience-card__number { color: var(--mn-butter) !important; }
+.audience-card--mint   .audience-card__number { color: var(--mn-magenta) !important; }
+.footer-b { background: var(--mn-black) !important; }
+.footer-b__signoff span { color: var(--mn-magenta) !important; }
+.contact-panel { background: var(--mn-black) !important; }
+
+/* The contact form's left-side .em was previously routed by other rules.
+   For the new dark contact panel the magenta "talk" should stay magenta,
+   even when the global --ink-emphasis tweak fires. */
+.contact-b__headline .em { color: var(--mn-magenta) !important; }
+.contact-b__sent-mark { background: var(--mn-magenta) !important; color: var(--mn-cream) !important; }
+
+/* ── Cyan: ONE role ─────────────────────────────────────────────
+   Cyan is the brand spark, reserved for confirmation moments only.
+   Compare check, calendar "today", and form-success mark. */
+.compare__col--ims .compare__mark--check { background: var(--mn-cyan) !important; color: var(--mn-black) !important; }
+.cal-mock__cell.is-mark { background: var(--mn-cyan) !important; color: var(--mn-black) !important; }
+.contact-b__sent-mark   { background: var(--mn-cyan) !important; color: var(--mn-black) !important; }
+
+/* ── Process Steps: each step gets its own hue ─────────────────
+   01 magenta · 02 butter · 03 rose. Avatars within Step 02 rotate
+   the same triad so no two read identical. */
+.proc-card--shortlist .proc-card__badge { background: var(--mn-butter) !important; color: var(--mn-black) !important; }
+.cand-card--1 .cand-card__avatar { background: var(--mn-magenta) !important; color: var(--mn-cream) !important; }
+.cand-card--2 .cand-card__avatar { background: var(--mn-butter)  !important; color: var(--mn-black) !important; }
+.cand-card--3 .cand-card__avatar { background: var(--mn-rose)    !important; color: var(--mn-black) !important; }
+/* Fallback for any other .cand-card__avatar */
+.cand-card__avatar { background: var(--mn-magenta); color: var(--mn-cream); }
+
+/* ── Contact form icons: removed in redesign. The new contact panel
+   uses typographic labels (Email/Phone/Office) instead of icon circles. */
+
+/* ── Pill puck (mint variant) ─────────────────────────────────── */
+.pill--swing--mint .pill__puck { background: var(--mn-butter) !important; color: var(--mn-black) !important; }
+
+/* ── Stat chips on the dark band ──────────────────────────────── */
+.section--ink .statchip__num--coral  { color: var(--mn-magenta) !important; }
+.section--ink .statchip__num--butter { color: var(--mn-butter)  !important; }
+.section--ink .statchip__num--mint   { color: var(--mn-cyan)    !important; }
+.section--ink .statchip__num--lilac  { color: var(--mn-rose)    !important; }
+
+/* ── Step / value-card / hero accents ─────────────────────────── */
+.step--mint  .step__num { color: var(--mn-butter) !important; }
+.step--lilac .step__num { color: var(--mn-rose)   !important; }
+.value-card--mint { border-top-color: var(--mn-rose) !important; }
+.hero__blob--lilac { background: var(--mn-rose) !important; }
+
+/* ── Catch-all: inline styles using --pop-mint/lilac/sky ──────
+   Many components inline-set the old token. Re-route to palette. */
+[style*="background: var(--pop-mint)"],
+[style*="background:var(--pop-mint)"]   { background: var(--mn-butter)  !important; }
+[style*="background: var(--pop-lilac)"],
+[style*="background:var(--pop-lilac)"]  { background: var(--mn-rose)    !important; }
+[style*="background: var(--pop-sky)"],
+[style*="background:var(--pop-sky)"]    { background: #B8B5B0 !important; }
+
+/* ── Page-variations: class-based overrides ──────────────────── */
+.ja__job-spec--emergency  { background: var(--mn-butter)  !important; color: var(--mn-black) !important; }
+.ja__job-spec--surgery    { background: var(--mn-rose)    !important; }
+.ja__job-spec--internal   { background: #B8B5B0 !important; color: var(--mn-black) !important; }
+.jc__pin--mint            { background: var(--mn-butter)  !important; color: var(--mn-black) !important; }
+.jc__pin--lilac           { background: var(--mn-rose)    !important; }
+.jc__pin--sky             { background: #B8B5B0 !important; color: var(--mn-black) !important; }
+.au__pillar--03           { border-top-color: var(--mn-rose) !important; }
+.au__stat-num--mint       { color: var(--mn-magenta) !important; }
+.au__stat-num--lilac      { color: var(--mn-rose) !important; }
+.aud-c__card--cli         { background: var(--mn-butter) !important; }
+.proc-b__row--02 .proc-b__node { background: var(--mn-butter) !important; color: var(--mn-black) !important; }
+.proc-c__card--03 .proc-c__num { color: var(--mn-butter) !important; }
