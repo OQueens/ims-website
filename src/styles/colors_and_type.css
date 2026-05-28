@@ -150,9 +150,12 @@
   /* Battlefin is upright-only. Italic emphasis in headlines uses
    * --font-display-italic so it falls through to Fraunces, not
    * synthetic-italic Battlefin. */
-  --font-display:        "Battlefin", "Fraunces", "Migra", Georgia, serif;
-  --font-display-italic: "Fraunces", "Migra", Georgia, serif;
-  --font-body:           "Inter", "Inter Variable", system-ui, -apple-system, sans-serif;
+  /* @fontsource registers the variable families as "… Variable" — list those
+   * first so the self-hosted webfont wins over any system-installed "Inter"/
+   * "Fraunces". The bare names are kept as fallbacks. */
+  --font-display:        "Battlefin", "Fraunces Variable", "Fraunces", "Migra", Georgia, serif;
+  --font-display-italic: "Fraunces Variable", "Fraunces", "Migra", Georgia, serif;
+  --font-body:           "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
   --font-mono:           "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* ─────────── Typography · fluid display scale ─────────── */
