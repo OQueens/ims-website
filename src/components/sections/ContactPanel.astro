@@ -9,6 +9,12 @@
  * shared partial. Contact details (hello@imsstaffing.com, (817) 555-0140) are
  * kit demo content — replicated per the exact-replication directive.
  */
+interface Props {
+  /** Heading tag for the panel title. Home renders it as a sub-section (h2);
+   *  /contact renders it as the page title (h1). Default h2. */
+  as?: 'h1' | 'h2';
+}
+const { as: Heading = 'h2' } = Astro.props;
 ---
 <section class="section section--cream contact-b-section" id="contact" aria-labelledby="contact-anchor">
   <div class="container">
@@ -20,9 +26,9 @@
         <span class="eyebrow contact-b__eyebrow">
           <span class="eyebrow__dot"></span>Get in touch
         </span>
-        <h2 class="contact-b__headline" id="contact-anchor">
+        <Heading class="contact-b__headline" id="contact-anchor">
           Let's <span class="em">talk</span>.
-        </h2>
+        </Heading>
         <p class="contact-b__sub">
           A real conversation goes farther than a form. Pick whichever way is fastest, we'll be ready.
         </p>

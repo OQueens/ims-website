@@ -165,8 +165,8 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
 </MarketingLayout>
 
 <style>
-  body { background: var(--cream); overflow-x: clip; }
-
+  /* Page-wide body bg + overflow-x:clip come from kit.css; no scoped body{}
+   * rule here (Astro mangles the `body` selector so it never matches). */
   /* Atmospheric blobs */
   .atmosphere { position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(120px); }
   .atmosphere--lilac { width: 600px; height: 600px; background: var(--pop-lilac); opacity: 0.14; top: 20vh; right: -200px; animation: blobFloatA 28s ease-in-out infinite; }

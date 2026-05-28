@@ -177,17 +177,17 @@ const hintList = [
           <div class="jb-b__search-hints">
             <span class="jb-b__search-hints-label">Try:</span>
             {hintList.map((h) => (
-              <span class="jb-b__search-hint" data-q={h}>{h}</span>
+              <button type="button" class="jb-b__search-hint" data-q={h}>{h}</button>
             ))}
           </div>
         )}
       </div>
 
       {specialtiesPresent.length > 0 && (
-        <div class="jb-b__chips" id="jobs-chips">
-          <span class="jb-b__chip jb-b__chip--active" data-spec="all">All · <span data-count="all">{totalCount}</span></span>
+        <div class="jb-b__chips" id="jobs-chips" role="group" aria-label="Filter jobs by specialty">
+          <button type="button" class="jb-b__chip jb-b__chip--active" data-spec="all" aria-pressed="true">All · <span data-count="all">{totalCount}</span></button>
           {specialtiesPresent.map((s) => (
-            <span class="jb-b__chip" data-spec={s}>{specialtyLabel(s)}</span>
+            <button type="button" class="jb-b__chip" data-spec={s} aria-pressed="false">{specialtyLabel(s)}</button>
           ))}
         </div>
       )}
@@ -276,7 +276,7 @@ const hintList = [
   .jb-b__search-btn:hover { background: var(--ink-emphasis); transform: translateX(2px); }
   .jb-b__search-hints { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: var(--space-3); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--ink-mute); }
   .jb-b__search-hints-label { color: var(--ink-mute); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-  .jb-b__search-hint { padding: 4px 10px; border-radius: 999px; background: rgba(31,26,35,0.06); color: var(--ink); cursor: pointer; transition: background 160ms; }
+  .jb-b__search-hint { font: inherit; letter-spacing: inherit; border: none; padding: 4px 10px; border-radius: 999px; background: rgba(31,26,35,0.06); color: var(--ink); cursor: pointer; transition: background 160ms; }
   .jb-b__search-hint:hover { background: var(--pop-butter); }
 
   .jb-b__empty { max-width: 880px; margin: var(--space-7) auto; padding: var(--space-7) var(--space-6); text-align: center; background: var(--cream-soft); border: 1px dashed var(--rule); border-radius: 24px; display: none; }
@@ -382,8 +382,12 @@ const hintList = [
     });
     chips?.querySelectorAll<HTMLElement>('.jb-b__chip').forEach((chip) => {
       chip.addEventListener('click', () => {
-        chips.querySelectorAll('.jb-b__chip').forEach((c) => c.classList.remove('jb-b__chip--active'));
+        chips.querySelectorAll('.jb-b__chip').forEach((c) => {
+          c.classList.remove('jb-b__chip--active');
+          c.setAttribute('aria-pressed', 'false');
+        });
         chip.classList.add('jb-b__chip--active');
+        chip.setAttribute('aria-pressed', 'true');
         activeSpec = chip.dataset.spec || 'all';
         applyFilter();
       });

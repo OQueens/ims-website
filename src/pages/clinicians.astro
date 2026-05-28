@@ -185,30 +185,12 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
 </MarketingLayout>
 
 <style>
-  body { background: var(--cream); overflow-x: clip; }
-
   /* ============================================================
    * Seamless flow, cream throughout, color via cards, atmospheric blobs.
+   * Page-wide body bg + overflow-x:clip come from kit.css; no scoped body{}
+   * rule here (Astro mangles the `body` selector so it never matches).
+   * (Marquee CSS dropped — clinicians has no marquee section.)
    * ============================================================ */
-  .marquee-section.section--ink {
-    background: var(--ink) !important;
-    color: var(--cream-soft) !important;
-    padding: var(--space-7) 0 !important;
-  }
-  .marquee-section .eyebrow { color: rgba(251, 246, 238, 0.5) !important; }
-  .marquee-section .marquee-eyebrow {
-    text-align: center;
-    margin-bottom: var(--space-4);
-    max-width: none;
-    padding: 0 var(--container-pad);
-  }
-  .marquee-section .marquee {
-    max-width: none;
-    background: transparent;
-    border-radius: 0;
-    padding: 0;
-  }
-  .marquee-section .marquee__item { color: var(--cream-soft); }
 
   /* Variation A · mint hero: mint card on cream */
   .ca__hero { background: transparent !important; padding: var(--space-7) 0 !important; }
