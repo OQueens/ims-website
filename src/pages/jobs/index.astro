@@ -1,22 +1,21 @@
 ---
 /**
- * /jobs — Open opportunities listing.
+ * /jobs — Open opportunities. Chromia-Cream "jb-b" card-grid design (kit
+ * page-variations/jobs.html, pick B) fed by the REAL Supabase ims_jobs feed.
  *
- * Data source: Supabase ims_jobs WHERE status='active'.
- * Populated by the LocumSmart webhook receiver at src/pages/api/locumsmart-webhook.ts;
- * see migrations/20260508_ims_jobs_table.sql for the row shape + CHECK constraints.
+ * Data source: Supabase ims_jobs WHERE status='active' (LocumSmart webhook
+ * receiver at src/pages/api/locumsmart-webhook.ts). SSR (prerender=false) so LS
+ * events surface without a rebuild; routes through _worker.js.
  *
- * Render mode: SSR (prerender=false) so LS events surface without a rebuild.
- * The route flows through _worker.js; on Pages preview/production
- * Astro.locals.runtime.env exposes SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.
+ * Per the exact-replication directive the LAYOUT is the kit's; per the
+ * jobs-specific directive the DATA is real (NOT the kit's fake "124
+ * assignments"). The kit cards show fabricated pay/schedule/openings — the feed
+ * has none, so we show real fields only (specialty, location, length, call,
+ * coverage) and "Rate on request" (no fabricated numbers).
  *
- * Public/internal boundary (schema design): facility_name is INTERNAL data
- * and is NEVER read by this page. The /jobs headline always renders
- * public_facility_label (derived by the receiver via derivePublicFacilityLabel).
- * The schema's facility_name_public clearance flag is intentionally ignored
- * here — see facilityHeadline below for the sticky-clearance rationale.
+ * Public/internal boundary preserved: facility_name is INTERNAL and never read;
+ * the card always renders public_facility_label (see facilityLabel below).
  */
-
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
 import SiteNav from '../../components/nav/SiteNav.astro';
 import SiteFooter from '../../components/footer/SiteFooter.astro';
@@ -53,11 +52,10 @@ if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
     const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    // LIMIT 1000 matches PostgREST default server max — Phase 1.A scale is
-    // tens-to-low-hundreds of active assignments at any time, so a single
-    // page fetches the whole list. Beyond 1000 active rows the filter rail
-    // also starts truncating; Phase 1.5 adds range pagination if scale
-    // exceeds the bound. Spec §3.1 explicitly defers search to Phase 1.5.
+    // LIMIT 1000 matches PostgREST default server max — Phase 1.A volume is
+    // tens-to-low-hundreds of active assignments, so one page fetches the whole
+    // list. Beyond 1000 the chip rail also truncates; range pagination is a
+    // later concern.
     const { data, error } = await supabase
       .from('ims_jobs')
       .select(
@@ -75,455 +73,320 @@ if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error('[/jobs] supabase client crash:', e);
   }
 } else {
-  console.warn('[/jobs] env not configured — rendering empty grid');
+  console.warn('[/jobs] env not configured — rendering empty state');
 }
 
-const specialtiesPresent = [...new Set(jobs.map((j) => j.specialty_slug))].sort();
-const statesPresent = [
-  ...new Set(jobs.map((j) => j.facility_state).filter((s): s is string => !!s)),
-].sort();
 const totalCount = jobs.length;
 
 const specialtyLabel = (s: string) =>
   s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-// length_category enum from the schema: short | medium | long | ongoing | NULL.
-// Filter UI exposes short/medium/long only — fold 'ongoing' into 'long' for
-// the data attribute so the "12+ weeks" checkbox captures open-ended assignments
-// alongside bucketed-long. NULL (start_date present but end_date absent and
-// vice-versa edge cases) renders no data-length so it shows only when no
-// length filter is active.
-const lengthDataAttr = (c: string | null): string => (c === 'ongoing' ? 'long' : c ?? '');
+// Distinct specialties present, for the filter chips.
+const specialtiesPresent = [...new Set(jobs.map((j) => j.specialty_slug))].sort();
+
+// Map a specialty slug to one of the kit's soft card tints; cycle for any slug
+// not in the canonical map so every card gets a stable colour.
+const SPEC_TINT: Record<string, string> = {
+  anesthesia: 'coral',
+  'ob-gyn': 'rose',
+  obgyn: 'rose',
+  urology: 'butter',
+  emergency: 'mint',
+  'emergency-medicine': 'mint',
+  'internal-medicine': 'sky',
+  hospitalist: 'sky',
+  surgery: 'lilac',
+  'general-surgery': 'lilac',
+  radiology: 'coral',
+  psychiatry: 'butter',
+};
+const TINTS = ['coral', 'rose', 'butter', 'mint', 'sky', 'lilac'];
+const tintFor = (slug: string, i: number) => SPEC_TINT[slug] ?? TINTS[i % TINTS.length];
+
 const lengthDisplay = (c: string | null): string =>
   c ? c.charAt(0).toUpperCase() + c.slice(1) : '';
 
-const facilityHeadline = (j: JobRow): string => {
-  // Always render public_facility_label — the schema clearance flag
-  // facility_name_public is intentionally NOT consulted here. The flag is
-  // recruiter-owned (sticky across LS updates), but facility_name itself
-  // overwrites on every LS event. A prior clearance for "Hospital A" would
-  // therefore expose "Hospital B" the next time LS routes the assignment
-  // through the same row. The fallback default ('Healthcare Facility') only
-  // fires for the admin-set-NULL edge case; the receiver's
-  // derivePublicFacilityLabel always emits a non-null value.
-  const label = j.public_facility_label ?? 'Healthcare Facility';
-  const locTail = [j.facility_city, j.facility_state].filter(Boolean).join(', ');
-  return locTail ? `${label} · ${locTail}` : label;
+const locationTitle = (j: JobRow): string => {
+  const loc = [j.facility_city, j.facility_state].filter(Boolean).join(', ');
+  return loc || j.public_facility_label || 'Nationwide';
 };
 
-const bodyParts = (j: JobRow): string =>
-  [j.call_type, j.coverage_type].filter(Boolean).join(' · ');
+const facilityLabel = (j: JobRow): string => j.public_facility_label ?? 'Healthcare facility';
 
-// jobTitle is the denormalized string the ApplyModal will display in confirmation
-// + the recruiter email subject (per spec §3.3). Specialty alone is informative
-// enough — the modal composes richer text from data-state + data-job-ref.
-const cardTitle = (j: JobRow): string =>
-  j.specialty_name ?? specialtyLabel(j.specialty_slug);
+// Lower-cased haystack for the client search (mirrors the kit's tokenized match).
+const keywords = (j: JobRow): string =>
+  [
+    j.specialty_slug,
+    j.specialty_name,
+    j.facility_city,
+    j.facility_state,
+    j.public_facility_label,
+    j.length_category,
+    j.call_type,
+    j.coverage_type,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+// Up to 4 search hints derived from real data (specialty labels first, then
+// states present). Empty when the feed is dormant.
+const hintList = [
+  ...specialtiesPresent.slice(0, 3).map(specialtyLabel),
+  ...[...new Set(jobs.map((j) => j.facility_state).filter((s): s is string => !!s))].slice(0, 2),
+].slice(0, 4);
 ---
 <MarketingLayout
-  title="Open Roles · Innovative Medical Staffing"
-  description={`${totalCount} open opportunities across the IMS network.`}
-  noindex={false}
+  title="Open Roles — Innovative Medical Staffing"
+  description={`${totalCount} open locum assignments across the IMS network. Search by city, state, or specialty.`}
   inCard={false}
 >
   <SiteNav slot="nav" />
-  <div class="card-wrap">
-    <header class="page-hero">
-      <h1>Open opportunities</h1>
-      <p>{totalCount} active roles. Filter by specialty, state, or length.</p>
-    </header>
 
-    <div class="layout">
-      <aside class="filter-rail" aria-label="Filters">
-        <section>
-          <h2>Specialty</h2>
-          <ul role="group" aria-label="Filter by specialty">
-            {specialtiesPresent.map((s) => (
-              <li>
-                <label>
-                  <input type="checkbox" name="specialty" value={s} />
-                  <span>{specialtyLabel(s)}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section>
-          <h2>State</h2>
-          <ul role="group" aria-label="Filter by state">
-            {statesPresent.map((st) => (
-              <li><label><input type="checkbox" name="state" value={st} /> <span>{st}</span></label></li>
-            ))}
-          </ul>
-        </section>
-        <section>
-          <h2>Length</h2>
-          <ul role="group" aria-label="Filter by length">
-            <li><label><input type="checkbox" name="length" value="short" /> &lt; 4 weeks</label></li>
-            <li><label><input type="checkbox" name="length" value="medium" /> 4–12 weeks</label></li>
-            <li><label><input type="checkbox" name="length" value="long" /> 12+ weeks</label></li>
-          </ul>
-        </section>
-        <button type="button" class="reset" id="filter-reset">Reset filters</button>
-      </aside>
+  <div class="variation">
+    <section class="jb__hero">
+      <div class="container">
+        <span class="jb__hero-eyebrow">{totalCount} open {totalCount === 1 ? 'assignment' : 'assignments'} · live feed</span>
+        <h1 class="jb__hero-title">Browse <span>open roles</span>.</h1>
+        <p class="jb__hero-sub">Live feed from LocumSmart, curated by a recruiter. Search by city, state, or specialty.</p>
+      </div>
 
-      <section class="results" id="results-grid" aria-live="polite">
-        {jobs.map((j) => (
+      <div class="jb-b__search">
+        <form class="jb-b__search-shell" id="jobs-search-form">
+          <span class="jb-b__search-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-3.5-3.5"></path>
+            </svg>
+          </span>
+          <input
+            id="jobs-search-input"
+            class="jb-b__search-input"
+            type="search"
+            placeholder="Try a city, state, or specialty…"
+            autocomplete="off"
+            aria-label="Search open jobs by city, state, or specialty"
+          />
+          <button type="button" id="jobs-search-clear" class="jb-b__search-clear" aria-label="Clear search">×</button>
+          <button type="submit" class="jb-b__search-btn">
+            Search
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+        {hintList.length > 0 && (
+          <div class="jb-b__search-hints">
+            <span class="jb-b__search-hints-label">Try:</span>
+            {hintList.map((h) => (
+              <span class="jb-b__search-hint" data-q={h}>{h}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {specialtiesPresent.length > 0 && (
+        <div class="jb-b__chips" id="jobs-chips">
+          <span class="jb-b__chip jb-b__chip--active" data-spec="all">All · <span data-count="all">{totalCount}</span></span>
+          {specialtiesPresent.map((s) => (
+            <span class="jb-b__chip" data-spec={s}>{specialtyLabel(s)}</span>
+          ))}
+        </div>
+      )}
+    </section>
+
+    <section class="jb-section">
+      <div class="jb-b__grid" id="jobs-grid">
+        {jobs.map((j, i) => (
           <article
-            class="job-card"
-            data-job-ref={j.id}
-            data-job-title={cardTitle(j)}
-            data-specialty={j.specialty_slug}
-            data-state={j.facility_state ?? ''}
-            data-length={lengthDataAttr(j.length_category)}
+            class={`jb-b__card jb-b__card--${tintFor(j.specialty_slug, i)}`}
+            data-spec={j.specialty_slug}
+            data-state={(j.facility_state ?? '').toLowerCase()}
+            data-city={(j.facility_city ?? '').toLowerCase()}
+            data-keywords={keywords(j)}
           >
-            <div class="eyebrow">
-              <span class="specialty">{specialtyLabel(j.specialty_slug)}</span>
-              {j.length_category && <span class="length">{lengthDisplay(j.length_category)}</span>}
+            <span class="jb-b__card-arrow" aria-hidden="true">→</span>
+            <span class="jb-b__card-spec">{j.specialty_name ?? specialtyLabel(j.specialty_slug)}</span>
+            <h3 class="jb-b__card-title">{locationTitle(j)}</h3>
+            <div class="jb-b__card-pay jb-b__card-pay--text">Rate on request</div>
+            <div class="jb-b__card-meta">
+              <div class="jb-b__card-meta-row"><span>Facility</span><b>{facilityLabel(j)}</b></div>
+              {j.length_category && (
+                <div class="jb-b__card-meta-row"><span>Length</span><b>{lengthDisplay(j.length_category)}</b></div>
+              )}
+              {(j.call_type || j.coverage_type) && (
+                <div class="jb-b__card-meta-row"><span>Type</span><b>{[j.call_type, j.coverage_type].filter(Boolean).join(' · ')}</b></div>
+              )}
             </div>
-            <h3>{facilityHeadline(j)}</h3>
-            {bodyParts(j) && <p>{bodyParts(j)}</p>}
-            <p class="rate"><em>Rate on request</em></p>
-            <button class="apply-trigger" type="button" data-apply-trigger>Apply through IMS →</button>
           </article>
         ))}
-      </section>
-    </div>
+      </div>
 
-    <div id="empty-state" hidden>
-      <p>No openings match those filters. Tell us what you're looking for and we'll reach out when one opens.</p>
-      {/* Mini form per spec §3.1 — specialty + state + email. Posts to /api/contact at T34/T46 with intent=coverage. */}
-      <form id="empty-state-alert-form" class="empty-form" novalidate>
-        <label>
-          <span>Specialty</span>
-          <select name="specialty" required>
-            <option value="">Choose…</option>
-            {specialtiesPresent.map((s) => (
-              <option value={s}>{specialtyLabel(s)}</option>
-            ))}
-            <option value="other">Other / not listed</option>
-          </select>
-        </label>
-        <label>
-          <span>State</span>
-          <select name="state" required>
-            <option value="">Choose…</option>
-            {statesPresent.map((st) => (<option value={st}>{st}</option>))}
-            <option value="OPEN">Open / no preference</option>
-          </select>
-        </label>
-        <label>
-          <span>Email</span>
-          <input type="email" name="email" required maxlength="254" />
-        </label>
-        <input type="text" name="phone_alt" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true" />
-        {/* TurnstileWidget mounts here at T48; submit-handler wires to /api/contact at T34. */}
-        <button type="submit" class="submit-btn" disabled>Notify me when one opens</button>
-        <p class="form-status" role="status" aria-live="polite"></p>
-      </form>
-    </div>
+      <div class={`jb-b__empty${totalCount === 0 ? ' is-visible' : ''}`} id="jobs-empty">
+        <h3 class="jb-b__empty-title">No openings match that yet.</h3>
+        <p class="jb-b__empty-body">
+          Our roster is curated, not a job aggregator. If nothing here fits,
+          send us your CV anyway — your account lead will reach out as soon as
+          something opens.
+        </p>
+        <a class="pill pill--swing" href="/contact">
+          <span>Tell us what you're looking for</span><span class="pill__puck" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
   </div>
-
-  {/* T50 will mount ApplyModal here and T51 will wire .apply-trigger click handlers. */}
 
   <SiteFooter slot="footer" />
 </MarketingLayout>
 
-<style>
-  .card-wrap {
-    background: var(--surface-card);
-    color: var(--ink-on-cream);
-    border-radius: var(--r-card);
-    margin: clamp(20px, 4vw, 64px);
-    overflow: hidden;
-    padding: clamp(48px, 8vw, 96px) clamp(24px, 4vw, 64px);
+<!-- is:global — the job cards are rendered inside a {jobs.map()} expression, so
+     a scoped <style> can't reliably target them (same Astro scoping limitation
+     as the hero rotator). These .jb-b__/.jb__ classes are jobs-only, so global
+     scope is safe and deterministic. -->
+<style is:global>
+  /* Page-specific jb-b styles ported from the kit jobs.html (variation B).
+   * Shared atoms (.pill, .container, .eyebrow) resolve from kit.css. */
+  .jb__hero { padding: var(--space-9) 0 var(--space-6); text-align: center; }
+  .jb__hero-eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: var(--ink-mute); }
+  .jb__hero-title {
+    font-family: var(--font-display); font-weight: 900;
+    font-size: clamp(52px, 7vw, 112px); line-height: 0.94;
+    letter-spacing: -0.04em; color: var(--ink); margin: var(--space-3) auto var(--space-4);
+    max-width: 18ch;
   }
-  .page-hero h1 {
-    font-family: var(--font-display);
-    font-size: clamp(40px, 6vw, 64px);
-    line-height: 1.1;
-    margin: 0 0 16px;
+  .jb__hero-title span { color: var(--ink-emphasis); }
+  .jb__hero-sub { font-family: var(--font-body); font-size: 19px; line-height: 1.5; color: var(--ink-soft); max-width: 60ch; margin: 0 auto; }
+
+  .jb-section { padding: var(--space-7) 0; position: relative; }
+
+  .jb-b__search { max-width: 880px; margin: var(--space-5) auto var(--space-3); padding: 0 var(--container-pad); }
+  .jb-b__search-shell {
+    position: relative; display: flex; align-items: center;
+    background: var(--cream-soft); border: 1.5px solid var(--rule);
+    border-radius: 999px; padding: 6px 6px 6px 22px;
+    transition: border-color 200ms, box-shadow 200ms;
+    box-shadow: 0 8px 24px rgba(31,26,35,0.04);
   }
-  .page-hero p {
-    font-family: var(--font-body);
-    color: var(--ink-on-cream-2);
-    font-size: 17px;
-  }
-  .layout {
-    display: grid;
-    grid-template-columns: 240px 1fr;
-    gap: 48px;
-    margin-top: 48px;
-  }
-  .filter-rail {
-    position: sticky;
-    top: 96px;
-    align-self: start;
-    font-family: var(--font-body);
-  }
-  .filter-rail h2 {
-    font-family: var(--font-display);
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.10em;
-    margin: 24px 0 8px;
-    color: var(--ink-on-cream-2);
-  }
-  .filter-rail ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .filter-rail label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  .filter-rail .reset {
-    margin-top: 16px;
-    background: transparent;
-    border: 1px solid var(--border-strong-mkt);
-    border-radius: var(--r-pill-mkt);
-    padding: 8px 16px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 13px;
-    color: var(--ink-on-cream);
-  }
-  .results {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 24px;
-  }
-  .job-card {
-    border: 1px solid var(--border-hairline);
-    border-radius: 16px;
-    padding: 32px;
-    background: var(--surface-card-2);
-    transition: border-color 180ms ease-out, transform 180ms ease-out;
-  }
-  .job-card[hidden] { display: none !important; }
-  .job-card:hover {
-    /* Cyan accent border on hover — needs to be visible against the dark
-     * card surface. --brand-navy alias resolves to dark navy, which would
-     * disappear into the surface. Codex r2 fold (parallel fix for legacy
-     * /jobs CSS during the dark-system reskin). */
-    border-color: var(--ims-cyan-500);
-    transform: translateY(-1px);
-  }
-  .job-card .eyebrow {
-    font-family: var(--font-display);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 16px;
-  }
-  .job-card .eyebrow .specialty {
-    color: var(--brand-gold-muted);
-    margin-right: 12px;
-  }
-  .job-card .eyebrow .length {
-    color: var(--brand-teal);
-  }
-  .job-card h3 {
-    font-family: var(--font-display);
-    font-size: 24px;
-    margin: 0 0 12px;
-    line-height: 1.3;
-  }
-  .job-card p {
-    font-size: 15px;
-    margin: 0 0 8px;
-    color: var(--ink-on-cream-2);
-  }
-  .job-card .rate {
-    /* Cyan accent — needs contrast against dark card surface. */
-    color: var(--ims-cyan-400);
-    font-weight: 600;
-  }
-  .job-card .apply-trigger {
-    margin-top: 16px;
-    background: transparent;
-    /* Cyan outline button (was dark navy on cream). Patched for the
-     * dark-system reskin: outline must contrast against the dark card
-     * surface. Codex r2 fold. */
-    border: 1.5px solid var(--ims-cyan-500);
-    color: var(--ims-cyan-400);
-    padding: 10px 20px;
-    border-radius: var(--r-pill-mkt);
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 14px;
-  }
-  .job-card .apply-trigger:hover {
-    background: var(--ims-cyan-500);
-    color: var(--ims-navy-900);
-  }
-  #empty-state {
-    text-align: center;
-    padding: 96px 0;
-  }
-  .empty-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    max-width: 720px;
-    margin: 32px auto 0;
-    text-align: left;
-  }
-  .empty-form label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 14px;
-  }
-  .empty-form select,
-  .empty-form input[type="email"] {
-    border: 1px solid var(--border-strong-mkt);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-family: inherit;
-    font-size: 15px;
-    background: var(--surface-card-2);
-  }
-  .empty-form .honeypot {
-    position: absolute;
-    left: -9999px;
-    width: 1px;
-    height: 1px;
-  }
-  .empty-form .submit-btn {
-    grid-column: 1 / -1;
-    /* Cyan filled CTA — patched for dark-system reskin. Codex r2 fold. */
-    background: var(--ims-cyan-500);
-    color: var(--ims-navy-900);
-    border: none;
-    border-radius: var(--r-pill-mkt);
-    padding: 12px 24px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 15px;
-  }
-  .empty-form .submit-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  @media (max-width: 768px) {
-    .layout { grid-template-columns: 1fr; gap: 32px; }
-    .filter-rail { position: static; }
-  }
+  .jb-b__search-shell:focus-within { border-color: var(--ink); box-shadow: 0 12px 32px rgba(31,26,35,0.10); }
+  .jb-b__search-icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--ink-mute); display: inline-flex; align-items: center; justify-content: center; }
+  .jb-b__search-input { flex: 1; border: none; background: transparent; font-family: var(--font-body); font-size: 16px; font-weight: 500; color: var(--ink); padding: 14px; outline: none; }
+  .jb-b__search-input::placeholder { color: var(--ink-mute); font-weight: 400; }
+  .jb-b__search-clear { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; background: rgba(31,26,35,0.08); color: var(--ink); display: none; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; margin-right: 6px; }
+  .jb-b__search-shell.has-text .jb-b__search-clear { display: inline-flex; }
+  .jb-b__search-clear:hover { background: rgba(31,26,35,0.16); }
+  .jb-b__search-btn { border: none; cursor: pointer; background: var(--ink); color: var(--cream-soft); padding: 12px 22px; border-radius: 999px; font-family: var(--font-body); font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; transition: background 180ms, transform 180ms; }
+  .jb-b__search-btn:hover { background: var(--ink-emphasis); transform: translateX(2px); }
+  .jb-b__search-hints { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: var(--space-3); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--ink-mute); }
+  .jb-b__search-hints-label { color: var(--ink-mute); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+  .jb-b__search-hint { padding: 4px 10px; border-radius: 999px; background: rgba(31,26,35,0.06); color: var(--ink); cursor: pointer; transition: background 160ms; }
+  .jb-b__search-hint:hover { background: var(--pop-butter); }
+
+  .jb-b__empty { max-width: 880px; margin: var(--space-7) auto; padding: var(--space-7) var(--space-6); text-align: center; background: var(--cream-soft); border: 1px dashed var(--rule); border-radius: 24px; display: none; }
+  .jb-b__empty.is-visible { display: block; }
+  .jb-b__empty-title { font-family: var(--font-display); font-weight: 900; font-size: 28px; letter-spacing: -0.02em; color: var(--ink); margin: 0 0 var(--space-3); }
+  .jb-b__empty-body { font-family: var(--font-body); font-size: 15px; line-height: 1.55; color: var(--ink-soft); margin: 0 auto var(--space-4); max-width: 48ch; }
+  .jb-b__empty .pill { display: inline-flex; }
+
+  .jb-b__chips { max-width: 1280px; margin: var(--space-6) auto var(--space-5); padding: 0 var(--container-pad); display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .jb-b__chip { padding: 9px 18px; border-radius: 999px; font-family: var(--font-body); font-weight: 600; font-size: 13px; background: var(--cream-soft); border: 1px solid var(--rule); color: var(--ink); cursor: pointer; transition: all 200ms; }
+  .jb-b__chip:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(31,26,35,0.08); }
+  .jb-b__chip--active { background: var(--ink); color: var(--cream-soft); border-color: var(--ink); }
+
+  .jb-b__grid { max-width: 1280px; margin: 0 auto; padding: 0 var(--container-pad); display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+  @media (max-width: 900px) { .jb-b__grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .jb-b__grid { grid-template-columns: 1fr; } }
+  .jb-b__card { border-radius: 24px; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); transition: transform 280ms var(--ease-out), box-shadow 280ms, opacity 220ms; cursor: default; position: relative; overflow: hidden; min-height: 280px; }
+  .jb-b__card.is-hidden { display: none; }
+  .jb-b__card:hover { transform: translateY(-4px); box-shadow: 0 20px 48px rgba(31,26,35,0.12); }
+  .jb-b__card--coral { background: var(--soft-coral); }
+  .jb-b__card--rose { background: var(--soft-rose); }
+  .jb-b__card--butter { background: var(--soft-butter); }
+  .jb-b__card--mint { background: var(--soft-mint); }
+  .jb-b__card--sky { background: var(--soft-sky); }
+  .jb-b__card--lilac { background: var(--soft-lilac); }
+  .jb-b__card-spec { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .jb-b__card-spec::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
+  .jb-b__card-title { font-family: var(--font-display); font-weight: 900; font-size: 26px; line-height: 1.05; letter-spacing: -0.025em; color: var(--ink); margin: 0; }
+  .jb-b__card-pay { font-family: var(--font-display); font-weight: 900; font-size: 36px; line-height: 0.9; letter-spacing: -0.025em; color: var(--ink); font-variant-numeric: tabular-nums; margin: var(--space-2) 0; }
+  .jb-b__card-pay--text { font-size: 20px; font-family: var(--font-body); font-weight: 600; color: var(--ink-soft); letter-spacing: 0; }
+  .jb-b__card-meta { display: flex; flex-direction: column; gap: 4px; padding-top: var(--space-3); border-top: 1px solid rgba(31,26,35,0.15); margin-top: auto; }
+  .jb-b__card-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--ink); letter-spacing: 0.04em; }
+  .jb-b__card-meta-row b { font-weight: 700; text-align: right; }
+  .jb-b__card-arrow { position: absolute; top: var(--space-4); right: var(--space-4); width: 32px; height: 32px; border-radius: 999px; background: var(--ink); color: var(--cream-soft); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
 </style>
 
 <script>
-  const cards = Array.from(document.querySelectorAll<HTMLElement>('.job-card'));
-  const empty = document.getElementById('empty-state');
-  const checkboxes = document.querySelectorAll<HTMLInputElement>(
-    '.filter-rail input[type=checkbox]',
-  );
-  const reset = document.getElementById('filter-reset');
+  // Client filter (bundled, served from 'self' — CSP-clean; no inline handlers).
+  // Ported from the kit jobs.html: live text search + specialty chips over the
+  // server-rendered cards.
+  const input = document.getElementById('jobs-search-input') as HTMLInputElement | null;
+  const shell = document.getElementById('jobs-search-form');
+  const clear = document.getElementById('jobs-search-clear');
+  const grid = document.getElementById('jobs-grid');
+  const empty = document.getElementById('jobs-empty');
+  const chips = document.getElementById('jobs-chips');
+  const count = document.querySelector('[data-count="all"]');
 
-  function readUrlFilters() {
-    const p = new URL(window.location.href).searchParams;
-    return {
-      specialty: new Set(p.getAll('specialty')),
-      state: new Set(p.getAll('state')),
-      length: new Set(p.getAll('length')),
-    };
-  }
+  if (input && grid) {
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('.jb-b__card'));
+    const TOTAL = cards.length;
 
-  function applyFilters() {
-    const f = readUrlFilters();
-    let visible = 0;
-    for (const card of cards) {
-      const sp = card.dataset.specialty || '';
-      const st = card.dataset.state || '';
-      const ln = card.dataset.length || '';
-      const show =
-        (f.specialty.size === 0 || f.specialty.has(sp)) &&
-        (f.state.size === 0 || f.state.has(st)) &&
-        (f.length.size === 0 || f.length.has(ln));
-      card.hidden = !show;
-      if (show) visible++;
-    }
-    if (empty) empty.hidden = visible !== 0;
-  }
+    const tokenize = (s: string) =>
+      (s || '').toLowerCase().replace(/[^a-z0-9\- ]+/g, ' ').split(/\s+/).filter(Boolean);
 
-  function syncCheckboxesFromUrl() {
-    const f = readUrlFilters();
-    checkboxes.forEach((cb) => {
-      const set = f[cb.name as keyof typeof f];
-      cb.checked = !!set?.has(cb.value);
-    });
-  }
+    const haystack = (c: HTMLElement) =>
+      [c.dataset.spec, c.dataset.state, c.dataset.city, c.dataset.keywords, c.textContent]
+        .join(' ')
+        .toLowerCase();
 
-  function writeUrlFromCheckboxes() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('specialty');
-    url.searchParams.delete('state');
-    url.searchParams.delete('length');
-    checkboxes.forEach((cb) => {
-      if (cb.checked) url.searchParams.append(cb.name, cb.value);
-    });
-    history.replaceState({}, '', url.toString());
-  }
+    let activeSpec = 'all';
+    let query = '';
 
-  // Spec section 0.5.5: filtered URLs (any specialty/state/length param)
-  // flip the robots meta directive + retarget canonical to root /jobs.
-  // Prevents thin-content indexing of every filter combination.
-  // Symmetric: both branches set canonical explicitly so navigation between
-  // filtered and unfiltered states cannot leave stale metadata behind.
-  function updateRobotsMeta() {
-    const params = new URL(window.location.href).searchParams;
-    const isFiltered =
-      params.has('specialty') || params.has('state') || params.has('length');
-    const head = document.head;
-    let robots = head.querySelector<HTMLMetaElement>('meta[name="robots"]');
-    const can = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    // Always retarget canonical to the unfiltered /jobs URL — same value for
-    // both branches, since the canonical for the page is the search-less form.
-    if (can) {
-      const u = new URL(can.href);
-      u.search = '';
-      can.href = u.toString();
-    }
-    if (isFiltered) {
-      if (!robots) {
-        robots = document.createElement('meta');
-        robots.name = 'robots';
-        head.appendChild(robots);
+    function applyFilter() {
+      const qTokens = tokenize(query);
+      let visible = 0;
+      for (const c of cards) {
+        const specOk = activeSpec === 'all' || (c.dataset.spec || '') === activeSpec;
+        const hay = haystack(c);
+        const queryOk = qTokens.length === 0 || qTokens.every((t) => hay.includes(t));
+        const show = specOk && queryOk;
+        c.classList.toggle('is-hidden', !show);
+        if (show) visible++;
       }
-      robots.content = 'noindex,follow';
-    } else if (robots) {
-      robots.remove();
+      if (empty) empty.classList.toggle('is-visible', visible === 0);
+      if (count) count.textContent = String(activeSpec === 'all' && !query ? TOTAL : visible);
     }
-  }
 
-  syncCheckboxesFromUrl();
-  applyFilters();
-  updateRobotsMeta();
-  checkboxes.forEach((cb) =>
-    cb.addEventListener('change', () => {
-      writeUrlFromCheckboxes();
-      applyFilters();
-      updateRobotsMeta();
-    }),
-  );
-  reset?.addEventListener('click', () => {
-    checkboxes.forEach((cb) => {
-      cb.checked = false;
+    input.addEventListener('input', (e) => {
+      query = (e.target as HTMLInputElement).value.trim();
+      shell?.classList.toggle('has-text', query.length > 0);
+      applyFilter();
     });
-    writeUrlFromCheckboxes();
-    applyFilters();
-    updateRobotsMeta();
-  });
-  window.addEventListener('popstate', () => {
-    syncCheckboxesFromUrl();
-    applyFilters();
-    updateRobotsMeta();
-  });
+    clear?.addEventListener('click', () => {
+      input.value = '';
+      query = '';
+      shell?.classList.remove('has-text');
+      input.focus();
+      applyFilter();
+    });
+    shell?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      applyFilter();
+    });
+    document.querySelectorAll<HTMLElement>('.jb-b__search-hint').forEach((h) => {
+      h.addEventListener('click', () => {
+        input.value = h.dataset.q || '';
+        query = input.value;
+        shell?.classList.add('has-text');
+        applyFilter();
+        input.focus();
+      });
+    });
+    chips?.querySelectorAll<HTMLElement>('.jb-b__chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.querySelectorAll('.jb-b__chip').forEach((c) => c.classList.remove('jb-b__chip--active'));
+        chip.classList.add('jb-b__chip--active');
+        activeSpec = chip.dataset.spec || 'all';
+        applyFilter();
+      });
+    });
+  }
 </script>
