@@ -1,200 +1,76 @@
 ---
 /*
- * SiteFooter — IMS dark footer. Translated from the ims-dark-website
- * Claude Design handoff (components/Footer.jsx). Marquee headline + 4-column
- * grid (brand + 3 link columns) + colophon row.
+ * SiteFooter — dark-ink footer-b (IMS Design System V3 / Chromia-Cream).
+ * Ported from the kit's Footer.jsx; all styling lives in src/styles/kit.css
+ * (.footer-b*). Content replicated from the kit per the exact-replication
+ * directive (sign-off "The place to be is right here.", the kit's Fort Worth
+ * (817) 555-0140) — the content pass reconciles real contact details.
  *
- * LinkedIn URL preserved from Zach 2026-05-07 (was the only FOLLOW link
- * in the prior cream footer). LinkedIn lives under "The firm" column now.
+ * Exceptions kept as REAL data (not fabricated): the LinkedIn URL Zach
+ * provided 2026-05-07. Instagram has no real handle yet (placeholder).
+ * The newsletter form has no backend yet → graceful GET to /contact (flagged).
  */
 const LINKEDIN_URL = 'https://www.linkedin.com/company/innovative-medical-staffing/';
-const cols: { head: string; links: { href: string; label: string; external?: boolean }[] }[] = [
-  {
-    head: 'For clinicians',
-    links: [
-      { href: '/clinicians', label: 'How it works' },
-      { href: '/jobs',       label: 'Open assignments' },
-      { href: '/contact',    label: 'Refer a colleague' },
-      { href: '/clinicians', label: 'How we credential' },
-    ],
-  },
-  {
-    head: 'For facilities',
-    links: [
-      { href: '/facilities',  label: 'Our model' },
-      { href: '/specialties', label: 'Specialties' },
-      { href: '/contact',     label: 'Request a roster' },
-      { href: '/about',       label: 'Case studies' },
-    ],
-  },
-  {
-    head: 'The firm',
-    links: [
-      { href: '/about',     label: 'Our story' },
-      { href: '/about',     label: 'The team' },
-      { href: LINKEDIN_URL, label: 'LinkedIn', external: true },
-      { href: '/contact',   label: 'Careers at IMS' },
-    ],
-  },
-];
-const year = new Date().getFullYear();
 ---
-<footer class="footer">
-  <div class="inner">
-    <h2 class="marquee">
-      Locums, <span class="marquee__accent">without the loneliness.</span>
-    </h2>
+<footer class="footer-b">
+  <div class="footer-b__blob footer-b__blob--coral" aria-hidden="true"></div>
+  <div class="footer-b__blob footer-b__blob--butter" aria-hidden="true"></div>
+  <div class="container" style="position: relative; z-index: 1;">
+    <span class="eyebrow footer-b__eyebrow"><span class="eyebrow__dot"></span>Get in touch</span>
+    <h2 class="footer-b__signoff">The place to be <span>is right here</span>.</h2>
 
-    <div class="grid">
-      <div class="brand-col">
-        <div class="brand-row">
-          <img src="/ims-logo-light.png" alt="IMS" class="brand-mark" width="120" height="28" />
-          <div class="brand-lockup">
-            <span class="brand-name">Innovative Medical Staffing</span>
-            <span class="brand-sub">Est. 2018 as IAS</span>
-          </div>
-        </div>
-        <p class="brand-pitch">
-          We place credentialed physicians and advanced-practice clinicians into
-          locum tenens assignments across every specialty — and we treat every
-          clinician like the only one we have.
-        </p>
-        <div class="brand-contact">
-          <a href="tel:+15125246686" class="lnk contact-row">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#7FD0EE" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/>
-            </svg>
-            (512) 524-6686
-          </a>
-          <span class="dot">·</span>
-          <a href="mailto:recruiting@iastaffing.com" class="lnk contact-row">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#7FD0EE" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/>
-            </svg>
-            recruiting@iastaffing.com
-          </a>
-        </div>
+    <form class="footer-b__nl" method="get" action="/contact">
+      <input class="input" type="email" name="email" placeholder="your@email.com" aria-label="Email for newsletter" />
+      <button class="pill pill--swing" type="submit">
+        Subscribe
+        <span class="pill__puck" aria-hidden="true">→</span>
+      </button>
+    </form>
+
+    <nav class="footer-b__sitemap" aria-label="Footer">
+      <div class="footer-b__col">
+        <span class="label">For you</span>
+        <a href="/facilities">Facilities</a>
+        <a href="/clinicians">Clinicians</a>
+        <a href="/jobs">Open jobs</a>
       </div>
+      <div class="footer-b__col">
+        <span class="label">Company</span>
+        <a href="/about">About</a>
+        <a href="/how-it-works">How it works</a>
+        <a href="/specialties">Specialties</a>
+        <a href="/contact">Contact</a>
+      </div>
+      <div class="footer-b__col">
+        <span class="label">Legal</span>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/cookies">Cookies</a>
+      </div>
+      <div class="footer-b__col" style="align-items: flex-end;">
+        <span class="label">Find us</span>
+        <a href="#">Fort Worth, TX</a>
+        <a href="tel:+18175550140">(817) 555-0140</a>
+      </div>
+    </nav>
 
-      {cols.map((c) => (
-        <div>
-          <div class="col-head">{c.head}</div>
-          {c.links.map((l) => (
-            l.external
-              ? <a href={l.href} class="link" rel="noopener noreferrer" target="_blank">{l.label}</a>
-              : <a href={l.href} class="link">{l.label}</a>
-          ))}
-        </div>
-      ))}
-    </div>
-
-    <div class="colophon">
-      <span>© {year} Innovative Medical Staffing. Previously Innovative Anesthesia Staffing (est. 2018).</span>
-      <div class="colophon-right">
-        <a href="/privacy" class="lnk">Privacy</a>
-        <a href="/terms" class="lnk">Terms</a>
-        <a href="/cookies" class="lnk">Cookies</a>
+    <div class="footer-b__bottom">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <img src="/ims-logo-light.png" alt="Innovative Medical Staffing" style="height: 28px; width: auto;" />
+        <small>© Innovative Medical Staffing &nbsp;·&nbsp; Fort Worth, TX &nbsp;·&nbsp; NALTO member &nbsp;·&nbsp; Joint Commission certified</small>
+      </div>
+      <div class="footer-b__socials">
+        <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" aria-label="IMS on LinkedIn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 2a2 2 0 100 4 2 2 0 000-4z"/>
+          </svg>
+        </a>
+        <a href="#" aria-label="Instagram">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zM12 8a4 4 0 100 8 4 4 0 000-8zM17.5 6.5a.5.5 0 100 1 .5.5 0 000-1z"/>
+          </svg>
+        </a>
       </div>
     </div>
   </div>
 </footer>
-
-<style>
-  .footer {
-    background: var(--ims-navy-900);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    margin-top: 120px;
-    padding-top: 80px;
-    padding-bottom: 28px;
-  }
-  .inner { max-width: 1368px; margin: 0 auto; padding: 0 36px; }
-  .marquee {
-    font: 800 clamp(48px, 9vw, 132px) / 0.92 var(--font);
-    letter-spacing: -0.03em;
-    color: var(--fg-1);
-    margin: 0;
-    padding-bottom: 56px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  }
-  .marquee__accent { color: var(--ims-cyan-500); }
-  .grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 48px;
-    padding: 56px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  }
-  .brand-col { display: flex; flex-direction: column; gap: 20px; max-width: 360px; }
-  .brand-row { display: flex; align-items: center; gap: 12px; }
-  .brand-mark { height: 28px; width: auto; }
-  .brand-lockup { display: flex; flex-direction: column; line-height: 1; }
-  .brand-name {
-    font: 800 18px/1 var(--font);
-    letter-spacing: -0.01em;
-    color: var(--fg-1);
-  }
-  .brand-sub {
-    font: 500 10px/1 var(--font);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ims-cyan-400);
-    margin-top: 6px;
-  }
-  .brand-pitch {
-    font: 500 15px/1.55 var(--font);
-    color: var(--fg-3);
-    margin: 0;
-    max-width: 320px;
-  }
-  .brand-contact {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-top: 6px;
-  }
-  .contact-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font: 600 14px/1 var(--font);
-    color: var(--ims-cyan-400);
-    text-decoration: none;
-  }
-  .dot { color: var(--fg-4); }
-  .col-head {
-    font: 600 12px/1 var(--font);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--fg-4);
-    margin-bottom: 18px;
-  }
-  .link {
-    font: 500 14px/2 var(--font);
-    color: var(--fg-2);
-    text-decoration: none;
-    display: block;
-    letter-spacing: -0.2px;
-  }
-  .link:hover { color: var(--fg-1); }
-  .colophon {
-    padding-top: 28px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--fg-4);
-    font: 500 12px/1 var(--font);
-    letter-spacing: -0.2px;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-  .colophon-right { display: flex; gap: 24px; }
-
-  @media (max-width: 900px) {
-    .inner { padding: 0 20px; }
-    .footer { padding-top: 56px; margin-top: 64px; }
-    .grid { grid-template-columns: 1fr 1fr; gap: 32px; padding: 40px 0; }
-    .brand-col { grid-column: 1 / -1; max-width: 100%; }
-    .marquee { padding-bottom: 32px; }
-  }
-</style>

@@ -126,11 +126,11 @@ const ORG_JSON_LD = {
   <body class="marketing">
     <slot name="nav" />
     {inCard ? (
-      <main class="card">
+      <main id="main" class="card">
         <slot />
       </main>
     ) : (
-      <main class="full-bleed">
+      <main id="main" class="full-bleed">
         <slot />
       </main>
     )}
