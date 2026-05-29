@@ -5,11 +5,12 @@
  * shared with the homepage via the ContactPanel partial. The prior page was a
  * skeleton (its Turnstile/Resend form was deferred and never wired).
  *
- * FLAG (iteration): the form does a native POST to /api/contact; Cloudflare
- * Turnstile + token validation + the success state are not yet wired into this
- * design. The kit's placeholder email/phone (hello@imsstaffing.com,
- * (817) 555-0140) are replicated per the exact-replication directive — the real
- * recruiting@iastaffing.com / (512) 524-6686 get restored in the content pass.
+ * Content pass (2026-05-28): real contact details now live in ContactPanel
+ * (recruiting@iastaffing.com / (512) 524-6686 / Fort Worth, TX).
+ *
+ * STILL FLAGGED for Zach: the form does a native POST to /api/contact, but the
+ * endpoint + Cloudflare Turnstile + token validation + the success-state UX are
+ * not yet wired into this design.
  */
 import MarketingLayout from '../layouts/MarketingLayout.astro';
 import SiteNav from '../components/nav/SiteNav.astro';

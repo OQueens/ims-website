@@ -4,10 +4,13 @@
  * Reused on home (inline) + /contact. Styling from kit.css (.contact-b*).
  *
  * Zero-JS: the kit's client "sent" toggle is dropped; the form does a native
- * POST to /api/contact. NOTE (Task 11): endpoint wiring + Turnstile + the
- * success state are finalized on the /contact page and propagate here via this
- * shared partial. Contact details (hello@imsstaffing.com, (817) 555-0140) are
- * kit demo content — replicated per the exact-replication directive.
+ * POST to /api/contact. Contact details are now REAL (content pass 2026-05-28):
+ * recruiting@iastaffing.com / (512) 524-6686 / Fort Worth, TX.
+ *
+ * STILL FLAGGED for Zach: the /api/contact endpoint + Cloudflare Turnstile +
+ * the success-state UX are not yet wired (the form does a plain native POST);
+ * the "replies within one business day" / "Mon–Fri 8a–6p Central" service
+ * claims should be confirmed.
  */
 interface Props {
   /** Heading tag for the panel title. Home renders it as a sub-section (h2);
@@ -37,14 +40,14 @@ const { as: Heading = 'h2' } = Astro.props;
           <div class="contact-b__info-row">
             <dt class="contact-b__info-label">Email</dt>
             <dd class="contact-b__info-value">
-              <a href="mailto:hello@imsstaffing.com">hello@imsstaffing.com</a>
+              <a href="mailto:recruiting@iastaffing.com">recruiting@iastaffing.com</a>
               <span class="contact-b__info-meta">Replies within one business day</span>
             </dd>
           </div>
           <div class="contact-b__info-row">
             <dt class="contact-b__info-label">Phone</dt>
             <dd class="contact-b__info-value">
-              <a href="tel:8175550140">(817) 555-0140</a>
+              <a href="tel:+15125246686">(512) 524-6686</a>
               <span class="contact-b__info-meta">Mon to Fri, 8a to 6p Central</span>
             </dd>
           </div>
@@ -52,7 +55,7 @@ const { as: Heading = 'h2' } = Astro.props;
             <dt class="contact-b__info-label">Office</dt>
             <dd class="contact-b__info-value">
               Fort Worth, TX
-              <span class="contact-b__info-meta">One floor, about 40 people</span>
+              <span class="contact-b__info-meta">Headquarters</span>
             </dd>
           </div>
         </dl>

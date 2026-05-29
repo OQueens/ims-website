@@ -1,60 +1,145 @@
 ---
 /*
- * LegalPage — cream legal-content layout (kit Legal.jsx). Renders Privacy,
- * Terms, or Cookies by `kind`. Styling from kit.css (.legal-page*). The kit's
- * <main> wrapper is dropped (MarketingLayout provides <main id="main">); the
- * .legal-page class moves to a wrapping <div>.
+ * LegalPage — cream legal-content layout (kit Legal.jsx design) carrying the
+ * REAL IMS legal notices. Renders Privacy, Terms, or Cookies by `kind`.
+ * Layout/typography from kit.css (.legal-page*); the rich-body styles (lists,
+ * inline links, <code>, the draft callout) live in the <style is:global> block
+ * below because section bodies are injected with set:html and therefore never
+ * receive Astro's scoped cid attribute.
  *
- * NOTE (content pass): placeholder emails (privacy@imsmed.example /
- * legal@imsmed.example) are kit demo content — replicated per the
- * exact-replication directive; reconcile with real addresses later.
+ * Content note: this restores the real, fact-grounded notices that predate the
+ * Chromia-Cream port (real sub-processors Plausible/Resend/Supabase/Cloudflare,
+ * real retention windows, real recruiting@iastaffing.com, US-state + GDPR
+ * sections) into the new design. The notices remain DRAFT pending Zach's legal
+ * review (SG15 Pre-Launch Checklist) — Travis County / Fort Worth references
+ * and final wording are his to confirm.
  */
 interface Props { kind: 'privacy' | 'terms' | 'cookies'; }
 const { kind } = Astro.props;
 
+// A section body is a list of blocks: a paragraph or an unordered list.
+// Strings may carry trusted inline HTML (<a>, <strong>, <em>, <code>) — this is
+// author-controlled copy, not user input, so set:html is safe here.
+const SUPPORT_EMAIL = 'recruiting@iastaffing.com';
+const UPDATED = 'May 7, 2026';
+
 const LEGAL_CONTENT = {
   privacy: {
-    eyebrow: 'Last updated · January 2026',
+    eyebrow: `Last updated · ${UPDATED}`,
     title: { lead: 'Your information,', em: 'handled with care', trail: '.' },
-    intro: "Innovative Medical Staffing collects only what's needed to match clinicians with assignments and to support facilities through the credentialing process. We don't sell your data. We don't share it with anyone outside the staffing relationship without your consent.",
+    intro: "This notice describes what Innovative Medical Staffing (IMS) collects through this site and our staffing service, what we do with it, where it lives, and how to ask us to delete it.",
     sections: [
-      { h: 'What we collect', body: 'For clinicians: name, contact details, license numbers, work history, credentialing documents, references, and the assignment preferences you share with your account lead. For facilities: organization details, billing contacts, EMR notes, and the role requirements you submit through staffing requests.' },
-      { h: 'How we use it', body: "To verify credentials with primary sources, present clinicians to facilities, manage assignments, process payroll and invoicing, and stay in touch about new opportunities. That's the full list." },
-      { h: 'Who can see it', body: 'Your dedicated account lead and the credentialing team. Facilities only see the candidates we present to them, and only the information clinicians have agreed to share. We use a small number of vetted vendors (payroll, e-signature, background checks) under written confidentiality agreements.' },
-      { h: 'How long we keep it', body: "Clinician records are retained as required by Joint Commission and state staffing regulations, typically six years from the last assignment. You can request a copy of your file, or ask us to delete what we're not legally required to keep, by writing to privacy@imsmed.example." },
-      { h: 'Your rights', body: 'You can access, correct, or request deletion of your information at any time. We respond within 30 days. Residents of California, Colorado, Virginia, and similar jurisdictions have additional rights under state law, contact us for the full state-specific notice.' },
+      { h: 'What we collect', body: [
+        { p: 'We collect only what the staffing relationship needs:' },
+        { ul: [
+          `<strong>Application data</strong> — name, contact details, CV, license states, certifications, references, work history, and availability submitted through the site or by email.`,
+          `<strong>Contact-form data</strong> — name, contact details, intent (clinician opportunity / facility coverage / general), and message body.`,
+          `<strong>Usage telemetry</strong> — anonymous, aggregated visit data via Plausible Cloud (no cookies, no cross-site identifiers, no stored IP). See the <a href="/cookies">Cookies notice</a>.`,
+          `<strong>Operational records</strong> — credentialing artifacts, references, and assignment history maintained for the clinicians and facility partners we work with.`,
+        ]},
+      ]},
+      { h: 'How we use it', body: [
+        { ul: [
+          `To match clinicians to assignments and facilities to qualified clinicians.`,
+          `To handle credentialing, onboarding, travel, and assignment logistics.`,
+          `To respond to inquiries and stay in touch with the clinicians and facility partners we work with.`,
+          `To meet the legal, regulatory, and contractual obligations specific to healthcare staffing.`,
+        ]},
+      ]},
+      { h: 'Where it lives', body: [
+        { ul: [
+          `Application + contact data — Supabase (US-hosted Postgres, encrypted at rest, row-level security enabled).`,
+          `Outbound transactional email — Resend (SOC 2 Type II, DPA signed).`,
+          `Anonymous site analytics — Plausible Cloud (EU-hosted, GDPR/CCPA-compliant, DPA signed).`,
+          `Site hosting — Cloudflare Pages (US/EU edge, DPA signed).`,
+        ]},
+      ]},
+      { h: 'How long we keep it', body: [
+        { ul: [
+          `<strong>Job-application data</strong> — 18 months from last contact, then deleted unless an active engagement extends the relationship.`,
+          `<strong>Contact-form messages</strong> — 12 months from last reply, then deleted.`,
+          `<strong>Operational records for active clinicians and facility partners</strong> — kept for the duration of the relationship plus 7 years, per healthcare-staffing record-retention norms.`,
+        ]},
+      ]},
+      { h: 'Your rights and how to exercise them', body: [
+        { p: `You can ask us at any time to confirm what we hold about you, correct it, or delete it. Email <a href="mailto:${SUPPORT_EMAIL}?subject=Data%20deletion%20request">${SUPPORT_EMAIL}</a> with the subject <em>Data deletion request</em>. We respond within 30 days.` },
+        { p: `We do not sell personal data, and we do not share it with third parties for advertising. We disclose only to the sub-processors listed above and to facilities or clinicians involved in an active engagement you have agreed to.` },
+      ]},
+      { h: 'US state-law accommodations', body: [
+        { p: `If you reside in California (CCPA/CPRA), Colorado (CPA), Connecticut (CTDPA), Utah (UCPA), or Virginia (VCDPA), you have additional rights — including the right to know, delete, and correct, and to opt out of profiling for decisions with legal or similarly significant effects. The deletion-request flow above satisfies these state-law requests; we honor verifiable consumer requests within 45 days, extendable once with notice.` },
+      ]},
+      { h: 'EU / UK visitors (GDPR)', body: [
+        { p: `For visitors in the EU or UK, IMS acts as the data controller. The legal basis for processing is performance of a contract (when you engage our staffing service), legitimate interest (when you contact us about a possible engagement), or consent where local law requires it. You have the rights of access, rectification, erasure, restriction, portability, and objection. Email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> to exercise them or to lodge a complaint.` },
+      ]},
+      { h: 'Changes to this notice', body: [
+        { p: `We update this notice when our practices change or when the law requires it. The date at the top reflects the most recent change.` },
+      ]},
     ],
-    contact: { lead: 'Questions or requests:', address: 'privacy@imsmed.example', mail: 'Privacy Office, Innovative Medical Staffing, Fort Worth, TX' },
+    contact: { lead: 'Questions or data requests:', address: SUPPORT_EMAIL, mail: 'Innovative Medical Staffing · Fort Worth, TX' },
   },
+
   terms: {
-    eyebrow: 'Last updated · January 2026',
+    eyebrow: `Last updated · ${UPDATED}`,
     title: { lead: 'The rules of the road,', em: 'in plain English', trail: '.' },
-    intro: 'These terms apply to anyone using imsmed.example or working with Innovative Medical Staffing under a clinician or facility agreement. Your separate signed agreement (clinician contract, master services agreement) controls if anything here conflicts.',
+    intro: "These terms govern your use of this site and your relationship with Innovative Medical Staffing. A separate signed agreement — a clinician contract or a facility staffing agreement — controls if anything here conflicts with it.",
+    note: `<strong>Draft —</strong> these terms are under legal review. The substance reflects how IMS operates today, but the language is provisional; the final version will be linked here at launch.`,
     sections: [
-      { h: 'Using the site', body: "You can browse without signing in. When you submit a staffing request or apply to a role, you confirm the information you provide is accurate and you have the right to share it. Don't try to break, scrape, or abuse the site, we'll cut access if you do." },
-      { h: 'Clinician relationships', body: "Clinicians are independent contractors unless their signed agreement says otherwise. We don't supervise clinical work, the facility does. Each clinician is responsible for maintaining their own license, DEA, and continuing education in good standing." },
-      { h: 'Facility relationships', body: 'Facilities engage IMS under a Master Services Agreement that covers credentialing standards, billing terms (Net-15 default), malpractice coverage ($2M provided), and conversion fees. The MSA controls, this page is a summary.' },
-      { h: 'Content + intellectual property', body: "Site copy, designs, the IMS mark, and the surrounding visual system are owned by Innovative Medical Staffing. Don't repost them as your own. You retain ownership of anything you submit (resumes, role descriptions) and grant us a license to use it for the staffing relationship." },
-      { h: 'Limits + liability', body: "We provide staffing services, not medical advice. We're not liable for indirect, incidental, or consequential damages beyond the fees paid in the prior six months. Some jurisdictions don't allow these limits, where that applies, the limits don't apply." },
-      { h: 'Disputes', body: "We'd rather talk it out. Email legal@imsmed.example first. If that doesn't resolve it, disputes are heard in Tarrant County, Texas, under Texas law. Class actions are waived where allowed." },
+      { h: 'The service', body: [
+        { p: `Innovative Medical Staffing (IMS) provides healthcare-staffing services connecting qualified clinicians with healthcare facilities for locum tenens and similar engagements. This site describes the service, lists open opportunities, and provides contact paths. Information on this site is general unless captured in a signed agreement between IMS and a clinician or facility.` },
+      ]},
+      { h: 'No fees charged to clinicians', body: [
+        { p: `IMS does not charge clinicians a fee for placement or representation. Compensation to IMS is paid by the facility partner under a separate staffing agreement. Clinicians retain the right to engage directly with any facility outside the IMS relationship.` },
+      ]},
+      { h: 'Recruiter relationship', body: [
+        { p: `Submitting a CV, contact form, or inquiry creates a non-exclusive, no-obligation working relationship with an IMS recruiter for the purpose of evaluating fit. It is not employment, an offer of employment, or a guarantee of placement. Either party may end the relationship at any time before a signed engagement.` },
+      ]},
+      { h: 'Information accuracy', body: [
+        { p: `Information clinicians and facilities provide must be accurate and complete to the best of their knowledge. IMS verifies credentials, references, and licensure; reliance on materially false information may end the working relationship.` },
+      ]},
+      { h: 'Site use', body: [
+        { p: `You agree not to access this site through automated means beyond ordinary search-engine crawling, interfere with the site infrastructure, or use the site to send unsolicited commercial messages to addresses harvested from it.` },
+      ]},
+      { h: 'Intellectual property', body: [
+        { p: `Site content (copy, marks, illustrations) is the property of IMS or its licensors. You may share links to public pages and quote short excerpts with attribution; do not reproduce the site or substantial portions of it without written permission.` },
+      ]},
+      { h: 'Disclaimer', body: [
+        { p: `Site content is provided on an as-is basis. IMS does not warrant the site will be uninterrupted or error-free. To the extent permitted by law, IMS disclaims implied warranties of merchantability, fitness for a particular purpose, and non-infringement.` },
+      ]},
+      { h: 'Limitation of liability', body: [
+        { p: `To the extent permitted by law, IMS's liability arising from site use is limited to the amount you paid IMS in the twelve months preceding the claim — which, for site visitors, is zero. This does not limit liability for matters that cannot be limited by law, including gross negligence or willful misconduct.` },
+      ]},
+      { h: 'Governing law and disputes', body: [
+        { p: `These terms are governed by the laws of the State of Texas, without regard to its conflict-of-laws rules. The parties agree to attempt good-faith resolution before filing a claim. Any unresolved dispute will be brought in the state or federal courts in Travis County, Texas, unless applicable consumer-protection law in your jurisdiction gives you a non-waivable right to a different venue.` },
+      ]},
+      { h: 'Severability and modification', body: [
+        { p: `If any provision of these terms is found unenforceable, the remainder stays in effect. We may update these terms when our practices change or when the law requires it; the date at the top reflects the most recent change. Continued use of the site after a change constitutes acceptance of the updated terms.` },
+      ]},
     ],
-    contact: { lead: 'Legal questions:', address: 'legal@imsmed.example', mail: 'Innovative Medical Staffing, Fort Worth, TX' },
+    contact: { lead: 'Questions about these terms:', address: SUPPORT_EMAIL, mail: 'Innovative Medical Staffing · Fort Worth, TX' },
   },
+
   cookies: {
-    eyebrow: 'Last updated · January 2026',
+    eyebrow: `Last updated · ${UPDATED}`,
     title: { lead: 'We use cookies for', em: 'the boring necessary things', trail: '.' },
-    intro: 'No tracking pixels following you around the internet. No advertising networks. The cookies we set keep the site working and help us see which pages people actually read.',
+    intro: "We don't use tracking cookies, cross-site identifiers, or third-party advertising tags. Site usage telemetry runs through Plausible Cloud, which is cookieless by design.",
     sections: [
-      { h: 'Strictly necessary', body: "Session cookies that keep you signed in if you log in to the clinician portal, and the security tokens that prevent form spam. These can't be turned off, the site won't work without them." },
-      { h: 'Analytics', body: 'A single first-party analytics cookie that records anonymized page views, session length, and which pages lead to staffing requests. We use the numbers to decide what to write more of. No individual identification, no cross-site tracking, no resale.' },
-      { h: "What we don't do", body: "We don't run third-party advertising cookies, social-media pixels, or behavioral targeting. We don't sell, share, or hand over cookie data to anyone outside our analytics provider." },
-      { h: 'Your choices', body: "Your browser controls cookies, you can block or delete them at any time. Disabling strictly-necessary cookies breaks login and forms. Disabling analytics doesn't break anything for you, it just means we see less about how the site is used." },
+      { h: 'What cookies are set', body: [
+        { p: `One cookie is set when you visit this site: <code>__cf_bm</code>. It is set by Cloudflare for bot-management and security. Its lifetime is 30 minutes from your most recent request, and no personal data is stored in the cookie body.` },
+        { p: `Under EU PECR, <code>__cf_bm</code> is treated as a strictly-necessary functional cookie (it protects the site from automated abuse), so consent is not required. It is exempt for the same reason under the equivalent US state-law provisions.` },
+      ]},
+      { h: 'Why there is no consent banner', body: [
+        { p: `Consent banners are required when a site sets non-essential cookies or uses cross-site tracking. We do neither. Site analytics run on Plausible Cloud, which uses no cookies and no persistent identifiers — visit counts are aggregated at the request level using a daily-rotating salted hash that cannot identify a returning visitor.` },
+      ]},
+      { h: 'Where to learn more', body: [
+        { p: `Our broader handling of personal data — what we collect through forms, retention, the deletion-request flow, and sub-processors — is documented in the <a href="/privacy">Privacy notice</a>. The Plausible Cloud approach is documented at <a href="https://plausible.io/data-policy" rel="external noopener">plausible.io/data-policy</a>.` },
+      ]},
     ],
-    contact: { lead: 'Questions:', address: 'privacy@imsmed.example', mail: 'Privacy Office, Innovative Medical Staffing, Fort Worth, TX' },
+    contact: { lead: 'Privacy questions:', address: SUPPORT_EMAIL, mail: 'Innovative Medical Staffing · Fort Worth, TX' },
   },
 } as const;
 
 const c = LEGAL_CONTENT[kind] ?? LEGAL_CONTENT.privacy;
+const note = 'note' in c ? c.note : undefined;
 const pad = (i: number) => String(i + 1).padStart(2, '0');
 ---
 <div class="legal-page">
@@ -71,6 +156,7 @@ const pad = (i: number) => String(i + 1).padStart(2, '0');
         {c.title.lead} <span class="em">{c.title.em}</span>{c.title.trail}
       </h1>
       <p class="legal-page__intro">{c.intro}</p>
+      {note && <p class="legal-page__note" role="note" set:html={note} />}
     </header>
 
     <div class="legal-page__body">
@@ -79,7 +165,11 @@ const pad = (i: number) => String(i + 1).padStart(2, '0');
           <div class="legal-section__num"><span>{pad(i)}</span></div>
           <div class="legal-section__content">
             <h2 class="legal-section__h">{s.h}</h2>
-            <p class="legal-section__body">{s.body}</p>
+            {s.body.map((block) => (
+              'p' in block
+                ? <p class="legal-section__body" set:html={block.p} />
+                : <ul class="legal-section__list">{block.ul.map((li) => <li set:html={li} />)}</ul>
+            ))}
           </div>
         </section>
       ))}
@@ -92,3 +182,54 @@ const pad = (i: number) => String(i + 1).padStart(2, '0');
     </aside>
   </div>
 </div>
+
+<style is:global>
+  /* Rich-body styles for the legal notices. Scoped under .legal-section /
+   * .legal-page so they stay namespaced even though the block is global
+   * (section bodies are injected with set:html and miss Astro's cid). */
+  .legal-section__content { display: flex; flex-direction: column; gap: var(--space-3); }
+  .legal-section__content .legal-section__h { margin-bottom: 0; }
+
+  .legal-section__list {
+    margin: 0; padding-left: 1.25em;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .legal-section__list li {
+    font-family: var(--font-body); font-size: 16px; line-height: 1.65;
+    color: var(--ink-soft); max-width: 64ch;
+  }
+  .legal-section__list li::marker { color: var(--ink-mute); }
+
+  .legal-section__body strong,
+  .legal-section__list strong { color: var(--ink); font-weight: 700; }
+  .legal-section__body em,
+  .legal-section__list em { color: var(--ink); font-style: italic; }
+
+  .legal-section__body a,
+  .legal-section__list a {
+    color: var(--ink); text-decoration: underline;
+    text-decoration-thickness: 1px; text-underline-offset: 2px;
+    transition: color 180ms var(--ease-out);
+  }
+  .legal-section__body a:hover,
+  .legal-section__list a:hover { color: var(--ink-emphasis); }
+  .legal-section__body a:focus-visible,
+  .legal-section__list a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .legal-section__body code,
+  .legal-section__list code {
+    font-family: var(--font-mono); font-size: 0.88em;
+    background: var(--cream-soft); border: 1px solid var(--rule);
+    border-radius: 6px; padding: 1px 6px;
+  }
+
+  .legal-page__note {
+    margin: var(--space-4) 0 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--soft-butter);
+    border-radius: 14px;
+    font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+    color: var(--ink); max-width: 60ch;
+  }
+  .legal-page__note strong { font-weight: 700; }
+</style>
