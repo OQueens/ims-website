@@ -136,6 +136,13 @@ const ORG_JSON_LD = {
       </main>
     )}
     <slot name="footer" />
+    <script is:inline>
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.querySelectorAll('.hero-stage').forEach((el) => el.classList.add('hero-go'));
+        });
+      });
+    </script>
   </body>
 </html>
 

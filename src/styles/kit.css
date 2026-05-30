@@ -2146,3 +2146,29 @@ body[data-rhythm="tight"] .cta-band__headline { font-size: clamp(40px, 6vw, 84px
   font-family: var(--font-body); font-size: 14px;
   color: var(--ink-mute); margin: 0;
 }
+
+/* ============================================================
+ * Motion helpers · hero entrance + reusable ambient-glow drift
+ * ============================================================ */
+
+/* Hero entrance — visible by default; plays one frame after JS confirms. */
+.hero-stage > * { /* children animate */ }
+html.js .hero-stage > * {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 600ms cubic-bezier(0.22,1,0.36,1), transform 600ms cubic-bezier(0.22,1,0.36,1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+html.js .hero-stage.hero-go > * { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce), print {
+  html.js .hero-stage > * { opacity: 1 !important; transform: none !important; transition: none; }
+}
+
+/* Ambient-glow drift — reusable helper (NOT applied to existing animated blobs). */
+@media (min-width: 769px) and (prefers-reduced-motion: no-preference) {
+  .ambient-glow { animation: ambientDrift 18s linear infinite; }
+}
+@keyframes ambientDrift {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50%      { transform: translate(3%, -2%) scale(1.04); }
+}
