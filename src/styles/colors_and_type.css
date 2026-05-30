@@ -205,6 +205,8 @@
   --dur-fast:        150ms;
   --dur-base:        280ms;
   --dur-slow:        520ms;
+  --dur-reveal:      560ms;   /* scroll-reveal entrance */
+  --stagger-step:    70ms;    /* per-child cascade step */
 
   /* ─────────── Layout ─────────── */
   --container-max:   1320px;
