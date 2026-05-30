@@ -1,4 +1,19 @@
 ---
+/*
+ * ScrollReveal — thin convenience wrapper that tags an element with the global
+ * `scroll-reveal` class so the site-wide reveal observer (inline in
+ * MarketingLayout) animates it on scroll-in.
+ *
+ * The reveal CSS lives GLOBALLY in src/styles/kit.css and the observer is a
+ * single inline script in MarketingLayout — NOT scoped here — so the same
+ * effect is available to elements that just add class="scroll-reveal" directly
+ * in page markup (with optional style="--i:N" for stagger). This component is
+ * kept for back-compat with how-it-works.astro / specialties.astro and as an
+ * ergonomic wrapper; it intentionally has no <style> or <script> of its own.
+ *
+ * Never-invisible contract is enforced by the global CSS (visible by default,
+ * hidden only under html.js) + the layout's inline observer + load failsafe.
+ */
 interface Props {
   as?: string;
   /** legacy single-element delay in ms (kept for about/facilities back-compat) */
@@ -11,52 +26,3 @@ const { as: As = 'section', delay = 0, class: className = '', ...rest } = Astro.
 <As class:list={['scroll-reveal', className]} data-reveal-delay={delay} {...rest}>
   <slot />
 </As>
-
-<style>
-  /* BARE DEFAULT = VISIBLE (no-JS / crawler / print / SSR-snapshot safe). */
-  .scroll-reveal { opacity: 1; transform: none; }
-  /* Hidden start-state ONLY once JS is confirmed. */
-  :global(html.js) .scroll-reveal {
-    opacity: 0;
-    transform: translateY(20px);
-    transition:
-      opacity var(--dur-reveal, 560ms) cubic-bezier(0.22, 1, 0.36, 1),
-      transform var(--dur-reveal, 560ms) cubic-bezier(0.22, 1, 0.36, 1);
-    transition-delay: calc(var(--i, 0) * var(--stagger-step, 70ms));
-  }
-  .scroll-reveal.is-revealed { opacity: 1; transform: none; }
-  /* Belt-and-suspenders: never hidden under reduced-motion or print. */
-  @media (prefers-reduced-motion: reduce), print {
-    .scroll-reveal { opacity: 1 !important; transform: none !important; transition: none; }
-  }
-</style>
-
-<script>
-  function revealAll() {
-    document.querySelectorAll<HTMLElement>('.scroll-reveal').forEach((el) => el.classList.add('is-revealed'));
-  }
-  const prefersReduced =
-    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-  if (typeof window === 'undefined' || !('IntersectionObserver' in window) || prefersReduced) {
-    revealAll();
-  } else {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const el = entry.target as HTMLElement;
-          el.style.willChange = 'opacity, transform';
-          // legacy per-element delay still honored; --i stagger handled in CSS
-          const legacyDelay = Number(el.dataset.revealDelay ?? 0);
-          const apply = () => el.classList.add('is-revealed');
-          legacyDelay > 0 ? setTimeout(apply, legacyDelay) : apply();
-          el.addEventListener('transitionend', () => { el.style.willChange = ''; }, { once: true });
-          observer.unobserve(el);
-        }
-      },
-      { rootMargin: '0px 0px -12% 0px', threshold: 0 },
-    );
-    document.querySelectorAll<HTMLElement>('.scroll-reveal').forEach((el) => observer.observe(el));
-  }
-</script>

@@ -2148,8 +2148,32 @@ body[data-rhythm="tight"] .cta-band__headline { font-size: clamp(40px, 6vw, 84px
 }
 
 /* ============================================================
- * Motion helpers · hero entrance + reusable ambient-glow drift
+ * Motion helpers · scroll-reveal + hero entrance + ambient-glow drift
+ *
+ * GLOBAL (not component-scoped) so any element on any marketing page can opt in
+ * with class="scroll-reveal" (+ optional style="--i:N" for stagger), whether
+ * added directly in page markup or via the <ScrollReveal> wrapper. The reveal
+ * observer is a single inline script in MarketingLayout (can't fail to fetch
+ * independently of the html.js flag). Never-invisible contract: bare default is
+ * VISIBLE; hidden start-state is gated behind html.js; reduced-motion/print
+ * force visible.
  * ============================================================ */
+
+/* Scroll-reveal · BARE DEFAULT = VISIBLE (no-JS / crawler / print / SSR safe). */
+.scroll-reveal { opacity: 1; transform: none; }
+/* Hidden start-state ONLY once JS is confirmed. */
+html.js .scroll-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity var(--dur-reveal, 560ms) cubic-bezier(0.22, 1, 0.36, 1),
+    transform var(--dur-reveal, 560ms) cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * var(--stagger-step, 70ms));
+}
+.scroll-reveal.is-revealed { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce), print {
+  .scroll-reveal { opacity: 1 !important; transform: none !important; transition: none; }
+}
 
 /* Hero entrance — visible by default; plays one frame after JS confirms. */
 .hero-stage > * { /* children animate */ }

@@ -90,7 +90,21 @@ const ORG_JSON_LD = {
 <!doctype html>
 <html lang="en">
   <head>
-    <script is:inline>document.documentElement.classList.add('js')</script>
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      /* Never-invisible failsafe: the .js class above lets CSS hide
+       * .scroll-reveal / .hero-stage content before JS reveals it. If the
+       * reveal module never runs (chunk-load failure, CSP, flaky network) the
+       * content would be stuck invisible. After load, if the module hasn't
+       * signalled ready, force-reveal everything so content can never be lost. */
+      addEventListener('load', function () {
+        setTimeout(function () {
+          if (window.__scrollRevealReady) return;
+          document.querySelectorAll('.scroll-reveal').forEach(function (el) { el.classList.add('is-revealed'); });
+          document.querySelectorAll('.hero-stage').forEach(function (el) { el.classList.add('hero-go'); });
+        }, 1500);
+      });
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
@@ -136,12 +150,58 @@ const ORG_JSON_LD = {
       </main>
     )}
     <slot name="footer" />
+    <!-- Site-wide scroll-reveal observer + hero entrance. Inline (is:inline)
+         so it can never fail to fetch independently of the html.js flag that
+         hides .scroll-reveal — closing the never-invisible gap. -->
     <script is:inline>
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          document.querySelectorAll('.hero-stage').forEach((el) => el.classList.add('hero-go'));
+      (function () {
+        var prefersReduced =
+          window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // Signal the head failsafe that reveal logic is live.
+        window.__scrollRevealReady = true;
+
+        function revealAll() {
+          document.querySelectorAll('.scroll-reveal').forEach(function (el) {
+            el.classList.add('is-revealed');
+          });
+        }
+
+        if (!('IntersectionObserver' in window) || prefersReduced) {
+          revealAll();
+        } else {
+          var observer = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                var el = entry.target;
+                el.style.willChange = 'opacity, transform';
+                var legacyDelay = Number(el.dataset.revealDelay || 0);
+                var clearWillChange = function () { el.style.willChange = ''; };
+                var apply = function () { el.classList.add('is-revealed'); };
+                legacyDelay > 0 ? setTimeout(apply, legacyDelay) : apply();
+                el.addEventListener('transitionend', clearWillChange, { once: true });
+                // Failsafe: clear will-change even if no transition fires
+                // (already-final state) so it can't leak a compositor layer.
+                setTimeout(clearWillChange, 1200 + legacyDelay);
+                observer.unobserve(el);
+              });
+            },
+            { rootMargin: '0px 0px -12% 0px', threshold: 0 },
+          );
+          document.querySelectorAll('.scroll-reveal').forEach(function (el) {
+            observer.observe(el);
+          });
+        }
+
+        // Hero entrance: paint the offset first, then play one frame later.
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            document.querySelectorAll('.hero-stage').forEach(function (el) {
+              el.classList.add('hero-go');
+            });
+          });
         });
-      });
+      })();
     </script>
   </body>
 </html>
