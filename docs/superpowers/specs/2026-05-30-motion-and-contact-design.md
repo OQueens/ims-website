@@ -97,7 +97,7 @@ Above-fold heroes use **hero-entrance** (primitive 3, first-paint-visible). Belo
 Source: `C:\Users\oclou\QueenClaude\_ims-design-extract\design_handoff_contact_page\` (`README.md` + `contact-reference.html`). High-fidelity; recreate pixel-faithfully in Astro using existing tokens.
 
 - **Scope:** the dark design applies to **`/contact` + its success state ONLY** (Zach). The homepage's `ContactPanel` stays cream/unchanged. Replace `/contact`'s `<ContactPanel>` render with a new dark component (e.g. `src/components/sections/GetInTouch.astro` or inline in `contact.astro`). Keep `ContactPanel.astro` for the homepage.
-- **Structure** (exact CSS in the understand-workflow map, run `wi2sgcofn`): `.gt-page` dark wrapper (radial magenta+rose glows over `--mn-black`, two `.gt-glow` drifting blobs via primitive 5) → main `.gt-shell` grid `5fr 6fr` (≤920px → single column, max 560px): **left rail** (eyebrow "Get in touch", headline "Let's *talk*." with "talk" magenta, sub, 3-row Email/Phone/Office `<dl>`) + **cream form card** `.gt-card` (`--cream-soft #FBF6EE`, radius 24, shadow). → success `.gt-thanks` section (hidden until `.is-active`) → confetti `<canvas>` fixed sibling.
+- **Structure** (exact CSS in the understand-workflow map: `docs/superpowers/research/2026-05-30-handoff-and-codebase-map.json`): `.gt-page` dark wrapper (radial magenta+rose glows over `--mn-black`, two `.gt-glow` drifting blobs via primitive 5) → main `.gt-shell` grid `5fr 6fr` (≤920px → single column, max 560px): **left rail** (eyebrow "Get in touch", headline "Let's *talk*." with "talk" magenta, sub, 3-row Email/Phone/Office `<dl>`) + **cream form card** `.gt-card` (`--cream-soft #FBF6EE`, radius 24, shadow). → success `.gt-thanks` section (hidden until `.is-active`) → confetti `<canvas>` fixed sibling.
 - **Form fields:** name (req) | email (req) on row 1; **"I am a…" segmented control** (3 radio-buttons: Facility/Clinician/Something else, values `facility`/`clinician`/`other`, one required — checked = ink bg + cream text); role (optional, full); message textarea (full); magenta submit pill "Send it →" with dark puck.
 - **Tokens:** map to existing `--mn-*` family (all match exactly). Focus ring magenta. **Confetti 5 colors = `['#C44569','#E8C465','#D88B9F','#59BFE7','#F4ECDF']`** (use the code value `#F4ECDF`, NOT the README's `#FBF6EE`).
 - **Success state copy (verbatim):**
@@ -180,6 +180,6 @@ CLOUDFLARE_API_TOKEN=$(cat ~/.cloudflare-token) CLOUDFLARE_ACCOUNT_ID=7e0fc3bb97
 ---
 
 ## 12. Pointers
-- Understand-workflow map (exact handoff CSS, contact stack, tokens, sections): task output `wi2sgcofn`.
-- Motion research + synthesis (the proposal this spec is built from): task output `w8lr4fker`.
+- Understand-workflow map (exact handoff CSS, contact stack, tokens, sections): `docs/superpowers/research/2026-05-30-handoff-and-codebase-map.json` (committed; was workflow task output `wi2sgcofn`).
+- Motion research + synthesis (the proposal this spec is built from): `docs/superpowers/research/2026-05-30-motion-research-synthesis.json` (committed; was workflow task output `w8lr4fker`).
 - Memory: `project_ims_motion_workstream_2026-05-30.md`, `project_ims_chromia_cream_v3_port_2026-05-28.md`.

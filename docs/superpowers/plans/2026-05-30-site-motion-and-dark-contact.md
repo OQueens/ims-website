@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **READ FIRST:** the design spec `docs/superpowers/specs/2026-05-30-motion-and-contact-design.md` (exact values, rationale, per-surface plan). For the dark-contact verbatim CSS/markup, the authoritative source is the handoff `C:\Users\oclou\QueenClaude\_ims-design-extract\design_handoff_contact_page\contact-reference.html` + its decoded map in workflow task output `wi2sgcofn`. This plan tells you WHAT to do and shows the NEW logic; for the pixel-exact contact CSS, transcribe from those sources.
+> **READ FIRST:** the design spec `docs/superpowers/specs/2026-05-30-motion-and-contact-design.md` (exact values, rationale, per-surface plan). For the dark-contact verbatim CSS/markup, the authoritative source is the decoded map at `docs/superpowers/research/2026-05-30-handoff-and-codebase-map.json` (committed; the `handoff.*` keys have the exact CSS transcribed) plus the original handoff `C:\Users\oclou\QueenClaude\_ims-design-extract\design_handoff_contact_page\contact-reference.html` + `README.md`. This plan tells you WHAT to do and shows the NEW logic; for the pixel-exact contact CSS, transcribe from those sources.
 
 **Goal:** Bring accessible, best-in-class scroll motion to the 5 static marketing pages and port the dark "Get in touch" page with confetti success state — unified into one motion language, with content that can never render invisible.
 
@@ -257,7 +257,7 @@ Wrap `.cc__timeline` so it gets `scroll-reveal`/`is-revealed` (the observer adds
 
 ### Task 2.1: Create `GetInTouch.astro` (structure + real info)
 **Files:** Create `src/components/sections/GetInTouch.astro`.
-- [ ] Build the `.gt-page` dark wrapper + two `.gt-glow` (add `ambient-glow` class) + `.gt-shell` (5fr/6fr grid, ≤920px single col) per the spec §6 / handoff map (`wi2sgcofn`). Transcribe the exact CSS from `contact-reference.html` into a scoped `<style>`, mapping tokens to `--mn-*` (`--mn-black`, `--mn-magenta`, `--mn-rose`, `--mn-butter`, `--cream-soft`, etc.).
+- [ ] Build the `.gt-page` dark wrapper + two `.gt-glow` (add `ambient-glow` class) + `.gt-shell` (5fr/6fr grid, ≤920px single col) per the spec §6 / handoff map (`docs/superpowers/research/2026-05-30-handoff-and-codebase-map.json`). Transcribe the exact CSS from `contact-reference.html` into a scoped `<style>`, mapping tokens to `--mn-*` (`--mn-black`, `--mn-magenta`, `--mn-rose`, `--mn-butter`, `--cream-soft`, etc.).
 - [ ] Left rail: eyebrow "Get in touch", headline `Let's <span class="em">talk</span>.`, sub copy, and the 3-row `<dl>` with **REAL info**: `recruiting@iastaffing.com` / `(512) 524-6686` / `Fort Worth, TX`. (Meta lines optional — flag as unverified; default to including them.)
 - [ ] Commit: `feat(contact): dark Get-in-touch page shell + left rail (real info)`.
 
