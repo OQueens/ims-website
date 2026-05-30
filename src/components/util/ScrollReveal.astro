@@ -1,11 +1,9 @@
 ---
 interface Props {
-  /** Tag name for the wrapper. Default: section */
   as?: string;
-  /** Reveal delay in ms (default 0) */
+  /** legacy single-element delay in ms (kept for about/facilities back-compat) */
   delay?: number;
   class?: string;
-  /** Any other HTML attribute (id, aria-*, role, data-*, etc.) is forwarded to the rendered tag. */
   [key: string]: unknown;
 }
 const { as: As = 'section', delay = 0, class: className = '', ...rest } = Astro.props;
@@ -15,65 +13,50 @@ const { as: As = 'section', delay = 0, class: className = '', ...rest } = Astro.
 </As>
 
 <style>
-  .scroll-reveal {
+  /* BARE DEFAULT = VISIBLE (no-JS / crawler / print / SSR-snapshot safe). */
+  .scroll-reveal { opacity: 1; transform: none; }
+  /* Hidden start-state ONLY once JS is confirmed. */
+  :global(html.js) .scroll-reveal {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(20px);
     transition:
-      opacity 500ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
-    will-change: opacity, transform;
+      opacity var(--dur-reveal, 560ms) cubic-bezier(0.22, 1, 0.36, 1),
+      transform var(--dur-reveal, 560ms) cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: calc(var(--i, 0) * var(--stagger-step, 70ms));
   }
-  .scroll-reveal.is-revealed {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  /* Reduced-motion: render revealed state immediately, no animation. */
-  @media (prefers-reduced-motion: reduce) {
-    .scroll-reveal {
-      opacity: 1;
-      transform: none;
-      transition: none;
-    }
+  .scroll-reveal.is-revealed { opacity: 1; transform: none; }
+  /* Belt-and-suspenders: never hidden under reduced-motion or print. */
+  @media (prefers-reduced-motion: reduce), print {
+    .scroll-reveal { opacity: 1 !important; transform: none !important; transition: none; }
   }
 </style>
 
 <script>
-  // Fallback: if IntersectionObserver is unavailable OR the user prefers
-  // reduced motion, reveal everything synchronously — otherwise content
-  // would stay permanently hidden behind the opacity:0 default.
   function revealAll() {
-    document.querySelectorAll<HTMLElement>('.scroll-reveal').forEach((el) => {
-      el.classList.add('is-revealed');
-    });
+    document.querySelectorAll<HTMLElement>('.scroll-reveal').forEach((el) => el.classList.add('is-revealed'));
   }
+  const prefersReduced =
+    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-  const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-  if (typeof window === 'undefined' || !('IntersectionObserver' in window) || prefersReducedMotion) {
+  if (typeof window === 'undefined' || !('IntersectionObserver' in window) || prefersReduced) {
     revealAll();
   } else {
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            const delay = Number(el.dataset.revealDelay ?? 0);
-            if (delay > 0) {
-              setTimeout(() => el.classList.add('is-revealed'), delay);
-            } else {
-              el.classList.add('is-revealed');
-            }
-            observer.unobserve(el); // once-only per spec §4.4
-          }
+          if (!entry.isIntersecting) continue;
+          const el = entry.target as HTMLElement;
+          el.style.willChange = 'opacity, transform';
+          // legacy per-element delay still honored; --i stagger handled in CSS
+          const legacyDelay = Number(el.dataset.revealDelay ?? 0);
+          const apply = () => el.classList.add('is-revealed');
+          legacyDelay > 0 ? setTimeout(apply, legacyDelay) : apply();
+          el.addEventListener('transitionend', () => { el.style.willChange = ''; }, { once: true });
+          observer.unobserve(el);
         }
       },
-      { rootMargin: '-10%' },
+      { rootMargin: '0px 0px -12% 0px', threshold: 0 },
     );
-
-    document.querySelectorAll<HTMLElement>('.scroll-reveal').forEach((el) => {
-      observer.observe(el);
-    });
+    document.querySelectorAll<HTMLElement>('.scroll-reveal').forEach((el) => observer.observe(el));
   }
 </script>

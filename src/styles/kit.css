@@ -1511,20 +1511,6 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
 }
 
 /* ============================================================
- * Scroll-reveal · fade + slide up as elements enter the viewport
- * Applied via JS that adds .reveal then .in; respects reduced motion
- * ============================================================ */
-.reveal {
-  opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 720ms var(--ease-out), transform 720ms var(--ease-out);
-}
-.reveal.in { opacity: 1; transform: translateY(0); }
-@media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
-}
-
-/* ============================================================
  * Audience mix · two big rotated cards with hover-to-front
  * and role-detail mini-cards embedded inside
  * ============================================================ */
