@@ -29,8 +29,27 @@
  *     (src/lib/contact-validation.ts) is the single source of truth for the
  *     client-side check, shared with any future backend.
  *
- * Phase 2 = client-side success only. No real network POST yet (backend follows).
+ * Backend wired (this plan): the form fetch-POSTs to /api/contact (Turnstile +
+ * Resend). Progressive enhancement — JS flips to success in place; no-JS native
+ * POST round-trips and the server re-renders this component with sent=true.
  */
+import TurnstileWidget from '../forms/TurnstileWidget.astro';
+
+interface Props {
+  /** Server-rendered success state (no-JS POST → /contact?sent=1). */
+  sent?: boolean;
+  /** Server-rendered error banner code (no-JS POST → /contact?error=…). */
+  errorCode?: string | null;
+}
+
+const { sent = false, errorCode = null } = Astro.props;
+
+const ERROR_MESSAGES: Record<string, string> = {
+  verify: "We couldn't confirm you're human. Please reload and try again.",
+  send: 'Something went wrong sending your message. Please email recruiting@iastaffing.com directly.',
+  validation: 'Please fill in your name, a valid email, and select who you are.',
+};
+const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.send) : null;
 ---
 
 <div class="gt-page">
@@ -39,7 +58,7 @@
   <canvas class="gt-confetti" id="gtConfetti" aria-hidden="true"></canvas>
 
   <div class="gt-wrap">
-    <div class="gt-shell" id="gtShell">
+    <div class="gt-shell" id="gtShell" class:list={[{ 'gt-shell--done': sent }]}>
       <!-- LEFT RAIL -->
       <div class="gt-left">
         <div class="gt-eyebrow"><span class="gt-eyebrow__dot"></span>Get in touch</div>
@@ -105,6 +124,20 @@
             <textarea id="gtMessage" name="message" placeholder="What can we help with?"></textarea>
           </div>
 
+          <!-- Honeypot: visually hidden, off-tab, ignored by humans. A filled
+               value = bot → server drops silently before any Resend send. Not
+               display:none (some bots skip those). -->
+          <div class="gt-hp" aria-hidden="true">
+            <label for="gtCompany">Company</label>
+            <input id="gtCompany" name="company" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <div class="gt-field gt-field--full">
+            <TurnstileWidget form=".gt-form" />
+          </div>
+
+          <p class="gt-error" id="gtError" role="alert" hidden={!errorMessage}>{errorMessage}</p>
+
           <button class="gt-submit" type="submit">
             Send it <span class="gt-submit__puck" aria-hidden="true">→</span>
           </button>
@@ -113,7 +146,7 @@
     </div>
 
     <!-- SUCCESS STATE -->
-    <div class="gt-thanks" id="gtThanks" role="status" aria-live="polite" tabindex="-1">
+    <div class="gt-thanks" id="gtThanks" class:list={['gt-thanks', { 'is-active': sent }]} role="status" aria-live="polite" tabindex="-1">
       <div class="gt-thanks__check" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="#FBF6EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
       </div>
@@ -278,6 +311,33 @@
   }
   .gt-submit:hover .gt-submit__puck { transform: translateX(4px); }
 
+  /* Honeypot — off-screen, never display:none. */
+  .gt-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* Server-rendered error banner (no-JS POST round-trip) + JS error reuse. */
+  .gt-error {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(196, 69, 105, 0.10);
+    border: 1px solid rgba(196, 69, 105, 0.35);
+    color: #8f2f48;
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .gt-error[hidden] { display: none; }
+
+  /* Server-rendered success (?sent=1): hide the shell entirely. */
+  .gt-shell--done { display: none; }
+
   /* Success */
   .gt-thanks { display: none; text-align: center; padding: 40px 0; max-width: 680px; margin: 0 auto; }
   .gt-thanks:focus { outline: none; }
@@ -411,14 +471,53 @@
         return;
       }
 
-      // Phase 2 = client-side success only (no network POST yet — backend follows).
-      shell.style.display = 'none';
-      thanks.classList.add('is-active');
-      window.scrollTo(0, 0);
-      // Move focus to the success region so SR + keyboard users are told it
-      // succeeded (focus was on the now-hidden submit button).
-      (thanks as HTMLElement).focus();
-      fireConfetti();
+      // Backend wired: POST the form to /api/contact and only flip to success
+      // on a 200. Accept: application/json selects the JSON (no-redirect) path.
+      const submitBtn = form.querySelector('.gt-submit') as HTMLButtonElement | null;
+      const errorEl = document.getElementById('gtError');
+      if (errorEl) errorEl.setAttribute('hidden', '');
+
+      const showError = (msg: string) => {
+        if (errorEl) {
+          errorEl.textContent = msg;
+          errorEl.removeAttribute('hidden');
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Send it →';
+        }
+      };
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending…';
+      }
+
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { Accept: 'application/json' },
+      })
+        .then((res) => {
+          if (!res.ok) {
+            if (res.status === 403) {
+              showError("We couldn't confirm you're human. Please reload and try again.");
+            } else {
+              showError('Something went wrong sending your message. Please email recruiting@iastaffing.com directly.');
+            }
+            return;
+          }
+          shell.style.display = 'none';
+          thanks.classList.add('is-active');
+          window.scrollTo(0, 0);
+          // Move focus to the success region so SR + keyboard users are told it
+          // succeeded (focus was on the now-hidden submit button).
+          (thanks as HTMLElement).focus();
+          fireConfetti();
+        })
+        .catch(() => {
+          showError('We could not reach the server. Please email recruiting@iastaffing.com directly.');
+        });
     });
   }
 
