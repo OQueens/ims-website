@@ -1,0 +1,697 @@
+---
+/*
+ * GetInTouch — the dark "Get in touch" contact page. The design north-star.
+ *
+ * SOURCE NOTE: the intended verbatim handoff at
+ * docs/superpowers/research/contact-reference-decoded.txt decoded to an EMPTY
+ * file (117 bytes — section headers only, "0 block(s)" / "no body found"), and
+ * no other copy of the `.gt-*` CSS / fireConfetti() / markup exists in the repo.
+ * This is therefore a faithful RECONSTRUCTION built to the Phase-2 spec's
+ * detailed adaptations and matching the existing `contact-b` dark design
+ * language (ContactPanel.astro). Flagged in the report as a deviation.
+ *
+ * Adaptations applied:
+ *  1. Scoped color vars (no --mn-* tokens exist) using the spec's exact hex.
+ *     Fonts map to the site's global tokens (imported by MarketingLayout).
+ *  2. Real IMS contact info (recruiting@iastaffing.com / (512) 524-6686 /
+ *     Fort Worth, TX) — not the handoff placeholders.
+ *  3. .gt-nav dropped — the page uses the site's <SiteNav> (layout nav slot).
+ *  4. Glow drift kept as the page's own gtDrift ambient animation (NOT the
+ *     global .ambient-glow class — would double-declare animation).
+ *  5. Never-invisible: entrance animations are transform-only (gtPop = scale,
+ *     gtRise = translateY); resting opacity stays 1. The form/left rail render
+ *     fully visible by default; .gt-thanks is a deliberate display:none state
+ *     swap (not hidden visible content — if JS is off the form native-POSTs).
+ *  6. Reduced-motion: fireConfetti() early-returns in JS; glows + entrance
+ *     animations disabled via scoped @media (prefers-reduced-motion).
+ *
+ * Phase 2 = client-side success only. No real network POST yet (backend is a
+ * separate follow-on plan).
+ */
+---
+
+<div class="gt-page">
+  <div class="gt-glow gt-glow--magenta" aria-hidden="true"></div>
+  <div class="gt-glow gt-glow--rose" aria-hidden="true"></div>
+
+  <div class="gt-shell" id="gtShell">
+    <!-- LEFT RAIL -->
+    <div class="gt-left">
+      <p class="gt-eyebrow">Get in touch</p>
+      <h1 class="gt-headline">Let's <em>talk</em>.</h1>
+      <p class="gt-sub">
+        A real conversation goes farther than a form. Whether you are staffing a
+        unit or looking for your next assignment, we reply fast and we keep it
+        human.
+      </p>
+
+      <div class="gt-info">
+        <div class="gt-info__item">
+          <span class="gt-info__label">Email</span>
+          <a class="gt-info__value" href="mailto:recruiting@iastaffing.com">recruiting@iastaffing.com</a>
+        </div>
+        <div class="gt-info__item">
+          <span class="gt-info__label">Phone</span>
+          <a class="gt-info__value" href="tel:+15125246686">(512) 524-6686</a>
+        </div>
+        <div class="gt-info__item">
+          <span class="gt-info__label">Office</span>
+          <span class="gt-info__value">Fort Worth, TX</span>
+        </div>
+      </div>
+
+      <div class="gt-meta">
+        <div class="gt-meta__line">Replies within one business day</div>
+        <div class="gt-meta__line">Mon to Fri, 8a to 6p Central</div>
+        <div class="gt-meta__line">One floor, about 40 people</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: FORM CARD -->
+    <div class="gt-card">
+      <form class="gt-form" id="gtForm" method="post" action="/api/contact" novalidate>
+        <div class="gt-row">
+          <div class="gt-field">
+            <label class="gt-label" for="gtName">Name</label>
+            <input class="gt-input" id="gtName" name="name" type="text" placeholder="Jane Doe" required />
+          </div>
+          <div class="gt-field">
+            <label class="gt-label" for="gtEmail">Email</label>
+            <input class="gt-input" id="gtEmail" name="email" type="email" placeholder="jane@hospital.org" required />
+          </div>
+        </div>
+
+        <div class="gt-field">
+          <span class="gt-label" id="gtAudienceLabel">I am a…</span>
+          <div class="gt-seg" role="radiogroup" aria-labelledby="gtAudienceLabel">
+            <label class="gt-seg__opt">
+              <input type="radio" name="audience" value="facility" required />
+              <span class="gt-seg__btn">Facility</span>
+            </label>
+            <label class="gt-seg__opt">
+              <input type="radio" name="audience" value="clinician" />
+              <span class="gt-seg__btn">Clinician</span>
+            </label>
+            <label class="gt-seg__opt">
+              <input type="radio" name="audience" value="other" />
+              <span class="gt-seg__btn">Other</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="gt-field">
+          <label class="gt-label" for="gtRole">Role / title <span class="gt-label__hint">(optional)</span></label>
+          <input class="gt-input" id="gtRole" name="role" type="text" placeholder="Director of Nursing" />
+        </div>
+
+        <div class="gt-field">
+          <label class="gt-label" for="gtMessage">Message</label>
+          <textarea class="gt-textarea" id="gtMessage" name="message" placeholder="Tell us what you need…"></textarea>
+        </div>
+
+        <button class="gt-submit" type="submit">
+          Send it →
+          <span class="gt-submit__puck" aria-hidden="true">→</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div class="gt-thanks" id="gtThanks">
+    <div class="gt-thanks__badge" aria-hidden="true">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <h2 class="gt-thanks__title">Thank you for <em>reaching out</em>.</h2>
+    <p class="gt-thanks__body">
+      We received your message and someone from our team will get back to you
+      within one business day. We read every note personally.
+    </p>
+    <p class="gt-thanks__signoff">— The IMS team</p>
+    <div class="gt-thanks__actions">
+      <a class="gt-btn gt-btn--primary" href="/">Back to home →</a>
+      <a class="gt-btn gt-btn--ghost" href="/jobs">Browse open jobs</a>
+    </div>
+  </div>
+
+  <canvas class="gt-confetti" id="gtConfetti" aria-hidden="true"></canvas>
+</div>
+
+<style>
+  .gt-page {
+    /* Scoped color vars — this dark page is an intentional dark island.
+       Exact hex from the Phase-2 spec (no --mn-* tokens exist in this codebase).
+       --magenta == the site's --ink-emphasis (#C44569), so this is consistent. */
+    --magenta: #c44569;
+    --rose: #d88b9f;
+    --butter: #e8c465;
+    --cyan: #59bfe7;
+    --ink: #1f1a23;
+    --cream: #fbf6ee;
+    --black: #0a0a0f;
+    position: relative;
+    min-height: 100vh;
+    background: var(--black);
+    color: var(--cream);
+    overflow: hidden;
+    font-family: var(--font-body);
+  }
+
+  /* ambient glows — gtDrift is this page's own ambient motion (adaptation #4) */
+  .gt-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .gt-glow--magenta {
+    width: 520px;
+    height: 520px;
+    background: var(--magenta);
+    top: -120px;
+    left: -100px;
+    animation: gtDrift 26s ease-in-out infinite;
+  }
+  .gt-glow--rose {
+    width: 420px;
+    height: 420px;
+    background: var(--rose);
+    bottom: -140px;
+    right: -90px;
+    animation: gtDrift 30s ease-in-out infinite reverse;
+  }
+
+  @keyframes gtDrift {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(40px, 30px) scale(1.08);
+    }
+  }
+
+  /* shell */
+  .gt-shell {
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 96px 32px 120px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 72px;
+    align-items: start;
+  }
+
+  /* left rail */
+  .gt-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--butter);
+    margin: 0 0 20px;
+  }
+  .gt-headline {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 6vw, 68px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin: 0 0 28px;
+    font-weight: 600;
+  }
+  .gt-headline em {
+    font-style: normal;
+    color: var(--magenta);
+  }
+  .gt-sub {
+    font-size: 17px;
+    line-height: 1.6;
+    color: rgba(251, 246, 238, 0.72);
+    max-width: 42ch;
+    margin: 0 0 40px;
+  }
+
+  .gt-info {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin: 0 0 36px;
+  }
+  .gt-info__item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .gt-info__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(251, 246, 238, 0.5);
+  }
+  .gt-info__value {
+    font-family: var(--font-display);
+    font-size: 21px;
+    color: var(--cream);
+    text-decoration: none;
+  }
+  a.gt-info__value:hover {
+    color: var(--butter);
+  }
+  .gt-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(251, 246, 238, 0.12);
+  }
+  .gt-meta__line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    color: rgba(251, 246, 238, 0.6);
+  }
+  .gt-meta__line::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--butter);
+    flex: none;
+  }
+
+  /* card / form */
+  .gt-card {
+    background: rgba(251, 246, 238, 0.04);
+    border: 1px solid rgba(251, 246, 238, 0.1);
+    border-radius: 24px;
+    padding: 40px;
+    backdrop-filter: blur(12px);
+  }
+  .gt-form {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .gt-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .gt-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .gt-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(251, 246, 238, 0.7);
+  }
+  .gt-label__hint {
+    opacity: 0.5;
+  }
+  .gt-input,
+  .gt-textarea {
+    width: 100%;
+    background: rgba(10, 10, 15, 0.5);
+    border: 1px solid rgba(251, 246, 238, 0.16);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--cream);
+    font-size: 15px;
+    font-family: var(--font-body);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .gt-input:focus,
+  .gt-textarea:focus {
+    outline: none;
+    border-color: var(--magenta);
+    box-shadow: 0 0 0 3px rgba(196, 69, 105, 0.25);
+  }
+  .gt-input::placeholder,
+  .gt-textarea::placeholder {
+    color: rgba(251, 246, 238, 0.35);
+  }
+  .gt-textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  /* segmented control */
+  .gt-seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .gt-seg__opt {
+    position: relative;
+  }
+  .gt-seg__opt input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    cursor: pointer;
+    margin: 0;
+  }
+  .gt-seg__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(251, 246, 238, 0.16);
+    font-size: 14px;
+    color: rgba(251, 246, 238, 0.7);
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, color 0.18s;
+    text-align: center;
+  }
+  .gt-seg__opt input:checked + .gt-seg__btn {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--cream);
+  }
+  .gt-seg__opt input:focus-visible + .gt-seg__btn {
+    box-shadow: 0 0 0 3px rgba(196, 69, 105, 0.35);
+  }
+
+  /* submit */
+  .gt-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    align-self: flex-start;
+    margin-top: 4px;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 999px;
+    background: var(--magenta);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.25s;
+    box-shadow: 0 8px 30px rgba(196, 69, 105, 0.35);
+  }
+  .gt-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 38px rgba(196, 69, 105, 0.5);
+  }
+  .gt-submit__puck {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(10, 10, 15, 0.25);
+  }
+
+  /* success */
+  .gt-thanks {
+    display: none;
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 140px 32px 160px;
+    text-align: center;
+  }
+  .gt-thanks.is-active {
+    display: block;
+  }
+  .gt-thanks__badge {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--magenta);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 32px;
+    /* transform-only entrance (scale); resting opacity stays 1 (never-invisible) */
+    animation: gtPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  }
+  .gt-thanks__title {
+    font-family: var(--font-display);
+    font-size: clamp(34px, 5vw, 52px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 20px;
+    font-weight: 600;
+    animation: gtRise 0.6s ease 0.1s backwards;
+  }
+  .gt-thanks__title em {
+    font-style: normal;
+    color: var(--magenta);
+  }
+  .gt-thanks__body {
+    font-size: 18px;
+    line-height: 1.6;
+    color: rgba(251, 246, 238, 0.72);
+    max-width: 46ch;
+    margin: 0 auto 16px;
+    animation: gtRise 0.6s ease 0.2s backwards;
+  }
+  .gt-thanks__signoff {
+    /* the one display-italic line per the spec */
+    font-family: var(--font-display-italic);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--butter);
+    margin: 0 0 40px;
+    animation: gtRise 0.6s ease 0.3s backwards;
+  }
+  .gt-thanks__actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    animation: gtRise 0.6s ease 0.4s backwards;
+  }
+  .gt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.15s;
+  }
+  .gt-btn--primary {
+    background: var(--magenta);
+    color: #fff;
+  }
+  .gt-btn--ghost {
+    background: transparent;
+    color: var(--cream);
+    border: 1px solid rgba(251, 246, 238, 0.25);
+  }
+  .gt-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  /* transform-only keyframes — opacity is never animated (never-invisible) */
+  @keyframes gtPop {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+  @keyframes gtRise {
+    from {
+      transform: translateY(20px);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* confetti canvas */
+  .gt-confetti {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* responsive */
+  @media (max-width: 920px) {
+    .gt-shell {
+      grid-template-columns: 1fr;
+      gap: 48px;
+      padding: 72px 24px 96px;
+    }
+  }
+  @media (max-width: 560px) {
+    .gt-row {
+      grid-template-columns: 1fr;
+    }
+    .gt-seg {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Scoped reduced-motion guard — disables the ambient drift + transform-only
+     entrances on this page (the global switch in colors_and_type.css also
+     neutralizes animations; this keeps the intent explicit and scoped). */
+  @media (prefers-reduced-motion: reduce) {
+    .gt-glow {
+      animation: none;
+    }
+    .gt-thanks__badge,
+    .gt-thanks__title,
+    .gt-thanks__body,
+    .gt-thanks__signoff,
+    .gt-thanks__actions {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  // Component module script — Astro bundles this from 'self' (CSP-ok) and it
+  // only runs client-side, so document/canvas/matchMedia access is safe.
+  import { validateContact } from '../../lib/contact-validation';
+
+  const form = document.getElementById('gtForm') as HTMLFormElement | null;
+  const shell = document.getElementById('gtShell');
+  const thanks = document.getElementById('gtThanks');
+  const canvas = document.getElementById('gtConfetti') as HTMLCanvasElement | null;
+
+  function shake(el: HTMLElement) {
+    el.animate(
+      [
+        { transform: 'translateX(0)' },
+        { transform: 'translateX(-6px)' },
+        { transform: 'translateX(6px)' },
+        { transform: 'translateX(0)' },
+      ],
+      { duration: 320 },
+    );
+  }
+
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      // Phase 2 = client-side success only. No real network POST yet.
+      e.preventDefault();
+
+      const name = form.querySelector('[name="name"]') as HTMLInputElement;
+      const email = form.querySelector('[name="email"]') as HTMLInputElement;
+      const audChecked = form.querySelector(
+        '[name="audience"]:checked',
+      ) as HTMLInputElement | null;
+
+      // Single source of truth: the shared validateContact predicate.
+      const result = validateContact({
+        name: name.value,
+        email: email.value,
+        audience: audChecked ? audChecked.value : '',
+      });
+
+      if (!result.ok) {
+        if (result.field === 'name') {
+          shake(name);
+          name.focus();
+        } else if (result.field === 'email') {
+          shake(email);
+          email.focus();
+        } else if (result.field === 'audience') {
+          // Radio group: focus the first option and shake the control.
+          const firstRadio = form.querySelector(
+            '[name="audience"]',
+          ) as HTMLInputElement | null;
+          const seg = form.querySelector('.gt-seg') as HTMLElement | null;
+          if (seg) shake(seg);
+          if (firstRadio) firstRadio.focus();
+        }
+        return;
+      }
+
+      // Valid → swap to the success state. The .gt-thanks block is display:none
+      // until .is-active; the form is the visible primary content (a deliberate
+      // state swap, not a hidden-content violation).
+      if (shell) (shell as HTMLElement).style.display = 'none';
+      if (thanks) thanks.classList.add('is-active');
+      window.scrollTo(0, 0);
+      fireConfetti();
+    });
+  }
+
+  function fireConfetti() {
+    // Reduced-motion: never run the rAF loop (CSS can't stop JS animation).
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const W = (canvas.width = window.innerWidth);
+    const H = (canvas.height = window.innerHeight);
+    const colors = ['#C44569', '#E8C465', '#D88B9F', '#59BFE7', '#F4ECDF'];
+    const pieces: Array<{
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      color: string;
+      rot: number;
+      vr: number;
+      vy: number;
+      vx: number;
+      sway: number;
+    }> = [];
+    for (let i = 0; i < 160; i++) {
+      pieces.push({
+        x: Math.random() * W,
+        y: -20 - Math.random() * H * 0.5,
+        w: 6 + Math.random() * 8,
+        h: 8 + Math.random() * 10,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * Math.PI,
+        vr: -0.2 + Math.random() * 0.4,
+        vy: 2.4 + Math.random() * 3.4,
+        vx: -1.2 + Math.random() * 2.4,
+        sway: Math.random() * Math.PI,
+      });
+    }
+
+    const t0 = performance.now();
+    function frame(now: number) {
+      const elapsed = now - t0;
+      ctx!.clearRect(0, 0, W, H);
+      pieces.forEach((p) => {
+        p.x += p.vx + Math.sin(now / 600 + p.sway) * 0.6;
+        p.y += p.vy;
+        p.rot += p.vr;
+        ctx!.save();
+        ctx!.translate(p.x, p.y);
+        ctx!.rotate(p.rot);
+        ctx!.fillStyle = p.color;
+        ctx!.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx!.restore();
+      });
+      if (elapsed < 4200) {
+        requestAnimationFrame(frame);
+      } else {
+        ctx!.clearRect(0, 0, W, H);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+</script>
