@@ -8,14 +8,19 @@
  * The homepage still uses ContactPanel (the cream contact-b panel); this page
  * is the standalone dark surface.
  *
- * STILL FLAGGED for Zach: Phase 2 is client-side success only — the form's
- * native POST to /api/contact + the endpoint + Cloudflare Turnstile + token
- * validation are a separate follow-on plan (backend not yet wired).
+ * SSR (prerender=false) so the no-JS POST path can server-render the success
+ * state (?sent=1) and surface a friendly error (?error=…). The JS path never
+ * navigates — it fetches /api/contact and flips to success in place.
  */
 import MarketingLayout from '../layouts/MarketingLayout.astro';
 import SiteNav from '../components/nav/SiteNav.astro';
 import SiteFooter from '../components/footer/SiteFooter.astro';
 import GetInTouch from '../components/sections/GetInTouch.astro';
+
+export const prerender = false;
+
+const sent = Astro.url.searchParams.get('sent') === '1';
+const errorCode = Astro.url.searchParams.get('error');
 ---
 <MarketingLayout
   title="Get in touch — Innovative Medical Staffing"
@@ -23,6 +28,6 @@ import GetInTouch from '../components/sections/GetInTouch.astro';
   inCard={false}
 >
   <SiteNav slot="nav" />
-  <GetInTouch />
+  <GetInTouch sent={sent} errorCode={errorCode} />
   <SiteFooter slot="footer" />
 </MarketingLayout>

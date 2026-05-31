@@ -22,7 +22,8 @@
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@supabase/supabase-js": "^2.105.4",
-    "astro": "^5.18.1"
+    "astro": "^5.18.1",
+    "resend": "^6.12.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260506.1",
