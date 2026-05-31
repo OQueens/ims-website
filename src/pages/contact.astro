@@ -1,21 +1,21 @@
 ---
 /*
- * /contact — Chromia-Cream contact page. The kit's contact surface IS the
- * contact-b split panel (variations/contact.html variation B = ContactForm.jsx),
- * shared with the homepage via the ContactPanel partial. The prior page was a
- * skeleton (its Turnstile/Resend form was deferred and never wired).
+ * /contact — the dark "Get in touch" page (Phase 2, the design north-star).
+ * Renders the GetInTouch dark island: ambient glows, split shell (left rail +
+ * form card), client-side success state, and confetti. Real contact details
+ * live in GetInTouch (recruiting@iastaffing.com / (512) 524-6686 / Fort Worth, TX).
  *
- * Content pass (2026-05-28): real contact details now live in ContactPanel
- * (recruiting@iastaffing.com / (512) 524-6686 / Fort Worth, TX).
+ * The homepage still uses ContactPanel (the cream contact-b panel); this page
+ * is the standalone dark surface.
  *
- * STILL FLAGGED for Zach: the form does a native POST to /api/contact, but the
- * endpoint + Cloudflare Turnstile + token validation + the success-state UX are
- * not yet wired into this design.
+ * STILL FLAGGED for Zach: Phase 2 is client-side success only — the form's
+ * native POST to /api/contact + the endpoint + Cloudflare Turnstile + token
+ * validation are a separate follow-on plan (backend not yet wired).
  */
 import MarketingLayout from '../layouts/MarketingLayout.astro';
 import SiteNav from '../components/nav/SiteNav.astro';
 import SiteFooter from '../components/footer/SiteFooter.astro';
-import ContactPanel from '../components/sections/ContactPanel.astro';
+import GetInTouch from '../components/sections/GetInTouch.astro';
 ---
 <MarketingLayout
   title="Get in touch — Innovative Medical Staffing"
@@ -23,6 +23,6 @@ import ContactPanel from '../components/sections/ContactPanel.astro';
   inCard={false}
 >
   <SiteNav slot="nav" />
-  <ContactPanel as="h1" />
+  <GetInTouch />
   <SiteFooter slot="footer" />
 </MarketingLayout>
