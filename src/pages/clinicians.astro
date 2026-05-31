@@ -16,19 +16,19 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
       <div class="hero__blob hero__blob--lilac" aria-hidden="true" style="top: -140px; right: -100px; opacity: 0.35;"></div>
       <div class="hero__blob hero__blob--coral" aria-hidden="true" style="bottom: -100px; left: -60px; opacity: 0.28;"></div>
       <div class="hero__blob hero__blob--butter" aria-hidden="true" style="top: 40%; right: 20%; width: 220px; height: 220px; opacity: 0.28;"></div>
-      <div class="container">
-        <span class="cc__hero-eyebrow">For clinicians · the IMS process</span>
-        <h1 class="cc__hero-title">From CV to <span>first shift</span> in four clear steps.</h1>
-        <p class="cc__hero-sub">No portal limbo. No "we'll get back to you when we get to it." Here's exactly what happens, and how long each part takes.</p>
+      <div class="container hero-stage">
+        <span class="cc__hero-eyebrow" style="--i:0">For clinicians · the IMS process</span>
+        <h1 class="cc__hero-title" style="--i:1">From CV to <span>first shift</span> in four clear steps.</h1>
+        <p class="cc__hero-sub" style="--i:2">No portal limbo. No "we'll get back to you when we get to it." Here's exactly what happens, and how long each part takes.</p>
       </div>
     </section>
 
     <section class="cc__timeline">
       <div class="container">
-        <div class="cc__timeline-track">
+        <div class="cc__timeline-track scroll-reveal">
           <div class="cc__timeline-line"></div>
 
-          <div class="cc__step cc__step--01">
+          <div class="cc__step cc__step--01 scroll-reveal" style="--i:0">
             <div class="cc__step-node">01</div>
             <div class="cc__step-card">
               <span class="cc__step-label">Day 1 · ~ 24 hours</span>
@@ -42,7 +42,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
             </div>
           </div>
 
-          <div class="cc__step cc__step--02">
+          <div class="cc__step cc__step--02 scroll-reveal" style="--i:1">
             <div class="cc__step-node">02</div>
             <div class="cc__step-card">
               <span class="cc__step-label">Days 2–10 · onboarding</span>
@@ -56,7 +56,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
             </div>
           </div>
 
-          <div class="cc__step cc__step--03">
+          <div class="cc__step cc__step--03 scroll-reveal" style="--i:2">
             <div class="cc__step-node">03</div>
             <div class="cc__step-card">
               <span class="cc__step-label">Week 2 · scheduling</span>
@@ -70,7 +70,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
             </div>
           </div>
 
-          <div class="cc__step cc__step--04">
+          <div class="cc__step cc__step--04 scroll-reveal" style="--i:3">
             <div class="cc__step-node">04</div>
             <div class="cc__step-card">
               <span class="cc__step-label">Week 3 · start working</span>
@@ -97,22 +97,22 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           <p class="section-anchor__sub">Higher rates. Better partners. The locum career most agencies promise but don't deliver.</p>
         </div>
         <div class="cc__why-grid">
-          <article class="cc__why-card cc__why-card--coral">
+          <article class="cc__why-card cc__why-card--coral scroll-reveal" style="--i:0">
             <div class="cc__why-num">$</div>
             <h3 class="cc__why-title">Highly competitive pay</h3>
             <p class="cc__why-body">Top-quartile rates in every specialty we staff. Transparent before you accept, no surprises in the contract.</p>
           </article>
-          <article class="cc__why-card cc__why-card--butter">
+          <article class="cc__why-card cc__why-card--butter scroll-reveal" style="--i:1">
             <div class="cc__why-num">✈</div>
             <h3 class="cc__why-title">Generous travel stipends</h3>
             <p class="cc__why-body">Travel, lodging, and per diem covered as standard. Concierge bookings if you want them; reimbursement if you don't.</p>
           </article>
-          <article class="cc__why-card cc__why-card--rose">
+          <article class="cc__why-card cc__why-card--rose scroll-reveal" style="--i:2">
             <div class="cc__why-num">☎</div>
             <h3 class="cc__why-title">One recruiter, your career</h3>
             <p class="cc__why-body">Not a portal. Not a rotating queue. The person who places you the first time is the person who calls you the fifteenth.</p>
           </article>
-          <article class="cc__why-card cc__why-card--lilac">
+          <article class="cc__why-card cc__why-card--lilac scroll-reveal" style="--i:3">
             <div class="cc__why-num">🛡</div>
             <h3 class="cc__why-title">Malpractice included</h3>
             <p class="cc__why-body">$2M / $4M occurrence-based coverage on every assignment. Licensing support across all 50 states.</p>
@@ -131,7 +131,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           <p class="section-anchor__sub">Three quick reads from clinicians currently on the IMS roster.</p>
         </div>
         <div class="cc__quotes-grid">
-          <article class="cc__quote cc__quote--rose">
+          <article class="cc__quote cc__quote--rose scroll-reveal" style="--i:0">
             <p class="cc__quote-text">"Twelve years and three agencies. IMS is the only one where the recruiter who placed me <em>still answers</em> the phone."</p>
             <div class="cc__quote-attr">
               <div class="cc__quote-avatar" style="background: var(--pop-magenta);">MR</div>
@@ -141,7 +141,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
               </div>
             </div>
           </article>
-          <article class="cc__quote cc__quote--butter">
+          <article class="cc__quote cc__quote--butter scroll-reveal" style="--i:1">
             <p class="cc__quote-text">"I get sent to facilities where the team is <em>actually glad</em> to see me. Other agencies can't sell that."</p>
             <div class="cc__quote-attr">
               <div class="cc__quote-avatar" style="background: var(--pop-coral);">JK</div>
@@ -151,7 +151,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
               </div>
             </div>
           </article>
-          <article class="cc__quote cc__quote--mint">
+          <article class="cc__quote cc__quote--mint scroll-reveal" style="--i:2">
             <p class="cc__quote-text">"Friday is payday. It's a small thing, until <em>every other agency</em> can't manage it."</p>
             <div class="cc__quote-attr">
               <div class="cc__quote-avatar" style="background: var(--pop-butter); color: var(--ink);">RP</div>
@@ -167,7 +167,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
 
     <section class="cc__cta">
       <div class="container">
-        <div class="cc__cta-card">
+        <div class="cc__cta-card scroll-reveal">
           <div class="cc__cta-card__blob" aria-hidden="true"></div>
           <span class="cc__cta-card__eyebrow">Submit your CV</span>
           <h2 class="cc__cta-card__title">Start the <span>conversation</span>.</h2>
@@ -574,6 +574,21 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     font-size: 11px; font-weight: 700;
     flex-shrink: 0;
   }
+
+  /* ───── Timeline signature reveal (motion, JS-gated) ─────
+   * Bare default leaves the line at natural full height (no-JS shows it).
+   * Only html.js introduces scaleY(0); reduced-motion/print reset it. */
+  html.js .cc__timeline-line { transform: scaleY(0); transform-origin: top; transition: transform 900ms cubic-bezier(0.22,0.61,0.36,1); }
+  html.js .cc__timeline-track.is-revealed .cc__timeline-line { transform: scaleY(1); }
+  @media (prefers-reduced-motion: reduce), print { html.js .cc__timeline-line { transform: none !important; } }
+
+  /* Per-step delay raised to 140ms for drama, scoped to the timeline only */
+  html.js .cc__timeline-track .scroll-reveal { --stagger-step: 140ms; }
+
+  /* Node pop — transform-only, backwards fill, never sets opacity:0 */
+  html.js .cc__step.is-revealed .cc__step-node { animation: nodePop 320ms var(--ease-spring) 60ms backwards; }
+  @keyframes nodePop { from { transform: scale(0.6); } to { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce), print { html.js .cc__step.is-revealed .cc__step-node { animation: none; } }
 
   .cc__cta { padding: var(--space-8) 0 var(--space-10); }
   .cc__cta-card {
