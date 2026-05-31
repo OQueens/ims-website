@@ -2170,7 +2170,10 @@ html.js .scroll-reveal {
     transform var(--dur-reveal, 560ms) cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: calc(var(--i, 0) * var(--stagger-step, 70ms));
 }
-.scroll-reveal.is-revealed { opacity: 1; transform: none; }
+/* Revealed state — MUST be html.js-gated so it outranks `html.js .scroll-reveal`
+ * (which is specificity 0,2,1). A bare `.scroll-reveal.is-revealed` (0,2,0) loses
+ * to it and the element stays stuck at opacity:0 after the observer fires. */
+html.js .scroll-reveal.is-revealed { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce), print {
   .scroll-reveal { opacity: 1 !important; transform: none !important; transition: none; }
 }
