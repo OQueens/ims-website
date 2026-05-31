@@ -145,10 +145,10 @@ const hintList = [
 
   <div class="variation">
     <section class="jb__hero">
-      <div class="container">
-        <span class="jb__hero-eyebrow">{totalCount} open {totalCount === 1 ? 'assignment' : 'assignments'} · live feed</span>
-        <h1 class="jb__hero-title">Browse <span>open roles</span>.</h1>
-        <p class="jb__hero-sub">Live feed from LocumSmart, curated by a recruiter. Search by city, state, or specialty.</p>
+      <div class="container hero-stage">
+        <span class="jb__hero-eyebrow" style="--i:0">{totalCount} open {totalCount === 1 ? 'assignment' : 'assignments'} · live feed</span>
+        <h1 class="jb__hero-title" style="--i:1">Browse <span>open roles</span>.</h1>
+        <p class="jb__hero-sub" style="--i:2">Live feed from LocumSmart, curated by a recruiter. Search by city, state, or specialty.</p>
       </div>
 
       <div class="jb-b__search">
@@ -194,7 +194,7 @@ const hintList = [
     </section>
 
     <section class="jb-section">
-      <div class="jb-b__grid" id="jobs-grid">
+      <div class="jb-b__grid scroll-reveal" id="jobs-grid">
         {jobs.map((j, i) => (
           <article
             class={`jb-b__card jb-b__card--${tintFor(j.specialty_slug, i)}`}
