@@ -477,6 +477,14 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
       const errorEl = document.getElementById('gtError');
       if (errorEl) errorEl.setAttribute('hidden', '');
 
+      // Cache the original button markup (label + puck span) so the error-retry
+      // path restores it exactly — a textContent swap would flatten the
+      // <span class="gt-submit__puck"> and kill its hover animation.
+      // XSS-safe: this is the element's OWN compiled, server-rendered static
+      // markup round-tripped back onto itself — never user input or network
+      // data — so re-assigning it via innerHTML introduces no injection vector.
+      const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+
       const showError = (msg: string) => {
         if (errorEl) {
           errorEl.textContent = msg;
@@ -484,7 +492,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
         }
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Send it →';
+          submitBtn.innerHTML = originalBtnHtml;
         }
       };
 
