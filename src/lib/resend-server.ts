@@ -43,7 +43,10 @@ export async function sendContactEmail(env: ResendEnv, p: {
   if (!envOk(env)) return { ok: false, error: 'Missing Resend env vars' };
   try {
     const resend = new Resend(env.RESEND_API_KEY);
-    const label = AUDIENCE_LABEL[p.audience] ?? p.audience;
+    // p.audience is the Audience enum (validated upstream by parseContactForm),
+    // so the lookup is always defined — no raw-user-string fallback that could
+    // leak un-escaped input into the subject line.
+    const label = AUDIENCE_LABEL[p.audience];
     const subject = `[IMS Contact · ${label}] ${p.name}`;
     const role = (p.role ?? '').trim();
     const message = (p.message ?? '').trim();

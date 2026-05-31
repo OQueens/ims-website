@@ -73,6 +73,12 @@ describe('parseContactForm', () => {
     expect(r).toEqual({ kind: 'invalid', field: 'message' });
   });
 
+  it('silently truncates over-length role (does not reject)', () => {
+    const r = parseContactForm({ ...base, role: 'x'.repeat(200) });
+    expect(r.kind).toBe('ok');
+    if (r.kind === 'ok') expect(r.data.role.length).toBe(160);
+  });
+
   it('tolerates undefined optional fields', () => {
     const r = parseContactForm({ name: 'A', email: 'a@b.co', audience: 'other', turnstileToken: 'tok' });
     expect(r.kind).toBe('ok');

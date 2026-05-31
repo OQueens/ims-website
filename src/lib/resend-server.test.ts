@@ -51,6 +51,7 @@ describe('sendContactEmail', () => {
     expect(html).toContain('&lt;script&gt;');
     expect(html).toContain('&amp;');
     expect(html).toContain('&quot;');
+    expect(html).toContain('&#39;');
   });
 
   it('omits optional role/message lines when empty', async () => {

@@ -1,6 +1,11 @@
 import { validateContact } from './contact-validation';
 import type { Audience } from './resend-server';
 
+// Server-side audience allowlist. validateContact (the client-shared predicate)
+// only checks that audience is truthy — it does NOT constrain the value — so
+// this guard is the authoritative allowlist and must stay in sync with the
+// radio values in GetInTouch.astro. Kept here (not in contact-validation) so the
+// client predicate stays minimal.
 const AUDIENCES: readonly Audience[] = ['facility', 'clinician', 'other'];
 
 const CAPS = { name: 120, email: 254, role: 160, message: 4000 } as const;
