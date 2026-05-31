@@ -29,6 +29,15 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
+// Defense-in-depth against email-header injection. validateContact's email
+// regex is unanchored and the name check is only non-empty, so a CR/LF could
+// reach a header-bound field (subject, replyTo). Resend's HTTPS API sanitizes
+// server-side, but we strip CR/LF/tab at the boundary regardless — a legitimate
+// name or address never contains them, so this is non-destructive for real input.
+function stripHeader(s: string): string {
+  return s.replace(/[\r\n\t]+/g, ' ').trim();
+}
+
 function envOk(env: ResendEnv): env is Required<ResendEnv> {
   return Boolean(env.RESEND_API_KEY && env.RESEND_FROM_EMAIL && env.RECRUITING_TO_ADDRESS);
 }
@@ -47,7 +56,7 @@ export async function sendContactEmail(env: ResendEnv, p: {
     // so the lookup is always defined — no raw-user-string fallback that could
     // leak un-escaped input into the subject line.
     const label = AUDIENCE_LABEL[p.audience];
-    const subject = `[IMS Contact · ${label}] ${p.name}`;
+    const subject = stripHeader(`[IMS Contact · ${label}] ${p.name}`);
     const role = (p.role ?? '').trim();
     const message = (p.message ?? '').trim();
     const html =
@@ -61,7 +70,7 @@ export async function sendContactEmail(env: ResendEnv, p: {
     const result = await resend.emails.send({
       from: env.RESEND_FROM_EMAIL,
       to: env.RECRUITING_TO_ADDRESS,
-      replyTo: p.email,
+      replyTo: stripHeader(p.email),
       subject,
       html,
     });

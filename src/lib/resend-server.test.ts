@@ -83,4 +83,16 @@ describe('sendContactEmail', () => {
     expect(res.ok).toBe(false);
     expect(sendMock).not.toHaveBeenCalled();
   });
+
+  it('strips CR/LF from header-bound fields (subject name + replyTo) — no header injection', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_4' }, error: null });
+    await sendContactEmail(ENV, {
+      name: 'Evil\r\nBcc: attacker@example.com',
+      email: 'a@b.co\r\nBcc: attacker@example.com',
+      audience: 'facility', role: '', message: 'hi',
+    });
+    const arg = sendMock.mock.calls[0][0];
+    expect(arg.subject).not.toMatch(/[\r\n]/);
+    expect(arg.replyTo).not.toMatch(/[\r\n]/);
+  });
 });
