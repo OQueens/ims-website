@@ -71,14 +71,14 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
   <SiteNav slot="nav" />
 
   <!-- ============================ HERO ============================ -->
-  <section class="section section--cream hero hero--center" aria-labelledby="hero-headline">
+  <section class="section section--cream hero hero--center hero-stage" aria-labelledby="hero-headline">
     <div class="hero__blob hero__blob--coral" aria-hidden="true"></div>
     <div class="hero__blob hero__blob--butter" aria-hidden="true"></div>
     <div class="hero__blob hero__blob--lilac" aria-hidden="true"></div>
 
     <div class="container hero__inner">
-      <div class="eyebrow hero__eyebrow"><span class="eyebrow__dot"></span>Locum tenens · est. 2018</div>
-      <h1 class="hero__headline" id="hero-headline">
+      <div class="eyebrow hero__eyebrow" style="--i:0"><span class="eyebrow__dot"></span>Locum tenens · est. 2018</div>
+      <h1 class="hero__headline" id="hero-headline" style="--i:1">
         A More <span class="hero__rotator" aria-label={ROTATING_WORDS[0]}>
           {ROTATING_WORDS.map((w) => (
             <span class="hero__rotator-word" aria-hidden="true">{w}</span>
@@ -88,10 +88,10 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
         <br />
         Way to Staff Care.
       </h1>
-      <p class="hero__sub">
+      <p class="hero__sub" style="--i:2">
         A boutique, family-style approach to locum staffing, connecting clinicians and facilities with the care, speed, and concierge support they deserve.
       </p>
-      <div class="hero__cta-row" role="group" aria-label="Primary actions">
+      <div class="hero__cta-row" role="group" aria-label="Primary actions" style="--i:3">
         <a class="pill pill--swing" href="/facilities">
           For Facilities
           <span class="pill__puck" aria-hidden="true">→</span>
@@ -114,9 +114,9 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
   <!-- ======================== POSITIONING ========================= -->
   <section class="section section--ink section--sm" aria-label="Company at a glance">
     <div class="container">
-      <div class="positioning">
-        {stats.map((s) => (
-          <div class="statchip">
+      <div class="positioning scroll-reveal">
+        {stats.map((s, i) => (
+          <div class="statchip" style={`--i:${i}`}>
             <div class={`statchip__num statchip__num--${s.tint} tabular`}>{s.num}</div>
             <div class="statchip__label">{s.label}</div>
           </div>
@@ -138,8 +138,8 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
         </p>
       </div>
 
-      <div class="aud-mix" role="group" aria-label="Audience options">
-        <article class="aud-mix__card aud-mix__card--fac" tabindex="0">
+      <div class="aud-mix scroll-reveal" role="group" aria-label="Audience options">
+        <article class="aud-mix__card aud-mix__card--fac" tabindex="0" style="--i:0">
           <span class="aud-mix__chip">For facilities · 01</span>
           <h3 class="aud-mix__title">Curated,<br /><span>not volume</span>.</h3>
           <p class="aud-mix__body">
@@ -175,7 +175,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
           </a>
         </article>
 
-        <article class="aud-mix__card aud-mix__card--cli" tabindex="0">
+        <article class="aud-mix__card aud-mix__card--cli" tabindex="0" style="--i:1">
           <span class="aud-mix__chip">For clinicians · 02</span>
           <h3 class="aud-mix__title">One recruiter,<br /><span>for life</span>.</h3>
           <p class="aud-mix__body">
@@ -228,7 +228,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
       </div>
 
       <div class="compare__grid">
-        <div class="compare__col compare__col--old">
+        <div class="compare__col compare__col--old scroll-reveal" style="--i:0">
           <div class="compare__header">
             <span class="compare__tag">The default</span>
             <h3 class="compare__heading">Other agencies</h3>
@@ -242,7 +242,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
             ))}
           </ul>
         </div>
-        <div class="compare__col compare__col--ims">
+        <div class="compare__col compare__col--ims scroll-reveal" style="--i:1">
           <div class="compare__header">
             <span class="compare__tag compare__tag--pop">The IMS way</span>
             <h3 class="compare__heading">Innovative Medical Staffing</h3>
@@ -281,7 +281,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
       </div>
     </div>
 
-    <div class="container cta-band__inner">
+    <div class="container cta-band__inner scroll-reveal">
       <span class="eyebrow"><span class="eyebrow__dot" style="background: var(--mn-black, #0A0A0F)"></span>Skip ahead</span>
       <h2 class="cta-band__headline" id="cta-band-anchor">
         Tell us what you <span class="em">need</span>.
@@ -309,8 +309,8 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
         </p>
       </div>
 
-      <div class="process-cards">
-        <article class="proc-card proc-card--brief">
+      <div class="process-cards scroll-reveal">
+        <article class="proc-card proc-card--brief" style="--i:0">
           <div class="proc-card__badge">Step 01</div>
           <h3 class="proc-card__title">Tell us what you <span style="color: var(--ink-emphasis)">need</span>.</h3>
           <p class="proc-card__body">Specialty, geography, schedule, call structure, EMR. The actual details.</p>
@@ -322,7 +322,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
           </div>
         </article>
 
-        <article class="proc-card proc-card--shortlist">
+        <article class="proc-card proc-card--shortlist" style="--i:1">
           <div class="proc-card__badge" style="background: var(--pop-mint); color: var(--ink)">Step 02</div>
           <h3 class="proc-card__title">Three vetted <span style="color: var(--ink-emphasis)">candidates</span>.</h3>
           <p class="proc-card__body">Not thirty resumes. Three who fit. We've talked to each this week.</p>
@@ -345,7 +345,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
           </div>
         </article>
 
-        <article class="proc-card proc-card--start">
+        <article class="proc-card proc-card--start" style="--i:2">
           <div class="proc-card__badge" style="background: var(--pop-coral); color: var(--cream-soft)">Step 03</div>
           <h3 class="proc-card__title">Meet, choose, <span style="color: var(--ink-emphasis)">start</span>.</h3>
           <p class="proc-card__body">Credentialing inside 14 days. We handle the paperwork and the calls.</p>
@@ -382,9 +382,9 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
           Anesthesia is the origin. Everything else is built on the same recruiter-led, curated model.
         </p>
       </div>
-      <div class="spec-grid">
-        {specialties.map((s) => (
-          <article class={`spec-card spec-card--${s.tint}`}>
+      <div class="spec-grid scroll-reveal">
+        {specialties.map((s, i) => (
+          <article class={`spec-card spec-card--${s.tint}`} style={`--i:${i < 4 ? i : 0}`}>
             <div class="spec-card__number">Nº {s.n}</div>
             <h3 class="spec-card__title">{s.title}</h3>
             <p class="spec-card__body">{s.body}</p>
@@ -410,9 +410,9 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
           Everything else is negotiable. These aren't.
         </p>
       </div>
-      <div class="values">
-        {values.map((v) => (
-          <article class={`value-card value-card--${v.tint}`}>
+      <div class="values scroll-reveal">
+        {values.map((v, i) => (
+          <article class={`value-card value-card--${v.tint}`} style={`--i:${i}`}>
             <h3 class="value-card__title">{v.title}</h3>
             <p class="value-card__body">{v.body}</p>
           </article>
@@ -422,7 +422,9 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
   </section>
 
   <!-- ========================== CONTACT =========================== -->
-  <ContactPanel />
+  <div class="scroll-reveal">
+    <ContactPanel />
+  </div>
 
   <SiteFooter slot="footer" />
 </MarketingLayout>
