@@ -1305,9 +1305,21 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   --cta-pop-y: 9px; --cta-pop-x: -4px;
   --cta-pop-dur: 12.5s; --cta-pop-delay: 2.1s;
 }
-@media (max-width: 1080px) { .cta-pop { display: none; } }
-@media (prefers-reduced-motion: reduce) { .cta-pop { animation: none !important; } }
-@media (max-width: 1080px) { .cta-pop { display: none; } }
+/* Mobile/tablet: keep a tasteful 2-node subset (tl + br); hide the two that would
+ * crowd the headline. Scale the CHILD content (the parent's transform is animated). */
+@media (max-width: 1080px) {
+  .cta-pop--tr, .cta-pop--bl { display: none; }
+  .cta-pop--tl { top: 6%; left: 4%; }
+  .cta-pop--br { bottom: 8%; right: 4%; }
+  .cta-pop--tl .cta-pop__pill { transform: rotate(var(--cta-pop-tilt, -4deg)) scale(0.82); }
+  .cta-pop--br .cta-pop__card { transform: rotate(var(--cta-pop-tilt, 3deg)) scale(0.82); }
+}
+@media (max-width: 560px) {
+  .cta-pop--tl { top: 3%; left: 2%; }
+  .cta-pop--br { bottom: 5%; right: 2%; }
+  .cta-pop--tl .cta-pop__pill { transform: rotate(var(--cta-pop-tilt, -4deg)) scale(0.72); }
+  .cta-pop--br .cta-pop__card { transform: rotate(var(--cta-pop-tilt, 3deg)) scale(0.72); }
+}
 @media (prefers-reduced-motion: reduce) { .cta-pop { animation: none !important; } }
 .cta-band__headline {
   font-family: var(--font-display);
