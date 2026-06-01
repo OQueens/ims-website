@@ -2178,6 +2178,31 @@ html.js .scroll-reveal.is-revealed { opacity: 1; transform: none; }
   .scroll-reveal { opacity: 1 !important; transform: none !important; transition: none; }
 }
 
+/* Reveal-group · per-child STAGGERED cascade (the fix for "loads all-at-once").
+ * The container is the IntersectionObserver trigger; its direct .reveal children
+ * cascade individually via --i. Bare default = visible (never-invisible). The
+ * revealed rule MUST stay html.js-gated so it outranks the hidden rule
+ * (specificity: hidden 0,3,1 < revealed 0,4,1) — the 2026-05-30 lesson. */
+.reveal-group > .reveal { opacity: 1; transform: none; }
+html.js .reveal-group > .reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity var(--dur-reveal, 620ms) var(--ease-rise),
+    transform var(--dur-reveal, 620ms) var(--ease-rise);
+  transition-delay: calc(var(--i, 0) * var(--stagger-step, 80ms));
+  will-change: opacity, transform;
+}
+/* Directional variants — adjacent cards don't all rise identically (reads natural). */
+html.js .reveal-group > .reveal--left  { transform: translateX(-28px); }
+html.js .reveal-group > .reveal--right { transform: translateX(28px); }
+html.js .reveal-group > .reveal--scale { transform: translateY(22px) scale(0.96); }
+/* Revealed — outranks every hidden/directional rule above (0,4,1). */
+html.js .reveal-group.is-revealed > .reveal { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce), print {
+  .reveal-group > .reveal { opacity: 1 !important; transform: none !important; transition: none; }
+}
+
 /* Hero entrance — visible by default; plays one frame after JS confirms. */
 .hero-stage > * { /* children animate */ }
 html.js .hero-stage > * {
