@@ -98,12 +98,12 @@ const specialties: { slug: string; name: string; framing: string }[] = [
     </div>
   </ScrollReveal>
 
-  <ScrollReveal as="section" id="grid" class="sp-grid" aria-labelledby="sp-grid-heading">
+  <section id="grid" class="sp-grid" aria-labelledby="sp-grid-heading">
     <div class="sp-grid__inner">
       <h2 id="sp-grid-heading" class="visually-hidden">All twelve specialties</h2>
-      <ul class="grid">
-        {specialties.map((s) => (
-          <li>
+      <ul class="grid reveal-group">
+        {specialties.map((s, i) => (
+          <li class="reveal" style={`--i:${Math.min(i, 5)}`}>
             <a class="card" href={`/jobs?specialty=${s.slug}`}>
               <h3 class="name">{s.name}</h3>
               <p class="framing">{s.framing}</p>
@@ -116,7 +116,7 @@ const specialties: { slug: string; name: string; framing: string }[] = [
         ))}
       </ul>
     </div>
-  </ScrollReveal>
+  </section>
 
   <ScrollReveal as="section" id="closing" class="sp-closing" aria-labelledby="sp-closing-heading">
     <div class="sp-closing__inner">

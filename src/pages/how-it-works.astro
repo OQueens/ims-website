@@ -111,7 +111,7 @@ const tabs: Tab[] = [
     </div>
   </ScrollReveal>
 
-  <ScrollReveal as="section" id="process" class="hw-process" aria-labelledby="hw-process-heading">
+  <section id="process" class="hw-process" aria-labelledby="hw-process-heading">
     <div class="hw-process__inner">
       <h2 id="hw-process-heading" class="visually-hidden">The 4-step process</h2>
 
@@ -141,9 +141,9 @@ const tabs: Tab[] = [
           hidden={i !== 0}
           data-panel={t.id}
         >
-          <ol class="steps">
-            {t.steps.map((step) => (
-              <li class="step">
+          <ol class="steps reveal-group">
+            {t.steps.map((step, si) => (
+              <li class="step reveal" style={`--i:${Math.min(si, 5)}`}>
                 <p class="num">{step.num}</p>
                 <h3 class="step-title">{step.title}</h3>
                 <p class="estimate">{step.estimate}</p>
@@ -154,7 +154,7 @@ const tabs: Tab[] = [
         </div>
       ))}
     </div>
-  </ScrollReveal>
+  </section>
 
   <ScrollReveal as="section" id="closing" class="hw-closing" aria-labelledby="hw-closing-heading">
     <div class="hw-closing__inner">
