@@ -114,9 +114,9 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
   <!-- ======================== POSITIONING ========================= -->
   <section class="section section--ink section--sm" aria-label="Company at a glance">
     <div class="container">
-      <div class="positioning scroll-reveal">
+      <div class="positioning reveal-group">
         {stats.map((s, i) => (
-          <div class="statchip" style={`--i:${i}`}>
+          <div class:list={['statchip', 'reveal']} style={`--i:${i}`}>
             <div class={`statchip__num statchip__num--${s.tint} tabular`}>{s.num}</div>
             <div class="statchip__label">{s.label}</div>
           </div>
@@ -128,18 +128,18 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
   <!-- ====================== AUDIENCE SPLIT ========================= -->
   <section class="section section--cream audience-mix-section" aria-labelledby="audience-anchor">
     <div class="container">
-      <div class="section-anchor">
-        <div>
+      <div class="section-anchor reveal-group">
+        <div class="reveal" style="--i:0">
           <span class="eyebrow"><span class="eyebrow__dot"></span>§ 02 · Two audiences</span>
           <h2 class="section-anchor__heading" id="audience-anchor">Built for <span class="em">both</span> sides of the room.</h2>
         </div>
-        <p class="section-anchor__sub">
+        <p class="section-anchor__sub reveal" style="--i:1">
           Most agencies write to a hypothetical "everyone." We don't. Pick your side and we'll keep the copy honest.
         </p>
       </div>
 
-      <div class="aud-mix scroll-reveal" role="group" aria-label="Audience options">
-        <article class="aud-mix__card aud-mix__card--fac" tabindex="0" style="--i:0">
+      <div class="aud-mix reveal-group" role="group" aria-label="Audience options">
+        <article class="aud-mix__card aud-mix__card--fac reveal reveal--left" tabindex="0" style="--i:0">
           <span class="aud-mix__chip">For facilities · 01</span>
           <h3 class="aud-mix__title">Curated,<br /><span>not volume</span>.</h3>
           <p class="aud-mix__body">
@@ -175,7 +175,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
           </a>
         </article>
 
-        <article class="aud-mix__card aud-mix__card--cli" tabindex="0" style="--i:1">
+        <article class="aud-mix__card aud-mix__card--cli reveal reveal--right" tabindex="0" style="--i:1">
           <span class="aud-mix__chip">For clinicians · 02</span>
           <h3 class="aud-mix__title">One recruiter,<br /><span>for life</span>.</h3>
           <p class="aud-mix__body">
@@ -217,18 +217,18 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
   <!-- ========================== COMPARE =========================== -->
   <section class="section section--cream compare" aria-labelledby="compare-anchor">
     <div class="container">
-      <div class="section-anchor">
-        <div>
+      <div class="section-anchor reveal-group">
+        <div class="reveal" style="--i:0">
           <span class="eyebrow"><span class="eyebrow__dot"></span>§ 03 · How we're different</span>
           <h2 class="section-anchor__heading" id="compare-anchor">The way most <span class="em">aren't</span>.</h2>
         </div>
-        <p class="section-anchor__sub">
+        <p class="section-anchor__sub reveal" style="--i:1">
           Locum staffing has a default mode. We don't operate in it.
         </p>
       </div>
 
-      <div class="compare__grid">
-        <div class="compare__col compare__col--old scroll-reveal" style="--i:0">
+      <div class="compare__grid reveal-group">
+        <div class="compare__col compare__col--old reveal reveal--left" style="--i:0">
           <div class="compare__header">
             <span class="compare__tag">The default</span>
             <h3 class="compare__heading">Other agencies</h3>
@@ -242,7 +242,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
             ))}
           </ul>
         </div>
-        <div class="compare__col compare__col--ims scroll-reveal" style="--i:1">
+        <div class="compare__col compare__col--ims reveal reveal--right" style="--i:1">
           <div class="compare__header">
             <span class="compare__tag compare__tag--pop">The IMS way</span>
             <h3 class="compare__heading">Innovative Medical Staffing</h3>
@@ -281,15 +281,15 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
       </div>
     </div>
 
-    <div class="container cta-band__inner scroll-reveal">
-      <span class="eyebrow"><span class="eyebrow__dot" style="background: var(--mn-black, #0A0A0F)"></span>Skip ahead</span>
-      <h2 class="cta-band__headline" id="cta-band-anchor">
+    <div class="container cta-band__inner reveal-group">
+      <span class:list={['eyebrow', 'reveal']} style="--i:0"><span class="eyebrow__dot" style="background: var(--mn-black, #0A0A0F)"></span>Skip ahead</span>
+      <h2 class:list={['cta-band__headline', 'reveal']} id="cta-band-anchor" style="--i:1">
         Tell us what you <span class="em">need</span>.
       </h2>
-      <p class="cta-band__sub">
+      <p class:list={['cta-band__sub', 'reveal']} style="--i:2">
         The fastest path is a conversation. We answer messages within one business day, every day except Sunday.
       </p>
-      <a class="pill pill--swing pill--swing--magenta" href="/contact">
+      <a class:list={['pill', 'pill--swing', 'pill--swing--magenta', 'reveal']} href="/contact" style="--i:3">
         Start a conversation
         <span class="pill__puck" aria-hidden="true">→</span>
       </a>
@@ -299,18 +299,18 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
   <!-- ======================== PROCESS STEPS ======================= -->
   <section class="section section--lilac process-section" aria-labelledby="process-anchor">
     <div class="container">
-      <div class="section-anchor">
-        <div>
+      <div class="section-anchor reveal-group">
+        <div class="reveal" style="--i:0">
           <span class="eyebrow"><span class="eyebrow__dot" style="background: var(--pop-magenta)"></span>§ 04 · The process</span>
           <h2 class="section-anchor__heading" id="process-anchor">Three steps, <span class="em" style="color: var(--pop-magenta)">nothing</span> hidden.</h2>
         </div>
-        <p class="section-anchor__sub">
+        <p class="section-anchor__sub reveal" style="--i:1">
           Same process whether you're a 240-bed acute-care hospital or a CRNA looking for a long-stay placement.
         </p>
       </div>
 
-      <div class="process-cards scroll-reveal">
-        <article class="proc-card proc-card--brief" style="--i:0">
+      <div class="process-cards reveal-group">
+        <article class="proc-card proc-card--brief reveal" style="--i:0">
           <div class="proc-card__badge">Step 01</div>
           <h3 class="proc-card__title">Tell us what you <span style="color: var(--ink-emphasis)">need</span>.</h3>
           <p class="proc-card__body">Specialty, geography, schedule, call structure, EMR. The actual details.</p>
@@ -322,7 +322,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
           </div>
         </article>
 
-        <article class="proc-card proc-card--shortlist" style="--i:1">
+        <article class="proc-card proc-card--shortlist reveal" style="--i:1">
           <div class="proc-card__badge" style="background: var(--pop-mint); color: var(--ink)">Step 02</div>
           <h3 class="proc-card__title">Three vetted <span style="color: var(--ink-emphasis)">candidates</span>.</h3>
           <p class="proc-card__body">Not thirty resumes. Three who fit. We've talked to each this week.</p>
@@ -345,7 +345,7 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
           </div>
         </article>
 
-        <article class="proc-card proc-card--start" style="--i:2">
+        <article class="proc-card proc-card--start reveal" style="--i:2">
           <div class="proc-card__badge" style="background: var(--pop-coral); color: var(--cream-soft)">Step 03</div>
           <h3 class="proc-card__title">Meet, choose, <span style="color: var(--ink-emphasis)">start</span>.</h3>
           <p class="proc-card__body">Credentialing inside 14 days. We handle the paperwork and the calls.</p>
@@ -373,18 +373,18 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
   <!-- ======================= SPECIALTY GRID ======================= -->
   <section class="section section--cream" aria-labelledby="spec-anchor">
     <div class="container">
-      <div class="section-anchor">
-        <div>
+      <div class="section-anchor reveal-group">
+        <div class="reveal" style="--i:0">
           <span class="eyebrow"><span class="eyebrow__dot"></span>§ 04 · The daily six (and then some)</span>
           <h2 class="section-anchor__heading" id="spec-anchor">Where we live <span class="em">deepest</span>.</h2>
         </div>
-        <p class="section-anchor__sub">
+        <p class="section-anchor__sub reveal" style="--i:1">
           Anesthesia is the origin. Everything else is built on the same recruiter-led, curated model.
         </p>
       </div>
-      <div class="spec-grid scroll-reveal">
+      <div class="spec-grid reveal-group">
         {specialties.map((s, i) => (
-          <article class={`spec-card spec-card--${s.tint}`} style={`--i:${i < 4 ? i : 0}`}>
+          <article class:list={['spec-card', `spec-card--${s.tint}`, 'reveal']} style={`--i:${Math.min(i,5)}`}>
             <div class="spec-card__number">Nº {s.n}</div>
             <h3 class="spec-card__title">{s.title}</h3>
             <p class="spec-card__body">{s.body}</p>
@@ -401,18 +401,18 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
   <!-- ========================= VALUES GRID ======================== -->
   <section class="section section--cream" aria-labelledby="values-anchor">
     <div class="container">
-      <div class="section-anchor">
-        <div>
+      <div class="section-anchor reveal-group">
+        <div class="reveal" style="--i:0">
           <span class="eyebrow"><span class="eyebrow__dot"></span>§ 06 · How we operate</span>
           <h2 class="section-anchor__heading" id="values-anchor">Three rules we won't <span class="em">break</span>.</h2>
         </div>
-        <p class="section-anchor__sub">
+        <p class="section-anchor__sub reveal" style="--i:1">
           Everything else is negotiable. These aren't.
         </p>
       </div>
-      <div class="values scroll-reveal">
+      <div class="values reveal-group">
         {values.map((v, i) => (
-          <article class={`value-card value-card--${v.tint}`} style={`--i:${i}`}>
+          <article class:list={['value-card', `value-card--${v.tint}`, 'reveal']} style={`--i:${i}`}>
             <h3 class="value-card__title">{v.title}</h3>
             <p class="value-card__body">{v.body}</p>
           </article>
