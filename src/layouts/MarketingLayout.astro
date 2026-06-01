@@ -174,15 +174,30 @@ const ORG_JSON_LD = {
               entries.forEach(function (entry) {
                 if (!entry.isIntersecting) return;
                 var el = entry.target;
+                // For a reveal-group, the ANIMATED elements are the children, so
+                // promote (and later tear down) the children, not just the container.
+                var kids = el.classList.contains('reveal-group')
+                  ? el.querySelectorAll(':scope > .reveal')
+                  : [];
                 el.style.willChange = 'opacity, transform';
+                kids.forEach(function (k) { k.style.willChange = 'opacity, transform'; });
                 var legacyDelay = Number(el.dataset.revealDelay || 0);
-                var clearWillChange = function () { el.style.willChange = ''; };
+                var clearWillChange = function () {
+                  el.style.willChange = '';
+                  kids.forEach(function (k) { k.style.willChange = ''; });
+                };
                 var apply = function () { el.classList.add('is-revealed'); };
                 legacyDelay > 0 ? setTimeout(apply, legacyDelay) : apply();
-                el.addEventListener('transitionend', clearWillChange, { once: true });
-                // Failsafe: clear will-change even if no transition fires
-                // (already-final state) so it can't leak a compositor layer.
-                setTimeout(clearWillChange, 1200 + legacyDelay);
+                if (kids.length) {
+                  // Group cascade: a child's transitionend would fire on the FIRST
+                  // child and clear prematurely. Clear via timeout after the whole
+                  // capped cascade (reveal 620ms + max 5*80ms stagger ≈ 1020ms).
+                  setTimeout(clearWillChange, 1600 + legacyDelay);
+                } else {
+                  el.addEventListener('transitionend', clearWillChange, { once: true });
+                  // Failsafe: clear even if no transition fires (already-final state).
+                  setTimeout(clearWillChange, 1200 + legacyDelay);
+                }
                 observer.unobserve(el);
               });
             },

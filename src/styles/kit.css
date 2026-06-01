@@ -2191,9 +2191,10 @@ html.js .reveal-group > .reveal {
     opacity var(--dur-reveal, 620ms) var(--ease-rise),
     transform var(--dur-reveal, 620ms) var(--ease-rise);
   transition-delay: calc(var(--i, 0) * var(--stagger-step, 80ms));
-  will-change: opacity, transform;
 }
-/* Directional variants — adjacent cards don't all rise identically (reads natural). */
+/* Directional variants — adjacent cards don't all rise identically (reads natural).
+ * These have the SAME specificity (0,3,1) as the base hidden rule and override its
+ * transform by SOURCE ORDER — keep them AFTER the base `html.js .reveal-group > .reveal` rule. */
 html.js .reveal-group > .reveal--left  { transform: translateX(-28px); }
 html.js .reveal-group > .reveal--right { transform: translateX(28px); }
 html.js .reveal-group > .reveal--scale { transform: translateY(22px) scale(0.96); }

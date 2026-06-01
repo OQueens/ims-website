@@ -300,9 +300,12 @@ check(
 );
 // Never-invisible: bare .reveal-group>.reveal must set opacity:1 (no html.js gate).
 // Minified form collapses spaces: `.reveal-group>.reveal{opacity:1`.
+// Negative lookbehind excludes the html.js-gated rule (which appears as
+// `html.js .reveal-group>.reveal{...}` with a space before `.reveal-group`),
+// ensuring only the BARE, ungated visible default is matched.
 check(
   'motion never-invisible contract: bare .reveal-group>.reveal has opacity:1 (no html.js gate)',
-  /\.reveal-group>\.reveal\s*\{[^}]*opacity\s*:\s*1/.test(bundledCss),
+  /(?<!html\.js )\.reveal-group>\.reveal\s*\{[^}]*opacity\s*:\s*1/.test(bundledCss),
 );
 
 // ─── Type system (spec §4.2) ────────────────────────────────────────────────
