@@ -269,6 +269,42 @@ check('Phase 1.A brand token present (--brand-blue)', bundledCss.includes('--bra
 check('Phase 1.A brand token present (--ink-on-cream)', bundledCss.includes('--ink-on-cream:'));
 check('Phase 1.A brand token present (--ink-on-dark)', bundledCss.includes('--ink-on-dark:'));
 
+// ─── Motion contract (natural-stagger Phase 0, 2026-06-01) ──────────────────
+//
+// Guards the four invariants established by the reveal-group engine:
+//   1. New easing tokens --ease-rise / --ease-hero survived bundling.
+//   2. .reveal-group cascade rule is present in bundled CSS.
+//   3. .reveal-group.is-revealed cascade rule is present (the "revealed" trigger).
+//   4. Never-invisible contract: the bare (non-html.js) .reveal-group>.reveal
+//      default has opacity:1 — i.e. hidden start-state is ONLY applied under
+//      html.js, never as a raw bare rule. A missing bare rule here means content
+//      could be stuck invisible without JS.
+// Checks run against bundledCss (dist/_astro/*.css) — same surface as all
+// other design-system token checks above; minification removes spaces around >.
+
+check(
+  'motion token --ease-rise present in bundled CSS',
+  bundledCss.includes('--ease-rise'),
+);
+check(
+  'motion token --ease-hero present in bundled CSS',
+  bundledCss.includes('--ease-hero'),
+);
+check(
+  'motion .reveal-group cascade rule present in bundled CSS',
+  bundledCss.includes('.reveal-group'),
+);
+check(
+  'motion .reveal-group.is-revealed revealed rule present in bundled CSS',
+  bundledCss.includes('.reveal-group.is-revealed'),
+);
+// Never-invisible: bare .reveal-group>.reveal must set opacity:1 (no html.js gate).
+// Minified form collapses spaces: `.reveal-group>.reveal{opacity:1`.
+check(
+  'motion never-invisible contract: bare .reveal-group>.reveal has opacity:1 (no html.js gate)',
+  /\.reveal-group>\.reveal\s*\{[^}]*opacity\s*:\s*1/.test(bundledCss),
+);
+
 // ─── Type system (spec §4.2) ────────────────────────────────────────────────
 //
 // Codex r1+r2 fold: family-OR-src tolerance lets the check pass when
