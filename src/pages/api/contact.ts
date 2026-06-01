@@ -55,6 +55,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const fail = (status: number, code: string, field?: string): Response =>
     asJson ? json(status, { ok: false, error: code, field }) : redirect(`/contact?error=${code}`);
 
+  // Reject oversized bodies before buffering them (cheap DoS guard). A legit
+  // submission is well under 100KB (the message cap is 4000 chars plus small
+  // fields). Content-Length may be absent on chunked requests; then this is a
+  // no-op and the Cloudflare platform request-size limit is the backstop.
+  const contentLength = Number(request.headers.get('content-length') ?? '0');
+  if (Number.isFinite(contentLength) && contentLength > 100_000) {
+    return fail(413, 'toolarge');
+  }
+
   // 1. Parse the form body.
   let fields: ContactFields;
   try {
@@ -106,7 +115,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     message: data.message,
   });
   if (!sent.ok) {
-    console.error('[contact] resend failed:', sent.error);
+    // Newline-sanitize the provider error before logging (prevents log-line
+    // forgery if a provider message ever echoes attacker-influenced content).
+    console.error('[contact] resend failed:', (sent.error ?? '').replace(/[\r\n]+/g, ' '));
     return fail(502, 'send');
   }
 

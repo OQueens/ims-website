@@ -48,6 +48,16 @@ describe('parseContactForm', () => {
     expect(r).toEqual({ kind: 'invalid', field: 'email' });
   });
 
+  it('rejects an email containing CR/LF (header-injection guard)', () => {
+    const r = parseContactForm({ ...base, email: 'a@b.co\r\nBcc: attacker@example.com' });
+    expect(r).toEqual({ kind: 'invalid', field: 'email' });
+  });
+
+  it('accepts valid plus-addressing (guard must not over-reject)', () => {
+    const r = parseContactForm({ ...base, email: 'user+tag@example.com' });
+    expect(r.kind).toBe('ok');
+  });
+
   it('rejects missing audience', () => {
     const r = parseContactForm({ ...base, audience: '' });
     expect(r).toEqual({ kind: 'invalid', field: 'audience' });

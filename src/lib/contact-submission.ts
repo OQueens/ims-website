@@ -53,6 +53,13 @@ export function parseContactForm(f: ContactFields): ParseOutcome {
   const v = validateContact({ name, email, audience });
   if (!v.ok) return { kind: 'invalid', field: v.field };
 
+  // The shared email regex is unanchored and tolerant. Reject any whitespace in
+  // the address (no legitimate email contains a space, tab, CR, or LF), which
+  // stops a CRLF-laden value at validation — before it could reach an email
+  // header. Defense-in-depth on top of resend-server's stripHeader. Note: \s
+  // does NOT match '+', so valid plus-addressing (user+tag@example.com) passes.
+  if (/\s/.test(email)) return { kind: 'invalid', field: 'email' };
+
   if (!AUDIENCES.includes(audience as Audience)) return { kind: 'invalid', field: 'audience' };
   if (!turnstileToken) return { kind: 'invalid', field: 'token' };
 
