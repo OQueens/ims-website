@@ -8,18 +8,30 @@
  *     /contact?sent=1 (success) or /contact?error=<code> (failure), which
  *     contact.astro renders server-side.
  *
- * Scope (spec §7): Turnstile + Resend only. No persistence, no rate-limit.
- * Turnstile is the bot/abuse gate; the honeypot is belt-and-suspenders.
+ * Scope: Turnstile + Resend + durable capture. Every valid, human-verified
+ * submission is INSERTed to Supabase (ims_contact_messages) BEFORE the email so
+ * a lead is never lost when Resend fails; the row's resend_status is then
+ * reconciled to 'sent'/'failed'. Turnstile is the bot/abuse gate; the honeypot
+ * is belt-and-suspenders. No rate-limit yet (deferred).
  */
 import type { APIRoute } from 'astro';
 import { parseContactForm, wantsJson, type ContactFields } from '../../lib/contact-submission';
 import { verifyTurnstile } from '../../lib/turnstile-server';
 import { sendContactEmail, type ResendEnv } from '../../lib/resend-server';
+import { hashIp } from '../../lib/ip-hash';
+import {
+  buildContactRow,
+  insertContactMessage,
+  markResendOutcome,
+  type PersistenceEnv,
+} from '../../lib/contact-persistence';
 
 export const prerender = false;
 
-interface ContactEnv extends ResendEnv {
+interface ContactEnv extends ResendEnv, PersistenceEnv {
   TURNSTILE_SECRET_KEY?: string;
+  /** Optional secret pepper for ip_hash; degrades to unsalted SHA-256 if unset. */
+  IP_HASH_SALT?: string;
 }
 
 function readEnv(locals: App.Locals): ContactEnv {
@@ -33,6 +45,9 @@ function readEnv(locals: App.Locals): ContactEnv {
     RESEND_FROM_EMAIL: import.meta.env.RESEND_FROM_EMAIL,
     RECRUITING_TO_ADDRESS: import.meta.env.RECRUITING_TO_ADDRESS,
     TURNSTILE_SECRET_KEY: import.meta.env.TURNSTILE_SECRET_KEY,
+    SUPABASE_URL: import.meta.env.SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+    IP_HASH_SALT: import.meta.env.IP_HASH_SALT,
   };
 }
 
@@ -46,6 +61,12 @@ function json(status: number, body: unknown): Response {
 function redirect(path: string): Response {
   return new Response(null, { status: 303, headers: { Location: path } });
 }
+
+// Sanitize a provider-influenced error string before logging: strip ALL control
+// characters (not just CR/LF) so a crafted provider message can't forge log
+// lines or inject terminal escapes, and cap the length.
+const safeLog = (s: string | undefined): string =>
+  (s ?? '').replace(/[\u0000-\u001F\u007F]+/g, ' ').slice(0, 500);
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const accept = request.headers.get('accept');
@@ -106,7 +127,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return fail(403, 'verify');
   }
 
-  // 4. Deliver via Resend (never throws).
+  // 4. Durable capture FIRST (INSERT before email) so a lead is never lost when
+  // Resend fails. The row defaults to resend_status='pending'; step 6 reconciles
+  // it. If Supabase isn't wired (configured:false) this is a no-op and the flow
+  // degrades to email-only (the prior behavior).
+  const userAgent = (request.headers.get('user-agent') ?? '').slice(0, 512) || null;
+  const ipHash = await hashIp(ip, env.IP_HASH_SALT ?? '');
+  const row = buildContactRow(data, { ipHash, userAgent });
+  const inserted = await insertContactMessage(env, row);
+  if (inserted.configured && !inserted.ok) {
+    console.error('[contact] durable capture failed:', safeLog(inserted.error));
+  }
+
+  // 5. Deliver via Resend (never throws).
   const sent = await sendContactEmail(env, {
     name: data.name,
     email: data.email,
@@ -115,12 +148,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
     message: data.message,
   });
   if (!sent.ok) {
-    // Newline-sanitize the provider error before logging (prevents log-line
-    // forgery if a provider message ever echoes attacker-influenced content).
-    console.error('[contact] resend failed:', (sent.error ?? '').replace(/[\r\n]+/g, ' '));
-    return fail(502, 'send');
+    // safeLog strips control chars + caps length: prevents log-line forgery if a
+    // provider message ever echoes attacker-influenced content.
+    console.error('[contact] resend failed:', safeLog(sent.error));
   }
 
+  // 6. Reconcile the captured row's delivery state (only when we inserted one).
+  // Awaited (not fire-and-forget) so the write completes before the Worker
+  // response settles — a 'pending' row left behind would re-send on an ops sweep.
+  if (inserted.ok && inserted.id) {
+    const marked = await markResendOutcome(env, inserted.id, sent.ok, sent.error);
+    if (!marked.ok && marked.configured) {
+      console.error('[contact] resend-status reconcile failed:', safeLog(marked.error));
+    }
+  }
+
+  // 7. Respond. The lead is safe if it was persisted OR emailed; only when BOTH
+  // channels fail do we surface an error and ask the user to email directly.
+  // Persisted-but-unsent rows carry resend_status='failed' for an ops follow-up
+  // sweep (idx_ims_contact_resend) — success-on-persist trades a real-time email
+  // for a durable record rather than silently dropping the lead.
+  if (!inserted.ok && !sent.ok) {
+    return fail(502, 'send');
+  }
   return ok();
 };
 
