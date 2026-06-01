@@ -390,7 +390,10 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
   }
   .gt-pill--primary { background: var(--cream); color: var(--ink); }
   .gt-pill--ghost { background: transparent; color: var(--cream); border: 1.5px solid rgba(251, 246, 238, 0.3); }
-  .gt-pill:hover { transform: translateY(-2px); }
+  /* pointer-gated so success-state pills don't get stuck-hover on touch (Codex Medium fold) */
+  @media (hover: hover) and (pointer: fine) {
+    .gt-pill:hover { transform: translateY(-2px); }
+  }
 
   /* Confetti canvas */
   .gt-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }

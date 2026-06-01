@@ -2217,25 +2217,33 @@ html.js .scroll-reveal.is-revealed { opacity: 1; transform: none; }
  * cascade individually via --i. Bare default = visible (never-invisible). The
  * revealed rule MUST stay html.js-gated so it outranks the hidden rule
  * (specificity: hidden 0,3,1 < revealed 0,4,1) — the 2026-05-30 lesson. */
-.reveal-group > .reveal { opacity: 1; transform: none; }
+/* Reveal motion uses the individual `translate`/`scale` properties (NOT `transform`)
+ * so a child's OWN hover/press/base `transform` composes independently and is never
+ * clobbered by the revealed reset. (Codex High fold 2026-06-01: when `.reveal` sits
+ * directly on a card that also hover-lifts via `transform`, a `transform:none` reset
+ * killed the hover. `translate`/`scale` are separate animatable properties — Baseline
+ * since 2023 — and render before `transform`, so both coexist.) */
+.reveal-group > .reveal { opacity: 1; }   /* translate/scale default to none → visible */
 html.js .reveal-group > .reveal {
   opacity: 0;
-  transform: translateY(22px);
+  translate: 0 22px;
   transition:
     opacity var(--dur-reveal, 620ms) var(--ease-rise),
-    transform var(--dur-reveal, 620ms) var(--ease-rise);
+    translate var(--dur-reveal, 620ms) var(--ease-rise),
+    scale var(--dur-reveal, 620ms) var(--ease-rise);
   transition-delay: calc(var(--i, 0) * var(--stagger-step, 80ms));
 }
 /* Directional variants — adjacent cards don't all rise identically (reads natural).
- * These have the SAME specificity (0,3,1) as the base hidden rule and override its
- * transform by SOURCE ORDER — keep them AFTER the base `html.js .reveal-group > .reveal` rule. */
-html.js .reveal-group > .reveal--left  { transform: translateX(-28px); }
-html.js .reveal-group > .reveal--right { transform: translateX(28px); }
-html.js .reveal-group > .reveal--scale { transform: translateY(22px) scale(0.96); }
-/* Revealed — outranks every hidden/directional rule above (0,4,1). */
-html.js .reveal-group.is-revealed > .reveal { opacity: 1; transform: none; }
+ * Same specificity (0,3,1) as the base hidden rule — override by SOURCE ORDER, keep
+ * them AFTER the base `html.js .reveal-group > .reveal` rule. */
+html.js .reveal-group > .reveal--left  { translate: -28px 0; }
+html.js .reveal-group > .reveal--right { translate: 28px 0; }
+html.js .reveal-group > .reveal--scale { translate: 0 22px; scale: 0.96; }
+/* Revealed — resets ONLY the reveal offset (translate/scale), leaving `transform`
+ * free for component hover/press. Outranks every hidden/directional rule (0,4,1). */
+html.js .reveal-group.is-revealed > .reveal { opacity: 1; translate: none; scale: none; }
 @media (prefers-reduced-motion: reduce), print {
-  .reveal-group > .reveal { opacity: 1 !important; transform: none !important; transition: none; }
+  .reveal-group > .reveal { opacity: 1 !important; translate: none !important; scale: none !important; transition: none !important; }
 }
 
 /* Hero entrance — visible by default; plays one frame after JS confirms. */
