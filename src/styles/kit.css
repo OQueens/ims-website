@@ -54,15 +54,12 @@
               color var(--dur-fast) var(--ease-out);
 }
 .pill--primary { background: var(--ink); color: var(--cream-soft); }
-.pill--primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
 .pill--primary:focus-visible {
   outline: 2px solid var(--pop-coral);
   outline-offset: 3px;
 }
 .pill--coral { background: var(--pop-coral); color: var(--cream-soft); }
-.pill--coral:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
 .pill--butter { background: var(--pop-butter); color: var(--ink); }
-.pill--butter:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
 .pill--secondary {
   background: transparent;
   color: var(--ink);
@@ -76,7 +73,6 @@
 }
 .pill--small { padding: 8px 14px; font-size: 13px; }
 .pill__arrow { transition: transform var(--dur-fast) var(--ease-out); display: inline-block; }
-.pill:hover .pill__arrow { transform: translateX(2px); }
 
 /* Swing-arrow variant: arrow sits in a colored puck inside the pill, rotates -45deg on hover */
 .pill--swing {
@@ -97,10 +93,20 @@
   font-weight: 700;
   transition: transform 220ms var(--ease-snap);
 }
-.pill--swing:hover .pill__puck { transform: rotate(-45deg); }
 .pill--swing--butter .pill__puck { background: var(--pop-butter); color: var(--ink); }
 .pill--swing--mint .pill__puck { background: var(--pop-mint); color: var(--ink); }
 .pill--swing--magenta .pill__puck { background: var(--pop-magenta); color: var(--cream-soft); }
+
+/* ── Pointer-gated pill hover + press (safe on touch: no stuck-hover transforms) ── */
+@media (hover: hover) and (pointer: fine) {
+  .pill--primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+  .pill--coral:hover   { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+  .pill--butter:hover  { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+  .pill:hover .pill__arrow { transform: translateX(2px); }
+  .pill--swing:hover .pill__puck { transform: rotate(-45deg); }
+  /* Subtle press feedback — scale collapses slightly on click */
+  .pill:active { transform: scale(0.97); transition-duration: 110ms; }
+}
 
 /* ─────── Eyebrow ─────── */
 .eyebrow {
@@ -197,7 +203,9 @@
   font-weight: 700;
   transition: transform 220ms var(--ease-snap);
 }
-.topnav__cta:hover .topnav__cta__puck { transform: rotate(-45deg); }
+@media (hover: hover) and (pointer: fine) {
+  .topnav__cta:hover .topnav__cta__puck { transform: rotate(-45deg); }
+}
 
 @media (max-width: 768px) {
   .topnav__links { display: none; }
@@ -447,7 +455,9 @@ html, body { overflow-x: clip; }
   overflow: hidden;
   transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
 }
-.audience-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); }
+@media (hover: hover) and (pointer: fine) {
+  .audience-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); }
+}
 .audience-card--butter { background: var(--soft-butter); }
 .audience-card--mint { background: var(--soft-mint); }
 .audience-card__number {
@@ -545,7 +555,9 @@ html, body { overflow-x: clip; }
   overflow: hidden;
   min-height: 200px;
 }
-.spec-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-card); }
+@media (hover: hover) and (pointer: fine) {
+  .spec-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-card); }
+}
 .spec-card--coral { background: var(--soft-coral); }
 .spec-card--butter { background: var(--soft-butter); }
 .spec-card--mint { background: var(--soft-mint); }
@@ -668,7 +680,9 @@ html, body { overflow-x: clip; }
   border-top: 4px solid var(--pop-coral);
   transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
 }
-.value-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); }
+@media (hover: hover) and (pointer: fine) {
+  .value-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); }
+}
 .value-card--coral { border-top-color: var(--pop-coral); }
 .value-card--butter { border-top-color: var(--pop-butter); }
 .value-card--mint { border-top-color: var(--pop-mint); }
@@ -1100,16 +1114,18 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   transition: transform 380ms var(--ease-out), box-shadow 380ms var(--ease-out);
   cursor: pointer;
 }
-.compare__col:hover {
-  transform: translateY(-4px) scale(1.012);
-}
-.compare__col--old:hover {
-  box-shadow: 0 18px 48px rgba(31, 26, 35, 0.10);
-}
-.compare__col--ims:hover {
-  box-shadow: 0 22px 60px rgba(31, 26, 35, 0.32),
-              0 0 0 1px rgba(245, 200, 75, 0.4),
-              0 0 60px -10px rgba(245, 200, 75, 0.35);
+@media (hover: hover) and (pointer: fine) {
+  .compare__col:hover {
+    transform: translateY(-4px) scale(1.012);
+  }
+  .compare__col--old:hover {
+    box-shadow: 0 18px 48px rgba(31, 26, 35, 0.10);
+  }
+  .compare__col--ims:hover {
+    box-shadow: 0 22px 60px rgba(31, 26, 35, 0.32),
+                0 0 0 1px rgba(245, 200, 75, 0.4),
+                0 0 60px -10px rgba(245, 200, 75, 0.35);
+  }
 }
 .compare__col--old { background: var(--cream-soft); border: 1px solid var(--rule); }
 .compare__col--ims { background: var(--ink); color: var(--cream-soft); }
@@ -1340,23 +1356,25 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   z-index: 0;
 }
 .proc-card > * { position: relative; z-index: 1; }
-.proc-card:hover {
-  transform: translateY(-6px) rotate(-0.3deg);
-  box-shadow: 0 24px 56px rgba(31, 26, 35, 0.14);
+@media (hover: hover) and (pointer: fine) {
+  .proc-card:hover {
+    transform: translateY(-6px) rotate(-0.3deg);
+    box-shadow: 0 24px 56px rgba(31, 26, 35, 0.14);
+  }
+  .proc-card:hover::before { opacity: 0.18; }
+  .proc-card:hover .proc-card__badge {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(31, 26, 35, 0.18);
+  }
+  .proc-card:hover .proc-card__art--stack .cand-card--1 { transform: rotate(-5deg) translate(-4px, -2px); }
+  .proc-card:hover .proc-card__art--stack .cand-card--2 { transform: rotate(4deg) translate(4px, -1px); }
+  .proc-card:hover .proc-card__art--stack .cand-card--3 { transform: rotate(-2deg) translate(-2px, 2px); }
+  .proc-card:hover .cal-mock__cell.is-mark {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(91, 201, 168, 0.45);
+  }
+  .proc-card:hover .proc-mock__row { transform: translateX(2px); }
 }
-.proc-card:hover::before { opacity: 0.18; }
-.proc-card:hover .proc-card__badge {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(31, 26, 35, 0.18);
-}
-.proc-card:hover .proc-card__art--stack .cand-card--1 { transform: rotate(-5deg) translate(-4px, -2px); }
-.proc-card:hover .proc-card__art--stack .cand-card--2 { transform: rotate(4deg) translate(4px, -1px); }
-.proc-card:hover .proc-card__art--stack .cand-card--3 { transform: rotate(-2deg) translate(-2px, 2px); }
-.proc-card:hover .cal-mock__cell.is-mark {
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(91, 201, 168, 0.45);
-}
-.proc-card:hover .proc-mock__row { transform: translateX(2px); }
 .proc-card__badge {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -1544,18 +1562,20 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   transform: rotate(3deg) translateX(-40px);
   z-index: 2;
 }
-.aud-mix__card:hover,
 .aud-mix__card:focus-visible {
   transform: rotate(0deg) translateX(0) scale(1.025);
   z-index: 10;
   box-shadow: 0 28px 72px rgba(31, 26, 35, 0.22);
-}
-.aud-mix__card:focus-visible {
   outline: 3px solid var(--ink-emphasis);
   outline-offset: 4px;
 }
-.aud-mix:hover .aud-mix__card:not(:hover) {
-  opacity: 0.85;
+@media (hover: hover) and (pointer: fine) {
+  .aud-mix__card:hover {
+    transform: rotate(0deg) translateX(0) scale(1.025);
+    z-index: 10;
+    box-shadow: 0 28px 72px rgba(31, 26, 35, 0.22);
+  }
+  .aud-mix:hover .aud-mix__card:not(:hover) { opacity: 0.85; }
 }
 
 .aud-mix__chip {
@@ -1621,7 +1641,9 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   box-shadow: 0 2px 8px rgba(31, 26, 35, 0.05);
   transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
 }
-.role-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(31, 26, 35, 0.08); }
+@media (hover: hover) and (pointer: fine) {
+  .role-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(31, 26, 35, 0.08); }
+}
 .role-card__main { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
 .role-card__main b {
   font-family: var(--font-display);
