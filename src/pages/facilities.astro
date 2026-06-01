@@ -25,9 +25,9 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           </div>
         </div>
         <div class="fb__hero-vis">
-          <div class="fb__roster scroll-reveal">
+          <div class="fb__roster reveal-group">
             <div class="fb__roster-label">Available this week · roster snapshot</div>
-            <div class="fb__roster-item" style="--i:0">
+            <div class="fb__roster-item reveal" style="--i:0">
               <div class="fb__roster-avatar" style="background: var(--pop-coral);">JM</div>
               <div class="fb__roster-info">
                 <b>Dr. Jordan M.</b>
@@ -35,7 +35,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
               </div>
               <span class="fb__roster-badge">Open call</span>
             </div>
-            <div class="fb__roster-item" style="--i:1">
+            <div class="fb__roster-item reveal" style="--i:1">
               <div class="fb__roster-avatar" style="background: var(--pop-butter); color: var(--ink);">KR</div>
               <div class="fb__roster-info">
                 <b>Kavi R., CRNA</b>
@@ -43,7 +43,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
               </div>
               <span class="fb__roster-badge">Available</span>
             </div>
-            <div class="fb__roster-item" style="--i:2">
+            <div class="fb__roster-item reveal" style="--i:2">
               <div class="fb__roster-avatar" style="background: var(--pop-mint); color: var(--ink);">SP</div>
               <div class="fb__roster-info">
                 <b>Dr. Sara P.</b>
@@ -51,7 +51,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
               </div>
               <span class="fb__roster-badge">Available</span>
             </div>
-            <div class="fb__roster-item" style="--i:3">
+            <div class="fb__roster-item reveal" style="--i:3">
               <div class="fb__roster-avatar" style="background: var(--pop-lilac);">RN</div>
               <div class="fb__roster-info">
                 <b>Dr. Rae N.</b>
@@ -88,15 +88,15 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
 
     <section class="fb__pillars">
       <div class="container">
-        <div class="section-anchor">
-          <div>
+        <div class="section-anchor reveal-group">
+          <div class="reveal" style="--i:0">
             <span class="eyebrow"><span class="eyebrow__dot"></span>§ 01 · Three-pillar approach</span>
             <h2 class="section-anchor__heading">What every partnership <span class="em">always</span> includes.</h2>
           </div>
-          <p class="section-anchor__sub">Whether you're a 240-bed acute-care hospital or a single surgery center, these three commitments are the floor, never the ceiling.</p>
+          <p class="section-anchor__sub reveal" style="--i:1">Whether you're a 240-bed acute-care hospital or a single surgery center, these three commitments are the floor, never the ceiling.</p>
         </div>
-        <div class="fb__pillars-grid scroll-reveal">
-          <article class="fb__pillar" style="--i:0">
+        <div class="fb__pillars-grid reveal-group">
+          <article class="fb__pillar reveal" style="--i:0">
             <div class="fb__pillar-num">01</div>
             <h3 class="fb__pillar-title">Dedicated support for your facility.</h3>
             <p class="fb__pillar-body">One account lead, the same person, same number, who learns your call structure, EMR, and staff. Not a queue. Not a portal.</p>
@@ -106,7 +106,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
               <li>Quarterly facility check-ins</li>
             </ul>
           </article>
-          <article class="fb__pillar" style="--i:1">
+          <article class="fb__pillar reveal" style="--i:1">
             <div class="fb__pillar-num">02</div>
             <h3 class="fb__pillar-title">Tailored, three-candidate shortlist.</h3>
             <p class="fb__pillar-body">Three clinicians from our house roster matched to your specialty, call structure, and team culture. Not thirty resumes. Three real fits.</p>
@@ -116,7 +116,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
               <li>Reference checks already complete</li>
             </ul>
           </article>
-          <article class="fb__pillar" style="--i:2">
+          <article class="fb__pillar reveal" style="--i:2">
             <div class="fb__pillar-num">03</div>
             <h3 class="fb__pillar-title">Streamlined credentialing & onboarding.</h3>
             <p class="fb__pillar-body">Our credentialing team handles licensing, DEA, and references, typically inside 14 days.</p>
@@ -132,15 +132,15 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
 
     <section class="fc__quotes">
       <div class="container">
-        <div class="section-anchor">
-          <div>
+        <div class="section-anchor reveal-group">
+          <div class="reveal" style="--i:0">
             <span class="eyebrow"><span class="eyebrow__dot"></span>§ 02 · Unedited facility feedback</span>
             <h2 class="section-anchor__heading">From the people who <span class="em">hired them</span>.</h2>
           </div>
-          <p class="section-anchor__sub">Submitted via our post-assignment review, lightly excerpted for length.</p>
+          <p class="section-anchor__sub reveal" style="--i:1">Submitted via our post-assignment review, lightly excerpted for length.</p>
         </div>
-        <div class="fc__quotes-grid scroll-reveal">
-          <article class="fc__quote fc__quote--mint" style="--i:0">
+        <div class="fc__quotes-grid reveal-group">
+          <article class="fc__quote fc__quote--mint reveal" style="--i:0">
             <p class="fc__quote-text">"The CRNA they sent was board-certified, on time every shift, and the rest of our anesthesia team asked us to <em>book her again</em>."</p>
             <div class="fc__quote-attr">
               <div class="fc__quote-avatar" style="background: var(--pop-mint); color: var(--ink);">DH</div>
@@ -150,7 +150,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
               </div>
             </div>
           </article>
-          <article class="fc__quote fc__quote--butter" style="--i:1">
+          <article class="fc__quote fc__quote--butter reveal" style="--i:1">
             <p class="fc__quote-text">"Three resumes, not thirty. Credentialed in <em>twelve days</em>. The recruiter actually knew our EMR."</p>
             <div class="fc__quote-attr">
               <div class="fc__quote-avatar" style="background: var(--pop-butter); color: var(--ink);">MO</div>
@@ -160,7 +160,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
               </div>
             </div>
           </article>
-          <article class="fc__quote fc__quote--rose" style="--i:2">
+          <article class="fc__quote fc__quote--rose reveal" style="--i:2">
             <p class="fc__quote-text">"Our nurses say it's the first locum agency where they actually <em>like the clinicians</em>. That's the only review that matters."</p>
             <div class="fc__quote-attr">
               <div class="fc__quote-avatar" style="background: var(--pop-rose);">RN</div>
