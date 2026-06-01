@@ -15,15 +15,15 @@
  *     placeholders. The 3 meta lines are kept (unverified; behind the staging gate).
  *  3. The reference's demo .topbar/.nav-pill is dropped — the page uses the
  *     site's <SiteNav> (supplied by contact.astro via the layout nav slot).
- *  4. Glow drift kept as the reference's own gtDrift animation on the two glows
- *     (NOT the global .ambient-glow class — that would double-declare animation).
+ *  4. Glows removed in favour of .gt-page's own layered radial-gradient
+ *     background (fades naturally, no clip needed). overflow-x:hidden only.
  *  5. Never-invisible (hard project rule): the entrance keyframes are
  *     TRANSFORM-ONLY (gtPop=scale, gtRise=translateY). The reference's gtRise
  *     animated opacity too; we drop that so a frozen/disabled animation can never
  *     leave the success text invisible. .gt-thanks is display:none until JS adds
  *     .is-active — a deliberate state swap; the form is the visible primary
  *     content and would native-POST if JS never runs.
- *  6. Reduced-motion: fireConfetti() early-returns in JS; glows + entrance
+ *  6. Reduced-motion: fireConfetti() early-returns in JS; entrance + breathe
  *     animations are disabled via a scoped @media (prefers-reduced-motion).
  *  7. Success actions point at the real routes (/ and /jobs). validateContact
  *     (src/lib/contact-validation.ts) is the single source of truth for the
@@ -53,8 +53,6 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
 ---
 
 <div class="gt-page">
-  <div class="gt-glow gt-glow--magenta" aria-hidden="true"></div>
-  <div class="gt-glow gt-glow--rose" aria-hidden="true"></div>
   <canvas class="gt-confetti" id="gtConfetti" aria-hidden="true"></canvas>
 
   <div class="gt-wrap">
@@ -192,10 +190,10 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
       radial-gradient(700px 520px at -8% 108%, rgba(216, 139, 159, 0.30), transparent 60%),
       #0A0A0F;
     color: var(--cream);
-    /* Clip BOTH axes: the ambient glows are absolutely positioned and bleed past
-       every edge — hidden keeps them inside this dark island (and stops them from
-       drifting over the nav band above or the footer below). */
-    overflow: hidden;
+    /* Clip horizontal axis only: the soft radial-gradient background fades
+       naturally and can't cause horizontal scroll, but vertical clipping is
+       removed so content and footer are never cut off. */
+    overflow-x: hidden;
   }
   .gt-wrap {
     max-width: 1120px;
@@ -315,13 +313,19 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
     border-radius: 999px; padding: 16px 24px; font-family: var(--font-body);
     font-weight: 700; font-size: 16px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
   }
-  .gt-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(196, 69, 105, 0.4); }
   .gt-submit:focus-visible { outline: 3px solid var(--cream); outline-offset: 3px; }
   .gt-submit__puck {
     width: 28px; height: 28px; border-radius: 50%; background: var(--ink);
     display: grid; place-items: center; font-size: 14px; transition: transform 0.15s;
   }
-  .gt-submit:hover .gt-submit__puck { transform: translateX(4px); }
+
+  /* Hover-alive: gated to true pointer devices to avoid stuck-hover on touch. */
+  @media (hover: hover) and (pointer: fine) {
+    .gt-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(196,69,105,0.45); }
+    .gt-submit:active { transform: scale(0.98); transition-duration: 110ms; }
+    .gt-submit:hover .gt-submit__puck { transform: translateX(3px); }
+    .gt-seg__opt:active .gt-seg__btn { transform: scale(0.97); }
+  }
 
   /* Honeypot — off-screen, never display:none. */
   .gt-hp {
@@ -388,21 +392,6 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
   .gt-pill--ghost { background: transparent; color: var(--cream); border: 1.5px solid rgba(251, 246, 238, 0.3); }
   .gt-pill:hover { transform: translateY(-2px); }
 
-  /* Glows — the reference's own ambient drift (NOT the global .ambient-glow).
-     position: absolute (NOT fixed) so they're anchored to the dark page and
-     scroll away with it, instead of staying pinned to the viewport on the right
-     as you scroll (which read as a weird floating blob over the form + footer). */
-  .gt-glow { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 1; }
-  .gt-glow--magenta {
-    width: 560px; height: 560px; background: rgba(196, 69, 105, 0.30);
-    top: -160px; right: -120px; animation: gtDrift 26s ease-in-out infinite;
-  }
-  .gt-glow--rose {
-    width: 420px; height: 420px; background: rgba(216, 139, 159, 0.22);
-    bottom: -140px; left: -100px; animation: gtDrift 30s ease-in-out infinite reverse;
-  }
-  @keyframes gtDrift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(40px, 30px); } }
-
   /* Confetti canvas */
   .gt-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
 
@@ -411,7 +400,8 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
      from-state during the delay; opacity always stays 1). */
   @keyframes gtPop { 0% { transform: scale(0.4); } 55% { transform: scale(1.12); } 100% { transform: scale(1); } }
   @keyframes gtRise { from { transform: translateY(18px); } to { transform: translateY(0); } }
-  .gt-thanks.is-active .gt-thanks__check   { animation: gtPop 0.6s cubic-bezier(0.32, 0.72, 0, 1) backwards; }
+  @keyframes gtBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+  .gt-thanks.is-active .gt-thanks__check   { animation: gtPop 0.6s cubic-bezier(0.32, 0.72, 0, 1) backwards, gtBreathe 4.5s ease-in-out 800ms infinite; }
   .gt-thanks.is-active .gt-thanks__eyebrow { animation: gtRise 0.6s ease 40ms backwards; }
   .gt-thanks.is-active .gt-thanks__title   { animation: gtRise 0.6s ease 100ms backwards; }
   .gt-thanks.is-active .gt-thanks__body    { animation: gtRise 0.6s ease 180ms backwards; }
@@ -419,9 +409,9 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
   .gt-thanks.is-active .gt-thanks__actions { animation: gtRise 0.6s ease 320ms backwards; }
 
   /* Reduced motion — scoped (the site already has a global switch in
-     colors_and_type.css; this disables this page's drift + entrance explicitly). */
+     colors_and_type.css; this disables this page's entrance + breathe
+     animations explicitly). The infinite gtBreathe MUST be killed here. */
   @media (prefers-reduced-motion: reduce) {
-    .gt-glow,
     .gt-thanks.is-active .gt-thanks__check,
     .gt-thanks.is-active .gt-thanks__eyebrow,
     .gt-thanks.is-active .gt-thanks__title,
