@@ -194,10 +194,11 @@ const hintList = [
     </section>
 
     <section class="jb-section">
-      <div class="jb-b__grid scroll-reveal" id="jobs-grid">
+      <div class="jb-b__grid reveal-group" id="jobs-grid">
         {jobs.map((j, i) => (
           <article
-            class={`jb-b__card jb-b__card--${tintFor(j.specialty_slug, i)}`}
+            class:list={[`jb-b__card jb-b__card--${tintFor(j.specialty_slug, i)}`, 'reveal']}
+            style={`--i:${Math.min(i, 5)}`}
             data-spec={j.specialty_slug}
             data-state={(j.facility_state ?? '').toLowerCase()}
             data-city={(j.facility_city ?? '').toLowerCase()}
