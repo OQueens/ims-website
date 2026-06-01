@@ -100,7 +100,7 @@ const ORG_JSON_LD = {
       addEventListener('load', function () {
         setTimeout(function () {
           if (window.__scrollRevealReady) return;
-          document.querySelectorAll('.scroll-reveal').forEach(function (el) { el.classList.add('is-revealed'); });
+          document.querySelectorAll('.scroll-reveal, .reveal-group').forEach(function (el) { el.classList.add('is-revealed'); });
           document.querySelectorAll('.hero-stage').forEach(function (el) { el.classList.add('hero-go'); });
         }, 1500);
       });
@@ -161,7 +161,7 @@ const ORG_JSON_LD = {
         window.__scrollRevealReady = true;
 
         function revealAll() {
-          document.querySelectorAll('.scroll-reveal').forEach(function (el) {
+          document.querySelectorAll('.scroll-reveal, .reveal-group').forEach(function (el) {
             el.classList.add('is-revealed');
           });
         }
@@ -188,7 +188,7 @@ const ORG_JSON_LD = {
             },
             { rootMargin: '0px 0px -12% 0px', threshold: 0 },
           );
-          document.querySelectorAll('.scroll-reveal').forEach(function (el) {
+          document.querySelectorAll('.scroll-reveal, .reveal-group').forEach(function (el) {
             observer.observe(el);
           });
         }

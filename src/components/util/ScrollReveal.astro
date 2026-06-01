@@ -18,11 +18,14 @@ interface Props {
   as?: string;
   /** legacy single-element delay in ms (kept for about/facilities back-compat) */
   delay?: number;
+  /** when true, emit a .reveal-group (children cascade) instead of single .scroll-reveal */
+  group?: boolean;
   class?: string;
   [key: string]: unknown;
 }
-const { as: As = 'section', delay = 0, class: className = '', ...rest } = Astro.props;
+const { as: As = 'section', delay = 0, group = false, class: className = '', ...rest } = Astro.props;
+const revealClass = group ? 'reveal-group' : 'scroll-reveal';
 ---
-<As class:list={['scroll-reveal', className]} data-reveal-delay={delay} {...rest}>
+<As class:list={[revealClass, className]} data-reveal-delay={delay} {...rest}>
   <slot />
 </As>
