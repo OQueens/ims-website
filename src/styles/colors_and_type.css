@@ -199,14 +199,16 @@
   --radius-xs:       8px;       /* badges, micro-controls */
 
   /* ─────────── Motion · easing ─────────── */
-  --ease-out:        cubic-bezier(0.22, 0.61, 0.36, 1);  /* default */
-  --ease-snap:       cubic-bezier(0.32, 0.72, 0.00, 1);  /* page xitions */
-  --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);  /* reserved */
+  --ease-out:        cubic-bezier(0.22, 0.61, 0.36, 1);  /* default / hover-out */
+  --ease-snap:       cubic-bezier(0.32, 0.72, 0.00, 1);  /* success mark / page xitions */
+  --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);  /* DELIGHT ONLY — node pop / success */
+  --ease-rise:       cubic-bezier(0.22, 1, 0.36, 1);     /* easeOutQuint — reveal workhorse */
+  --ease-hero:       cubic-bezier(0.16, 1, 0.3, 1);      /* easeOutExpo — hero + large entrances */
   --dur-fast:        150ms;
   --dur-base:        280ms;
   --dur-slow:        520ms;
-  --dur-reveal:      560ms;   /* scroll-reveal entrance */
-  --stagger-step:    70ms;    /* per-child cascade step */
+  --dur-reveal:      620ms;   /* scroll-reveal entrance (was 560) */
+  --stagger-step:    80ms;    /* per-child cascade step (was 70) */
 
   /* ─────────── Layout ─────────── */
   --container-max:   1320px;

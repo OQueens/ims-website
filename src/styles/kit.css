@@ -2166,9 +2166,9 @@ html.js .scroll-reveal {
   opacity: 0;
   transform: translateY(20px);
   transition:
-    opacity var(--dur-reveal, 560ms) cubic-bezier(0.22, 1, 0.36, 1),
-    transform var(--dur-reveal, 560ms) cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: calc(var(--i, 0) * var(--stagger-step, 70ms));
+    opacity var(--dur-reveal, 620ms) var(--ease-rise),
+    transform var(--dur-reveal, 620ms) var(--ease-rise);
+  transition-delay: calc(var(--i, 0) * var(--stagger-step, 80ms));
 }
 /* Revealed state — MUST be html.js-gated so it outranks `html.js .scroll-reveal`
  * (which is specificity 0,2,1). A bare `.scroll-reveal.is-revealed` (0,2,0) loses
@@ -2183,7 +2183,7 @@ html.js .scroll-reveal.is-revealed { opacity: 1; transform: none; }
 html.js .hero-stage > * {
   opacity: 0;
   transform: translateY(16px);
-  transition: opacity 600ms cubic-bezier(0.22,1,0.36,1), transform 600ms cubic-bezier(0.22,1,0.36,1);
+  transition: opacity 700ms var(--ease-hero), transform 700ms var(--ease-hero);
   transition-delay: calc(var(--i, 0) * 90ms);
 }
 html.js .hero-stage.hero-go > * { opacity: 1; transform: none; }
