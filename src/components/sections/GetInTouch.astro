@@ -165,6 +165,15 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
 <style>
   /* Scoped color vars (the reference's :root) — exact handoff hex. The dark page
      is an intentional dark island within the otherwise cream site. */
+
+  /* Paint the whole body dark on this page so no cream band shows above the dark
+     surface (behind the floating nav) or anywhere around it. Scoped via :has so
+     it only applies where .gt-page renders (/contact), leaving the cream site
+     untouched. */
+  :global(body:has(.gt-page)) {
+    background: #0A0A0F;
+  }
+
   .gt-page {
     --magenta: #C44569;   /* primary accent */
     --butter:  #E8C465;   /* eyebrow / labels */
@@ -183,7 +192,10 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
       radial-gradient(700px 520px at -8% 108%, rgba(216, 139, 159, 0.30), transparent 60%),
       #0A0A0F;
     color: var(--cream);
-    overflow-x: hidden;
+    /* Clip BOTH axes: the ambient glows are absolutely positioned and bleed past
+       every edge — hidden keeps them inside this dark island (and stops them from
+       drifting over the nav band above or the footer below). */
+    overflow: hidden;
   }
   .gt-wrap {
     max-width: 1120px;
@@ -376,8 +388,11 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
   .gt-pill--ghost { background: transparent; color: var(--cream); border: 1.5px solid rgba(251, 246, 238, 0.3); }
   .gt-pill:hover { transform: translateY(-2px); }
 
-  /* Glows — the reference's own ambient drift (NOT the global .ambient-glow). */
-  .gt-glow { position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 1; }
+  /* Glows — the reference's own ambient drift (NOT the global .ambient-glow).
+     position: absolute (NOT fixed) so they're anchored to the dark page and
+     scroll away with it, instead of staying pinned to the viewport on the right
+     as you scroll (which read as a weird floating blob over the form + footer). */
+  .gt-glow { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 1; }
   .gt-glow--magenta {
     width: 560px; height: 560px; background: rgba(196, 69, 105, 0.30);
     top: -160px; right: -120px; animation: gtDrift 26s ease-in-out infinite;
