@@ -12,6 +12,9 @@
 // through worker because src/pages/index.astro is `prerender = false` for
 // canonicalization, plus any future SSR routes).
 
+import { getCookie } from "./lib/hub/cookies";
+import { verifySession } from "./lib/hub/session";
+
 export const PAGES_DEV_HOSTNAME = "ims-website.pages.dev";
 export const CANONICAL_HOSTNAME = "innovativemedicalstaffing.com";
 
@@ -62,4 +65,38 @@ export function applySecurityHeaders(response: Response): Response {
     cloned.headers.set(name, value);
   }
   return cloned;
+}
+
+// ── Hub auth guard ──────────────────────────────────────────────────────────
+// The hub (/hub) is gated behind a Google-OAuth session cookie. These public
+// paths run the sign-in handshake and must stay reachable unauthenticated.
+export const HUB_PUBLIC_PATHS = new Set([
+  "/hub/login",
+  "/hub/auth/start",
+  "/hub/auth/callback",
+  "/hub/auth/logout",
+]);
+
+export function isHubProtectedPath(pathname: string): boolean {
+  if (pathname !== "/hub" && !pathname.startsWith("/hub/")) return false;
+  const p = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  return !HUB_PUBLIC_PATHS.has(p);
+}
+
+// Returns a 302-to-login Response when a protected /hub path lacks a valid
+// session, else null (request proceeds). `now` is unix seconds.
+export async function hubGuardRedirect(
+  pathname: string,
+  cookieHeader: string | null,
+  env: { HUB_SESSION_SECRET?: string },
+  now: number,
+): Promise<Response | null> {
+  if (!isHubProtectedPath(pathname)) return null;
+  const token = getCookie(cookieHeader, "hub_session");
+  const session = token && env.HUB_SESSION_SECRET
+    ? await verifySession(token, env.HUB_SESSION_SECRET, now)
+    : null;
+  if (session) return null;
+  const loc = "/hub/login?returnTo=" + encodeURIComponent(pathname);
+  return new Response(null, { status: 302, headers: { Location: loc, ...SECURITY_HEADERS } });
 }
