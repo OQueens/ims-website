@@ -21,6 +21,8 @@ import SiteNav from '../components/nav/SiteNav.astro';
 import SiteFooter from '../components/footer/SiteFooter.astro';
 import MarqueeStrip from '../components/sections/MarqueeStrip.astro';
 import ContactPanel from '../components/sections/ContactPanel.astro';
+import { createClient } from '@supabase/supabase-js';
+import { countMatching, type JobSearchFields } from '../lib/job-search';
 
 export const prerender = false;
 
@@ -44,15 +46,18 @@ const compareRows = [
   ['Treated like just another number',  'Family-oriented approach'],
 ];
 
+// Editorial specialty cards. `query` is the search term the card deep-links to
+// (/jobs?q=) AND the term we count against the live feed, so the "N open" count
+// shown here equals what /jobs renders for the same query. See countMatching.
 const specialties = [
-  { n: '01', title: 'Anesthesia',        body: 'MDs, CRNAs, AAs. Our origin specialty, deepest expertise.',                   count: '47 open', tint: 'coral'  },
-  { n: '02', title: 'OB-GYN',            body: 'Generalist, MFM, GYN-only call. Surgery centers and hospitals.',              count: '19 open', tint: 'rose'   },
-  { n: '03', title: 'Urology',           body: 'General + robotic. Outpatient and hospital coverage.',                       count: '8 open',  tint: 'butter' },
-  { n: '04', title: 'Emergency',         body: 'MDs, APPs, Pediatric EM. 12-hour blocks, rural and urban.',                  count: '32 open', tint: 'mint'   },
-  { n: '05', title: 'Internal Medicine', body: 'Hospitalist, outpatient, rounding-only. Often paired with on-site lodging.', count: '24 open', tint: 'sky'    },
-  { n: '06', title: 'Surgery',           body: 'General, ortho, cardio, vascular. Long-stay and call coverage.',              count: '11 open', tint: 'lilac'  },
-  { n: '07', title: 'Radiology',         body: 'Diagnostic and IR. Remote-read assignments available.',                      count: '6 open',  tint: 'coral'  },
-  { n: '08', title: 'Psychiatry',        body: 'Inpatient, consult-liaison, telepsych.',                                     count: '14 open', tint: 'butter' },
+  { n: '01', title: 'Anesthesia',        body: 'MDs, CRNAs, AAs. Our origin specialty, deepest expertise.',                   query: 'anesth',            tint: 'coral'  },
+  { n: '02', title: 'OB-GYN',            body: 'Generalist, MFM, GYN-only call. Surgery centers and hospitals.',              query: 'ob-gyn',            tint: 'rose'   },
+  { n: '03', title: 'Urology',           body: 'General + robotic. Outpatient and hospital coverage.',                       query: 'urolog',            tint: 'butter' },
+  { n: '04', title: 'Emergency',         body: 'MDs, APPs, Pediatric EM. 12-hour blocks, rural and urban.',                  query: 'emergency',         tint: 'mint'   },
+  { n: '05', title: 'Internal Medicine', body: 'Hospitalist, outpatient, rounding-only. Often paired with on-site lodging.', query: 'internal medicine', tint: 'sky'    },
+  { n: '06', title: 'Surgery',           body: 'General, ortho, cardio, vascular. Long-stay and call coverage.',              query: 'surg',              tint: 'lilac'  },
+  { n: '07', title: 'Radiology',         body: 'Diagnostic and IR. Remote-read assignments available.',                      query: 'radiolog',          tint: 'coral'  },
+  { n: '08', title: 'Psychiatry',        body: 'Inpatient, consult-liaison, telepsych.',                                     query: 'psych',             tint: 'butter' },
 ];
 
 const values = [
@@ -62,6 +67,71 @@ const values = [
 ];
 
 const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
+
+// ── Live feed (Supabase ims_jobs) ──────────────────────────────────────────
+// Same read as /jobs (src/pages/jobs/index.astro): active assignments only,
+// newest first. SSR (prerender=false) so new LS events surface without a
+// rebuild. public_facility_label is the PUBLIC field; facility_name is never
+// read. Failure degrades to an empty feed (cards fall back gracefully) rather
+// than crashing the homepage.
+interface HomeJob extends JobSearchFields {
+  id: string;
+}
+interface PagesEnv {
+  SUPABASE_URL?: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+}
+
+const cfEnv = (Astro.locals as { runtime?: { env?: PagesEnv } }).runtime?.env;
+const env: PagesEnv = cfEnv ?? {
+  SUPABASE_URL: import.meta.env.SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+};
+
+let activeJobs: HomeJob[] = [];
+if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+  try {
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await supabase
+      .from('ims_jobs')
+      .select(
+        'id, specialty_slug, specialty_name, facility_state, facility_city, public_facility_label, length_category, call_type, coverage_type',
+      )
+      .eq('status', 'active')
+      .order('ls_last_modified', { ascending: false, nullsFirst: false })
+      .limit(1000);
+    if (error) {
+      console.error('[/] homepage feed read failed:', error.message);
+    } else if (data) {
+      activeJobs = data as HomeJob[];
+    }
+  } catch (e) {
+    console.error('[/] homepage feed client crash:', e);
+  }
+} else {
+  console.warn('[/] supabase env not configured — homepage feed empty');
+}
+
+const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const lengthDisplay = (c: string | null | undefined) =>
+  c ? c.charAt(0).toUpperCase() + c.slice(1) : '';
+const locationOf = (j: HomeJob) =>
+  [j.facility_city, j.facility_state].filter(Boolean).join(', ') || j.public_facility_label || 'Nationwide';
+
+// "Open this week" — the 3 most-recent real assignments, linked to their detail
+// page. Real fields only (no fabricated pay/weeks).
+const openThisWeek = activeJobs.slice(0, 3).map((j) => {
+  const spec = j.specialty_name ?? titleCase(j.specialty_slug);
+  const loc = locationOf(j);
+  const label = j.public_facility_label && j.public_facility_label !== loc ? j.public_facility_label : null;
+  const sub = [label, lengthDisplay(j.length_category)].filter(Boolean).join(' · ') || 'Rate on request';
+  return { id: j.id, title: `${spec} · ${loc}`, sub };
+});
+
+// Editorial specialty cards with REAL counts from the live feed.
+const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(activeJobs, s.query) }));
 ---
 <MarketingLayout
   title="Innovative Medical Staffing — A More Personal Way to Staff Care"
@@ -147,27 +217,23 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
           </p>
           <div class="aud-mix__roles">
             <span class="aud-mix__roles-label">Open this week</span>
-            <div class="role-card">
-              <div class="role-card__main">
-                <b>Anesthesia · Austin, TX</b>
-                <small>240-bed acute · 12 wks · $230–280/hr</small>
-              </div>
-              <span class="role-card__dot" aria-hidden="true"></span>
-            </div>
-            <div class="role-card">
-              <div class="role-card__main">
-                <b>OB-GYN · Sacramento, CA</b>
-                <small>Surgery center · 8 wks · $240–290/hr</small>
-              </div>
-              <span class="role-card__dot" aria-hidden="true"></span>
-            </div>
-            <div class="role-card">
-              <div class="role-card__main">
-                <b>Emergency · Helena, MT</b>
-                <small>Rural 12s · 16 wks · $290–340/hr</small>
-              </div>
-              <span class="role-card__dot" aria-hidden="true"></span>
-            </div>
+            {openThisWeek.length > 0 ? openThisWeek.map((j) => (
+              <a class="role-card" href={`/jobs/${j.id}`} aria-label={`${j.title} — view assignment`}>
+                <div class="role-card__main">
+                  <b>{j.title}</b>
+                  <small>{j.sub}</small>
+                </div>
+                <span class="role-card__dot" aria-hidden="true"></span>
+              </a>
+            )) : (
+              <a class="role-card" href="/jobs" aria-label="Browse the live job board">
+                <div class="role-card__main">
+                  <b>New roles every week</b>
+                  <small>Browse the live board</small>
+                </div>
+                <span class="role-card__dot" aria-hidden="true"></span>
+              </a>
+            )}
           </div>
           <a class="pill pill--swing aud-mix__cta" href="/facilities">
             Hire a clinician
@@ -383,16 +449,21 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
         </p>
       </div>
       <div class="spec-grid reveal-group">
-        {specialties.map((s, i) => (
-          <article class:list={['spec-card', `spec-card--${s.tint}`, 'reveal']} style={`--i:${Math.min(i,5)}`}>
+        {specialtyCards.map((s, i) => (
+          <a
+            class:list={['spec-card', `spec-card--${s.tint}`, 'reveal']}
+            style={`--i:${Math.min(i,5)}`}
+            href={`/jobs?q=${encodeURIComponent(s.query)}`}
+            aria-label={`${s.title} — ${s.count > 0 ? `${s.count} open this week` : 'roles open soon'}, view on the job board`}
+          >
             <div class="spec-card__number">Nº {s.n}</div>
             <h3 class="spec-card__title">{s.title}</h3>
             <p class="spec-card__body">{s.body}</p>
             <div class="spec-card__count">
               <span class="spec-card__dot" aria-hidden="true"></span>
-              {s.count} this week
+              {s.count > 0 ? `${s.count} open this week` : 'Roles open soon'}
             </div>
-          </article>
+          </a>
         ))}
       </div>
     </div>
@@ -428,3 +499,13 @@ const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
 
   <SiteFooter slot="footer" />
 </MarketingLayout>
+
+<!-- The "Open this week" role-cards and the specialty cards are now real links
+     into the live job board. They keep the kit's card visuals (the <a> carries
+     the same .role-card / .spec-card class); this only strips anchor defaults.
+     is:global because both are rendered inside {map()} expressions (same Astro
+     scoping caveat as /jobs). Selectors are anchor-scoped so nothing else moves. -->
+<style is:global>
+  a.role-card,
+  a.spec-card { text-decoration: none; color: inherit; cursor: pointer; }
+</style>

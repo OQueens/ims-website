@@ -395,5 +395,17 @@ const hintList = [
         applyFilter();
       });
     });
+
+    // Deep-link support: the homepage specialty cards link here as
+    // /jobs?q=<query>. Pre-fill the search and apply the same filter so the
+    // "N open this week" count shown on the homepage matches what's listed here
+    // (both use the shared tokenize + substring match — see src/lib/job-search.ts).
+    const initialQuery = new URLSearchParams(location.search).get('q');
+    if (initialQuery && initialQuery.trim()) {
+      query = initialQuery.trim();
+      input.value = query;
+      shell?.classList.add('has-text');
+      applyFilter();
+    }
   }
 </script>
