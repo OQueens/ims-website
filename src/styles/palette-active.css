@@ -134,3 +134,18 @@
 .aud-c__card--cli         { background: var(--mn-butter) !important; }
 .proc-b__row--02 .proc-b__node { background: var(--mn-butter) !important; color: var(--mn-black) !important; }
 .proc-c__card--03 .proc-c__num { color: var(--mn-butter) !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   Clinicians — class-rule gaps the inline catch-all couldn't reach.
+   --pop-mint (#0A0A0F) / --pop-lilac (#3A2D33) read BLACK on dark
+   surfaces, so these accents went invisible. Reroute to Magenta Noir.
+   ════════════════════════════════════════════════════════════════ */
+/* Process step nodes — 02 was --ink-on-black; complete magenta·butter·rose triad */
+.cc__step--02 .cc__step-node { background: var(--mn-butter) !important; color: var(--mn-black) !important; }
+.cc__step--03 .cc__step-node { background: var(--mn-rose)   !important; color: var(--mn-black) !important; }
+/* Dark "Start the conversation" CTA card — every accent was keyed to --pop-mint */
+.cc__cta-card__eyebrow           { color: var(--mn-butter)  !important; }
+.cc__cta-card__eyebrow::before   { background: var(--mn-butter) !important; }
+.cc__cta-card__title span        { color: var(--mn-magenta) !important; }
+.cc__cta-card__blob              { background: var(--mn-magenta) !important; }
+.cc__cta-card .pill--swing--mint { background: var(--mn-magenta) !important; color: var(--mn-cream) !important; }
