@@ -9,15 +9,15 @@
 import HubLayout from '../../layouts/HubLayout.astro';
 import { readHubEnv } from '../../lib/hub/hub-env';
 import { signSession, constantTimeEqual } from '../../lib/hub/session';
+import { safeReturnTo } from '../../lib/hub/safe-redirect';
 
 export const prerender = false;
 
 const env = readHubEnv(Astro.locals);
 const previewEnabled = !!env.HUB_PREVIEW_PASSCODE;
 
-// Same-origin /hub-only returnTo (no open redirect).
-const rawReturn = Astro.url.searchParams.get('returnTo') || '';
-const returnTo = rawReturn.startsWith('/hub') && !rawReturn.startsWith('//') ? rawReturn : '/hub';
+// Same-origin /hub-only returnTo (normalized — no open redirect / traversal).
+const returnTo = safeReturnTo(Astro.url.searchParams.get('returnTo'));
 const startHref = '/hub/auth/start?returnTo=' + encodeURIComponent(returnTo);
 
 // Preview-passcode POST → mint a session and land on the dashboard.

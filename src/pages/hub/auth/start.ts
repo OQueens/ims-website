@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { buildAuthUrl } from '../../../lib/hub/google-oauth';
 import { seal } from '../../../lib/hub/session';
 import { readHubEnv } from '../../../lib/hub/hub-env';
+import { safeReturnTo } from '../../../lib/hub/safe-redirect';
 
 export const prerender = false;
 
@@ -13,8 +14,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
   const redirectUri = url.origin + '/hub/auth/callback';
   const state = crypto.randomUUID();
   const nonce = crypto.randomUUID();
-  const rt = url.searchParams.get('returnTo') || '/hub';
-  const returnTo = rt.startsWith('/hub') && !rt.startsWith('//') ? rt : '/hub';
+  const returnTo = safeReturnTo(url.searchParams.get('returnTo'));
   const now = Math.floor(Date.now() / 1000);
   const oauth = await seal({ state, nonce, returnTo, exp: now + 600 }, env.HUB_SESSION_SECRET);
   const authUrl = buildAuthUrl(

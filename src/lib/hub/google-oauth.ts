@@ -67,8 +67,14 @@ export function validateIdTokenClaims(
   if (typeof claims.exp !== 'number' || claims.exp <= opts.now) return { ok: false, reason: 'expired' };
   if (claims.nonce !== opts.nonce) return { ok: false, reason: 'nonce' };
   if (!(claims.email_verified === true || claims.email_verified === 'true')) return { ok: false, reason: 'unverified' };
+  const dom = opts.allowedDomain.toLowerCase();
   const email = claims.email.toLowerCase();
-  if (!email.endsWith('@' + opts.allowedDomain.toLowerCase())) return { ok: false, reason: 'domain' };
+  if (!email.endsWith('@' + dom)) return { ok: false, reason: 'domain' };
+  // Defense-in-depth (Google's own recommendation when `hd` is passed in the
+  // auth request): require the Workspace hosted-domain claim to match too.
+  // Workspace accounts always populate `hd`; personal Gmail never does, so this
+  // rejects any non-Workspace token even if it somehow carried a matching email.
+  if (typeof claims.hd !== 'string' || claims.hd.toLowerCase() !== dom) return { ok: false, reason: 'domain' };
   return { ok: true, email, name: typeof claims.name === 'string' && claims.name ? claims.name : email };
 }
 
