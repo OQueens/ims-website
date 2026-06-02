@@ -35,12 +35,18 @@ describe('signSession/verifySession', () => {
   });
   it('rejects an expired session', async () => {
     const now = 1_000_000;
-    const tok = await signSession('z@iastaffing.com', 'Z', SECRET, now, 60);
+    const tok = await signSession('z@iastaffing.com', 'Z', SECRET, now, { ttlSeconds: 60 });
     expect(await verifySession(tok, SECRET, now + 61)).toBeNull();
   });
   it('rejects a forged session (no valid signature)', async () => {
     const forged = btoa(JSON.stringify({ email: 'x@iastaffing.com', exp: 9_999_999_999 })) + '.zzzz';
     expect(await verifySession(forged, SECRET, 1)).toBeNull();
+  });
+  it('kill-switch: a session minted under one generation fails under another', async () => {
+    const now = 1_000_000;
+    const tok = await signSession('z@iastaffing.com', 'Z', SECRET, now, { generation: '1' });
+    expect((await verifySession(tok, SECRET, now + 10, '1'))?.email).toBe('z@iastaffing.com');
+    expect(await verifySession(tok, SECRET, now + 10, '2')).toBeNull();
   });
 });
 

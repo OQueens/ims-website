@@ -2,6 +2,8 @@ export interface HubEnv {
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   HUB_SESSION_SECRET?: string;
+  /** Break-glass: bump this to invalidate every live hub session at once. */
+  HUB_SESSION_GENERATION: string;
   HUB_ALLOWED_DOMAIN: string;
   HUB_PREVIEW_PASSCODE?: string;
   SUPABASE_URL?: string;
@@ -18,6 +20,7 @@ export function readHubEnv(locals: unknown): HubEnv {
     GOOGLE_OAUTH_CLIENT_ID: src.GOOGLE_OAUTH_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET: src.GOOGLE_OAUTH_CLIENT_SECRET,
     HUB_SESSION_SECRET: src.HUB_SESSION_SECRET,
+    HUB_SESSION_GENERATION: src.HUB_SESSION_GENERATION || '1',
     HUB_ALLOWED_DOMAIN: src.HUB_ALLOWED_DOMAIN || 'iastaffing.com',
     HUB_PREVIEW_PASSCODE: src.HUB_PREVIEW_PASSCODE,
     SUPABASE_URL: src.SUPABASE_URL,
