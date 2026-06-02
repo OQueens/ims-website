@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seal, unseal, signSession, verifySession } from './session';
+import { seal, unseal, signSession, verifySession, constantTimeEqual } from './session';
 
 const SECRET = 'test-secret-0123456789-abcdefghij';
 
@@ -41,5 +41,13 @@ describe('signSession/verifySession', () => {
   it('rejects a forged session (no valid signature)', async () => {
     const forged = btoa(JSON.stringify({ email: 'x@iastaffing.com', exp: 9_999_999_999 })) + '.zzzz';
     expect(await verifySession(forged, SECRET, 1)).toBeNull();
+  });
+});
+
+describe('constantTimeEqual', () => {
+  it('is true for equal strings, false otherwise', async () => {
+    expect(await constantTimeEqual('hunter2', 'hunter2')).toBe(true);
+    expect(await constantTimeEqual('hunter2', 'hunter3')).toBe(false);
+    expect(await constantTimeEqual('', 'x')).toBe(false);
   });
 });

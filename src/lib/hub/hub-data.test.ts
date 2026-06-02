@@ -34,6 +34,15 @@ describe('aggregateHub', () => {
     expect(a.latestJobs).toHaveLength(5);
     expect(a.latestJobs.every((j) => j.pay === 'Rate on request')).toBe(true);
   });
+  it('escapes DB-derived text in the activity HTML snippet', () => {
+    const a = aggregateHub([row({ specialty_name: '<img src=x onerror=alert(1)>', facility_city: 'A&B', facility_state: null, public_facility_label: null })], 1_900_000_000);
+    expect(a.activity[0].txt).not.toContain('<img');
+    expect(a.activity[0].txt).toContain('&lt;img');
+    expect(a.activity[0].txt).toContain('A&amp;B');
+    // The only real tags are the wrapping <b>…</b>.
+    expect(a.activity[0].txt.startsWith('<b>')).toBe(true);
+  });
+
   it('handles an empty feed', () => {
     const a = aggregateHub([], 1_900_000_000);
     expect(a).toMatchObject({

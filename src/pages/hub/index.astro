@@ -1,0 +1,79 @@
+---
+/*
+ * /hub — internal operations dashboard (5 views). SSR (prerender=false), gated
+ * by the middleware hub guard (Google @iastaffing.com session). Real Overview +
+ * Simulator-latest data comes from the live ims_jobs feed via aggregateHub
+ * (same Supabase service-role pattern as /jobs); Analytics/Costs/Sync render the
+ * seed starting point. Faithful port of design_handoff_hub.
+ */
+import HubLayout from '../../layouts/HubLayout.astro';
+import HubSidebar from '../../components/hub/HubSidebar.astro';
+import HubTopbar from '../../components/hub/HubTopbar.astro';
+import OverviewView from '../../components/hub/OverviewView.astro';
+import SimulatorView from '../../components/hub/SimulatorView.astro';
+import AnalyticsView from '../../components/hub/AnalyticsView.astro';
+import SyncView from '../../components/hub/SyncView.astro';
+import CostsView from '../../components/hub/CostsView.astro';
+import { readHubEnv } from '../../lib/hub/hub-env';
+import { aggregateHub, type HubJobRow } from '../../lib/hub/hub-data';
+import { createClient } from '@supabase/supabase-js';
+
+export const prerender = false;
+
+const env = readHubEnv(Astro.locals);
+
+let rows: HubJobRow[] = [];
+if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+  try {
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await supabase
+      .from('ims_jobs')
+      .select(
+        'specialty_slug, specialty_name, facility_state, facility_city, public_facility_label, length_category, call_type, coverage_type, ls_last_modified',
+      )
+      .eq('status', 'active')
+      .order('ls_last_modified', { ascending: false, nullsFirst: false })
+      .limit(1000);
+    if (error) console.error('[/hub] supabase read failed:', error.message);
+    else if (data) rows = data as HubJobRow[];
+  } catch (e) {
+    console.error('[/hub] supabase client crash:', e);
+  }
+} else {
+  console.warn('[/hub] supabase env not configured — overview renders empty real-data state');
+}
+
+const overview = aggregateHub(rows, Math.floor(Date.now() / 1000));
+
+// Server-rendered eyebrow date (no client clock).
+const eyebrow = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'short',
+  day: 'numeric',
+}).format(new Date()).replace(',', ' ·');
+---
+<HubLayout title="IMS Hub · Dashboard" themeFlash>
+  <div class="hub">
+    <HubSidebar />
+    <div class="hub-main">
+      <HubTopbar eyebrow={eyebrow} title="Overview" />
+      <OverviewView
+        activeReqs={overview.activeReqs}
+        facilityCount={overview.facilityCount}
+        pipelineStates={overview.pipelineStates}
+        pipelineSpecs={overview.pipelineSpecs}
+        activity={overview.activity}
+      />
+      <SimulatorView latestJobs={overview.latestJobs} />
+      <AnalyticsView />
+      <SyncView />
+      <CostsView />
+    </div>
+  </div>
+</HubLayout>
+
+<script>
+  import '../../components/hub/hub-client';
+</script>

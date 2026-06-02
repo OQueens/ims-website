@@ -1,0 +1,133 @@
+---
+/*
+ * Rate Simulator view. PDF dropzone + controls + dark result panel are wired by
+ * hub-client.ts (transparent multiplier model — a modeled estimate, base rates
+ * are the seed starting point). "Latest 5 jobs" is REAL: server-rendered from
+ * aggregateHub(ims_jobs); clicking one loads its specialty into the simulator.
+ * Ported from design_handoff_hub/src/dashboard.html.
+ */
+import type { LatestJob } from '../../lib/hub/hub-data';
+interface Props { latestJobs: LatestJob[]; }
+const { latestJobs } = Astro.props;
+---
+<section class="hub-view" data-view="simulator">
+  <div class="sim-drop card" id="sim-drop">
+    <input type="file" id="sim-file" accept="application/pdf,.pdf" hidden />
+    <div class="sim-drop__idle" id="sim-drop-idle">
+      <div class="sim-drop__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      </div>
+      <div class="sim-drop__copy">
+        <div class="sim-drop__title">Drop a rate sheet or facility PDF</div>
+        <div class="sim-drop__sub">We'll read the specialty, region and shift to pre-fill the simulator. <button type="button" class="sim-drop__browse" id="sim-browse">browse files</button></div>
+      </div>
+      <span class="chip sim-drop__hint"><span class="chip__dot" style="background:var(--pop-butter);"></span>PDF · up to 10MB</span>
+    </div>
+    <div class="sim-drop__loaded" id="sim-drop-loaded" hidden>
+      <div class="sim-drop__file">
+        <span class="sim-drop__file-ic" aria-hidden="true">PDF</span>
+        <div>
+          <div class="sim-drop__file-name" id="sim-file-name">rate-sheet.pdf</div>
+          <div class="sim-drop__file-meta" id="sim-file-meta">Parsed · applied suggested inputs</div>
+        </div>
+        <button type="button" class="sim-drop__clear" id="sim-file-clear" aria-label="Remove file">×</button>
+      </div>
+      <div class="sim-drop__chips" id="sim-file-chips"></div>
+    </div>
+  </div>
+
+  <div class="sim">
+    <div class="sim__controls card">
+      <div class="field">
+        <label class="field__label" for="sim-spec">Specialty</label>
+        <select class="select" id="sim-spec">
+          <option value="260">Anesthesiology · MD</option>
+          <option value="240">CRNA</option>
+          <option value="300">Emergency Medicine</option>
+          <option value="250">OB-GYN</option>
+          <option value="245">Hospitalist</option>
+          <option value="335">General Surgery</option>
+          <option value="315">Urology</option>
+          <option value="230">Radiology · Teleread</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Region<b id="sim-region-lbl">National</b></label>
+        <div class="seg" id="sim-region" role="tablist">
+          <button class="seg__opt is-active" data-mult="1" data-lbl="National">National</button>
+          <button class="seg__opt" data-mult="1.12" data-lbl="West">West</button>
+          <button class="seg__opt" data-mult="1.05" data-lbl="NE">NE</button>
+          <button class="seg__opt" data-mult="0.94" data-lbl="SE">SE</button>
+          <button class="seg__opt" data-mult="0.9" data-lbl="Midwest">Midwest</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Shift type<b id="sim-shift-lbl">Day</b></label>
+        <div class="seg" id="sim-shift">
+          <button class="seg__opt is-active" data-mult="1" data-lbl="Day">Day</button>
+          <button class="seg__opt" data-mult="1.08" data-lbl="Swing">Swing</button>
+          <button class="seg__opt" data-mult="1.18" data-lbl="Nights">Nights</button>
+          <button class="seg__opt" data-mult="1.25" data-lbl="Weekend">Weekend</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Urgency<b id="sim-urg-lbl">Standard</b></label>
+        <div class="seg" id="sim-urg">
+          <button class="seg__opt is-active" data-mult="1" data-lbl="Standard">Standard</button>
+          <button class="seg__opt" data-mult="1.06" data-lbl="Priority">Priority</button>
+          <button class="seg__opt" data-mult="1.15" data-lbl="Emergent">Emergent</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="sim-weeks">Assignment length<b><span id="sim-weeks-val">12</span> wks</b></label>
+        <input class="range" id="sim-weeks" type="range" min="2" max="52" value="12" step="1" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="sim-margin">Target margin<b><span id="sim-margin-val">22</span>%</b></label>
+        <input class="range" id="sim-margin" type="range" min="12" max="40" value="22" step="1" />
+      </div>
+    </div>
+
+    <div class="sim__result">
+      <div class="sim__result-glow" aria-hidden="true"></div>
+      <div class="sim__result-label">Recommended bill rate</div>
+      <div class="sim__result-rate">$<span id="sim-bill">312</span><small>/hr</small></div>
+      <div class="sim__result-band">Modeled estimate <b id="sim-band" style="color:var(--cream-soft);">$298–$330</b> · base rates are a porting placeholder</div>
+      <div class="sim__breakdown">
+        <div class="sim__brk-row"><span class="sim__brk-label">Base (specialty median)</span><span class="sim__brk-val" id="brk-base">$260</span></div>
+        <div class="sim__brk-row"><span class="sim__brk-label">Region adjustment</span><span class="sim__brk-val pos" id="brk-region">×1.00</span></div>
+        <div class="sim__brk-row"><span class="sim__brk-label">Shift premium</span><span class="sim__brk-val pos" id="brk-shift">×1.00</span></div>
+        <div class="sim__brk-row"><span class="sim__brk-label">Urgency</span><span class="sim__brk-val pos" id="brk-urg">×1.00</span></div>
+        <div class="sim__brk-row"><span class="sim__brk-label">Pay rate to clinician</span><span class="sim__brk-val" id="brk-pay">$243</span></div>
+        <div class="sim__brk-row"><span class="sim__brk-label">Est. gross margin</span><span class="sim__brk-val pos" id="brk-margin">$69/hr · 22%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-5">
+    <div class="card__head">
+      <h2 class="card__title">Latest 5 jobs</h2>
+      <span class="chip"><span class="chip__dot" style="background:var(--pop-magenta,#C44569);"></span>Newest reqs</span>
+    </div>
+    <p class="subtle" style="margin:-6px 0 14px;">Tap a role to load its specialty into the simulator.</p>
+    <div class="latest" id="sim-latest">
+      {latestJobs.length === 0 && <p class="subtle">No open requisitions in the feed right now.</p>}
+      {latestJobs.map((j) => (
+        <div class="latest__item" data-spec={j.specVal} tabindex="0" role="button">
+          <span class="latest__badge" style={`background:${j.color}`}>{j.code}</span>
+          <div>
+            <div class="latest__title">{j.spec}</div>
+            <div class="latest__meta">{j.city}</div>
+          </div>
+          <span class="latest__pay">{j.pay}</span>
+          <span class="latest__age">{j.age ? j.age + ' ago' : ''}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

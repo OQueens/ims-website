@@ -1,0 +1,49 @@
+---
+/*
+ * HubLayout — minimal dark shell for the internal hub (/hub). No marketing
+ * nav/footer/dot-grid. Same font + token cascade as MarketingLayout, plus the
+ * ported hub.css. noindex (the hub is private). The theme-before-paint inline
+ * script (themeFlash) reads localStorage.imsHubTheme (default dark) and sets
+ * data-hub-theme on <html> before first paint to avoid a flash — CSP allows
+ * 'unsafe-inline' for scripts.
+ */
+import '@fontsource-variable/inter/index.css';
+import '@fontsource-variable/fraunces/index.css';
+import '@fontsource-variable/fraunces/standard-italic.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
+import '../styles/colors_and_type.css';
+import '../styles/kit.css';
+import '../styles/palette-active.css';
+import '../styles/hub.css';
+
+interface Props {
+  title?: string;
+  /** Emit the theme-before-paint inline script (dashboard yes, login no). */
+  themeFlash?: boolean;
+}
+const { title = 'IMS Hub', themeFlash = false } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" href="/ims-logo-mark.png" type="image/png" />
+    <title>{title}</title>
+    {themeFlash && (
+      <script is:inline>
+        (function () {
+          var t = 'dark';
+          try { t = localStorage.getItem('imsHubTheme') || 'dark'; } catch (e) {}
+          document.documentElement.setAttribute('data-hub-theme', t);
+        })();
+      </script>
+    )}
+  </head>
+  <body class="hub-body">
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,42 @@
+---
+/* Analytics view — SEED data (no real source yet). hub-client.ts draws the line
+   chart, donut, and bar cards from hub-seed on first open. KPI values are the
+   porting starting point. Ported from design_handoff_hub/src/dashboard.html. */
+---
+<section class="hub-view" data-view="analytics">
+  <div class="grid grid--kpi">
+    <div class="kpi"><div class="kpi__accent kpi__accent--magenta"></div><div class="kpi__label">Placements YTD</div><div class="kpi__val">214</div><span class="kpi__delta kpi__delta--up">▲ 22% YoY</span></div>
+    <div class="kpi"><div class="kpi__accent kpi__accent--cyan"></div><div class="kpi__label">Time-to-fill</div><div class="kpi__val">18<small>d</small></div><span class="kpi__delta kpi__delta--up">▼ 11%</span></div>
+    <div class="kpi"><div class="kpi__accent kpi__accent--butter"></div><div class="kpi__label">Submittal→offer</div><div class="kpi__val">31<small>%</small></div><span class="kpi__delta kpi__delta--up">▲ 4pts</span></div>
+    <div class="kpi"><div class="kpi__accent kpi__accent--rose"></div><div class="kpi__label">Extension rate</div><div class="kpi__val">58<small>%</small></div><span class="kpi__delta kpi__delta--up">▲ 6pts</span></div>
+  </div>
+
+  <div class="grid grid--2 mt-5">
+    <div class="chart-card">
+      <div class="card__head"><h2 class="card__title">Placements & fill time</h2><span class="chip"><span class="chip__dot" style="background:var(--pop-magenta,#C44569);"></span>Trailing 12 mo</span></div>
+      <svg class="linechart" id="line-chart" viewBox="0 0 600 240" preserveAspectRatio="none"></svg>
+      <div style="display:flex; gap:20px; margin-top:12px;">
+        <span class="legend__row" style="flex:0;"><span class="legend__sw" style="background:var(--pop-magenta,#C44569);"></span><span class="legend__name">Placements</span></span>
+        <span class="legend__row" style="flex:0;"><span class="legend__sw" style="background:var(--mn-cyan,#59BFE7);"></span><span class="legend__name">Avg fill days</span></span>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="card__head"><h2 class="card__title">Placements by specialty</h2></div>
+      <div class="donut-wrap">
+        <svg class="donut" id="donut" viewBox="0 0 42 42"></svg>
+        <div class="legend" id="donut-legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid--2 mt-5">
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">Fill time by specialty</h2></div>
+      <div class="bars" id="an-filltime"></div>
+    </div>
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">Top facilities by volume</h2></div>
+      <div class="bars" id="an-facilities"></div>
+    </div>
+  </div>
+</section>

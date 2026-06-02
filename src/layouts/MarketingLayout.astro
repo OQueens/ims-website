@@ -145,6 +145,15 @@ const ORG_JSON_LD = {
     />
   </head>
   <body class="marketing">
+    <!-- Cloaked staff-login entry: a faint top-left dot that reveals a "Staff
+         log in" pill on hover/focus → /hub/login. Hidden on mobile (kit.css). -->
+    <a class="cloak-login" href="/hub/login" aria-label="Staff log in">
+      <span class="cloak-login__dot" aria-hidden="true"></span>
+      <span class="cloak-login__pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        Staff log in
+      </span>
+    </a>
     <slot name="nav" />
     {inCard ? (
       <main id="main" class="card">

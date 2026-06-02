@@ -441,7 +441,10 @@ check(
   indexRendersMarketingLayout || indexRendersBaseLayout,
 );
 
-const pageFiles = findAstroPages(join(process.cwd(), 'src', 'pages'));
+const pageFiles = findAstroPages(join(process.cwd(), 'src', 'pages'))
+  // The hub (/hub) is a separate internal app surface rendered by HubLayout,
+  // not MarketingLayout — exempt it from the marketing-orphan check.
+  .filter((f) => !/[\\/]pages[\\/]hub[\\/]/.test(f));
 const pagesRenderingMarketingLayout = pageFiles.filter((f) =>
   rendersMarketingLayout(readFileSync(f, 'utf8')),
 );

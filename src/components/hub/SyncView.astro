@@ -1,0 +1,22 @@
+---
+/* Weekly Sync view — three editable team columns (Recruiting/Marketing/
+   Operations). hub-client.ts renders the board from hub-seed and persists edits
+   to localStorage.imsHubSync (v1; shared-table persistence is a planned
+   upgrade). Ported from design_handoff_hub/src/dashboard.html. */
+---
+<section class="hub-view" data-view="sync">
+  <div class="sync2-head">
+    <div>
+      <div class="sync2-eyebrow">Monday standup · this week</div>
+      <h2 class="sync2-title">This week, by team</h2>
+    </div>
+    <div class="sync2-head__actions">
+      <span class="chip"><span class="chip__dot" style="background:var(--mn-cyan,#59BFE7);"></span>9:00 AM</span>
+      <button class="sync2-reset" id="sync-reset" title="Reset to last saved seed">Reset board</button>
+    </div>
+  </div>
+
+  <div class="sync2-board" id="sync-board">
+    <!-- columns rendered by hub-client.ts -->
+  </div>
+</section>

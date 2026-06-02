@@ -2267,3 +2267,40 @@ html.js .hero-stage.hero-go > * { opacity: 1; transform: none; }
   0%, 100% { transform: translate(0,0) scale(1); }
   50%      { transform: translate(3%, -2%) scale(1.04); }
 }
+
+/* ─────────── Cloaked staff-login entry ───────────
+ * A near-invisible dot pinned to the top-left of every public page. On
+ * hover/focus the dot fades out and a dark "Staff log in" pill fades + scales
+ * in (transform-only → never-invisible safe). Hidden on mobile (staff use a
+ * direct link). Links to /hub/login. */
+.cloak-login {
+  position: fixed; top: 0; left: 0; z-index: 300;
+  padding: 14px 18px;
+  display: inline-flex; align-items: center;
+  text-decoration: none;
+}
+.cloak-login__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ink); opacity: 0.16;
+  transition: opacity 200ms var(--ease-out);
+}
+.cloak-login__pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-left: -7px; padding: 7px 13px;
+  border-radius: 999px;
+  background: var(--mn-black, #0A0A0F); color: var(--cream-soft);
+  font-family: var(--font-body); font-size: 12px; font-weight: 700;
+  white-space: nowrap;
+  opacity: 0; transform: translateX(-6px) scale(0.96); transform-origin: left center;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+  box-shadow: var(--shadow-pill);
+}
+.cloak-login__pill svg { width: 13px; height: 13px; }
+.cloak-login:hover .cloak-login__dot,
+.cloak-login:focus-visible .cloak-login__dot { opacity: 0; }
+.cloak-login:hover .cloak-login__pill,
+.cloak-login:focus-visible .cloak-login__pill { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
+/* On the dark /contact island the ink dot would vanish — lighten it there. */
+body:has(.gt-page) .cloak-login__dot { background: var(--cream-soft); }
+@media (max-width: 768px) { .cloak-login { display: none; } }

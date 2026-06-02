@@ -45,6 +45,14 @@ export async function unseal<T = Record<string, unknown>>(token: string, secret:
   try { return JSON.parse(dec.decode(b64urlToBytes(body))) as T; } catch { return null; }
 }
 
+// Constant-time string compare (passcode/secret checks). Compares HMACs of the
+// inputs so length is not leaked and timing is uniform regardless of where the
+// first differing byte is.
+export async function constantTimeEqual(a: string, b: string, key = 'ct-compare'): Promise<boolean> {
+  const [ha, hb] = await Promise.all([hmac(key, a), hmac(key, b)]);
+  return timingSafeEqual(ha, hb);
+}
+
 export interface HubSession { email: string; name: string; iat: number; exp: number; }
 const SESSION_TTL = 43200; // 12h
 

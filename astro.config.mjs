@@ -26,6 +26,7 @@ export default defineConfig({
         const url = new URL(page);
         if (url.pathname.startsWith('/api/')) return false;
         if (url.pathname.startsWith('/og/')) return false;
+        if (url.pathname === '/hub' || url.pathname.startsWith('/hub/')) return false;
         if (url.pathname === '/jobs' && url.search) return false;
         return true;
       },
