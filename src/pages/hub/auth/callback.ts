@@ -51,7 +51,9 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   });
   if (!result.ok) return fail(result.reason === 'domain' ? 'domain' : 'verify');
 
-  const session = await signSession(result.email, result.name, env.HUB_SESSION_SECRET, now);
+  const session = await signSession(result.email, result.name, env.HUB_SESSION_SECRET, now, {
+    generation: env.HUB_SESSION_GENERATION,
+  });
   const returnTo = safeReturnTo(sealed.returnTo);
   const headers = new Headers({ Location: returnTo, 'Cache-Control': 'no-store' });
   headers.append('Set-Cookie', sessionSetCookie(session));

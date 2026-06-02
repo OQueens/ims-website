@@ -53,18 +53,30 @@ export async function constantTimeEqual(a: string, b: string, key = 'ct-compare'
   return timingSafeEqual(ha, hb);
 }
 
-export interface HubSession { email: string; name: string; iat: number; exp: number; }
+export interface HubSession { email: string; name: string; iat: number; exp: number; gen?: string }
 // 30 days — staff stay signed in to the internal hub ("keep me logged in").
 export const SESSION_TTL = 2592000;
+// Break-glass kill-switch: this generation tag is baked into every token and
+// checked on verify. Bumping HUB_SESSION_GENERATION (env) invalidates ALL live
+// sessions at once — global revocation without rotating the signing secret
+// (which would also break in-flight OAuth state cookies). Per-session server-
+// side revocation (a KV/D1 store) is intentionally out of scope for this small
+// internal tool; logout clears the HttpOnly cookie on the device.
+const DEFAULT_GENERATION = '1';
 
 export async function signSession(
-  email: string, name: string, secret: string, now: number, ttlSeconds = SESSION_TTL,
+  email: string, name: string, secret: string, now: number,
+  opts: { ttlSeconds?: number; generation?: string } = {},
 ): Promise<string> {
-  return seal({ email, name, iat: now, exp: now + ttlSeconds }, secret);
+  const ttl = opts.ttlSeconds ?? SESSION_TTL;
+  return seal({ email, name, iat: now, exp: now + ttl, gen: opts.generation ?? DEFAULT_GENERATION }, secret);
 }
-export async function verifySession(token: string, secret: string, now: number): Promise<HubSession | null> {
+export async function verifySession(
+  token: string, secret: string, now: number, generation: string = DEFAULT_GENERATION,
+): Promise<HubSession | null> {
   const o = await unseal<HubSession>(token, secret);
   if (!o || typeof o.email !== 'string' || typeof o.exp !== 'number' || o.exp <= now) return null;
+  if ((o.gen ?? DEFAULT_GENERATION) !== generation) return null;
   return o;
 }
 

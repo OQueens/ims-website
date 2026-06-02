@@ -88,13 +88,13 @@ export function isHubProtectedPath(pathname: string): boolean {
 export async function hubGuardRedirect(
   pathname: string,
   cookieHeader: string | null,
-  env: { HUB_SESSION_SECRET?: string },
+  env: { HUB_SESSION_SECRET?: string; HUB_SESSION_GENERATION?: string },
   now: number,
 ): Promise<Response | null> {
   if (!isHubProtectedPath(pathname)) return null;
   const token = getCookie(cookieHeader, "hub_session");
   const session = token && env.HUB_SESSION_SECRET
-    ? await verifySession(token, env.HUB_SESSION_SECRET, now)
+    ? await verifySession(token, env.HUB_SESSION_SECRET, now, env.HUB_SESSION_GENERATION ?? "1")
     : null;
   if (session) return null;
   const loc = "/hub/login?returnTo=" + encodeURIComponent(pathname);

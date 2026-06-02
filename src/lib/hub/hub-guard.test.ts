@@ -33,7 +33,7 @@ describe('hubGuardRedirect', () => {
     expect(await hubGuardRedirect('/hub', `hub_session=${tok}`, env, 1010)).toBeNull();
   });
   it('redirects when the session is expired', async () => {
-    const tok = await signSession('z@iastaffing.com', 'Z', SECRET, 1000, 60);
+    const tok = await signSession('z@iastaffing.com', 'Z', SECRET, 1000, { ttlSeconds: 60 });
     const r = await hubGuardRedirect('/hub', `hub_session=${tok}`, env, 2000);
     expect(r?.status).toBe(302);
   });
