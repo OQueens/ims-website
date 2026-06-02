@@ -360,7 +360,12 @@
 .sync2-item__txt:focus { background: transparent; }
 .sync2-item__txt:empty::before { content: 'Type a focus…'; color: var(--ink-mute); }
 .sync2-item__del { border: none; background: none; color: var(--ink-mute); cursor: pointer; font-size: 16px; line-height: 1; opacity: 0; transition: opacity 140ms, color 140ms; padding: 2px; }
-.sync2-item:hover .sync2-item__del { opacity: 1; }
+.sync2-item:hover .sync2-item__del,
+.sync2-item:focus-within .sync2-item__del,
+.sync2-item__del:focus-visible { opacity: 1; }
+/* Never-invisible: the delete button is focusable + has no hover on touch, so
+   keep it visible (dimmed) where hover doesn't exist. */
+@media (hover: none) { .sync2-item__del { opacity: 0.55; } }
 .sync2-item__del:hover { color: var(--pop-magenta, #C44569); }
 .sync2-add { display: flex; align-items: center; gap: 8px; margin-top: 2px; padding: 10px 12px; border: 1px dashed var(--rule-strong); border-radius: 12px; background: none; color: var(--ink-soft); font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color 160ms, color 160ms; width: 100%; }
 .sync2-add:hover { border-color: var(--c, var(--pop-magenta, #C44569)); color: var(--ink); }
