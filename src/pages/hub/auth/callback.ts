@@ -3,6 +3,7 @@ import { exchangeCode, decodeJwtPayload, validateIdTokenClaims } from '../../../
 import { unseal, signSession } from '../../../lib/hub/session';
 import { getCookie } from '../../../lib/hub/cookies';
 import { readHubEnv } from '../../../lib/hub/hub-env';
+import { safeReturnTo } from '../../../lib/hub/safe-redirect';
 
 export const prerender = false;
 
@@ -51,7 +52,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   if (!result.ok) return fail(result.reason === 'domain' ? 'domain' : 'verify');
 
   const session = await signSession(result.email, result.name, env.HUB_SESSION_SECRET, now);
-  const returnTo = sealed.returnTo.startsWith('/hub') && !sealed.returnTo.startsWith('//') ? sealed.returnTo : '/hub';
+  const returnTo = safeReturnTo(sealed.returnTo);
   const headers = new Headers({ Location: returnTo, 'Cache-Control': 'no-store' });
   headers.append('Set-Cookie', `hub_session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/hub; Max-Age=43200`);
   headers.append('Set-Cookie', CLEAR_OAUTH);

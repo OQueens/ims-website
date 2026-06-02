@@ -70,6 +70,11 @@ describe('validateIdTokenClaims', () => {
   it('rejects a foreign domain', () => {
     expect(validateIdTokenClaims({ ...base, email: 'a@gmail.com' }, opts)).toMatchObject({ ok: false, reason: 'domain' });
   });
+  it('rejects a missing or mismatched hd claim (defense-in-depth)', () => {
+    const { hd, ...noHd } = base;
+    expect(validateIdTokenClaims(noHd, opts)).toMatchObject({ ok: false, reason: 'domain' });
+    expect(validateIdTokenClaims({ ...base, hd: 'evil.com' }, opts)).toMatchObject({ ok: false, reason: 'domain' });
+  });
   it('rejects null/malformed claims', () => {
     expect(validateIdTokenClaims(null, opts)).toMatchObject({ ok: false, reason: 'malformed' });
   });
