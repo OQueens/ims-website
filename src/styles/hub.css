@@ -22,7 +22,9 @@
   border-right: 1px solid rgba(251,246,238,0.08);
 }
 @media (max-width: 920px) { .hub-side { position: static; height: auto; } }
-.hub-side__brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px var(--space-5); }
+.hub-side__brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px var(--space-5); text-decoration: none; transition: opacity 160ms; }
+.hub-side__brand:hover { opacity: 0.78; }
+.hub-side__brand:focus-visible { outline: 2px solid var(--pop-magenta, #C44569); outline-offset: 3px; border-radius: 8px; }
 .hub-side__brand img { height: 26px; width: auto; }
 .hub-side__brand-tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--pop-butter); border: 1px solid rgba(232,196,101,0.4); border-radius: 999px; padding: 3px 8px; }
 

@@ -8,7 +8,8 @@
  */
 import HubLayout from '../../layouts/HubLayout.astro';
 import { readHubEnv } from '../../lib/hub/hub-env';
-import { signSession, constantTimeEqual } from '../../lib/hub/session';
+import { signSession, verifySession, constantTimeEqual, sessionSetCookie } from '../../lib/hub/session';
+import { getCookie } from '../../lib/hub/cookies';
 import { safeReturnTo } from '../../lib/hub/safe-redirect';
 
 export const prerender = false;
@@ -29,11 +30,20 @@ if (Astro.request.method === 'POST') {
       const now = Math.floor(Date.now() / 1000);
       const session = await signSession('preview@iastaffing.com', 'Preview', env.HUB_SESSION_SECRET, now);
       const headers = new Headers({ Location: returnTo, 'Cache-Control': 'no-store' });
-      headers.append('Set-Cookie', `hub_session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/hub; Max-Age=43200`);
+      headers.append('Set-Cookie', sessionSetCookie(session));
       return new Response(null, { status: 302, headers });
     }
   }
   return Astro.redirect('/hub/login?error=passcode', 303);
+}
+
+// Already signed in? Skip the login form and go straight to the dashboard — e.g.
+// a logged-in staffer clicking the cloaked entry shouldn't see a login page.
+if (env.HUB_SESSION_SECRET) {
+  const existing = getCookie(Astro.request.headers.get('cookie'), 'hub_session');
+  if (existing && (await verifySession(existing, env.HUB_SESSION_SECRET, Math.floor(Date.now() / 1000)))) {
+    return Astro.redirect(returnTo, 302);
+  }
 }
 
 const ERROR_MESSAGES: Record<string, string> = {

@@ -54,7 +54,8 @@ export async function constantTimeEqual(a: string, b: string, key = 'ct-compare'
 }
 
 export interface HubSession { email: string; name: string; iat: number; exp: number; }
-const SESSION_TTL = 43200; // 12h
+// 30 days — staff stay signed in to the internal hub ("keep me logged in").
+export const SESSION_TTL = 2592000;
 
 export async function signSession(
   email: string, name: string, secret: string, now: number, ttlSeconds = SESSION_TTL,
@@ -66,3 +67,10 @@ export async function verifySession(token: string, secret: string, now: number):
   if (!o || typeof o.email !== 'string' || typeof o.exp !== 'number' || o.exp <= now) return null;
   return o;
 }
+
+// Shared Set-Cookie strings so the cookie Max-Age can never drift from the
+// signed-session TTL (a mismatch would log staff out early or strand a dead cookie).
+export const SESSION_COOKIE = 'hub_session';
+export const sessionSetCookie = (value: string): string =>
+  `${SESSION_COOKIE}=${value}; HttpOnly; Secure; SameSite=Lax; Path=/hub; Max-Age=${SESSION_TTL}`;
+export const SESSION_CLEAR_COOKIE = `${SESSION_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/hub; Max-Age=0`;

@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { exchangeCode, decodeJwtPayload, validateIdTokenClaims } from '../../../lib/hub/google-oauth';
-import { unseal, signSession } from '../../../lib/hub/session';
+import { unseal, signSession, sessionSetCookie } from '../../../lib/hub/session';
 import { getCookie } from '../../../lib/hub/cookies';
 import { readHubEnv } from '../../../lib/hub/hub-env';
 import { safeReturnTo } from '../../../lib/hub/safe-redirect';
@@ -54,7 +54,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   const session = await signSession(result.email, result.name, env.HUB_SESSION_SECRET, now);
   const returnTo = safeReturnTo(sealed.returnTo);
   const headers = new Headers({ Location: returnTo, 'Cache-Control': 'no-store' });
-  headers.append('Set-Cookie', `hub_session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/hub; Max-Age=43200`);
+  headers.append('Set-Cookie', sessionSetCookie(session));
   headers.append('Set-Cookie', CLEAR_OAUTH);
   return new Response(null, { status: 302, headers });
 };
