@@ -221,7 +221,7 @@ if (job) {
     const setting = clean(job.practice_setting);
     const specialtyName = clean(job.specialty_name) || 'clinician';
     aboutText = [
-      `A locum assignment for ${anA(specialtyName)} ${specialtyName}${cityTitle !== 'Nationwide' ? ` in ${cityTitle}` : ''}${lengthVal ? `, ${lengthVal.toLowerCase()}` : ''}.`,
+      `A locum assignment for ${anA(specialtyName)} ${specialtyName} role${cityTitle !== 'Nationwide' ? ` in ${cityTitle}` : ''}${lengthVal ? `, ${lengthVal.toLowerCase()}` : ''}.`,
       setting
         ? `${titleCase(setting)} setting${coverageVal ? `, ${coverageVal.toLowerCase()}` : ''}.`
         : coverageVal
