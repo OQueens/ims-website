@@ -22,5 +22,14 @@ export const onRequest = defineMiddleware(async ({ request, locals, url }, next)
   }
 
   const response = await next();
-  return applySecurityHeaders(response);
+  const secured = applySecurityHeaders(response);
+  // Authenticated/internal hub HTML must never be cached by the browser,
+  // back-button, or a shared forward proxy. (Cloudflare already doesn't cache
+  // SSR responses, so this is browser/proxy defense-in-depth.) Scoped to /hub so
+  // cacheable prerendered marketing routes that also flow through the worker
+  // keep their default cacheability.
+  if (url.pathname === "/hub" || url.pathname.startsWith("/hub/")) {
+    secured.headers.set("Cache-Control", "private, no-store");
+  }
+  return secured;
 });
