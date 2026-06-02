@@ -149,3 +149,15 @@
 .cc__cta-card__title span        { color: var(--mn-magenta) !important; }
 .cc__cta-card__blob              { background: var(--mn-magenta) !important; }
 .cc__cta-card .pill--swing--mint { background: var(--mn-magenta) !important; color: var(--mn-cream) !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   Legacy IAS token revival. specialties.astro + how-it-works.astro
+   still render old .cta--primary / .tab.is-active that fill with
+   var(--brand-navy) — a token undefined in Magenta Noir, so they
+   resolved to transparent (cream text on the cream page = invisible).
+   Revive --brand-navy as the dark ink fill (faithful navy→ink port);
+   one definition restores both CTAs, the active tab, the secondary
+   border, and the keyboard-focus outlines. (Old Home* components that
+   also use it are dead code — not rendered by the new index.astro.)
+   ════════════════════════════════════════════════════════════════ */
+:root { --brand-navy: var(--ink); }
