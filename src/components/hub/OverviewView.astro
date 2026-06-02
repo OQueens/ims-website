@@ -1,0 +1,145 @@
+---
+/*
+ * Overview view. REAL data (from aggregateHub over ims_jobs): Active-reqs KPI,
+ * pipeline bars (by state + specialty), activity feed. Bars are server-rendered
+ * with their width baked into the markup (handoff gotcha #1 — no rAF/JS width).
+ * Priorities are seed (no real source yet). The other three KPIs (fill time,
+ * bill rate, fill rate) are SEED placeholders — the porting starting point we
+ * replace section-by-section; they are not live IMS metrics.
+ */
+import type { BarRow, ActivityItem } from '../../lib/hub/hub-data';
+import { PRIORITIES } from '../../lib/hub/hub-seed';
+
+interface Props {
+  activeReqs: number;
+  facilityCount: number;
+  pipelineStates: BarRow[];
+  pipelineSpecs: BarRow[];
+  activity: ActivityItem[];
+}
+const { activeReqs, facilityCount, pipelineStates, pipelineSpecs, activity } = Astro.props;
+
+const pct = (val: number, max: number) => (max > 0 ? Math.round((val / max) * 100) : 0);
+const barMax = (rows: BarRow[]) => Math.max(1, ...rows.map((r) => r.val));
+const statesMax = barMax(pipelineStates);
+const specsMax = barMax(pipelineSpecs);
+---
+<section class="hub-view is-active" data-view="overview">
+  <div class="grid grid--kpi">
+    <div class="kpi"><div class="kpi__accent kpi__accent--magenta"></div>
+      <div class="kpi__label">Active reqs</div>
+      <div class="kpi__val">{activeReqs}</div>
+      <span class="kpi__delta kpi__delta--flat">Live feed</span>
+      <div class="kpi__foot">Across {facilityCount} {facilityCount === 1 ? 'facility' : 'facilities'}</div>
+    </div>
+    {/* SEED placeholders — replace when we port real ops metrics together. */}
+    <div class="kpi"><div class="kpi__accent kpi__accent--cyan"></div>
+      <div class="kpi__label">Avg fill time</div>
+      <div class="kpi__val">18<small>days</small></div>
+      <span class="kpi__delta kpi__delta--up">▼ 2.3 days vs Q1</span>
+      <div class="kpi__foot">Goal: under 21 days</div>
+    </div>
+    <div class="kpi"><div class="kpi__accent kpi__accent--butter"></div>
+      <div class="kpi__label">Avg bill rate</div>
+      <div class="kpi__val">$268<small>/hr</small></div>
+      <span class="kpi__delta kpi__delta--up">▲ 3.1%</span>
+      <div class="kpi__foot">Blended, all specialties</div>
+    </div>
+    <div class="kpi"><div class="kpi__accent kpi__accent--rose"></div>
+      <div class="kpi__label">Fill rate</div>
+      <div class="kpi__val">94<small>%</small></div>
+      <span class="kpi__delta kpi__delta--flat">· flat MoM</span>
+      <div class="kpi__foot">Trailing 90 days</div>
+    </div>
+  </div>
+
+  <div class="grid grid--2 mt-5">
+    <div class="card">
+      <div class="card__head">
+        <h2 class="card__title">Active pipeline</h2>
+        <span class="card__link" data-goto="analytics">Full analytics →</span>
+      </div>
+      <p class="subtle" style="margin:-6px 0 14px;">Top states by open requisition volume</p>
+      <div class="bars" id="pipeline-states">
+        {pipelineStates.length === 0 && <p class="subtle">No active requisitions in the feed.</p>}
+        {pipelineStates.map((r) => (
+          <div class="bar__row">
+            <span class="bar__name">{r.name}</span>
+            <span class="bar__track"><span class={`bar__fill fill--${r.fill}`} style={`width:${pct(r.val, statesMax)}%`}></span></span>
+            <span class="bar__val">{r.val}</span>
+          </div>
+        ))}
+      </div>
+      <p class="subtle" style="margin:20px 0 14px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; font-size:10px;">Hottest specialties</p>
+      <div class="bars" id="pipeline-specs">
+        {pipelineSpecs.length === 0 && <p class="subtle">—</p>}
+        {pipelineSpecs.map((r) => (
+          <div class="bar__row">
+            <span class="bar__name">{r.name}</span>
+            <span class="bar__track"><span class={`bar__fill fill--${r.fill}`} style={`width:${pct(r.val, specsMax)}%`}></span></span>
+            <span class="bar__val">{r.val}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="card ov-ink-card" style="background:var(--mn-black,#0A0A0F); border:none; position:relative; overflow:hidden;">
+      <div style="position:absolute; width:280px; height:280px; border-radius:50%; filter:blur(90px); background:var(--pop-magenta,#C44569); opacity:0.28; top:-120px; right:-90px; pointer-events:none;"></div>
+      <div class="card__head" style="position:relative; z-index:1;">
+        <h2 class="card__title" style="color:var(--cream-soft);">Quick rate check</h2>
+      </div>
+      <p style="position:relative; z-index:1; color:rgba(251,246,238,0.6); font-size:13px; margin:-6px 0 18px;">Ballpark a bill rate without leaving the desk.</p>
+      <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:12px;">
+        <select class="select" id="qr-spec" style="background-color:rgba(251,246,238,0.08); color:var(--cream-soft); border-color:rgba(251,246,238,0.2);">
+          <option value="260">Anesthesiology · MD</option>
+          <option value="240">CRNA</option>
+          <option value="300">Emergency Medicine</option>
+          <option value="250">OB-GYN</option>
+          <option value="245">Hospitalist</option>
+          <option value="335">General Surgery</option>
+          <option value="315">Urology</option>
+        </select>
+        <select class="select" id="qr-region" style="background-color:rgba(251,246,238,0.08); color:var(--cream-soft); border-color:rgba(251,246,238,0.2);">
+          <option value="1">National average</option>
+          <option value="1.12">West / High cost</option>
+          <option value="1.05">Northeast</option>
+          <option value="0.94">Southeast</option>
+          <option value="0.9">Midwest / Rural</option>
+        </select>
+      </div>
+      <div style="position:relative; z-index:1; margin-top:20px; padding-top:18px; border-top:1px solid rgba(251,246,238,0.15);">
+        <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; font-weight:700; color:var(--pop-butter);">Estimated bill rate</div>
+        <div style="font-family:var(--font-display); font-weight:900; font-size:54px; line-height:1; letter-spacing:-0.03em; color:var(--cream-soft); margin-top:8px;"><span id="qr-rate">$260</span><span style="font-size:0.32em; color:rgba(251,246,238,0.6);">/hr</span></div>
+        <button class="card__link" data-goto="simulator" style="margin-top:14px; display:inline-block; color:var(--pop-magenta,#C44569);">Open full simulator →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid--2 mt-5">
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">Recent job activity</h2><span class="card__link" data-goto="simulator">View all →</span></div>
+      <div class="feed" id="activity-feed">
+        {activity.length === 0 && <p class="subtle">No recent activity in the feed.</p>}
+        {activity.map((i) => (
+          <div class="feed__item">
+            <span class="feed__dot" style={`background:${i.color};${i.txtColor ? 'color:' + i.txtColor + ';' : ''}`}>{i.who}</span>
+            <span class="feed__txt" set:html={i.txt}></span>
+            <span class="feed__time">{i.time}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">This week's priorities</h2><span class="chip"><span class="chip__dot" style="background:var(--pop-magenta,#C44569);"></span>{PRIORITIES.filter((p) => !p.done).length} open</span></div>
+      <div class="todo" id="priorities">
+        {PRIORITIES.map((p, i) => (
+          <div class="todo__item">
+            <span class={`todo__check ${p.done ? 'is-done' : ''}`} data-i={i} role="checkbox" tabindex="0" aria-checked={p.done ? 'true' : 'false'}>{p.done ? '✓' : ''}</span>
+            <span class={`todo__txt ${p.done ? 'is-done' : ''}`}>{p.txt}</span>
+            <span class={`todo__tag tag--${p.tag}`}>{p.tag}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

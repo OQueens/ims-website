@@ -1,0 +1,191 @@
+---
+/*
+ * /hub/login — dark split-screen sign-in. Google Workspace (@iastaffing.com)
+ * is the only real auth (→ /hub/auth/start). A staging-only preview passcode
+ * (env HUB_PREVIEW_PASSCODE, never set on prod) renders an extra form so the
+ * dashboard can be reviewed before the Google client exists. Faithful port of
+ * design_handoff_hub/src/login.html. prerender=false (reads env + POST handler).
+ */
+import HubLayout from '../../layouts/HubLayout.astro';
+import { readHubEnv } from '../../lib/hub/hub-env';
+import { signSession, constantTimeEqual } from '../../lib/hub/session';
+
+export const prerender = false;
+
+const env = readHubEnv(Astro.locals);
+const previewEnabled = !!env.HUB_PREVIEW_PASSCODE;
+
+// Same-origin /hub-only returnTo (no open redirect).
+const rawReturn = Astro.url.searchParams.get('returnTo') || '';
+const returnTo = rawReturn.startsWith('/hub') && !rawReturn.startsWith('//') ? rawReturn : '/hub';
+const startHref = '/hub/auth/start?returnTo=' + encodeURIComponent(returnTo);
+
+// Preview-passcode POST → mint a session and land on the dashboard.
+if (Astro.request.method === 'POST') {
+  if (previewEnabled && env.HUB_SESSION_SECRET) {
+    const form = await Astro.request.formData();
+    const supplied = String(form.get('passcode') ?? '');
+    if (await constantTimeEqual(supplied, env.HUB_PREVIEW_PASSCODE ?? '')) {
+      const now = Math.floor(Date.now() / 1000);
+      const session = await signSession('preview@iastaffing.com', 'Preview', env.HUB_SESSION_SECRET, now);
+      const headers = new Headers({ Location: returnTo, 'Cache-Control': 'no-store' });
+      headers.append('Set-Cookie', `hub_session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/hub; Max-Age=43200`);
+      return new Response(null, { status: 302, headers });
+    }
+  }
+  return Astro.redirect('/hub/login?error=passcode', 303);
+}
+
+const ERROR_MESSAGES: Record<string, string> = {
+  domain: 'Use your @iastaffing.com Google account to sign in.',
+  state: 'Sign-in expired or could not be verified. Please try again.',
+  verify: 'Sign-in failed. Please try again.',
+  config: 'Hub sign-in is not configured yet. Contact an admin.',
+  passcode: 'That passcode is not correct.',
+};
+const errorCode = Astro.url.searchParams.get('error');
+const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.verify) : null;
+---
+<HubLayout title="Sign in · IMS Hub">
+  <div class="login-page">
+    <aside class="login-aside">
+      <div class="login-aside__glow login-aside__glow--m" aria-hidden="true"></div>
+      <div class="login-aside__glow login-aside__glow--r" aria-hidden="true"></div>
+
+      <a class="login-brand" href="/" aria-label="Back to IMS home">
+        <img src="/ims-logo-light.png" alt="IMS" />
+        <span class="login-brand__tag">Hub</span>
+      </a>
+
+      <div class="login-aside__body">
+        <div class="login-aside__eyebrow">Internal operations</div>
+        <h1 class="login-aside__headline">The whole desk,<br /><span class="em">one screen</span>.</h1>
+        <p class="login-aside__sub">Live req tracking, fill-time analytics, the rate simulator, weekly sync and spend, all in one place for the IMS team.</p>
+      </div>
+
+      <div class="login-aside__stats">
+        <div class="login-aside__stat">
+          <div class="login-aside__stat-num">37<span class="u">+</span></div>
+          <div class="login-aside__stat-label">Active reqs</div>
+        </div>
+        <div class="login-aside__stat">
+          <div class="login-aside__stat-num">18<span class="u">d</span></div>
+          <div class="login-aside__stat-label">Avg fill time</div>
+        </div>
+        <div class="login-aside__stat">
+          <div class="login-aside__stat-num">94<span class="u">%</span></div>
+          <div class="login-aside__stat-label">Fill rate</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="login-main">
+      <div class="login-card">
+        <a class="login-card__back" href="/"><span aria-hidden="true">←</span> Back to site</a>
+        <h2 class="login-card__title">Welcome back.</h2>
+        <p class="login-card__sub">Sign in to the IMS Hub with your work Google account.</p>
+
+        {errorMessage && <p class="login-error" role="alert">{errorMessage}</p>}
+
+        <a class="login-google" href={startHref}>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.96h5.5c-.24 1.26-.97 2.33-2.06 3.05v2.53h3.33C20.74 18.1 21.8 15.4 21.8 12.2c0-.74-.07-1.45-.2-2.13H12Z"/><path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.43l-3.33-2.53c-.92.62-2.1.98-3.29.98-2.53 0-4.67-1.71-5.44-4.01H3.13v2.6A9.99 9.99 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.56 13.99c-.2-.6-.31-1.23-.31-1.89s.11-1.29.3-1.89V7.61H3.13a10 10 0 0 0 0 8.98l3.43-2.6Z"/><path fill="#4285F4" d="M12 6.1c1.47 0 2.78.5 3.81 1.49l2.85-2.85C16.96 3.16 14.7 2.2 12 2.2A9.99 9.99 0 0 0 3.13 7.6l3.43 2.6C7.33 7.82 9.47 6.1 12 6.1Z"/></svg>
+          Continue with Google Workspace
+          <span class="login-google__puck" aria-hidden="true">→</span>
+        </a>
+        <p class="login-note">IMS Google accounts only · <b>@iastaffing.com</b></p>
+
+        {previewEnabled && (
+          <form class="login-preview" method="post" action="/hub/login">
+            <div class="login-sso">
+              <span class="login-sso__rule"></span>
+              <span class="login-sso__label">staging preview</span>
+              <span class="login-sso__rule"></span>
+            </div>
+            <input type="hidden" name="returnTo" value={returnTo} />
+            <label class="login-label" for="passcode">Preview passcode</label>
+            <div class="login-preview__row">
+              <input class="login-input" id="passcode" name="passcode" type="password" placeholder="••••••••" autocomplete="off" required />
+              <button class="login-preview__btn" type="submit">Enter</button>
+            </div>
+          </form>
+        )}
+
+        <p class="login-foot">IMS internal · authorized users only</p>
+      </div>
+    </main>
+  </div>
+</HubLayout>
+
+<style>
+  /* The hub login is an intentional dark island; paint the body dark so no cream
+     edge shows. Scoped via :has so only this page is affected. */
+  :global(body:has(.login-page)) { background: #0A0A0F; }
+
+  .login-page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    background:
+      radial-gradient(900px 600px at 80% -10%, color-mix(in srgb, var(--pop-magenta, #C44569) 36%, transparent), transparent 60%),
+      radial-gradient(720px 540px at -10% 110%, color-mix(in srgb, var(--pop-rose) 28%, transparent), transparent 60%),
+      var(--mn-black, #0A0A0F);
+  }
+  @media (max-width: 860px) { .login-page { grid-template-columns: 1fr; } .login-aside { display: none; } }
+
+  .login-aside {
+    position: relative; overflow: hidden;
+    padding: var(--space-8) var(--space-8) var(--space-7);
+    display: flex; flex-direction: column; justify-content: space-between;
+    border-right: 1px solid rgba(251,246,238,0.10);
+  }
+  .login-aside__glow { position: absolute; width: 480px; height: 480px; border-radius: 50%; filter: blur(120px); pointer-events: none; }
+  .login-aside__glow--m { background: var(--pop-magenta, #C44569); opacity: 0.30; top: -160px; left: -100px; animation: lgFloatA 26s ease-in-out infinite; }
+  .login-aside__glow--r { background: var(--pop-rose); opacity: 0.20; bottom: -140px; right: -80px; animation: lgFloatB 30s ease-in-out infinite; }
+  @keyframes lgFloatA { 0%,100%{transform:translate(0,0);} 50%{transform:translate(28px,24px);} }
+  @keyframes lgFloatB { 0%,100%{transform:translate(0,0);} 50%{transform:translate(-24px,-20px);} }
+  @media (prefers-reduced-motion: reduce) { .login-aside__glow { animation: none; } }
+
+  .login-brand { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 12px; text-decoration: none; transition: opacity 160ms; }
+  .login-brand:hover { opacity: 0.82; }
+  .login-brand img { height: 30px; width: auto; }
+  .login-brand__tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--pop-butter); border: 1px solid rgba(232,196,101,0.4); border-radius: 999px; padding: 4px 10px; }
+  .login-aside__body { position: relative; z-index: 1; }
+  .login-aside__eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; color: rgba(251,246,238,0.55); margin-bottom: var(--space-4); display: flex; align-items: center; gap: 10px; }
+  .login-aside__eyebrow::before { content:''; width:9px; height:9px; border-radius:50%; background: var(--pop-butter); }
+  .login-aside__headline { font-family: var(--font-display); font-weight: 900; font-size: clamp(44px, 4.6vw, 76px); line-height: 0.92; letter-spacing: -0.035em; color: var(--cream-soft); margin: 0; }
+  .login-aside__headline .em { color: var(--pop-magenta, #C44569); }
+  .login-aside__sub { font-family: var(--font-body); font-size: 18px; line-height: 1.55; color: rgba(251,246,238,0.72); margin: var(--space-4) 0 0; max-width: 42ch; }
+  .login-aside__stats { position: relative; z-index: 1; display: flex; gap: var(--space-6); }
+  .login-aside__stat-num { font-family: var(--font-display); font-weight: 900; font-size: 34px; letter-spacing: -0.02em; color: var(--cream-soft); }
+  .login-aside__stat-num .u { color: var(--pop-magenta, #C44569); }
+  .login-aside__stat-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: rgba(251,246,238,0.5); margin-top: 4px; }
+
+  .login-main { display: flex; align-items: center; justify-content: center; padding: var(--space-8) var(--space-6); position: relative; }
+  .login-card { width: 100%; max-width: 420px; }
+  .login-card__back { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: 13px; font-weight: 600; color: rgba(251,246,238,0.6); text-decoration: none; margin-bottom: var(--space-6); transition: color 160ms, gap 160ms; }
+  .login-card__back:hover { color: var(--cream-soft); gap: 12px; }
+  .login-card__title { font-family: var(--font-display); font-weight: 900; font-size: 40px; line-height: 1.0; letter-spacing: -0.028em; color: var(--cream-soft); margin: 0 0 8px; }
+  .login-card__sub { font-family: var(--font-body); font-size: 15px; color: rgba(251,246,238,0.66); margin: 0 0 var(--space-6); }
+
+  .login-error { margin: 0 0 var(--space-5); padding: 12px 14px; border-radius: 12px; background: rgba(196,69,105,0.12); border: 1px solid rgba(196,69,105,0.4); color: #FF9DBB; font-family: var(--font-body); font-size: 14px; line-height: 1.45; }
+
+  .login-google { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; border: none; border-radius: 999px; background: var(--cream-soft); color: var(--mn-black, #0A0A0F); font-family: var(--font-body); font-weight: 700; font-size: 15px; padding: 16px 22px; cursor: pointer; text-decoration: none; transition: transform 160ms, box-shadow 160ms; }
+  .login-google__puck { width: 26px; height: 26px; border-radius: 50%; background: var(--mn-black, #0A0A0F); color: var(--cream-soft); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; transition: transform 160ms; }
+  @media (hover: hover) and (pointer: fine) {
+    .login-google:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0,0,0,0.4); }
+    .login-google:hover .login-google__puck { transform: translateX(3px); }
+  }
+  .login-note { font-family: var(--font-body); font-size: 13px; color: rgba(251,246,238,0.6); text-align: center; margin: var(--space-4) 0 0; }
+  .login-note b { color: var(--pop-butter); font-weight: 700; }
+
+  .login-sso { display: flex; align-items: center; gap: 12px; margin: var(--space-6) 0 var(--space-4); }
+  .login-sso__rule { flex: 1; height: 1px; background: rgba(251,246,238,0.14); }
+  .login-sso__label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(251,246,238,0.45); }
+  .login-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: rgba(251,246,238,0.6); display: block; margin-bottom: 7px; }
+  .login-preview__row { display: flex; gap: 8px; }
+  .login-input { flex: 1; box-sizing: border-box; border: 1px solid rgba(251,246,238,0.18); border-radius: 12px; background: rgba(251,246,238,0.06); color: var(--cream-soft); font-family: var(--font-body); font-size: 15px; padding: 13px 15px; transition: border-color 160ms, box-shadow 160ms, background 160ms; }
+  .login-input::placeholder { color: rgba(251,246,238,0.4); }
+  .login-input:focus { outline: none; border-color: var(--pop-magenta, #C44569); background: rgba(251,246,238,0.10); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pop-magenta, #C44569) 28%, transparent); }
+  .login-preview__btn { border: none; cursor: pointer; background: var(--pop-magenta, #C44569); color: var(--cream-soft); font-family: var(--font-body); font-weight: 700; font-size: 14px; padding: 0 20px; border-radius: 12px; }
+  .login-foot { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: rgba(251,246,238,0.4); text-align: center; margin-top: var(--space-6); }
+</style>

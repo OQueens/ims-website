@@ -1,0 +1,34 @@
+---
+/* Costs view — SEED data (no real source yet). hub-client.ts fills the agent
+   table, category bars, and tooling list from hub-seed. KPI values + table are
+   the porting starting point, not live spend. Ported from
+   design_handoff_hub/src/dashboard.html. */
+---
+<section class="hub-view" data-view="costs">
+  <div class="grid grid--kpi">
+    <div class="kpi"><div class="kpi__accent kpi__accent--magenta"></div><div class="kpi__label">Spend MTD</div><div class="kpi__val">$48.2<small>k</small></div><span class="kpi__delta kpi__delta--down">▲ 8% vs last mo</span></div>
+    <div class="kpi"><div class="kpi__accent kpi__accent--butter"></div><div class="kpi__label">Cost per placement</div><div class="kpi__val">$1,840</div><span class="kpi__delta kpi__delta--up">▼ 6%</span></div>
+    <div class="kpi"><div class="kpi__accent kpi__accent--cyan"></div><div class="kpi__label">Tooling / mo</div><div class="kpi__val">$6.4<small>k</small></div><span class="kpi__delta kpi__delta--flat">· flat</span></div>
+    <div class="kpi"><div class="kpi__accent kpi__accent--rose"></div><div class="kpi__label">Budget used</div><div class="kpi__val">71<small>%</small></div><div class="kpi__foot">Of June allocation</div></div>
+  </div>
+
+  <div class="card mt-5">
+    <div class="card__head"><h2 class="card__title">Spend by agent / desk</h2><span class="chip"><span class="chip__dot" style="background:var(--pop-magenta,#C44569);"></span>Month to date</span></div>
+    <table class="cost-table">
+      <thead><tr><th>Agent</th><th>Reqs worked</th><th>Placements</th><th>Spend share</th><th class="num">Spend</th></tr></thead>
+      <tbody id="cost-rows"></tbody>
+      <tfoot><tr class="cost-foot"><td>Total</td><td>61</td><td>26</td><td></td><td class="num">$48,240</td></tr></tfoot>
+    </table>
+  </div>
+
+  <div class="grid grid--2 mt-5">
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">Spend by category</h2></div>
+      <div class="bars" id="cost-cats"></div>
+    </div>
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">Tooling & subscriptions</h2></div>
+      <div class="feed" id="cost-tools"></div>
+    </div>
+  </div>
+</section>

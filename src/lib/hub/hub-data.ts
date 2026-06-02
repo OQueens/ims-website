@@ -50,6 +50,12 @@ const SPEC_VAL: Record<string, string> = {
 
 const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
+// Escape DB-derived text before it goes into the activity HTML snippet (rendered
+// with set:html). Defense-in-depth: the public ims_jobs fields are recruiter-
+// curated, but never trust DB content in an HTML sink.
+const esc = (s: string) =>
+  s.replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m] as string));
+
 function topGroups(rows: HubJobRow[], key: (r: HubJobRow) => string | null, limit: number): BarRow[] {
   const counts = new Map<string, number>();
   for (const r of rows) {
@@ -103,7 +109,7 @@ export function aggregateHub(rows: HubJobRow[], now: number): HubOverview {
     return {
       who: initials(name),
       color: COLORS[i % COLORS.length],
-      txt: `<b>${name}</b>${loc ? ' · ' + loc : ''}`,
+      txt: `<b>${esc(name)}</b>${loc ? ' · ' + esc(loc) : ''}`,
       time: a ? a + ' ago' : 'recently',
     };
   });
