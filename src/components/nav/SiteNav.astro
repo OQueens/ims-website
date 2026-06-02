@@ -4,8 +4,11 @@
  * Ported from the kit's TopNav.jsx; all styling lives in src/styles/kit.css
  * (.topnav*). Active route keys off aria-current="page".
  *
- * Zero-JS: the kit's hide-on-scroll is intentionally dropped — the pill stays
- * sticky/visible at every scroll position.
+ * Hide-on-scroll: a small Astro module (bundled from 'self' → CSP-ok) toggles
+ * .topnav--hidden so the floating pill slides up on scroll-down and returns on
+ * scroll-up or near the top. The CSS (transition + --hidden translate/opacity)
+ * already lives in kit.css; this only wires the scroll listener.
+ * Per design_handoff_motion §2 (2026-06-02).
  *
  * NOTE (iterate): kit.css hides .topnav__links on mobile (<=768px) with no
  * hamburger — only logo + CTA show there. The footer sitemap carries full
@@ -36,3 +39,35 @@ const isCurrent = (href: string) => path === href || path.startsWith(href + '/')
     <span class="topnav__cta__puck" aria-hidden="true">→</span>
   </a>
 </nav>
+
+<script>
+  // Nav hide-on-scroll (design_handoff_motion §2). Astro bundles this from
+  // 'self' → CSP-safe. rAF-throttled: hide on scroll-down, show on scroll-up,
+  // always visible near the top and whenever a nav control gets keyboard focus.
+  const nav = document.querySelector('.topnav');
+  if (nav) {
+    let lastY = window.scrollY;
+    let ticking = false;
+    const update = () => {
+      const y = window.scrollY;
+      const d = y - lastY;
+      if (y < 80) nav.classList.remove('topnav--hidden');
+      else if (d > 12) nav.classList.add('topnav--hidden');
+      else if (d < -12) nav.classList.remove('topnav--hidden');
+      lastY = y;
+      ticking = false;
+    };
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          requestAnimationFrame(update);
+          ticking = true;
+        }
+      },
+      { passive: true },
+    );
+    // A11y: never leave the nav hidden when a keyboard user focuses into it.
+    nav.addEventListener('focusin', () => nav.classList.remove('topnav--hidden'));
+  }
+</script>
