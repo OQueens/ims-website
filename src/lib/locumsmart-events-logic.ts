@@ -53,6 +53,28 @@ export interface LsEventRow {
   raw_payload: Record<string, unknown>;
 }
 
+export type EnvelopeResult =
+  | { ok: true; payload: LSWebhookPayload }
+  | { ok: false; reason: string };
+
+/**
+ * LENIENT validation for the unified events endpoint. Unlike the strict
+ * validatePayloadShape (which requires the full assignment shape), this only
+ * demands what the events log fundamentally needs: a string `key` (so we can
+ * authenticate the delivery) and a string `operation` (so the event has a type
+ * and a usable dedupe key). Everything else is optional and captured losslessly
+ * in raw_payload — so a future non-assignment event (candidate / offer /
+ * credentialing, design §10) is logged the day it first arrives without a
+ * schema change. mapToLsEventRow is null-safe for all the optional fields.
+ */
+export function validateEventEnvelope(raw: unknown): EnvelopeResult {
+  if (typeof raw !== 'object' || raw === null) return { ok: false, reason: 'not-an-object' };
+  const r = raw as Record<string, unknown>;
+  if (typeof r.key !== 'string' || r.key.length === 0) return { ok: false, reason: 'missing-key' };
+  if (typeof r.operation !== 'string' || r.operation.length === 0) return { ok: false, reason: 'missing-operation' };
+  return { ok: true, payload: raw as LSWebhookPayload };
+}
+
 /**
  * The event's logical occurrence time: LS lastModified, else createDate, else
  * the time we received it. Used both for `occurred_at` and for the dedupe key.

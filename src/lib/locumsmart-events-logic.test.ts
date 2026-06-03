@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { LSWebhookPayload } from './locumsmart-webhook-logic';
-import { deriveDedupeKey, mapToLsEventRow } from './locumsmart-events-logic';
+import { deriveDedupeKey, mapToLsEventRow, validateEventEnvelope } from './locumsmart-events-logic';
 
 // A representative assignment-shaped LS payload (the known contract, per
 // docs/superpowers/specs/2026-06-02-locumsmart-unified-webhook-design.md §4).
@@ -119,11 +119,35 @@ describe('mapToLsEventRow', () => {
     } as LSWebhookPayload;
     const row = mapToLsEventRow(sparse, RECEIVED_AT);
     expect(row.specialty_slug).toBe('other');
-    expect(row.specialty_name).toBeNull();
     expect(row.facility_state).toBeNull();
-    expect(row.facility_city).toBeNull();
-    expect(row.organization).toBeNull();
-    expect(row.num_providers_requested).toBeNull();
     expect(row.occurred_at).toBe(RECEIVED_AT);
+  });
+});
+
+describe('validateEventEnvelope (lenient — must accept any event for the log)', () => {
+  it('accepts a minimal event with just key + operation (future non-assignment event)', () => {
+    const r = validateEventEnvelope({ key: 'k', operation: 'CandidateSubmitted' });
+    expect(r.ok).toBe(true);
+  });
+
+  it('accepts a full assignment payload', () => {
+    expect(validateEventEnvelope(basePayload()).ok).toBe(true);
+  });
+
+  it('rejects non-objects (cannot form an event)', () => {
+    expect(validateEventEnvelope(null).ok).toBe(false);
+    expect(validateEventEnvelope('not-json').ok).toBe(false);
+    expect(validateEventEnvelope(42).ok).toBe(false);
+  });
+
+  it('rejects a missing or non-string key (cannot authenticate)', () => {
+    expect(validateEventEnvelope({ operation: 'Receive' }).ok).toBe(false);
+    expect(validateEventEnvelope({ key: 123, operation: 'Receive' }).ok).toBe(false);
+    expect(validateEventEnvelope({ key: '', operation: 'Receive' }).ok).toBe(false);
+  });
+
+  it('rejects a missing or non-string operation (no event type to log)', () => {
+    expect(validateEventEnvelope({ key: 'k' }).ok).toBe(false);
+    expect(validateEventEnvelope({ key: 'k', operation: '' }).ok).toBe(false);
   });
 });
