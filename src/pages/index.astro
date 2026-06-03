@@ -30,15 +30,15 @@ const ROTATING_WORDS = ['Personal', 'Curated', 'Thoughtful', 'Human'];
 const widestWord = ROTATING_WORDS.reduce((a, b) => (a.length > b.length ? a : b));
 
 const stats = [
-  { num: '47',   label: 'States',            tint: 'coral'  },
-  { num: '2018', label: 'Founded',           tint: 'butter' },
-  { num: '24h',  label: 'Emergency fill',    tint: 'mint'   },
-  { num: '~40',  label: 'People, one floor', tint: 'lilac'  },
+  { num: '47',   label: 'States staffed',        tint: 'coral'  },
+  { num: '2022', label: 'Founded',               tint: 'butter' },
+  { num: 'All',  label: 'Specialties',           tint: 'mint'   },
+  { num: '1:1',  label: 'Recruiter per clinician', tint: 'lilac'  },
 ];
 
 const compareRows = [
   ['Below average industry rates',      'Highly competitive pay'],
-  ['Overcomplicated communication',     'Generous travel stipends'],
+  ['Overcomplicated communication',     'One recruiter who knows your file'],
   ['Redundant onboarding processes',    'Streamlined onboarding process'],
   ['Lack of licensing support',         'Comprehensive assignment support'],
   ['Mediocre credentialing assistance', 'Your own dedicated support team'],
@@ -54,16 +54,16 @@ const specialties = [
   { n: '02', title: 'OB-GYN',            body: 'Generalist, MFM, GYN-only call. Surgery centers and hospitals.',              query: 'ob-gyn',            tint: 'rose'   },
   { n: '03', title: 'Urology',           body: 'General + robotic. Outpatient and hospital coverage.',                       query: 'urolog',            tint: 'butter' },
   { n: '04', title: 'Emergency',         body: 'MDs, APPs, Pediatric EM. 12-hour blocks, rural and urban.',                  query: 'emergency',         tint: 'mint'   },
-  { n: '05', title: 'Internal Medicine', body: 'Hospitalist, outpatient, rounding-only. Often paired with on-site lodging.', query: 'internal medicine', tint: 'sky'    },
+  { n: '05', title: 'Internal Medicine', body: 'Hospitalist, outpatient, rounding-only. Short and long-stay coverage.', query: 'internal medicine', tint: 'sky'    },
   { n: '06', title: 'Surgery',           body: 'General, ortho, cardio, vascular. Long-stay and call coverage.',              query: 'surg',              tint: 'lilac'  },
   { n: '07', title: 'Radiology',         body: 'Diagnostic and IR. Remote-read assignments available.',                      query: 'radiolog',          tint: 'coral'  },
   { n: '08', title: 'Psychiatry',        body: 'Inpatient, consult-liaison, telepsych.',                                     query: 'psych',             tint: 'butter' },
 ];
 
 const values = [
-  { title: 'Considered, not volume.',  tint: 'coral',  body: 'We send three vetted candidates, not thirty resumes. The work happens before the email, in conversations with clinicians we already know.' },
-  { title: 'One recruiter, for life.', tint: 'butter', body: 'No rotating account reps. No portal. The person who places you for your first assignment is the person who calls you for your fifteenth.' },
-  { title: 'Friday is payday.',        tint: 'mint',   body: 'Direct deposit lands Friday morning, every Friday. $2M / $4M occurrence-based malpractice included. Boring, but it matters.' },
+  { title: 'Three, not thirty.',       tint: 'coral',  body: 'We send a few vetted candidates, not a stack of resumes. The work happens before the email, in conversations with clinicians we already know.' },
+  { title: 'One recruiter, for life.', tint: 'butter', body: 'No rotating account reps. The person who places you for your first assignment is the person who calls you for your fifteenth.' },
+  { title: 'A real human answers.',    tint: 'mint',   body: 'Call and a person picks up. We respond within one business day, every day of the week, weekends included. No queue, no ticket number, no chatbot.' },
 ];
 
 const calDays = Array.from({ length: 30 }, (_, i) => i + 1);
@@ -147,7 +147,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
     <div class="hero__blob hero__blob--lilac" aria-hidden="true"></div>
 
     <div class="container hero__inner hero-stage">
-      <div class="eyebrow hero__eyebrow" style="--i:0"><span class="eyebrow__dot"></span>Locum tenens · est. 2018</div>
+      <div class="eyebrow hero__eyebrow" style="--i:0"><span class="eyebrow__dot"></span>Locum tenens · est. 2022</div>
       <h1 class="hero__headline" id="hero-headline" style="--i:1">
         A More <span class="hero__rotator" aria-label={ROTATING_WORDS[0]}>
           {ROTATING_WORDS.map((w) => (
@@ -159,7 +159,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
         Way to Staff Care.
       </h1>
       <p class="hero__sub" style="--i:2">
-        A boutique, family-style approach to locum staffing, connecting clinicians and facilities with the care, speed, and concierge support they deserve.
+        A boutique, family-style approach to locum staffing, connecting clinicians and facilities with the care, speed, and country-club-level concierge support they deserve.
       </p>
       <div class="hero__cta-row" role="group" aria-label="Primary actions" style="--i:3">
         <a class="pill pill--swing" href="/facilities">
@@ -204,7 +204,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
           <h2 class="section-anchor__heading" id="audience-anchor">Built for <span class="em">both</span> sides of the room.</h2>
         </div>
         <p class="section-anchor__sub reveal" style="--i:1">
-          Most agencies write to a hypothetical "everyone." We don't. Pick your side and we'll keep the copy honest.
+          Most agencies write to a hypothetical "everyone." We don't. Whether you're staffing a unit or looking for your next assignment, you get a straight answer and one person who owns it.
         </p>
       </div>
 
@@ -213,42 +213,10 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
           <span class="aud-mix__chip">For facilities · 01</span>
           <h3 class="aud-mix__title">Curated,<br /><span>not volume</span>.</h3>
           <p class="aud-mix__body">
-            Three vetted candidates. One account lead. 14-day credentialing. Friday-morning invoicing.
+            Three vetted candidates. One account lead. Credentialing typically lands in under 60 days — with emergency credentialing when a start can't wait — and we keep the date on track.
           </p>
           <div class="aud-mix__roles">
-            <span class="aud-mix__roles-label">Open this week</span>
-            {openThisWeek.length > 0 ? openThisWeek.map((j) => (
-              <a class="role-card" href={`/jobs/${j.id}`} aria-label={`${j.title} — view assignment`}>
-                <div class="role-card__main">
-                  <b>{j.title}</b>
-                  <small>{j.sub}</small>
-                </div>
-                <span class="role-card__dot" aria-hidden="true"></span>
-              </a>
-            )) : (
-              <a class="role-card" href="/jobs" aria-label="Browse the live job board">
-                <div class="role-card__main">
-                  <b>New roles every week</b>
-                  <small>Browse the live board</small>
-                </div>
-                <span class="role-card__dot" aria-hidden="true"></span>
-              </a>
-            )}
-          </div>
-          <a class="pill pill--swing aud-mix__cta" href="/facilities">
-            Hire a clinician
-            <span class="pill__puck" aria-hidden="true">→</span>
-          </a>
-        </article>
-
-        <article class="aud-mix__card aud-mix__card--cli reveal reveal--right" tabindex="0" style="--i:1">
-          <span class="aud-mix__chip">For clinicians · 02</span>
-          <h3 class="aud-mix__title">One recruiter,<br /><span>for life</span>.</h3>
-          <p class="aud-mix__body">
-            Not a portal. Not a rotating queue. One person who knows your specialty, your geography, your preferred call structure.
-          </p>
-          <div class="aud-mix__roles">
-            <span class="aud-mix__roles-label">Clinicians placed this month</span>
+            <span class="aud-mix__roles-label">Recently placed</span>
             <div class="role-card">
               <div class="role-card__avatar" style="background: var(--pop-rose)">JM</div>
               <div class="role-card__main">
@@ -270,6 +238,38 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
                 <small>OB-GYN · 8y · Texas-based</small>
               </div>
             </div>
+          </div>
+          <a class="pill pill--swing aud-mix__cta" href="/facilities">
+            Hire a clinician
+            <span class="pill__puck" aria-hidden="true">→</span>
+          </a>
+        </article>
+
+        <article class="aud-mix__card aud-mix__card--cli reveal reveal--right" tabindex="0" style="--i:1">
+          <span class="aud-mix__chip">For clinicians · 02</span>
+          <h3 class="aud-mix__title">One recruiter,<br /><span>for life</span>.</h3>
+          <p class="aud-mix__body">
+            Not a rotating queue. One recruiter who knows your specialty, your geography, your preferred call structure — and treats you like family.
+          </p>
+          <div class="aud-mix__roles">
+            <span class="aud-mix__roles-label">Open this week</span>
+            {openThisWeek.length > 0 ? openThisWeek.map((j) => (
+              <a class="role-card" href={`/jobs/${j.id}`} aria-label={`${j.title} — view assignment`}>
+                <div class="role-card__main">
+                  <b>{j.title}</b>
+                  <small>{j.sub}</small>
+                </div>
+                <span class="role-card__dot" aria-hidden="true"></span>
+              </a>
+            )) : (
+              <a class="role-card" href="/jobs" aria-label="Browse the live job board">
+                <div class="role-card__main">
+                  <b>New roles every week</b>
+                  <small>Browse the live board</small>
+                </div>
+                <span class="role-card__dot" aria-hidden="true"></span>
+              </a>
+            )}
           </div>
           <a class="pill pill--swing pill--swing--magenta aud-mix__cta" href="/clinicians">
             Find your assignment
@@ -353,7 +353,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
         Tell us what you <span class="em">need</span>.
       </h2>
       <p class:list={['cta-band__sub', 'reveal']} style="--i:2">
-        The fastest path is a conversation. We answer messages within one business day, every day except Sunday.
+        The fastest path is a conversation. We answer messages within one business day, every day of the week, weekends included.
       </p>
       <a class:list={['pill', 'pill--swing', 'pill--swing--magenta', 'reveal']} href="/contact" style="--i:3">
         Start a conversation
@@ -379,7 +379,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
         <article class="proc-card proc-card--brief reveal" style="--i:0">
           <div class="proc-card__badge">Step 01</div>
           <h3 class="proc-card__title">Tell us what you <span style="color: var(--ink-emphasis)">need</span>.</h3>
-          <p class="proc-card__body">Specialty, geography, schedule, call structure, EMR. The actual details.</p>
+          <p class="proc-card__body">Coverage to fill or an assignment to find — specialty, geography, schedule, call structure, EMR. The actual details.</p>
           <div class="proc-card__art proc-card__art--form" aria-hidden="true">
             <div class="proc-mock__row"><span class="proc-mock__label">Specialty</span><span class="proc-mock__field">Anesthesiology</span></div>
             <div class="proc-mock__row"><span class="proc-mock__label">Location</span><span class="proc-mock__field">Austin, TX</span></div>
@@ -390,8 +390,8 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
 
         <article class="proc-card proc-card--shortlist reveal" style="--i:1">
           <div class="proc-card__badge" style="background: var(--pop-mint); color: var(--ink)">Step 02</div>
-          <h3 class="proc-card__title">Three vetted <span style="color: var(--ink-emphasis)">candidates</span>.</h3>
-          <p class="proc-card__body">Not thirty resumes. Three who fit. We've talked to each this week.</p>
+          <h3 class="proc-card__title">A curated <span style="color: var(--ink-emphasis)">shortlist</span>.</h3>
+          <p class="proc-card__body">A few that fit, not a stack to sort. Facilities get vetted candidates; clinicians get assignments matched to them.</p>
           <div class="proc-card__art proc-card__art--stack" aria-hidden="true">
             <div class="cand-card cand-card--3" style="background: var(--soft-rose)">
               <div class="cand-card__avatar" style="background: var(--pop-rose)">JM</div>
@@ -414,7 +414,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
         <article class="proc-card proc-card--start reveal" style="--i:2">
           <div class="proc-card__badge" style="background: var(--pop-coral); color: var(--cream-soft)">Step 03</div>
           <h3 class="proc-card__title">Meet, choose, <span style="color: var(--ink-emphasis)">start</span>.</h3>
-          <p class="proc-card__body">Credentialing inside 14 days. We handle the paperwork and the calls.</p>
+          <p class="proc-card__body">Credentialing typically lands in under 60 days, with emergency credentialing when a start can't wait. We keep the paperwork moving so the start date holds.</p>
           <div class="proc-card__art proc-card__art--calendar" aria-hidden="true">
             <div class="cal-mock">
               <div class="cal-mock__header">

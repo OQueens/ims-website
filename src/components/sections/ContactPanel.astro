@@ -7,10 +7,11 @@
  * POST to /api/contact. Contact details are now REAL (content pass 2026-05-28):
  * recruiting@iastaffing.com / (512) 524-6686 / Fort Worth, TX.
  *
- * STILL FLAGGED for Zach: the /api/contact endpoint + Cloudflare Turnstile +
- * the success-state UX are not yet wired (the form does a plain native POST);
- * the "replies within one business day" / "Mon–Fri 8a–6p Central" service
- * claims should be confirmed.
+ * Availability copy matches the homepage canonical claim (a real person
+ * answers every day of the week, weekends included; replies within one
+ * business day). The
+ * /api/contact endpoint + Cloudflare Turnstile + success-state UX are wired
+ * separately.
  */
 interface Props {
   /** Heading tag for the panel title. Home renders it as a sub-section (h2);
@@ -48,7 +49,7 @@ const { as: Heading = 'h2' } = Astro.props;
             <dt class="contact-b__info-label">Phone</dt>
             <dd class="contact-b__info-value">
               <a href="tel:+15125246686">(512) 524-6686</a>
-              <span class="contact-b__info-meta">Mon to Fri, 8a to 6p Central</span>
+              <span class="contact-b__info-meta">A real person answers, every day — weekends included</span>
             </dd>
           </div>
           <div class="contact-b__info-row">

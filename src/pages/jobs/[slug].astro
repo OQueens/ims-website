@@ -199,9 +199,9 @@ if (job) {
     typeof job.trauma_level === 'number' && job.trauma_level > 0 && `Level ${job.trauma_level} trauma center`,
     reqCerts.length > 0 && `${reqCerts.join(', ')} required`,
     clean(job.estimated_credentialing_time) &&
-      `Credentialing typically ~${clean(job.estimated_credentialing_time)}${/^\d+$/.test(clean(job.estimated_credentialing_time)) ? ' days' : ''}`,
-    // Documented, site-wide IMS facts (not fabricated; mirrored from /clinicians).
-    '$2M / $4M occurrence malpractice included',
+      `Facility estimate: credentialing ~${clean(job.estimated_credentialing_time)}${/^\d+$/.test(clean(job.estimated_credentialing_time)) ? ' days' : ''}`,
+    // Documented, true IMS benefits.
+    'Malpractice covered',
     'One recruiter for the life of your assignment',
     'Friday direct deposit, every week',
   ].filter((x): x is string => Boolean(x));

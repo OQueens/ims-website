@@ -70,7 +70,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
           </div>
           <div class="gt-info__row">
             <span class="gt-info__k">Phone</span>
-            <span class="gt-info__v"><a href="tel:+15125246686">(512) 524-6686</a><span class="gt-info__meta">Mon to Fri, 8a to 6p Central</span></span>
+            <span class="gt-info__v"><a href="tel:+15125246686">(512) 524-6686</a><span class="gt-info__meta">A real person answers, every day — weekends included</span></span>
           </div>
           <div class="gt-info__row">
             <span class="gt-info__k">Office</span>
@@ -171,6 +171,20 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
   :global(body:has(.gt-page)) {
     background: #0A0A0F;
   }
+  /* Continuous full-viewport glow: a position:fixed pseudo behind all content
+     (z-index:-1) so the dark gradient spans the ENTIRE page — form AND footer —
+     as one field that never clips at a section box. Uses a fixed ELEMENT, not
+     background-attachment:fixed (which iOS Safari renders unreliably). */
+  :global(body:has(.gt-page))::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(1100px 820px at 88% 2%, rgba(196, 69, 105, 0.40), transparent 62%),
+      radial-gradient(960px 720px at -6% 98%, rgba(216, 139, 159, 0.26), transparent 62%);
+  }
 
   .gt-page {
     --magenta: #C44569;   /* primary accent */
@@ -185,15 +199,14 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
 
     position: relative;
     min-height: 100vh;
-    background:
-      radial-gradient(900px 600px at 85% -8%, rgba(196, 69, 105, 0.38), transparent 60%),
-      radial-gradient(700px 520px at -8% 108%, rgba(216, 139, 159, 0.30), transparent 60%),
-      #0A0A0F;
+    background: transparent;  /* glow lives on the fixed body backdrop above */
     color: var(--cream);
-    /* Clip horizontal axis only: the soft radial-gradient background fades
-       naturally and can't cause horizontal scroll, but vertical clipping is
-       removed so content and footer are never cut off. */
     overflow-x: hidden;
+  }
+  /* Form area and footer are transparent so the single fixed-position glow
+     backdrop shows through both — one continuous field, no per-section seam. */
+  :global(body:has(.gt-page) .footer-b) {
+    background: transparent;
   }
   .gt-wrap {
     max-width: 1120px;

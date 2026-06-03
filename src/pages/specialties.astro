@@ -2,8 +2,9 @@
 // /specialties — 12-card editorial overview (spec §1 + plan T23).
 //
 // Phase 1.A scope: editorial overview only. Per-specialty [slug] pages are
-// Phase 1.75 (programmatic SEO). Each card links to /jobs?specialty={slug}
-// for filtered-listing entry. NO /specialties/[slug] route at v1.
+// Phase 1.75 (programmatic SEO). Each card links to /jobs?q={query} (the only
+// param /jobs reads) for a search-prefilled listing. NO /specialties/[slug]
+// route at v1.
 //
 // Card framing copy: 2-line TAY Amaya 17px expansions of the HomeSpecialties
 // 1-line versions, composed in voice (spec §2.7 examples were CRNA-only;
@@ -17,65 +18,82 @@ import SiteNav from '../components/nav/SiteNav.astro';
 import SiteFooter from '../components/footer/SiteFooter.astro';
 import ScrollReveal from '../components/util/ScrollReveal.astro';
 
-const specialties: { slug: string; name: string; framing: string }[] = [
+// `query` is the search term the card deep-links to (/jobs?q=). /jobs only
+// reads ?q= and matches by substring against the live feed (see job-search.ts),
+// so we use short stems that match the feed's specialty values — mirroring the
+// homepage specialty cards (src/pages/index.astro). `slug` is kept as the React
+// key only. Specialties with no live jobs land on the honest empty-state.
+const specialties: { slug: string; name: string; query: string; framing: string }[] = [
   {
     slug: 'anesthesiology',
     name: 'Anesthesiology',
+    query: 'anesth',
     framing: 'Operative coverage for community hospitals, academic centers, and ambulatory surgicenters. Mixed acuity and case-mix considered.',
   },
   {
     slug: 'crna',
     name: 'CRNA',
+    query: 'crna',
     framing: 'Independent and supervised practice across surgical, OB, and pain settings. Both staff-augment and full-coverage assignments.',
   },
   {
     slug: 'hospitalist',
     name: 'Hospitalist',
+    query: 'hospitalist',
     framing: 'Inpatient rounding for community and tertiary hospitals. Day, swing, and night shifts with consistent census expectations.',
   },
   {
     slug: 'emergency-medicine',
     name: 'Emergency Medicine',
+    query: 'emergency',
     framing: 'Single- and double-coverage shifts across volume tiers, from rural critical-access to high-volume urban EDs.',
   },
   {
     slug: 'family-medicine',
     name: 'Family Medicine',
+    query: 'family',
     framing: 'Outpatient and urgent-care coverage with broad scope. FQHC, private practice, and rural-clinic settings.',
   },
   {
     slug: 'psychiatry',
     name: 'Psychiatry',
+    query: 'psych',
     framing: 'Inpatient, consult-liaison, and outpatient assignments. Adult, child-and-adolescent, and geriatric subspecialty matches.',
   },
   {
     slug: 'ob-gyn',
     name: 'OB/GYN',
+    query: 'ob-gyn',
     framing: 'Labor-and-delivery and clinic coverage at variable acuity. Locum-only and locum-to-perm options where the facility allows.',
   },
   {
     slug: 'general-surgery',
     name: 'General Surgery',
+    query: 'surg',
     framing: 'Call coverage and elective scheduling for community hospitals. Trauma and laparoscopic experience matched to facility need.',
   },
   {
     slug: 'radiology',
     name: 'Radiology',
+    query: 'radiolog',
     framing: 'Diagnostic and teleradiology coverage with mixed modalities. Final read, prelim, and after-hours call shifts available.',
   },
   {
     slug: 'pediatrics',
     name: 'Pediatrics',
-    framing: 'Inpatient pediatrics, newborn nursery, and clinic settings. NICU and PICU subspecialty available where credentialed.',
+    query: 'pediatric',
+    framing: 'Inpatient pediatrics, newborn nursery, and clinic settings. NICU and PICU subspecialty matched where the facility supports it.',
   },
   {
     slug: 'cardiology',
     name: 'Cardiology',
+    query: 'cardiolog',
     framing: 'Non-invasive consult coverage with reading-room support. Echo, stress, and Holter reads paired with clinic days.',
   },
   {
     slug: 'neurology',
     name: 'Neurology',
+    query: 'neurolog',
     framing: 'Inpatient consult, stroke coverage, and outpatient clinic. Tele-neurology arms also matched where the facility supports.',
   },
 ];
@@ -93,7 +111,7 @@ const specialties: { slug: string; name: string; framing: string }[] = [
       <p class="body">
         Twelve specialties across community hospitals, academic centers,
         and outpatient settings. Each card links to live opportunities you
-        can browse by state, shift type, or rate.
+        can search by city, state, or specialty.
       </p>
     </div>
   </ScrollReveal>
@@ -104,7 +122,7 @@ const specialties: { slug: string; name: string; framing: string }[] = [
       <ul class="grid reveal-group">
         {specialties.map((s, i) => (
           <li class="reveal" style={`--i:${Math.min(i, 5)}`}>
-            <a class="card" href={`/jobs?specialty=${s.slug}`}>
+            <a class="card" href={`/jobs?q=${encodeURIComponent(s.query)}`}>
               <h3 class="name">{s.name}</h3>
               <p class="framing">{s.framing}</p>
               <span class="link-affordance">
