@@ -49,10 +49,34 @@ describe('deriveDedupeKey', () => {
     expect(deriveDedupeKey(p)).toBe('11111111-1111-1111-1111-111111111111:Receive:no-ts');
   });
 
-  it('falls back to "no-id" when assignmentId is absent (non-assignment event)', () => {
+  it('uses a content-hash key for non-assignment-shaped events (no natural identity)', () => {
     const p = basePayload();
     delete (p as Partial<LSWebhookPayload>).assignmentId;
-    expect(deriveDedupeKey(p)).toBe('no-id:Receive:2026-06-02T12:00:00.000Z');
+    expect(deriveDedupeKey(p)).toMatch(/^evt:/);
+  });
+
+  it('gives DISTINCT keys to distinct non-assignment events of the same type (no collision -> no drop)', () => {
+    const bid1 = { key: 'k', operation: 'Accepted', bidId: 'bid-1' } as unknown as LSWebhookPayload;
+    const bid2 = { key: 'k', operation: 'Accepted', bidId: 'bid-2' } as unknown as LSWebhookPayload;
+    expect(deriveDedupeKey(bid1)).not.toBe(deriveDedupeKey(bid2));
+  });
+
+  it('gives the SAME key to an identical non-assignment payload (retry dedupes)', () => {
+    const inv = { key: 'k', operation: 'Paid', invoiceId: 'inv-9' } as unknown as LSWebhookPayload;
+    const invRetry = { key: 'k', operation: 'Paid', invoiceId: 'inv-9' } as unknown as LSWebhookPayload;
+    expect(deriveDedupeKey(inv)).toBe(deriveDedupeKey(invRetry));
+  });
+
+  it('dedupes a non-assignment retry regardless of field order (stable hash)', () => {
+    const a = { key: 'k', operation: 'Paid', invoiceId: 'inv-1', amount: 100 } as unknown as LSWebhookPayload;
+    const b = { amount: 100, invoiceId: 'inv-1', operation: 'Paid', key: 'k' } as unknown as LSWebhookPayload;
+    expect(deriveDedupeKey(a)).toBe(deriveDedupeKey(b));
+  });
+
+  it('does not depend on the bearer key value (key omitted from the hash)', () => {
+    const a = { key: 'key-A', operation: 'Paid', invoiceId: 'inv-1' } as unknown as LSWebhookPayload;
+    const b = { key: 'key-B', operation: 'Paid', invoiceId: 'inv-1' } as unknown as LSWebhookPayload;
+    expect(deriveDedupeKey(a)).toBe(deriveDedupeKey(b));
   });
 
   it('produces distinct keys for different operations on the same assignment', () => {
@@ -109,6 +133,11 @@ describe('mapToLsEventRow', () => {
     expect(raw.operation).toBe('Receive');
   });
 
+  it('event_type falls back to "unknown" when operation is absent', () => {
+    const noOp = { key: 'k', details: {} } as unknown as LSWebhookPayload;
+    expect(mapToLsEventRow(noOp, RECEIVED_AT).event_type).toBe('unknown');
+  });
+
   it('is null-safe for a payload missing details (non-assignment / sparse event)', () => {
     const sparse = {
       assignmentId: '33333333-3333-3333-3333-333333333333',
@@ -146,8 +175,8 @@ describe('validateEventEnvelope (lenient — must accept any event for the log)'
     expect(validateEventEnvelope({ key: '', operation: 'Receive' }).ok).toBe(false);
   });
 
-  it('rejects a missing or non-string operation (no event type to log)', () => {
-    expect(validateEventEnvelope({ key: 'k' }).ok).toBe(false);
-    expect(validateEventEnvelope({ key: 'k', operation: '' }).ok).toBe(false);
+  it('accepts an event with no operation (still logged losslessly; event_type falls back)', () => {
+    expect(validateEventEnvelope({ key: 'k' }).ok).toBe(true);
+    expect(validateEventEnvelope({ key: 'k', operation: '' }).ok).toBe(true);
   });
 });

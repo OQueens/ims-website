@@ -22,9 +22,48 @@ import {
   deriveStatus,
   normalizeSpecialtySlug,
   redactPayloadForStorage,
+  validatePayloadShape,
   type LSWebhookPayload,
   type SpecialtySlug,
 } from './locumsmart-webhook-logic';
+
+/**
+ * cyrb53 — a fast, deterministic, dependency-free 53-bit string hash (sync, runs
+ * in both the Workers runtime and Node). Used only to derive a collision-free
+ * dedupe key for non-assignment events that have no shared natural identity. A
+ * 53-bit space makes accidental collisions negligible at this event volume.
+ */
+function cyrb53(str: string, seed = 0): string {
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
+/**
+ * Deterministic, key-order-independent JSON serialization. Recursively sorts
+ * object keys so the SAME logical payload hashes identically even if LS re-emits
+ * its fields in a different order (e.g. after a platform upgrade) — so a true
+ * retry always dedupes instead of double-logging.
+ */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null';
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+  const obj = value as Record<string, unknown>;
+  const body = Object.keys(obj)
+    .sort()
+    .map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`)
+    .join(',');
+  return `{${body}}`;
+}
 
 /**
  * A row destined for the append-only `ls_events` table. Mirrors the migration
@@ -70,8 +109,13 @@ export type EnvelopeResult =
 export function validateEventEnvelope(raw: unknown): EnvelopeResult {
   if (typeof raw !== 'object' || raw === null) return { ok: false, reason: 'not-an-object' };
   const r = raw as Record<string, unknown>;
+  // `key` is the ONLY hard requirement — it is how we authenticate the delivery.
+  // `operation` is NOT required: a non-assignment event (Bid / Agreement /
+  // Invoice / Timesheet / Provider / Confirmation Amendment) may carry a
+  // different discriminator, and we must still log it losslessly rather than
+  // drop it. mapToLsEventRow falls back to event_type 'unknown' and a content-
+  // hash dedupe key, and raw_payload captures the full shape for later.
   if (typeof r.key !== 'string' || r.key.length === 0) return { ok: false, reason: 'missing-key' };
-  if (typeof r.operation !== 'string' || r.operation.length === 0) return { ok: false, reason: 'missing-operation' };
   return { ok: true, payload: raw as LSWebhookPayload };
 }
 
@@ -93,13 +137,23 @@ function deriveOccurredAt(payload: LSWebhookPayload, receivedAtIso: string): str
  * reveals a true LS event id, switch to it (design §10 item 4).
  */
 export function deriveDedupeKey(payload: LSWebhookPayload): string {
-  const d = payload.details ?? {};
-  const ts = d.lastModified ?? d.createDate ?? 'no-ts';
-  // assignmentId is non-optional on the assignment contract, but a future
-  // non-assignment event (candidate/offer/credentialing — design §10) may omit
-  // it, so fall back rather than stringify `undefined` into the dedupe key.
-  const id = payload.assignmentId ?? 'no-id';
-  return `${id}:${payload.operation}:${ts}`;
+  // Assignment-shaped events have a stable natural identity (assignmentId +
+  // operation + timestamp). Use it so a re-serialized retry dedupes and
+  // placements/fills are never double-counted.
+  if (validatePayloadShape(payload).ok) {
+    const d = payload.details ?? {};
+    const ts = d.lastModified ?? d.createDate ?? 'no-ts';
+    return `${payload.assignmentId}:${payload.operation}:${ts}`;
+  }
+  // Everything else (Bids, Agreements, Invoices, Timesheets, Providers,
+  // Confirmation Amendments) shares no natural identity, so a fixed prefix like
+  // "no-id:<operation>:no-ts" would collide and silently DROP distinct events.
+  // Key off a content hash instead: identical retries dedupe (same hash),
+  // distinct events never collide. The bearer `key` is OMITTED from the hash
+  // (not just redacted) so the hash never depends on the secret or the redaction
+  // marker; stableStringify makes it independent of field order.
+  const { key: _bearerKey, ...hashable } = payload as Record<string, unknown>;
+  return `evt:${cyrb53(stableStringify(hashable))}`;
 }
 
 /**
@@ -114,7 +168,7 @@ export function mapToLsEventRow(payload: LSWebhookPayload, receivedAtIso: string
 
   return {
     dedupe_key: deriveDedupeKey(payload),
-    event_type: payload.operation,
+    event_type: payload.operation || 'unknown',
     assignment_id: payload.assignmentId ?? null,
     assignment_number: payload.assignmentNumber ?? null,
     occurred_at: deriveOccurredAt(payload, receivedAtIso),
