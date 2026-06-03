@@ -5,10 +5,24 @@
 plus a missing-clause audit. Method: a 14-agent workflow — 7 dimensions, each researched against
 primary/secondary 2025–2026 sources, then **adversarially verified** by a second agent that tried to refute
 the conclusion and re-checked the citations. **Engineering/communications work grounded in research — NOT
-legal advice.** The notices remain **DRAFT** pending a licensed-attorney sign-off.
+legal advice.**
 
 Result: **4 of 7 dimensions yielded clear, safe copy fixes (applied 2026-06-03)**; **3 are genuine
-attorney/founder judgment calls (surfaced below, NOT auto-applied).**
+attorney/founder judgment calls (surfaced below).**
+
+> **🔭 UPDATE — 2026-06-03 (Zach's independent attorney-style review folded).** Zach ran our ChatGPT
+> deep-research prompt and the result (a 11-page cited Texas-law review, saved to Downloads) **converged
+> with this analysis** and supplied vetted clause language. We then folded the FULL set into LegalPage.astro:
+> **the DRAFT / "under legal review" banner was REMOVED** (the reviewer's #1 call — a draft banner on live
+> Terms undermines assent); the liability cap is now **ALL-CAPS, reaches IMS's own ordinary negligence, $100
+> floor**; sale/share, retention (category-based, no 7-yr-statute claim), HIPAA ("generally"+no-PHI), and GDPR
+> (US-intent) reframed; and we **ADDED** IP/anti-scraping, acceptable-use, suspension, third-party-links, a
+> **2-year** limitations period (reviewer confirmed 1-yr is VOID per Tex. CPRC §16.070), a **narrow**
+> misuse-indemnity, children's/COPPA, breach-notice, accessibility, Do-Not-Track, and general boilerplate.
+> **Still licensed-counsel judgment calls:** keep arbitration OFF the public site (both analyses agree);
+> exact cap floor ($100 vs $250); placed-clinician retention years (4/6/7); whether any future workflow makes
+> IMS a HIPAA business associate; and re-checking the live SBA size-standard table if IMS nears the receipts
+> cutoff. The pages are now presented as final (no DRAFT banner); these residual items are refinements, not blockers.
 
 ---
 

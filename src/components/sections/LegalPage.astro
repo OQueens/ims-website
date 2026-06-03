@@ -23,16 +23,21 @@
  * qualifies), and a registered-agent mailbox is not a "principal office"
  * (CPRC 15.001) — so forum-level State of Texas is the enforceable, accurate
  * choice. IMS is fully remote; the address is for legal service, NOT a staffed
- * office. The
- * notices remain DRAFT pending Zach's attorney sign-off (SG15 Pre-Launch
- * Checklist). A 2026-06-03 deep-research pass (14-agent, cited; see
- * docs/legal/2026-06-02-legal-research-findings.md) folded 4 accuracy fixes —
- * liability $100 floor + site-vs-signed-contract boundary; plain-English
- * no-sale carve-outs; real retention floors; HIPAA + state-law future-proofing —
- * and surfaced the attorney/founder calls: keep arbitration OFF the website (it
- * belongs in signed contracts); optional missing-clause adds (E-SIGN, COPPA,
- * breach-notice §521.053, accessibility, general boilerplate); the signed-contract
- * liability cap; and removing this DRAFT banner only after attorney sign-off.
+ * office. The notices were hardened on 2026-06-03 after Zach's independent
+ * attorney-style deep review (ChatGPT deep-research run on our prompt). Folded:
+ * DRAFT banner REMOVED (a draft banner on live terms undermines assent); liability
+ * cap -> ALL-CAPS, reaches IMS's OWN ordinary negligence, non-zero $100 floor;
+ * sale/share reframed (monetary-sale vs service-facilitation); retention ->
+ * category-based (~4yr base, NOT a 7yr statute); HIPAA "generally does not apply" +
+ * do-not-submit-PHI; GDPR softened to US-intent (+ Switzerland). ADDED: IP +
+ * anti-scraping + acceptable-use, suspension/termination, third-party-links, a
+ * 2-YEAR limitations period (NOT 1yr — void per Tex. CPRC 16.070), a narrow
+ * misuse-indemnity, children's/COPPA, breach-notice, accessibility, Do-Not-Track,
+ * and general boilerplate (entire-agreement/no-waiver/assignment/e-communications).
+ * Remaining licensed-counsel judgment calls (keep arbitration OFF the public site;
+ * exact cap floor $100 vs $250; placed-clinician retention 4/6/7 yr; whether any
+ * future workflow makes IMS a HIPAA business associate) are catalogued in
+ * docs/legal/2026-06-03-residual-legal-research.md.
  */
 interface Props { kind: 'privacy' | 'terms' | 'cookies'; }
 const { kind } = Astro.props;
@@ -80,19 +85,22 @@ const LEGAL_CONTENT = {
         ]},
       ]},
       { h: 'How long we keep it', body: [
-        { p: `These are our own retention windows. Where the law sets a floor we meet or exceed it; otherwise they reflect how long the staffing relationship actually needs the records.` },
+        { p: `We keep personal information only as long as reasonably necessary for the purposes described here — to operate our recruiting and staffing business, keep appropriate business records, meet tax, payroll, recordkeeping, and legal obligations, resolve disputes, and enforce agreements. Retention varies by category, and a litigation hold always overrides routine deletion:` },
         { ul: [
-          `<strong>Job-application data</strong> — up to 18 months from last contact, then deleted unless an active engagement extends the relationship. (Federal EEOC rules require only one year; the longer window is our own policy.)`,
-          `<strong>Contact-form messages</strong> — up to 12 months from last reply, then deleted.`,
-          `<strong>Operational records tied to an active clinician or facility engagement</strong> — kept for the duration of the engagement, then retained afterward as our agreements and applicable law require. The legal floors here are shorter than people expect: federal payroll-tax records run four years, FLSA wage records three, and Form I-9s the later of three years after hire or one year after the assignment ends, while Texas's longest relevant deadline is the four-year limit on contract claims. As a matter of our own policy we keep core engagement records up to seven years after an engagement ends — comfortably beyond every one of those floors, and in line with common healthcare-credentialing practice.`,
+          `<strong>Website analytics and security logs</strong> — typically up to 18 months.`,
+          `<strong>Routine website inquiries with no relationship formed</strong> — up to 24 months.`,
+          `<strong>Job-application data</strong> — up to 18 months from last contact, then deleted unless an active engagement extends the relationship.`,
+          `<strong>Placement, billing, and related business records</strong> — about 4 years after the last placement activity, payment, or relationship event, or longer where tax, accounting, contractual, insurance, or litigation-hold reasons apply.`,
+          `<strong>Form I-9 and similar mandated records</strong> — kept on their own statutory schedule.`,
         ]},
+        { p: `The legal floors that drive these windows are shorter than people often assume — federal payroll-tax records run four years, FLSA wage records three, Form I-9s the later of three years after hire or one year after the assignment ends, and Texas's longest relevant deadline is the four-year limit on contract claims. Where we keep records longer, that is our own conservative policy, not a legal requirement.` },
       ]},
       { h: 'A note on HIPAA', body: [
-        { p: `IMS is a staffing agency — not a healthcare provider or health plan. The information we collect about you (contact details, licenses, certifications, references, and work history) is professional credentialing information about you as a clinician, so we do not collect patient health records ("protected health information") under HIPAA. When you are placed at a facility, any patient information you handle on that assignment is governed by that facility's own HIPAA policies, because on assignment you work under the facility's direction — not ours.` },
+        { p: `IMS is a staffing agency — not a healthcare provider or health plan. The information we collect about you (contact details, licenses, certifications, references, and work history) is professional credentialing information about you as a clinician, so HIPAA generally does not apply to what we collect, and we do not collect patient health records ("protected health information") through this site. Please do not submit patient health information through our web forms or by email. When you are placed at a facility, any patient information you handle on that assignment is governed by that facility's own HIPAA policies, because on assignment you work under the facility's direction — not ours.` },
       ]},
       { h: 'Your rights and how to exercise them', body: [
         { p: `You can ask us at any time to confirm what we hold about you, correct it, or delete it. Email <a href="mailto:${SUPPORT_EMAIL}?subject=Data%20deletion%20request">${SUPPORT_EMAIL}</a> with the subject <em>Data deletion request</em>. We aim to respond within 30 days.` },
-        { p: `We do not sell your personal data, and we do not share it for advertising or cross-context behavioral advertising. We disclose it only to the sub-processors listed above, who act on our behalf, and to the specific facilities or clinicians needed to carry out an engagement you have asked us to pursue.` },
+        { p: `We do not sell personal data for monetary consideration, we do not share personal information for cross-context behavioral advertising, and we do not process personal data for targeted advertising. If a clinician asks us to present them for a staffing opportunity, we may disclose the information reasonably necessary to evaluate and facilitate that requested opportunity with a healthcare facility or other business counterparty — we treat those disclosures as part of providing the staffing services you have asked for, not as advertising. We also disclose data to the sub-processors listed above, who act on our behalf. We do not sell sensitive personal data.` },
       ]},
       { h: 'Privacy laws and where you live', body: [
         { p: `Innovative Medical Staffing is a small Texas-based business. The comprehensive US state consumer-privacy laws now in effect — including California (CCPA/CPRA) and the roughly twenty other states, Texas among them, with similar laws as of 2026 — generally apply only to larger companies that cross specific revenue or data-volume thresholds, or that sell personal data. We do not meet those thresholds, and we do not sell personal data. Most of these laws also do not cover the information you give us as a job applicant or a business contact, and even the newest and broadest of them — such as Connecticut's 2026 amendments, which can reach a business that handles the sensitive data of a single resident — apply only to individuals acting as consumers, not to the job applicants and business contacts whose information we handle.` },
@@ -100,7 +108,16 @@ const LEGAL_CONTENT = {
         { p: `None of that changes how we treat you. Whatever the law requires, you can ask us to confirm, correct, or delete what we hold — use the deletion-request flow above, and we will honor reasonable requests.` },
       ]},
       { h: 'Where we operate', body: [
-        { p: `IMS is a US-based staffing agency serving US healthcare facilities and US-based clinicians. We do not target or market our services to people in the EU or UK, so the GDPR does not generally apply to what we do. If you are in the EU or UK and have a question or request about your information, email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> and we will do our best to help.` },
+        { p: `Our services are intended for people in the United States, and we do not currently market our services to individuals in the EEA, UK, or Switzerland. If you are outside the United States and have a question or request about your information, email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> and we will do our best to help.` },
+      ]},
+      { h: 'If there is a data breach', body: [
+        { p: `If we determine that a security incident requires notice under applicable law, we will provide those notices as the law requires. For Texas residents, that may include notice to the affected individuals and, where required, a report to the Texas Attorney General.` },
+      ]},
+      { h: "Children's privacy", body: [
+        { p: `This site is not directed to children under 13, and IMS does not knowingly collect personal information online from children under 13. If you believe a child under 13 has given us personal information through the site, email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> and we will take appropriate action.` },
+      ]},
+      { h: 'Accessibility', body: [
+        { p: `IMS is committed to improving website accessibility for all users. If you have trouble accessing any content on this site, email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> with the page and the issue, and we will work to provide the information in an accessible format.` },
       ]},
       { h: 'Changes to this notice', body: [
         { p: `We update this notice when our practices change or when the law requires it. The date at the top reflects the most recent change.` },
@@ -113,7 +130,6 @@ const LEGAL_CONTENT = {
     eyebrow: `Last updated · ${UPDATED}`,
     title: { lead: 'The rules of the road,', em: 'in plain English', trail: '.' },
     intro: "These terms govern your use of this site and your relationship with Innovative Medical Staffing. A separate signed agreement — a clinician contract or a facility staffing agreement — controls if anything here conflicts with it.",
-    note: `<strong>Draft —</strong> these terms are under legal review. The substance reflects how IMS operates today, but the language is provisional; the final version will be linked here at launch.`,
     sections: [
       { h: 'The service', body: [
         { p: `Innovative Medical Staffing (IMS) provides healthcare-staffing services connecting qualified clinicians with healthcare facilities for locum tenens and similar engagements. This site describes the service, lists open opportunities, and offers ways to get in touch. Information on this site is general unless captured in a signed agreement between IMS and a clinician or facility.` },
@@ -130,20 +146,35 @@ const LEGAL_CONTENT = {
       { h: 'Site use', body: [
         { p: `You agree not to access this site through automated means beyond ordinary search-engine crawling, interfere with the site infrastructure, or use the site to send unsolicited commercial messages to addresses harvested from it.` },
       ]},
-      { h: 'Intellectual property', body: [
-        { p: `Site content (copy, marks, illustrations) is the property of IMS or its licensors. You may share links to public pages and quote short excerpts with attribution; do not reproduce the site or substantial portions of it without written permission.` },
+      { h: 'Intellectual property and acceptable use', body: [
+        { p: `Site content (copy, marks, illustrations, compilations, and software) is owned by IMS or its licensors and protected by intellectual-property law. Subject to these terms, IMS grants you a limited, revocable, non-exclusive, non-transferable license to use the site to learn about IMS and its services. You may share links to public pages and quote short excerpts with attribution. You may not copy, scrape, reproduce, republish, distribute, frame, reverse-engineer, or create derivative works from the site or its content except as expressly permitted in writing, and you may not submit false, inaccurate, or misleading information, including inaccurate credentialing or licensure information.` },
       ]},
       { h: 'Disclaimer', body: [
         { p: `Site content is provided on an as-is basis. IMS does not warrant the site will be uninterrupted or error-free. To the extent permitted by law, IMS disclaims implied warranties of merchantability, fitness for a particular purpose, and non-infringement.` },
       ]},
       { h: 'Limitation of liability', body: [
-        { p: `<strong>Limitation of liability. To the maximum extent permitted by law, IMS's total liability arising out of or relating to your use of this site will not exceed the greater of (a) the amount you paid IMS for access to this site in the twelve months before the claim, or (b) one hundred U.S. dollars (US$100).</strong> Nothing here limits liability that cannot be limited or excluded under applicable law, including liability for gross negligence, fraud, willful misconduct, or personal injury or death caused by negligence. This limit applies to your use of this site only — IMS's liability under any signed clinician or facility staffing agreement is governed solely by the limitation-of-liability provision in that agreement.` },
+        { p: `<strong>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IMS'S TOTAL AGGREGATE LIABILITY ARISING OUT OF OR RELATING TO THE SITE, THESE TERMS, OR ANY CONTENT OR MATERIALS PROVIDED THROUGH THE SITE — INCLUDING ANY CLAIM BASED ON IMS'S OWN ORDINARY NEGLIGENCE — WILL NOT EXCEED THE GREATER OF (A) US$100, OR (B) THE AMOUNT YOU PAID IMS, IF ANY, FOR USE OF THE SITE OR THE SPECIFIC SERVICE GIVING RISE TO THE CLAIM IN THE 12 MONTHS BEFORE THE EVENT FIRST GIVING RISE TO THE CLAIM. THIS LIMITATION DOES NOT APPLY TO LIABILITY FOR FRAUD, WILLFUL MISCONDUCT, GROSS NEGLIGENCE, PERSONAL INJURY OR DEATH CAUSED BY NEGLIGENCE, OR ANY LIABILITY THAT CANNOT BE EXCLUDED OR LIMITED UNDER APPLICABLE LAW.</strong> This limit applies to your use of this site only — IMS's liability under any signed clinician or facility staffing agreement is governed solely by the limitation-of-liability provision in that agreement.` },
+      ]},
+      { h: 'Your responsibility for misuse', body: [
+        { p: `To the extent permitted by law, you agree to cover IMS's reasonable losses arising from your unlawful use of the site, your submission of false or misleading information (including inaccurate credentials), your scraping or other unauthorized access, or your infringement of someone else's rights. This is limited to misuse by you; it does not ask ordinary visitors to insure IMS against its own conduct.` },
+      ]},
+      { h: 'Suspension and termination', body: [
+        { p: `IMS may suspend, restrict, or end your access to the site at any time, with or without notice, if we reasonably believe you have violated these terms, provided false information, interfered with the site, or used it unlawfully.` },
+      ]},
+      { h: 'Third-party links', body: [
+        { p: `The site may link to third-party websites or services for convenience. IMS does not control and is not responsible for their content, policies, or practices; your use of any third-party site is at your own risk and subject to that third party's terms.` },
       ]},
       { h: 'Governing law and disputes', body: [
         { p: `These terms are governed by the laws of the State of Texas, without regard to its conflict-of-laws rules. The parties agree to attempt good-faith resolution before filing a claim. Any unresolved dispute will be brought exclusively in the state or federal courts located in the State of Texas, and you consent to personal jurisdiction there, unless applicable consumer-protection law in your jurisdiction gives you a non-waivable right to a different venue.` },
       ]},
+      { h: 'Time limit for claims', body: [
+        { p: `Any claim arising out of or relating to the site or these terms must be brought within two years after it arises, to the extent applicable law allows a shortened period.` },
+      ]},
       { h: 'Severability and modification', body: [
-        { p: `If any provision of these terms is found unenforceable, the remainder stays in effect. We may update these terms when our practices change or when the law requires it; the date at the top reflects the most recent change. Continued use of the site after a change constitutes acceptance of the updated terms.` },
+        { p: `If any provision of these terms is found unenforceable, the remainder stays in effect. We may update these terms when our practices change or when the law requires it; the date at the top reflects the most recent change. Material changes apply going forward, and continued use of the site after a change constitutes acceptance of the updated terms.` },
+      ]},
+      { h: 'General', body: [
+        { p: `These terms, together with any signed agreement that applies to you, are the entire agreement between you and IMS about the site. Our failure to enforce a provision is not a waiver of it. You may not assign your rights under these terms; IMS may assign its rights to an affiliate or successor. You agree that IMS may communicate with you electronically and that electronic records and communications satisfy any requirement that such communications be in writing.` },
       ]},
     ],
     contact: { lead: 'Questions about these terms:', address: SUPPORT_EMAIL, mail: LEGAL_ENTITY },
@@ -161,6 +192,9 @@ const LEGAL_CONTENT = {
       { h: 'Why there is no consent banner', body: [
         { p: `Consent banners are required when a site sets non-essential cookies or uses cross-site tracking. We do neither. Site analytics run on Plausible Cloud, which uses no cookies and no persistent identifiers — visit counts are aggregated at the request level using a daily-rotating salted hash that cannot identify a returning visitor.` },
       ]},
+      { h: 'Do Not Track', body: [
+        { p: `This site uses only the strictly-necessary Cloudflare security cookie described above, and our analytics avoid non-essential cookies. Because we use no advertising cookies or cross-context behavioral-advertising tools, the site does not currently respond differently to browser "Do Not Track" signals.` },
+      ]},
       { h: 'Where to learn more', body: [
         { p: `Our broader handling of personal data — what we collect through forms, retention, the deletion-request flow, and sub-processors — is documented in the <a href="/privacy">Privacy notice</a>. The Plausible Cloud approach is documented at <a href="https://plausible.io/data-policy" rel="external noopener">plausible.io/data-policy</a>.` },
       ]},
@@ -170,7 +204,6 @@ const LEGAL_CONTENT = {
 } as const;
 
 const c = LEGAL_CONTENT[kind] ?? LEGAL_CONTENT.privacy;
-const note = 'note' in c ? c.note : undefined;
 const pad = (i: number) => String(i + 1).padStart(2, '0');
 ---
 <div class="legal-page">
@@ -187,7 +220,6 @@ const pad = (i: number) => String(i + 1).padStart(2, '0');
         {c.title.lead} <span class="em">{c.title.em}</span>{c.title.trail}
       </h1>
       <p class="legal-page__intro">{c.intro}</p>
-      {note && <p class="legal-page__note" role="note" set:html={note} />}
     </header>
 
     <div class="legal-page__body">
