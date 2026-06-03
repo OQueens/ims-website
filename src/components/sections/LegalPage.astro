@@ -12,8 +12,9 @@
  * (2026-06-02 legal pass): state consumer-privacy laws scoped to what truly
  * applies + the Texas TDPSA small-business exemption, GDPR scoped down (IMS does
  * not target the EU/UK), HIPAA clarified (IMS is neither a covered entity nor a
- * business associate), retention attributed to its real driver (TX employment/
- * tax statutes of limitation, not an invented "norm"), and the dispute venue set
+ * business associate), retention framed as IMS's own policy that meets/exceeds
+ * the real federal (IRS 4yr / FLSA 3yr / I-9) + Texas (4-yr contract SOL) floors
+ * (the 7yr window is conservative practice, NOT a 7-yr statute), and the venue set
  * to a State-of-Texas forum-selection clause. IMS's registered office address
  * (12650 N Beach St, Fort Worth, TX 76244 — in Tarrant County, verified) is shown
  * in the legal contact block for service, but the clause does NOT pin a binding
@@ -24,7 +25,14 @@
  * choice. IMS is fully remote; the address is for legal service, NOT a staffed
  * office. The
  * notices remain DRAFT pending Zach's attorney sign-off (SG15 Pre-Launch
- * Checklist); the liability-cap enforceability is the one genuine attorney call.
+ * Checklist). A 2026-06-03 deep-research pass (14-agent, cited; see
+ * docs/legal/2026-06-02-legal-research-findings.md) folded 4 accuracy fixes —
+ * liability $100 floor + site-vs-signed-contract boundary; plain-English
+ * no-sale carve-outs; real retention floors; HIPAA + state-law future-proofing —
+ * and surfaced the attorney/founder calls: keep arbitration OFF the website (it
+ * belongs in signed contracts); optional missing-clause adds (E-SIGN, COPPA,
+ * breach-notice §521.053, accessibility, general boilerplate); the signed-contract
+ * liability cap; and removing this DRAFT banner only after attorney sign-off.
  */
 interface Props { kind: 'privacy' | 'terms' | 'cookies'; }
 const { kind } = Astro.props;
@@ -67,7 +75,7 @@ const LEGAL_CONTENT = {
         { ul: [
           `Application + contact data — Supabase (US-hosted Postgres, encrypted at rest).`,
           `Outbound transactional email — Resend (US-based email delivery).`,
-          `Anonymous site analytics — Plausible Cloud (cookieless, no stored IP).`,
+          `Anonymous site analytics — Plausible Cloud (cookieless, no stored IP; EU-hosted, data never leaves the EU).`,
           `Site hosting — Cloudflare (global edge network).`,
         ]},
       ]},
@@ -76,18 +84,18 @@ const LEGAL_CONTENT = {
         { ul: [
           `<strong>Job-application data</strong> — up to 18 months from last contact, then deleted unless an active engagement extends the relationship. (Federal EEOC rules require only one year; the longer window is our own policy.)`,
           `<strong>Contact-form messages</strong> — up to 12 months from last reply, then deleted.`,
-          `<strong>Operational records tied to an active clinician or facility engagement</strong> — kept for the duration of the engagement, then as long as our agreements and applicable law require — typically up to 7 years after it ends, to align with Texas employment-record and tax statutes of limitation.`,
+          `<strong>Operational records tied to an active clinician or facility engagement</strong> — kept for the duration of the engagement, then retained afterward as our agreements and applicable law require. The legal floors here are shorter than people expect: federal payroll-tax records run four years, FLSA wage records three, and Form I-9s the later of three years after hire or one year after the assignment ends, while Texas's longest relevant deadline is the four-year limit on contract claims. As a matter of our own policy we keep core engagement records up to seven years after an engagement ends — comfortably beyond every one of those floors, and in line with common healthcare-credentialing practice.`,
         ]},
       ]},
       { h: 'A note on HIPAA', body: [
-        { p: `IMS is a staffing agency — not a healthcare provider or health plan. The information we collect about you (contact details, licenses, certifications, references, and work history) is professional credentialing information about you as a clinician, not patient health records, so it is not "protected health information" under HIPAA. When you are placed at a facility, any patient information you handle on that assignment is governed by that facility's own HIPAA policies, because on assignment you work under the facility's direction — not ours.` },
+        { p: `IMS is a staffing agency — not a healthcare provider or health plan. The information we collect about you (contact details, licenses, certifications, references, and work history) is professional credentialing information about you as a clinician, so we do not collect patient health records ("protected health information") under HIPAA. When you are placed at a facility, any patient information you handle on that assignment is governed by that facility's own HIPAA policies, because on assignment you work under the facility's direction — not ours.` },
       ]},
       { h: 'Your rights and how to exercise them', body: [
         { p: `You can ask us at any time to confirm what we hold about you, correct it, or delete it. Email <a href="mailto:${SUPPORT_EMAIL}?subject=Data%20deletion%20request">${SUPPORT_EMAIL}</a> with the subject <em>Data deletion request</em>. We aim to respond within 30 days.` },
-        { p: `We do not sell personal data, and we do not share it with third parties for advertising. We disclose only to the sub-processors listed above and to facilities or clinicians involved in an active engagement you have agreed to.` },
+        { p: `We do not sell your personal data, and we do not share it for advertising or cross-context behavioral advertising. We disclose it only to the sub-processors listed above, who act on our behalf, and to the specific facilities or clinicians needed to carry out an engagement you have asked us to pursue.` },
       ]},
       { h: 'Privacy laws and where you live', body: [
-        { p: `Innovative Medical Staffing is a small Texas-based business. The comprehensive US state consumer-privacy laws — including those in California (CCPA/CPRA), Colorado, Connecticut, Virginia, Utah, and our home state of Texas — generally apply only to larger companies that cross specific revenue or data-volume thresholds, or that sell personal data. We do not meet those thresholds, and we do not sell personal data. Most of these laws also do not cover the information you give us as a job applicant or a business contact.` },
+        { p: `Innovative Medical Staffing is a small Texas-based business. The comprehensive US state consumer-privacy laws now in effect — including California (CCPA/CPRA) and the roughly twenty other states, Texas among them, with similar laws as of 2026 — generally apply only to larger companies that cross specific revenue or data-volume thresholds, or that sell personal data. We do not meet those thresholds, and we do not sell personal data. Most of these laws also do not cover the information you give us as a job applicant or a business contact, and even the newest and broadest of them — such as Connecticut's 2026 amendments, which can reach a business that handles the sensitive data of a single resident — apply only to individuals acting as consumers, not to the job applicants and business contacts whose information we handle.` },
         { p: `Texas's own law — the Texas Data Privacy and Security Act — exempts businesses that qualify as a "small business" under US Small Business Administration standards, which we do. The one rule that still applies to every business, large or small, is that sensitive personal data may not be sold without your consent; we satisfy it by not selling data at all.` },
         { p: `None of that changes how we treat you. Whatever the law requires, you can ask us to confirm, correct, or delete what we hold — use the deletion-request flow above, and we will honor reasonable requests.` },
       ]},
@@ -129,7 +137,7 @@ const LEGAL_CONTENT = {
         { p: `Site content is provided on an as-is basis. IMS does not warrant the site will be uninterrupted or error-free. To the extent permitted by law, IMS disclaims implied warranties of merchantability, fitness for a particular purpose, and non-infringement.` },
       ]},
       { h: 'Limitation of liability', body: [
-        { p: `<strong>To the maximum extent permitted by law, IMS's total liability arising out of or relating to your use of this site will not exceed the amount you paid IMS in the twelve months before the claim — which, for site visitors who pay IMS nothing, is zero.</strong> Nothing here limits liability that cannot be limited or excluded under applicable law, including liability for gross negligence, fraud, willful misconduct, or personal injury or death caused by negligence.` },
+        { p: `<strong>Limitation of liability. To the maximum extent permitted by law, IMS's total liability arising out of or relating to your use of this site will not exceed the greater of (a) the amount you paid IMS for access to this site in the twelve months before the claim, or (b) one hundred U.S. dollars (US$100).</strong> Nothing here limits liability that cannot be limited or excluded under applicable law, including liability for gross negligence, fraud, willful misconduct, or personal injury or death caused by negligence. This limit applies to your use of this site only — IMS's liability under any signed clinician or facility staffing agreement is governed solely by the limitation-of-liability provision in that agreement.` },
       ]},
       { h: 'Governing law and disputes', body: [
         { p: `These terms are governed by the laws of the State of Texas, without regard to its conflict-of-laws rules. The parties agree to attempt good-faith resolution before filing a claim. Any unresolved dispute will be brought exclusively in the state or federal courts located in the State of Texas, and you consent to personal jurisdiction there, unless applicable consumer-protection law in your jurisdiction gives you a non-waivable right to a different venue.` },

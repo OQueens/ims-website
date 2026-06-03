@@ -124,7 +124,13 @@ const ORG_JSON_LD = {
     <link rel="preload" href="/fonts/Battlefin-Black.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/Battlefin-Bold.woff2" as="font" type="font/woff2" crossorigin />
     <title>{title}</title>
-    <!-- Plausible Cloud — privacy-friendly, no cookie banner per spec §0.5.8 -->
+    <!-- Plausible Cloud — privacy-friendly, no cookie banner per spec §0.5.8.
+         LEGAL CONTRACT: this is the ONLY third-party telemetry permitted (cookieless,
+         no ad/cross-site identifiers). Do NOT add Google Analytics/GTM, a Meta/Facebook
+         pixel, or any ad/retargeting tag — /privacy and /cookies state we run no
+         advertising or cross-site-tracking tags and do not sell/share data for ads;
+         adding one makes those notices FALSE and could forfeit the TDPSA/CCPA no-sale
+         posture. If analytics ever changes, update LegalPage.astro LEGAL_CONTENT first. -->
     <script
       is:inline
       defer
