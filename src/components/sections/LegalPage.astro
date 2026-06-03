@@ -7,12 +7,16 @@
  * below because section bodies are injected with set:html and therefore never
  * receive Astro's scoped cid attribute.
  *
- * Content note: this restores the real, fact-grounded notices that predate the
- * Chromia-Cream port (real sub-processors Plausible/Resend/Supabase/Cloudflare,
- * real retention windows, real recruiting@iastaffing.com, US-state + GDPR
- * sections) into the new design. The notices remain DRAFT pending Zach's legal
- * review (SG15 Pre-Launch Checklist) — Travis County / Fort Worth references
- * and final wording are his to confirm.
+ * Content note: these are the real, fact-grounded notices, researched against
+ * the laws that actually bind a small Texas boutique locum-staffing firm
+ * (2026-06-02 legal pass): state consumer-privacy laws scoped to what truly
+ * applies + the Texas TDPSA small-business exemption, GDPR scoped down (IMS does
+ * not target the EU/UK), HIPAA clarified (IMS is neither a covered entity nor a
+ * business associate), retention attributed to its real driver (TX employment/
+ * tax statutes of limitation, not an invented "norm"), and the dispute venue
+ * corrected to Tarrant County (Fort Worth HQ — Travis County is Austin). The
+ * notices remain DRAFT pending Zach's attorney sign-off (SG15 Pre-Launch
+ * Checklist); the liability-cap enforceability is the one genuine attorney call.
  */
 interface Props { kind: 'privacy' | 'terms' | 'cookies'; }
 const { kind } = Astro.props;
@@ -21,7 +25,7 @@ const { kind } = Astro.props;
 // Strings may carry trusted inline HTML (<a>, <strong>, <em>, <code>) — this is
 // author-controlled copy, not user input, so set:html is safe here.
 const SUPPORT_EMAIL = 'recruiting@iastaffing.com';
-const UPDATED = 'May 7, 2026';
+const UPDATED = 'June 2, 2026';
 
 const LEGAL_CONTENT = {
   privacy: {
@@ -33,43 +37,49 @@ const LEGAL_CONTENT = {
         { p: 'We collect only what the staffing relationship needs:' },
         { ul: [
           `<strong>Application data</strong> — name, contact details, CV, license states, certifications, references, work history, and availability submitted through the site or by email.`,
-          `<strong>Contact-form data</strong> — name, contact details, intent (clinician opportunity / facility coverage / general), and message body.`,
+          `<strong>Contact-form data</strong> — your name, email address, who you are (facility, clinician, or general inquiry), an optional role or specialty, and the message you send us.`,
           `<strong>Usage telemetry</strong> — anonymous, aggregated visit data via Plausible Cloud (no cookies, no cross-site identifiers, no stored IP). See the <a href="/cookies">Cookies notice</a>.`,
-          `<strong>Operational records</strong> — credentialing artifacts, references, and assignment history maintained for the clinicians and facility partners we work with.`,
+          `<strong>Operational records</strong> — the credentialing paperwork, references, and assignment history we gather and hold for the clinicians and facility partners we work with, in coordination with each facility's medical staff office.`,
         ]},
       ]},
       { h: 'How we use it', body: [
         { ul: [
           `To match clinicians to assignments and facilities to qualified clinicians.`,
-          `To handle credentialing, onboarding, travel, and assignment logistics.`,
+          `To facilitate credentialing, onboarding, and assignment logistics.`,
           `To respond to inquiries and stay in touch with the clinicians and facility partners we work with.`,
           `To meet the legal, regulatory, and contractual obligations specific to healthcare staffing.`,
         ]},
       ]},
       { h: 'Where it lives', body: [
         { ul: [
-          `Application + contact data — Supabase (US-hosted Postgres, encrypted at rest, row-level security enabled).`,
-          `Outbound transactional email — Resend (SOC 2 Type II, DPA signed).`,
-          `Anonymous site analytics — Plausible Cloud (EU-hosted, GDPR/CCPA-compliant, DPA signed).`,
-          `Site hosting — Cloudflare Pages (US/EU edge, DPA signed).`,
+          `Application + contact data — Supabase (US-hosted Postgres, encrypted at rest).`,
+          `Outbound transactional email — Resend (US-based email delivery).`,
+          `Anonymous site analytics — Plausible Cloud (cookieless, no stored IP).`,
+          `Site hosting — Cloudflare (global edge network).`,
         ]},
       ]},
       { h: 'How long we keep it', body: [
+        { p: `These are our own retention windows. Where the law sets a floor we meet or exceed it; otherwise they reflect how long the staffing relationship actually needs the records.` },
         { ul: [
-          `<strong>Job-application data</strong> — 18 months from last contact, then deleted unless an active engagement extends the relationship.`,
-          `<strong>Contact-form messages</strong> — 12 months from last reply, then deleted.`,
-          `<strong>Operational records for active clinicians and facility partners</strong> — kept for the duration of the relationship plus 7 years, per healthcare-staffing record-retention norms.`,
+          `<strong>Job-application data</strong> — up to 18 months from last contact, then deleted unless an active engagement extends the relationship. (Federal EEOC rules require only one year; the longer window is our own policy.)`,
+          `<strong>Contact-form messages</strong> — up to 12 months from last reply, then deleted.`,
+          `<strong>Operational records tied to an active clinician or facility engagement</strong> — kept for the duration of the engagement, then as long as our agreements and applicable law require — typically up to 7 years after it ends, to align with Texas employment-record and tax statutes of limitation.`,
         ]},
       ]},
+      { h: 'A note on HIPAA', body: [
+        { p: `IMS is a staffing agency — not a healthcare provider or health plan. The information we collect about you (contact details, licenses, certifications, references, and work history) is professional credentialing information about you as a clinician, not patient health records, so it is not "protected health information" under HIPAA. When you are placed at a facility, any patient information you handle on that assignment is governed by that facility's own HIPAA policies, because on assignment you work under the facility's direction — not ours.` },
+      ]},
       { h: 'Your rights and how to exercise them', body: [
-        { p: `You can ask us at any time to confirm what we hold about you, correct it, or delete it. Email <a href="mailto:${SUPPORT_EMAIL}?subject=Data%20deletion%20request">${SUPPORT_EMAIL}</a> with the subject <em>Data deletion request</em>. We respond within 30 days.` },
+        { p: `You can ask us at any time to confirm what we hold about you, correct it, or delete it. Email <a href="mailto:${SUPPORT_EMAIL}?subject=Data%20deletion%20request">${SUPPORT_EMAIL}</a> with the subject <em>Data deletion request</em>. We aim to respond within 30 days.` },
         { p: `We do not sell personal data, and we do not share it with third parties for advertising. We disclose only to the sub-processors listed above and to facilities or clinicians involved in an active engagement you have agreed to.` },
       ]},
-      { h: 'US state-law accommodations', body: [
-        { p: `If you reside in California (CCPA/CPRA), Colorado (CPA), Connecticut (CTDPA), Utah (UCPA), or Virginia (VCDPA), you have additional rights — including the right to know, delete, and correct, and to opt out of profiling for decisions with legal or similarly significant effects. The deletion-request flow above satisfies these state-law requests; we honor verifiable consumer requests within 45 days, extendable once with notice.` },
+      { h: 'Privacy laws and where you live', body: [
+        { p: `Innovative Medical Staffing is a small Texas-based business. The comprehensive US state consumer-privacy laws — including those in California (CCPA/CPRA), Colorado, Connecticut, Virginia, Utah, and our home state of Texas — generally apply only to larger companies that cross specific revenue or data-volume thresholds, or that sell personal data. We do not meet those thresholds, and we do not sell personal data. Most of these laws also do not cover the information you give us as a job applicant or a business contact.` },
+        { p: `Texas's own law — the Texas Data Privacy and Security Act — exempts businesses that qualify as a "small business" under US Small Business Administration standards, which we do. The one rule that still applies to every business, large or small, is that sensitive personal data may not be sold without your consent; we satisfy it by not selling data at all.` },
+        { p: `None of that changes how we treat you. Whatever the law requires, you can ask us to confirm, correct, or delete what we hold — use the deletion-request flow above, and we will honor reasonable requests.` },
       ]},
-      { h: 'EU / UK visitors (GDPR)', body: [
-        { p: `For visitors in the EU or UK, IMS acts as the data controller. The legal basis for processing is performance of a contract (when you engage our staffing service), legitimate interest (when you contact us about a possible engagement), or consent where local law requires it. You have the rights of access, rectification, erasure, restriction, portability, and objection. Email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> to exercise them or to lodge a complaint.` },
+      { h: 'Where we operate', body: [
+        { p: `IMS is a US-based staffing agency serving US healthcare facilities and US-based clinicians. We do not target or market our services to people in the EU or UK, so the GDPR does not generally apply to what we do. If you are in the EU or UK and have a question or request about your information, email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> and we will do our best to help.` },
       ]},
       { h: 'Changes to this notice', body: [
         { p: `We update this notice when our practices change or when the law requires it. The date at the top reflects the most recent change.` },
@@ -85,7 +95,7 @@ const LEGAL_CONTENT = {
     note: `<strong>Draft —</strong> these terms are under legal review. The substance reflects how IMS operates today, but the language is provisional; the final version will be linked here at launch.`,
     sections: [
       { h: 'The service', body: [
-        { p: `Innovative Medical Staffing (IMS) provides healthcare-staffing services connecting qualified clinicians with healthcare facilities for locum tenens and similar engagements. This site describes the service, lists open opportunities, and provides contact paths. Information on this site is general unless captured in a signed agreement between IMS and a clinician or facility.` },
+        { p: `Innovative Medical Staffing (IMS) provides healthcare-staffing services connecting qualified clinicians with healthcare facilities for locum tenens and similar engagements. This site describes the service, lists open opportunities, and offers ways to get in touch. Information on this site is general unless captured in a signed agreement between IMS and a clinician or facility.` },
       ]},
       { h: 'No fees charged to clinicians', body: [
         { p: `IMS does not charge clinicians a fee for placement or representation. Compensation to IMS is paid by the facility partner under a separate staffing agreement. Clinicians retain the right to engage directly with any facility outside the IMS relationship.` },
@@ -94,7 +104,7 @@ const LEGAL_CONTENT = {
         { p: `Submitting a CV, contact form, or inquiry creates a non-exclusive, no-obligation working relationship with an IMS recruiter for the purpose of evaluating fit. It is not employment, an offer of employment, or a guarantee of placement. Either party may end the relationship at any time before a signed engagement.` },
       ]},
       { h: 'Information accuracy', body: [
-        { p: `Information clinicians and facilities provide must be accurate and complete to the best of their knowledge. IMS verifies credentials, references, and licensure; reliance on materially false information may end the working relationship.` },
+        { p: `Clinicians and facilities must provide accurate, complete information. IMS facilitates credentialing and reference checks together with the facility's medical staff office and relies on the materials and references provided; reliance on materially false information may end the working relationship.` },
       ]},
       { h: 'Site use', body: [
         { p: `You agree not to access this site through automated means beyond ordinary search-engine crawling, interfere with the site infrastructure, or use the site to send unsolicited commercial messages to addresses harvested from it.` },
@@ -106,10 +116,10 @@ const LEGAL_CONTENT = {
         { p: `Site content is provided on an as-is basis. IMS does not warrant the site will be uninterrupted or error-free. To the extent permitted by law, IMS disclaims implied warranties of merchantability, fitness for a particular purpose, and non-infringement.` },
       ]},
       { h: 'Limitation of liability', body: [
-        { p: `To the extent permitted by law, IMS's liability arising from site use is limited to the amount you paid IMS in the twelve months preceding the claim — which, for site visitors, is zero. This does not limit liability for matters that cannot be limited by law, including gross negligence or willful misconduct.` },
+        { p: `<strong>To the maximum extent permitted by law, IMS's total liability arising out of or relating to your use of this site will not exceed the amount you paid IMS in the twelve months before the claim — which, for site visitors who pay IMS nothing, is zero.</strong> Nothing here limits liability that cannot be limited or excluded under applicable law, including liability for gross negligence, fraud, willful misconduct, or personal injury or death caused by negligence.` },
       ]},
       { h: 'Governing law and disputes', body: [
-        { p: `These terms are governed by the laws of the State of Texas, without regard to its conflict-of-laws rules. The parties agree to attempt good-faith resolution before filing a claim. Any unresolved dispute will be brought in the state or federal courts in Travis County, Texas, unless applicable consumer-protection law in your jurisdiction gives you a non-waivable right to a different venue.` },
+        { p: `These terms are governed by the laws of the State of Texas, without regard to its conflict-of-laws rules. The parties agree to attempt good-faith resolution before filing a claim. Any unresolved dispute will be brought in the state or federal courts located in Tarrant County, Texas — home to our Fort Worth offices — unless applicable consumer-protection law in your jurisdiction gives you a non-waivable right to a different venue.` },
       ]},
       { h: 'Severability and modification', body: [
         { p: `If any provision of these terms is found unenforceable, the remainder stays in effect. We may update these terms when our practices change or when the law requires it; the date at the top reflects the most recent change. Continued use of the site after a change constitutes acceptance of the updated terms.` },
@@ -124,8 +134,8 @@ const LEGAL_CONTENT = {
     intro: "We don't use tracking cookies, cross-site identifiers, or third-party advertising tags. Site usage telemetry runs through Plausible Cloud, which is cookieless by design.",
     sections: [
       { h: 'What cookies are set', body: [
-        { p: `One cookie is set when you visit this site: <code>__cf_bm</code>. It is set by Cloudflare for bot-management and security. Its lifetime is 30 minutes from your most recent request, and no personal data is stored in the cookie body.` },
-        { p: `Under EU PECR, <code>__cf_bm</code> is treated as a strictly-necessary functional cookie (it protects the site from automated abuse), so consent is not required. It is exempt for the same reason under the equivalent US state-law provisions.` },
+        { p: `One cookie is set when you visit this site: <code>__cf_bm</code>. Cloudflare sets it for bot-management and security; it lasts 30 minutes from your most recent request and stores no personal data in the cookie body. Cloudflare classifies it as strictly necessary, and it does not track you across sites.` },
+        { p: `US state privacy laws — such as the Texas Data Privacy and Security Act — tie consent and opt-out obligations to selling personal data and to targeted advertising, not to a strictly-necessary security cookie. We do neither, and we run no advertising or cross-site-tracking tags. Even under the stricter EU/UK ePrivacy rules, security and anti-abuse cookies fall within the "strictly necessary" exemption from consent.` },
       ]},
       { h: 'Why there is no consent banner', body: [
         { p: `Consent banners are required when a site sets non-essential cookies or uses cross-site tracking. We do neither. Site analytics run on Plausible Cloud, which uses no cookies and no persistent identifiers — visit counts are aggregated at the request level using a daily-rotating salted hash that cannot identify a returning visitor.` },
