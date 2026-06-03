@@ -186,16 +186,25 @@ export function normalizeSpecialtySlug(name: string | null | undefined): Special
  */
 export function derivePublicFacilityLabel(d: LSAssignmentDetails | null | undefined): string {
   const traumaLevel = d?.traumaLevel;
-  const setting = d?.practiceSetting;
+  const setting = d?.practiceSetting ?? '';
   const facCount = d?.facilities?.length ?? 0;
 
   if (typeof traumaLevel === 'number' && traumaLevel >= 1 && traumaLevel <= 5) {
     return `Level ${traumaLevel} Trauma Center`;
   }
-  if (setting === 'Outpatient') {
+  // LS sends single ("Inpatient" / "Outpatient") OR combined ("Inpatient,
+  // Outpatient", "Outpatient, Inpatient") settings. Match by substring so a
+  // combined value no longer falls through to the generic "Healthcare Facility"
+  // (a facility doing both inpatient and outpatient is a Medical Center).
+  const hasInpatient = setting.includes('Inpatient');
+  const hasOutpatient = setting.includes('Outpatient');
+  if (hasInpatient && hasOutpatient) {
+    return facCount > 1 ? 'Multi-Site Health System' : 'Medical Center';
+  }
+  if (hasOutpatient) {
     return facCount > 1 ? 'Multi-Site Outpatient Network' : 'Outpatient Surgery Center';
   }
-  if (setting === 'Inpatient') {
+  if (hasInpatient) {
     return facCount > 1 ? 'Multi-Site Health System' : 'Hospital';
   }
   return 'Healthcare Facility';

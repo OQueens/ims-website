@@ -233,6 +233,21 @@ describe('derivePublicFacilityLabel', () => {
       facilities: [{ facility: 'X' }, { facility: 'Y' }],
     })).toBe('Multi-Site Outpatient Network');
   });
+  it('maps a combined inpatient + outpatient setting to Medical Center', () => {
+    // LS commonly sends "Inpatient, Outpatient" (a facility that does both).
+    // Before, exact-string matching fell through to "Healthcare Facility".
+    expect(derivePublicFacilityLabel({ practiceSetting: 'Inpatient, Outpatient' })).toBe('Medical Center');
+    expect(derivePublicFacilityLabel({ practiceSetting: 'Outpatient, Inpatient' })).toBe('Medical Center');
+  });
+  it('keeps trauma-center precedence over a combined setting', () => {
+    expect(derivePublicFacilityLabel({ practiceSetting: 'Inpatient, Outpatient', traumaLevel: 2 })).toBe('Level 2 Trauma Center');
+  });
+  it('maps a multi-facility combined setting to Multi-Site Health System', () => {
+    expect(derivePublicFacilityLabel({
+      practiceSetting: 'Outpatient, Inpatient',
+      facilities: [{ facility: 'X' }, { facility: 'Y' }],
+    })).toBe('Multi-Site Health System');
+  });
   it('falls back to Healthcare Facility when no signal present', () => {
     expect(derivePublicFacilityLabel({})).toBe('Healthcare Facility');
     expect(derivePublicFacilityLabel(null)).toBe('Healthcare Facility');

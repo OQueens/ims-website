@@ -4,6 +4,8 @@ import {
   jobHaystack,
   matchesQuery,
   countMatching,
+  editDistance,
+  haystackMatchesQuery,
   type JobSearchFields,
 } from './job-search';
 
@@ -119,5 +121,110 @@ describe('countMatching', () => {
 
   it('counts every job for an empty query', () => {
     expect(countMatching(feed, '')).toBe(feed.length);
+  });
+});
+
+describe('editDistance (Damerau / optimal string alignment)', () => {
+  it('is 0 for identical strings', () => {
+    expect(editDistance('radiology', 'radiology')).toBe(0);
+  });
+
+  it('counts a single deletion (radiolgy → radiology)', () => {
+    expect(editDistance('radiolgy', 'radiology')).toBe(1);
+  });
+
+  it('counts a single insertion (dalas → dallas)', () => {
+    expect(editDistance('dalas', 'dallas')).toBe(1);
+  });
+
+  it('counts an adjacent transposition as a single edit', () => {
+    expect(editDistance('ba', 'ab')).toBe(1);
+    expect(editDistance('cardilogy', 'cardiolgy')).toBe(1);
+  });
+
+  it('counts a full replacement', () => {
+    expect(editDistance('abc', 'xyz')).toBe(3);
+  });
+
+  it('handles empty strings', () => {
+    expect(editDistance('', 'abc')).toBe(3);
+    expect(editDistance('abc', '')).toBe(3);
+  });
+});
+
+describe('matchesQuery — typo tolerance (fuzzy, every-token-must-hit)', () => {
+  it('matches a misspelled specialty (anesthesiolgy → Anesthesiology)', () => {
+    expect(matchesQuery(job(), 'anesthesiolgy')).toBe(true);
+  });
+
+  it('matches a misspelled/short-by-one specialty (radiolgy → Radiology)', () => {
+    const rad = job({ specialty_slug: 'radiology', specialty_name: 'Radiology', public_facility_label: null });
+    expect(matchesQuery(rad, 'radiolgy')).toBe(true);
+  });
+
+  it('matches a misspelled city (dalas → Dallas)', () => {
+    const j = job({ facility_city: 'Dallas', facility_state: 'TX', public_facility_label: null });
+    expect(matchesQuery(j, 'dalas')).toBe(true);
+  });
+
+  it('matches free-text specialty + location with a typo (cardiology houstan)', () => {
+    const j = job({
+      specialty_slug: 'cardiology',
+      specialty_name: 'Internal Medicine - Cardiology',
+      facility_city: 'Houston',
+      facility_state: 'TX',
+      public_facility_label: null,
+    });
+    expect(matchesQuery(j, 'cardiology houstan')).toBe(true);
+  });
+
+  it('still requires every token to hit (right specialty, wrong city → false)', () => {
+    const j = job({
+      specialty_slug: 'cardiology',
+      specialty_name: 'Cardiology',
+      facility_city: 'Houston',
+      facility_state: 'TX',
+      public_facility_label: null,
+    });
+    expect(matchesQuery(j, 'cardiology boston')).toBe(false);
+  });
+
+  it('does not fuzzy-match a clearly different specialty (psychiatry vs anesthesiology)', () => {
+    expect(matchesQuery(job(), 'psychiatry')).toBe(false);
+  });
+
+  it('does not apply edit-distance fuzz to very short tokens (≤3 chars: substring only)', () => {
+    // "rad" should NOT fuzz-match "tax"/"car"/etc.; only substring hits count.
+    const j = job({ specialty_slug: 'other', specialty_name: 'Audiologist', facility_city: 'Reno', facility_state: 'NV', public_facility_label: null });
+    expect(matchesQuery(j, 'rad')).toBe(false);
+  });
+
+  it('matches a separator-free or hyphenated query (obgyn / ob-gyn → Obstetrics and Gynecology)', () => {
+    const j = job({ specialty_slug: 'ob-gyn', specialty_name: 'Obstetrics and Gynecology', facility_city: 'Reno', facility_state: 'NV', public_facility_label: null });
+    expect(matchesQuery(j, 'obgyn')).toBe(true);
+    expect(matchesQuery(j, 'ob-gyn')).toBe(true);
+  });
+
+  it('does not let the separator-insensitive path match an unrelated job', () => {
+    expect(matchesQuery(job(), 'obgyn')).toBe(false);
+  });
+});
+
+describe('haystackMatchesQuery — client-facing matcher over a prebuilt haystack', () => {
+  it('matches substring and typo queries against a haystack string', () => {
+    const h = jobHaystack(job());
+    expect(haystackMatchesQuery(h, 'anesth')).toBe(true);
+    expect(haystackMatchesQuery(h, 'anesthesiolgy')).toBe(true);
+    expect(haystackMatchesQuery(h, 'austin')).toBe(true);
+    expect(haystackMatchesQuery(h, 'radiology')).toBe(false);
+  });
+
+  it('treats an empty query as matching', () => {
+    expect(haystackMatchesQuery('anything here', '')).toBe(true);
+  });
+
+  it('is the engine behind matchesQuery (same result for the job haystack)', () => {
+    const j = job({ specialty_name: 'Cardiology', facility_city: 'Houston' });
+    expect(haystackMatchesQuery(jobHaystack(j), 'cardiolgy houstan')).toBe(matchesQuery(j, 'cardiolgy houstan'));
   });
 });

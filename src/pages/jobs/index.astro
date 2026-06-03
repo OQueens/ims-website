@@ -163,9 +163,9 @@ const hintList = [
             id="jobs-search-input"
             class="jb-b__search-input"
             type="search"
-            placeholder="Try a city, state, or specialty…"
+            placeholder="Search any specialty or city — typos OK"
             autocomplete="off"
-            aria-label="Search open jobs by city, state, or specialty"
+            aria-label="Search open jobs by specialty, city, or state — typo-tolerant"
           />
           <button type="button" id="jobs-search-clear" class="jb-b__search-clear" aria-label="Clear search">×</button>
           <button type="submit" class="jb-b__search-btn">
@@ -318,8 +318,13 @@ const hintList = [
 
 <script>
   // Client filter (bundled, served from 'self' — CSP-clean; no inline handlers).
-  // Ported from the kit jobs.html: live text search + specialty chips over the
-  // server-rendered cards.
+  // Live text search + specialty chips over the server-rendered cards. The text
+  // search is TYPO-TOLERANT and uses the SAME matcher as the homepage count
+  // (src/lib/job-search.ts) over the SAME fields (each card's data-keywords is
+  // exactly jobHaystack(job)), so the homepage "N open" count equals what shows
+  // here for any query — misspellings included.
+  import { haystackMatchesQuery } from '../../lib/job-search';
+
   const input = document.getElementById('jobs-search-input') as HTMLInputElement | null;
   const shell = document.getElementById('jobs-search-form');
   const clear = document.getElementById('jobs-search-clear');
@@ -332,24 +337,16 @@ const hintList = [
     const cards = Array.from(grid.querySelectorAll<HTMLElement>('.jb-b__card'));
     const TOTAL = cards.length;
 
-    const tokenize = (s: string) =>
-      (s || '').toLowerCase().replace(/[^a-z0-9\- ]+/g, ' ').split(/\s+/).filter(Boolean);
-
-    const haystack = (c: HTMLElement) =>
-      [c.dataset.spec, c.dataset.state, c.dataset.city, c.dataset.keywords, c.textContent]
-        .join(' ')
-        .toLowerCase();
-
     let activeSpec = 'all';
     let query = '';
 
     function applyFilter() {
-      const qTokens = tokenize(query);
       let visible = 0;
       for (const c of cards) {
         const specOk = activeSpec === 'all' || (c.dataset.spec || '') === activeSpec;
-        const hay = haystack(c);
-        const queryOk = qTokens.length === 0 || qTokens.every((t) => hay.includes(t));
+        // data-keywords === jobHaystack(job); haystackMatchesQuery is the shared,
+        // typo-tolerant matcher (substring-first + edit-distance fallback).
+        const queryOk = haystackMatchesQuery(c.dataset.keywords || '', query);
         const show = specOk && queryOk;
         c.classList.toggle('is-hidden', !show);
         if (show) visible++;
@@ -399,7 +396,7 @@ const hintList = [
     // Deep-link support: the homepage specialty cards link here as
     // /jobs?q=<query>. Pre-fill the search and apply the same filter so the
     // "N open this week" count shown on the homepage matches what's listed here
-    // (both use the shared tokenize + substring match — see src/lib/job-search.ts).
+    // (both use the shared typo-tolerant matcher — see src/lib/job-search.ts).
     const initialQuery = new URLSearchParams(location.search).get('q');
     if (initialQuery && initialQuery.trim()) {
       query = initialQuery.trim();

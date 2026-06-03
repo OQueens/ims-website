@@ -4,8 +4,8 @@
 [`src/components/sections/LegalPage.astro`](../../src/components/sections/LegalPage.astro)
 (the `LEGAL_CONTENT` map → `/privacy`, `/terms`, `/cookies`) so the page states only
 what actually binds **Innovative Medical Staffing (IMS)** — a small, 2022-founded
-boutique locum-tenens / healthcare-staffing firm headquartered in **Fort Worth, Texas
-(Tarrant County)**, with a US-only audience.
+boutique locum-tenens / healthcare-staffing firm that is **fully remote** — founded in
+**Fort Worth, Texas** in 2022 (origin only; **no office or HQ anywhere**) — with a US-only audience.
 
 **Method.** Each legal dimension was researched against primary/authoritative sources
 (statutes, AG/regulator/SBA pages, reputable law-firm summaries) by a dedicated agent,
@@ -15,6 +15,22 @@ confidence**. This is engineering/communications work grounded in research, **no
 advice** — the residual items flagged ⚖️ below are genuine attorney judgment calls.
 
 > **Status: DRAFT pending Zach's attorney sign-off.** `UPDATED` bumped to **June 2, 2026**.
+
+> **🔧 2026-06-03 CORRECTION + VERIFICATION (Zach ground truth + adversarial panel).** IMS is
+> **fully remote — no staffed office/HQ anywhere.** Fort Worth is the **2022 founding origin**, and
+> IMS's **registered legal address is 12650 N Beach St, Ste 114 #7022, Fort Worth, TX 76244** — a
+> commercial registered-agent / mailbox address **in Tarrant County** (county VERIFIED via USPS ZIP
+> record + Tarrant Appraisal District parcel APN 41373677). Decisions: governing law = **State of
+> Texas**; the **registered address is now shown** in the legal contact block (publish-safe — a CMRA
+> + public TX-SOS record, and good privacy-notice practice); but the dispute venue stays a
+> **State-of-Texas forum-selection clause, NOT a binding Tarrant County venue.** A 3-lens panel found
+> a contractual county venue is **unenforceable** in Texas absent a $1M+ "major transaction"
+> (Tex. CPRC 15.020), and a registered-agent mailbox is not a "principal office" (CPRC 15.001) — so
+> naming Tarrant County as binding venue would be legally inert. `UPDATED` → **June 3, 2026**.
+> Marketing stays "Founded in Fort Worth, TX" (no office claim); legal (registered address) +
+> marketing (founding origin) coexist. ⚖️ Attorney options: keep the clean State-of-Texas forum
+> clause (recommended), OR name Tarrant County only as a non-binding *preference* with a lawful
+> fallback if Zach wants it explicit.
 
 ---
 
@@ -28,7 +44,7 @@ advice** — the residual items flagged ⚖️ below are genuine attorney judgme
 | **HIPAA** | (silent) | Added one accurate, conditional clarification: IMS is **neither a covered entity nor a business associate**; credentialing data ≠ patient PHI. |
 | **Cookies** | Rationale pinned on **"Under EU PECR"** | Leads with the actual cookie profile (`__cf_bm` strictly-necessary, Plausible cookieless) + **US notice-and-opt-out scope**; PECR demoted to a confirmatory aside. |
 | **Retention** | "+7 years, **per healthcare-staffing record-retention norms**" (unsupported) | Attributed to its **real driver** (TX employment-record & tax statutes of limitation); 18mo/12mo framed as **internal policy** (EEOC floor is 1 yr). |
-| **Dispute venue** | **Travis County** (Austin) | **Tarrant County** (Fort Worth HQ). |
+| **Dispute venue** | **Travis County** (Austin) | **State of Texas** (forum-selection, enforceable). Registered address (12650 N Beach St, Fort Worth = **Tarrant County**, verified) is shown for legal service, but a binding county venue is void in TX for a free site visitor (CPRC 15.020), so no county is pinned. |
 | **Liability cap** | carve-outs: gross negligence, willful misconduct | carve-outs completed (+ **fraud, personal injury/death by negligence**); operative cap sentence bolded for conspicuousness. |
 
 ---

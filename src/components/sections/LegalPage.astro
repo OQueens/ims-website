@@ -13,8 +13,16 @@
  * applies + the Texas TDPSA small-business exemption, GDPR scoped down (IMS does
  * not target the EU/UK), HIPAA clarified (IMS is neither a covered entity nor a
  * business associate), retention attributed to its real driver (TX employment/
- * tax statutes of limitation, not an invented "norm"), and the dispute venue
- * corrected to Tarrant County (Fort Worth HQ — Travis County is Austin). The
+ * tax statutes of limitation, not an invented "norm"), and the dispute venue set
+ * to a State-of-Texas forum-selection clause. IMS's registered office address
+ * (12650 N Beach St, Fort Worth, TX 76244 — in Tarrant County, verified) is shown
+ * in the legal contact block for service, but the clause does NOT pin a binding
+ * Tarrant County venue: under Tex. CPRC 15.020 a contractual county venue is
+ * unenforceable absent a $1M+ "major transaction" (a free site visitor never
+ * qualifies), and a registered-agent mailbox is not a "principal office"
+ * (CPRC 15.001) — so forum-level State of Texas is the enforceable, accurate
+ * choice. IMS is fully remote; the address is for legal service, NOT a staffed
+ * office. The
  * notices remain DRAFT pending Zach's attorney sign-off (SG15 Pre-Launch
  * Checklist); the liability-cap enforceability is the one genuine attorney call.
  */
@@ -25,7 +33,12 @@ const { kind } = Astro.props;
 // Strings may carry trusted inline HTML (<a>, <strong>, <em>, <code>) — this is
 // author-controlled copy, not user input, so set:html is safe here.
 const SUPPORT_EMAIL = 'recruiting@iastaffing.com';
-const UPDATED = 'June 2, 2026';
+const UPDATED = 'June 3, 2026';
+// Registered legal address (Texas LLC). This is a commercial registered-agent /
+// mailbox address in Fort Worth (Tarrant County) used for legal notices and
+// service — IMS is fully remote, so it is NOT a staffed office. Used in the
+// legal contact blocks and as the basis for the Tarrant County dispute venue.
+const LEGAL_ENTITY = 'Innovative Medical Staffing · 12650 N Beach St, Ste 114 #7022, Fort Worth, TX 76244';
 
 const LEGAL_CONTENT = {
   privacy: {
@@ -85,7 +98,7 @@ const LEGAL_CONTENT = {
         { p: `We update this notice when our practices change or when the law requires it. The date at the top reflects the most recent change.` },
       ]},
     ],
-    contact: { lead: 'Questions or data requests:', address: SUPPORT_EMAIL, mail: 'Innovative Medical Staffing · Fort Worth, TX' },
+    contact: { lead: 'Questions or data requests:', address: SUPPORT_EMAIL, mail: LEGAL_ENTITY },
   },
 
   terms: {
@@ -119,13 +132,13 @@ const LEGAL_CONTENT = {
         { p: `<strong>To the maximum extent permitted by law, IMS's total liability arising out of or relating to your use of this site will not exceed the amount you paid IMS in the twelve months before the claim — which, for site visitors who pay IMS nothing, is zero.</strong> Nothing here limits liability that cannot be limited or excluded under applicable law, including liability for gross negligence, fraud, willful misconduct, or personal injury or death caused by negligence.` },
       ]},
       { h: 'Governing law and disputes', body: [
-        { p: `These terms are governed by the laws of the State of Texas, without regard to its conflict-of-laws rules. The parties agree to attempt good-faith resolution before filing a claim. Any unresolved dispute will be brought in the state or federal courts located in Tarrant County, Texas — home to our Fort Worth offices — unless applicable consumer-protection law in your jurisdiction gives you a non-waivable right to a different venue.` },
+        { p: `These terms are governed by the laws of the State of Texas, without regard to its conflict-of-laws rules. The parties agree to attempt good-faith resolution before filing a claim. Any unresolved dispute will be brought exclusively in the state or federal courts located in the State of Texas, and you consent to personal jurisdiction there, unless applicable consumer-protection law in your jurisdiction gives you a non-waivable right to a different venue.` },
       ]},
       { h: 'Severability and modification', body: [
         { p: `If any provision of these terms is found unenforceable, the remainder stays in effect. We may update these terms when our practices change or when the law requires it; the date at the top reflects the most recent change. Continued use of the site after a change constitutes acceptance of the updated terms.` },
       ]},
     ],
-    contact: { lead: 'Questions about these terms:', address: SUPPORT_EMAIL, mail: 'Innovative Medical Staffing · Fort Worth, TX' },
+    contact: { lead: 'Questions about these terms:', address: SUPPORT_EMAIL, mail: LEGAL_ENTITY },
   },
 
   cookies: {
@@ -144,7 +157,7 @@ const LEGAL_CONTENT = {
         { p: `Our broader handling of personal data — what we collect through forms, retention, the deletion-request flow, and sub-processors — is documented in the <a href="/privacy">Privacy notice</a>. The Plausible Cloud approach is documented at <a href="https://plausible.io/data-policy" rel="external noopener">plausible.io/data-policy</a>.` },
       ]},
     ],
-    contact: { lead: 'Privacy questions:', address: SUPPORT_EMAIL, mail: 'Innovative Medical Staffing · Fort Worth, TX' },
+    contact: { lead: 'Privacy questions:', address: SUPPORT_EMAIL, mail: LEGAL_ENTITY },
   },
 } as const;
 

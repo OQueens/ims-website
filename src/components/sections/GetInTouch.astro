@@ -10,9 +10,10 @@
  *     Fonts map to the site's global tokens: Fraunces→--font-display (and
  *     --font-display-italic for the italic signoff), Inter→--font-body,
  *     JetBrains Mono→--font-mono (all imported by MarketingLayout).
- *  2. Real IMS contact info (recruiting@iastaffing.com / (512) 524-6686 /
- *     Fort Worth, TX) — NOT the handoff's hello@imsstaffing.com / (817) 555-0140
- *     placeholders. The 3 meta lines are kept (unverified; behind the staging gate).
+ *  2. Real IMS contact info (recruiting@iastaffing.com / (512) 524-6686) — NOT
+ *     the handoff's hello@imsstaffing.com / (817) 555-0140 placeholders. IMS is
+ *     a FULLY REMOTE firm founded in Fort Worth, TX (2022); there is no office
+ *     or HQ, so the location row reads "Founded in Fort Worth, TX", not "Office".
  *  3. The reference's demo .topbar/.nav-pill is dropped — the page uses the
  *     site's <SiteNav> (supplied by contact.astro via the layout nav slot).
  *  4. Glows removed in favour of .gt-page's own layered radial-gradient
@@ -73,8 +74,8 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
             <span class="gt-info__v"><a href="tel:+15125246686">(512) 524-6686</a><span class="gt-info__meta">A real person answers, every day — weekends included</span></span>
           </div>
           <div class="gt-info__row">
-            <span class="gt-info__k">Office</span>
-            <span class="gt-info__v">Fort Worth, TX<span class="gt-info__meta">One floor, about 40 people</span></span>
+            <span class="gt-info__k">Founded in</span>
+            <span class="gt-info__v">Fort Worth, TX<span class="gt-info__meta">est. 2022</span></span>
           </div>
         </div>
       </div>

@@ -64,6 +64,8 @@ interface JobDetail {
   trauma_level: number | null;
   patient_encounters_per_shift: string | null;
   estimated_credentialing_time: string | null;
+  temporary_privileges_available: boolean | null;
+  call_ratio: string | null;
 }
 
 const { slug } = Astro.params;
@@ -87,7 +89,7 @@ if (slug && UUID_RE.test(slug) && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_
     const { data, error } = await supabase
       .from('ims_jobs')
       .select(
-        'id, assignment_number, specialty_name, specialty_slug, provider_type, facility_city, facility_state, public_facility_label, num_providers_requested, start_date, duration_display, length_category, coverage_type, call_type, request_type, practice_setting, public_description, emr_system, board_certification_required, board_certification_minimum, fellowship, require_bls, require_acls, require_atls, require_pals, trauma_level, patient_encounters_per_shift, estimated_credentialing_time',
+        'id, assignment_number, specialty_name, specialty_slug, provider_type, facility_city, facility_state, public_facility_label, num_providers_requested, start_date, duration_display, length_category, coverage_type, call_type, request_type, practice_setting, public_description, emr_system, board_certification_required, board_certification_minimum, fellowship, require_bls, require_acls, require_atls, require_pals, trauma_level, patient_encounters_per_shift, estimated_credentialing_time, temporary_privileges_available, call_ratio',
       )
       .eq('id', slug)
       .eq('status', 'active')
@@ -131,6 +133,13 @@ const clean = (v: string | null | undefined): string => {
   return /^(n\/?a|none|null|tbd|unknown|n\.a\.?)$/i.test(s) ? '' : s;
 };
 const anA = (s: string): string => (/^[aeiou]/i.test(s.trim()) ? 'an' : 'a');
+// Render a call ratio ONLY when it's an unambiguous "1:N" — LS free-texts this
+// field with junk ("100", "60%", "TBD", "*", "0", "varies"), so drop anything
+// that isn't a clean ratio rather than show nonsense.
+const cleanCallRatio = (r: string | null | undefined): string | null => {
+  const m = /^1\s*[:/]\s*([1-9]\d?)$/.exec((r ?? '').trim());
+  return m ? `1:${m[1]}` : null;
+};
 
 let tone: (typeof TINTS)[number] = 'coral';
 let spec = '';
@@ -190,6 +199,11 @@ if (job) {
     job.require_atls && 'ATLS',
     job.require_pals && 'PALS',
   ].filter(Boolean);
+  // Anesthesiology + CRNA assignments carry the specialty-standard malpractice
+  // limits ($1M per claim / $3M aggregate, tail included); every other specialty
+  // just gets the true, figure-free "Malpractice covered".
+  const isAnesthesia = job.specialty_slug === 'anesthesiology' || job.specialty_slug === 'crna';
+  const callRatio = cleanCallRatio(job.call_ratio);
   highlights = [
     job.board_certification_required &&
       (/eligible/i.test(clean(job.board_certification_minimum))
@@ -198,10 +212,12 @@ if (job) {
     clean(job.fellowship) && `${titleCase(clean(job.fellowship))} fellowship`,
     typeof job.trauma_level === 'number' && job.trauma_level > 0 && `Level ${job.trauma_level} trauma center`,
     reqCerts.length > 0 && `${reqCerts.join(', ')} required`,
+    job.temporary_privileges_available === true && 'Temporary privileges available',
+    callRatio && `Call ratio ${callRatio}`,
     clean(job.estimated_credentialing_time) &&
       `Facility estimate: credentialing ~${clean(job.estimated_credentialing_time)}${/^\d+$/.test(clean(job.estimated_credentialing_time)) ? ' days' : ''}`,
     // Documented, true IMS benefits.
-    'Malpractice covered',
+    isAnesthesia ? 'Malpractice coverage — $1M / $3M with tail' : 'Malpractice covered',
     'One recruiter for the life of your assignment',
     'Friday direct deposit, every week',
   ].filter((x): x is string => Boolean(x));
@@ -261,7 +277,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
             {sub && <p class="jd-hero__sub">{sub}</p>}
             <div class="jd-hero__pay">
               <span class="jd-hero__pay-fig">Rate on request</span>
-              <span class="jd-hero__pay-note">shared with qualified candidates · W-2 or 1099</span>
+              <span class="jd-hero__pay-note">shared with qualified candidates · 1099 contract</span>
             </div>
           </section>
 
