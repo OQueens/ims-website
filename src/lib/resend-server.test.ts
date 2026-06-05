@@ -8,7 +8,7 @@ vi.mock('resend', () => ({
   Resend: vi.fn().mockImplementation(function () { return { emails: { send: sendMock } }; }),
 }));
 
-import { sendContactEmail } from './resend-server';
+import { sendContactEmail, sendLeadAlert } from './resend-server';
 
 const ENV = {
   RESEND_API_KEY: 're_test_key',
@@ -94,5 +94,74 @@ describe('sendContactEmail', () => {
     const arg = sendMock.mock.calls[0][0];
     expect(arg.subject).not.toMatch(/[\r\n]/);
     expect(arg.replyTo).not.toMatch(/[\r\n]/);
+  });
+});
+
+describe('sendContactEmail — BCC (owner copy)', () => {
+  it('adds bcc when LEAD_NOTIFY_BCC is set (comma-split + header-stripped)', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'm' }, error: null });
+    await sendContactEmail({ ...ENV, LEAD_NOTIFY_BCC: 'owner@gmail.com, second@x.co' }, {
+      name: 'A', email: 'a@b.co', audience: 'facility', role: '', message: 'hi',
+    });
+    expect(sendMock.mock.calls[0][0].bcc).toEqual(['owner@gmail.com', 'second@x.co']);
+  });
+
+  it('omits the bcc key entirely when LEAD_NOTIFY_BCC is unset', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'm' }, error: null });
+    await sendContactEmail(ENV, { name: 'A', email: 'a@b.co', audience: 'facility', role: '', message: 'hi' });
+    expect('bcc' in sendMock.mock.calls[0][0]).toBe(false);
+  });
+});
+
+describe('sendLeadAlert — safety-net fallback', () => {
+  const ALERT_ENV = { RESEND_API_KEY: 're_test_key', LEAD_ALERT_TO: 'zach.young@iastaffing.com' };
+
+  it('sends FROM the default Resend-verified sender TO LEAD_ALERT_TO with the safety-net banner', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'a1' }, error: null });
+    const res = await sendLeadAlert(ALERT_ENV, {
+      name: 'Jordan', email: 'j@x.co', audience: 'clinician', role: 'CRNA', message: 'hello',
+    });
+    expect(res.ok).toBe(true);
+    const arg = sendMock.mock.calls[0][0];
+    expect(arg.from).toContain('onboarding@resend.dev');
+    expect(arg.to).toEqual(['zach.young@iastaffing.com']);
+    expect(arg.replyTo).toBe('j@x.co');
+    expect(arg.subject).toContain('safety-net');
+    expect(arg.html).toContain('Safety-net copy');
+    expect(arg.html).toContain('CRNA');
+  });
+
+  it('uses LEAD_ALERT_FROM when provided and supports a comma list of recipients', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'a2' }, error: null });
+    await sendLeadAlert(
+      { ...ALERT_ENV, LEAD_ALERT_FROM: 'Ops <ops@iastaffing.com>', LEAD_ALERT_TO: 'a@x.co, b@y.co' },
+      { name: 'A', email: 'a@b.co', audience: 'other', role: '', message: '' },
+    );
+    const arg = sendMock.mock.calls[0][0];
+    expect(arg.from).toBe('Ops <ops@iastaffing.com>');
+    expect(arg.to).toEqual(['a@x.co', 'b@y.co']);
+  });
+
+  it('is a no-op (ok:false, no send) when LEAD_ALERT_TO is unset', async () => {
+    const res = await sendLeadAlert({ RESEND_API_KEY: 're_test_key' }, {
+      name: 'A', email: 'a@b.co', audience: 'facility', role: '', message: '',
+    });
+    expect(res.ok).toBe(false);
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op when RESEND_API_KEY is unset', async () => {
+    const res = await sendLeadAlert({ LEAD_ALERT_TO: 'z@x.co' }, {
+      name: 'A', email: 'a@b.co', audience: 'facility', role: '', message: '',
+    });
+    expect(res.ok).toBe(false);
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it('never throws — returns ok:false when send() rejects', async () => {
+    sendMock.mockRejectedValue(new Error('boom'));
+    const res = await sendLeadAlert(ALERT_ENV, { name: 'A', email: 'a@b.co', audience: 'facility', role: '', message: '' });
+    expect(res.ok).toBe(false);
+    expect(res.error).toContain('boom');
   });
 });

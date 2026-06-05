@@ -8,6 +8,7 @@ const parseContactForm = vi.hoisted(() => vi.fn());
 const wantsJson = vi.hoisted(() => vi.fn());
 const verifyTurnstile = vi.hoisted(() => vi.fn());
 const sendContactEmail = vi.hoisted(() => vi.fn());
+const sendLeadAlert = vi.hoisted(() => vi.fn());
 const hashIp = vi.hoisted(() => vi.fn());
 const buildContactRow = vi.hoisted(() => vi.fn());
 const insertContactMessage = vi.hoisted(() => vi.fn());
@@ -15,7 +16,7 @@ const markResendOutcome = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/lib/contact-submission', () => ({ parseContactForm, wantsJson }));
 vi.mock('../src/lib/turnstile-server', () => ({ verifyTurnstile }));
-vi.mock('../src/lib/resend-server', () => ({ sendContactEmail }));
+vi.mock('../src/lib/resend-server', () => ({ sendContactEmail, sendLeadAlert }));
 vi.mock('../src/lib/ip-hash', () => ({ hashIp }));
 vi.mock('../src/lib/contact-persistence', () => ({ buildContactRow, insertContactMessage, markResendOutcome }));
 
@@ -57,6 +58,8 @@ beforeEach(() => {
   buildContactRow.mockReturnValue({ name: 'Jordan', email: 'j@x.co', audience: 'facility', role: null, message: null, ip_hash: 'iphash', user_agent: 'TestUA/1.0' });
   insertContactMessage.mockResolvedValue({ ok: true, configured: true, id: 'row-1' });
   sendContactEmail.mockResolvedValue({ ok: true });
+  // Default: safety-net alert not configured (no LEAD_ALERT_TO in ENV) → ok:false.
+  sendLeadAlert.mockResolvedValue({ ok: false });
   markResendOutcome.mockResolvedValue({ ok: true, configured: true });
 });
 
@@ -84,12 +87,40 @@ describe('POST /api/contact orchestration', () => {
     expect(markResendOutcome).not.toHaveBeenCalled();
   });
 
-  it('insert FAIL + email FAIL -> 502 send (the only lead-lost case) and no reconcile', async () => {
+  it('insert FAIL + primary FAIL + safety-net FAIL -> 502 send (the only true lead-lost case) and no reconcile', async () => {
     insertContactMessage.mockResolvedValue({ ok: false, configured: true, error: 'db down' });
     sendContactEmail.mockResolvedValue({ ok: false, error: 'resend down' });
+    sendLeadAlert.mockResolvedValue({ ok: false, error: 'alert down' });
     const res = await post();
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({ ok: false, error: 'send' });
+    expect(sendLeadAlert).toHaveBeenCalledTimes(1);
+    expect(markResendOutcome).not.toHaveBeenCalled();
+  });
+
+  it('primary FAIL fires the safety-net alert; alert OK -> 200 (human reached) and reconcile records the PRIMARY failure', async () => {
+    sendContactEmail.mockResolvedValue({ ok: false, error: 'testing mode' });
+    sendLeadAlert.mockResolvedValue({ ok: true });
+    const res = await post();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(sendLeadAlert).toHaveBeenCalledTimes(1);
+    expect(markResendOutcome).toHaveBeenCalledWith(ENV, 'row-1', false, 'testing mode');
+  });
+
+  it('does NOT fire the safety-net alert when the primary send succeeds (no double-send)', async () => {
+    const res = await post();
+    expect(res.status).toBe(200);
+    expect(sendLeadAlert).not.toHaveBeenCalled();
+  });
+
+  it('insert FAIL + primary FAIL + safety-net OK -> 200 (lead reached a human even with no durable row)', async () => {
+    insertContactMessage.mockResolvedValue({ ok: false, configured: true, error: 'db down' });
+    sendContactEmail.mockResolvedValue({ ok: false, error: 'resend down' });
+    sendLeadAlert.mockResolvedValue({ ok: true });
+    const res = await post();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
     expect(markResendOutcome).not.toHaveBeenCalled();
   });
 
