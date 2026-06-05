@@ -125,10 +125,11 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
 
           <!-- Honeypot: visually hidden, off-tab, ignored by humans. A filled
                value = bot → server drops silently before any Resend send. Not
-               display:none (some bots skip those). -->
+               display:none (some bots skip those). NO <label> and named
+               `website_url` (not "company") so password managers / browser
+               autofill don't fill it and silently drop a real lead (INC-2). -->
           <div class="gt-hp" aria-hidden="true">
-            <label for="gtCompany">Company</label>
-            <input id="gtCompany" name="company" type="text" tabindex="-1" autocomplete="off" />
+            <input id="gtWebsiteUrl" name="website_url" type="text" tabindex="-1" autocomplete="off" />
           </div>
 
           <div class="gt-field gt-field--full">

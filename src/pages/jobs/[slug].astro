@@ -371,10 +371,12 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
                     <textarea id="jdMessage" name="message" placeholder="Anything you'd like us to know? (optional)"></textarea>
                   </div>
 
-                  <!-- Honeypot — off-screen, never display:none. -->
+                  <!-- Honeypot — off-screen, never display:none. NO <label> and
+                       named `website_url` (not "company") so password managers /
+                       browser autofill don't fill it and silently drop a real
+                       lead (INC-2). -->
                   <div class="jd-hp" aria-hidden="true">
-                    <label for="jdCompany">Company</label>
-                    <input id="jdCompany" name="company" type="text" tabindex="-1" autocomplete="off" />
+                    <input id="jdWebsiteUrl" name="website_url" type="text" tabindex="-1" autocomplete="off" />
                   </div>
 
                   <TurnstileWidget form="#jdApplyForm" />
@@ -640,14 +642,15 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
       }
 
       // Fold the job context into the message so the recruiter (and the captured
-      // row) always know which role this inquiry is about.
+      // row) always know which role this inquiry is about. Phone is NOT folded
+      // here anymore — the server reads the `phone` field directly (INC-2), so a
+      // no-JS native POST captures it too; folding it here as well would duplicate it.
       const role = ((fd.get('jobRole') as string) ?? '').toString();
       const refId = ((fd.get('jobRef') as string) ?? '').toString();
       const city = ((fd.get('jobCity') as string) ?? '').toString();
-      const phone = ((fd.get('phone') as string) ?? '').trim();
       const userMsg = ((fd.get('message') as string) ?? '').trim();
       const header = `Job inquiry — ${[role, city].filter(Boolean).join(' · ')}${refId ? ` (Ref ${refId})` : ''}.`;
-      const composed = [header, phone ? `Phone: ${phone}` : '', userMsg].filter(Boolean).join('\n');
+      const composed = [header, userMsg].filter(Boolean).join('\n');
       fd.set('message', composed);
 
       const submitBtn = form.querySelector('.jd-submit') as HTMLButtonElement | null;

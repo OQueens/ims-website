@@ -51,9 +51,11 @@ function post(accept = 'application/json') {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  parseContactForm.mockReturnValue({ kind: 'ok', data: VALID_DATA });
+  // Fresh copy each test: the route may mutate data.message (phone fold), so a
+  // shared object reference would leak across tests.
+  parseContactForm.mockReturnValue({ kind: 'ok', data: { ...VALID_DATA } });
   wantsJson.mockReturnValue(true);
-  verifyTurnstile.mockResolvedValue(true);
+  verifyTurnstile.mockResolvedValue('verified');
   hashIp.mockResolvedValue('iphash');
   buildContactRow.mockReturnValue({ name: 'Jordan', email: 'j@x.co', audience: 'facility', role: null, message: null, ip_hash: 'iphash', user_agent: 'TestUA/1.0' });
   insertContactMessage.mockResolvedValue({ ok: true, configured: true, id: 'row-1' });
@@ -141,12 +143,59 @@ describe('POST /api/contact orchestration', () => {
     expect(sendContactEmail).not.toHaveBeenCalled();
   });
 
-  it('failed Turnstile -> 403 verify, before any insert or email', async () => {
-    verifyTurnstile.mockResolvedValue(false);
+  it('REJECTED Turnstile (genuine bot) -> 403 verify, before any insert or email', async () => {
+    verifyTurnstile.mockResolvedValue('rejected');
     const res = await post();
     expect(res.status).toBe(403);
     expect(await res.json()).toEqual({ ok: false, error: 'verify' });
     expect(insertContactMessage).not.toHaveBeenCalled();
     expect(sendContactEmail).not.toHaveBeenCalled();
+  });
+
+  it('UNAVAILABLE Turnstile (Cloudflare outage) -> fails OPEN: 200, durable capture still happens', async () => {
+    verifyTurnstile.mockResolvedValue('unavailable');
+    const res = await post();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(insertContactMessage).toHaveBeenCalled();
+    expect(sendContactEmail).toHaveBeenCalled();
+  });
+
+  it('reads the phone field server-side and folds it into the captured message', async () => {
+    const body = 'name=Jordan&email=j@x.co&audience=facility&turnstileToken=tok&phone=555-123-4567';
+    const request = new Request('https://ims.test/api/contact', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/x-www-form-urlencoded',
+        'content-length': String(body.length),
+        'cf-connecting-ip': '203.0.113.7',
+        'user-agent': 'TestUA/1.0',
+      },
+      body,
+    });
+    await POST({ request, locals: { runtime: { env: ENV } } } as never);
+    // The route mutates data.message before buildContactRow; assert the phone landed.
+    const rowData = buildContactRow.mock.calls[0][0];
+    expect(rowData.message).toContain('Phone: 555-123-4567');
+  });
+
+  it('maps the renamed honeypot field (website_url) into the company slot parseContactForm checks', async () => {
+    const body = 'name=Jordan&email=j@x.co&audience=facility&turnstileToken=tok&website_url=bot-filled-this';
+    const request = new Request('https://ims.test/api/contact', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/x-www-form-urlencoded',
+        'content-length': String(body.length),
+        'cf-connecting-ip': '203.0.113.7',
+        'user-agent': 'TestUA/1.0',
+      },
+      body,
+    });
+    await POST({ request, locals: { runtime: { env: ENV } } } as never);
+    // Honeypot plumbing: the HTML field `website_url` must feed the `company`
+    // slot that parseContactForm inspects — otherwise the honeypot is dead.
+    expect(parseContactForm).toHaveBeenCalledWith(expect.objectContaining({ company: 'bot-filled-this' }));
   });
 });

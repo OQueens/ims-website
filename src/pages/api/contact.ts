@@ -90,6 +90,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   // 1. Parse the form body.
   let fields: ContactFields;
+  let phone = '';
   try {
     const form = await request.formData();
     const get = (k: string): string => {
@@ -103,8 +104,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
       role: get('role'),
       message: get('message'),
       turnstileToken: get('turnstileToken'),
-      company: get('company'),
+      // Honeypot — renamed off "company" + the <label> dropped in the forms
+      // (INC-2) so password managers stop autofilling it and silently dropping
+      // real leads. The HTML field is now `website_url`; it still feeds the same
+      // `company` honeypot slot consumed by parseContactForm.
+      company: get('website_url'),
     };
+    // Optional phone (only on the /jobs apply form). Read server-side + capped so
+    // a no-JS native POST still captures it; folded into the message below.
+    phone = get('phone').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 40);
   } catch {
     return fail(400, 'validation');
   }
@@ -121,13 +129,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
   const data = parsed.data;
 
+  // Fold the optional phone into the message — ims_contact_messages has no phone
+  // column, and reading it server-side (vs the old JS-only compose) means a no-JS
+  // POST keeps it. Persists in the durable row AND the recruiter email.
+  if (phone) {
+    data.message = data.message ? `Phone: ${phone}\n${data.message}` : `Phone: ${phone}`;
+  }
+
   const env = readEnv(locals);
 
-  // 3. Turnstile siteverify (fail-closed).
+  // 3. Turnstile siteverify (tri-state). 'rejected' = genuine bot → 403.
+  // 'unavailable' = Cloudflare unreachable/misconfigured (NOT the visitor's
+  // fault) → fail OPEN into durable capture so a siteverify outage can't silently
+  // eat every legitimate lead. 'verified' and 'unavailable' both proceed.
   const ip = request.headers.get('cf-connecting-ip') ?? '';
-  const human = await verifyTurnstile(data.turnstileToken, ip, env.TURNSTILE_SECRET_KEY ?? '');
-  if (!human) {
+  const turnstile = await verifyTurnstile(data.turnstileToken, ip, env.TURNSTILE_SECRET_KEY ?? '');
+  if (turnstile === 'rejected') {
     return fail(403, 'verify');
+  }
+  if (turnstile === 'unavailable') {
+    console.warn('[contact] turnstile unavailable — failing open to durable capture');
   }
 
   // 4. Durable capture FIRST (INSERT before email) so a lead is never lost when

@@ -10,16 +10,21 @@ interface Props {
 
 const { form, instanceId } = Astro.props;
 
-// Per-widget callback name — sanitized to JS identifier characters only.
+// Per-widget callback names — sanitized to JS identifier characters only.
 // Defaults derive from the form selector so callers do not need to think about it,
 // but two widgets pointing at the same form should pass distinct instanceId values.
-const callback = `onTurnstileSuccess_${(instanceId ?? form).replace(/[^a-zA-Z0-9_]/g, '_')}`;
+const id = (instanceId ?? form).replace(/[^a-zA-Z0-9_]/g, '_');
+const callback = `onTurnstileSuccess_${id}`;
+const expiredCallback = `onTurnstileExpired_${id}`;
+const timeoutCallback = `onTurnstileTimeout_${id}`;
 ---
 <div
   class="cf-turnstile"
   data-sitekey={TURNSTILE_SITE_KEY}
   data-form={form}
   data-callback={callback}
+  data-expired-callback={expiredCallback}
+  data-timeout-callback={timeoutCallback}
 ></div>
 <script
   is:inline
@@ -27,25 +32,29 @@ const callback = `onTurnstileSuccess_${(instanceId ?? form).replace(/[^a-zA-Z0-9
   defer
   src="https://challenges.cloudflare.com/turnstile/v0/api.js"
 ></script>
-<script is:inline define:vars={{ callback }}>
-  // Per-widget callback closes over THIS widget's target form selector via
-  // the data-form attribute on the widget div — no cross-widget leak.
+<script is:inline define:vars={{ callback, expiredCallback, timeoutCallback }}>
+  // Per-widget callbacks close over THIS widget's target form selector via the
+  // data-form attribute on the widget div — no cross-widget leak.
   // (Codex r2 AMBER #5 fold — replaced the previous cross-iterating
   // onTurnstileSuccess that read the first widget on the page.)
   //
   // SECURITY (Codex r2 T7 fold): `form` is intentionally NOT in define:vars.
   // Astro 5.18 lacks the GHSA-j687-52p2-xcff patch, so any value passed to
   // define:vars containing a closing-script-tag sequence would terminate the
-  // outer script. `callback` is safe (sanitized via the JS-identifier
+  // outer script. The callback NAMES are safe (sanitized via the JS-identifier
   // whitelist regex above); `form` is read at runtime from the widget's
   // data-form HTML attribute, which Astro auto-escapes at render time.
-  // Defense-in-depth even though current callers hardcode `form` at build
-  // time — keeps this safe if a future Phase 1.5 caller derives `form` from
-  // runtime user input.
+  function findWidget() {
+    return document.querySelector('.cf-turnstile[data-callback="' + callback + '"]');
+  }
+  function tokenInput() {
+    var widget = findWidget();
+    if (!widget) return null;
+    var target = document.querySelector(widget.dataset.form);
+    return target ? target.querySelector('input[name="turnstileToken"]') : null;
+  }
   window[callback] = function (token) {
-    var widget = document.querySelector(
-      '.cf-turnstile[data-callback="' + callback + '"]',
-    );
+    var widget = findWidget();
     if (!widget) return;
     var target = document.querySelector(widget.dataset.form);
     if (!target) return;
@@ -58,4 +67,18 @@ const callback = `onTurnstileSuccess_${(instanceId ?? form).replace(/[^a-zA-Z0-9
     }
     input.value = token;
   };
+  // Expiry/timeout (INC-2): a Turnstile token is single-use and short-lived. If it
+  // expires (slow form-fill, returning user) or the challenge times out, CLEAR the
+  // stale token and reset the widget to mint a fresh one — otherwise the client
+  // would re-POST the same dead token in a loop and the user dead-ends on a 403.
+  function clearAndReset() {
+    var input = tokenInput();
+    if (input) input.value = '';
+    var widget = findWidget();
+    if (widget && window.turnstile && typeof window.turnstile.reset === 'function') {
+      try { window.turnstile.reset(widget); } catch (e) { /* widget not ready; auto-render covers it */ }
+    }
+  }
+  window[expiredCallback] = clearAndReset;
+  window[timeoutCallback] = clearAndReset;
 </script>
