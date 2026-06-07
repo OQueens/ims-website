@@ -16,18 +16,16 @@ import SyncView from '../../components/hub/SyncView.astro';
 import CostsView from '../../components/hub/CostsView.astro';
 import { readHubEnv } from '../../lib/hub/hub-env';
 import { aggregateHub, type HubJobRow } from '../../lib/hub/hub-data';
-import { createClient } from '@supabase/supabase-js';
+import { getHubSupabase } from '../../lib/hub/hub-supabase';
 
 export const prerender = false;
 
 const env = readHubEnv(Astro.locals);
+const supabase = getHubSupabase(env);
 
 let rows: HubJobRow[] = [];
-if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+if (supabase) {
   try {
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
     const { data, error } = await supabase
       .from('ims_jobs')
       .select(
