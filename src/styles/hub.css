@@ -206,20 +206,6 @@
 .sync-owner { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--ink-soft); }
 .sync-owner__av { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 900; font-size: 9px; color: var(--cream-soft); }
 
-/* ── Costs ───────────────────────────────────────────────────── */
-.cost-table { width: 100%; border-collapse: collapse; }
-.cost-table th { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--ink-mute); text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); }
-.cost-table th.num, .cost-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.cost-table td { padding: 14px 12px; border-bottom: 1px solid var(--rule); font-size: 14px; color: var(--ink); }
-.cost-table tr:last-child td { border-bottom: none; }
-.cost-table tbody tr:hover { background: var(--bone); }
-.cost-agent { display: flex; align-items: center; gap: 10px; }
-.cost-agent__av { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 900; font-size: 12px; color: var(--cream-soft); flex-shrink: 0; }
-.cost-agent__name { font-weight: 700; }
-.cost-bar { height: 8px; border-radius: 999px; background: var(--bone); overflow: hidden; width: 120px; display: inline-block; vertical-align: middle; }
-.cost-bar__fill { height: 100%; background: var(--pop-magenta, #C44569); border-radius: 999px; display: block; }
-.cost-foot td { font-weight: 800; color: var(--ink); border-top: 2px solid var(--rule-strong); }
-
 .subtle { color: var(--ink-mute); font-size: 12px; }
 .mt-5 { margin-top: var(--space-5); }
 .mt-6 { margin-top: var(--space-6); }

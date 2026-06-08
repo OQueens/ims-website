@@ -1,12 +1,15 @@
 ---
 /*
  * Rate Simulator view. PDF dropzone + controls + dark result panel are wired by
- * hub-client.ts (transparent multiplier model — a modeled estimate, base rates
- * are the seed starting point). "Latest 5 jobs" is REAL: server-rendered from
- * aggregateHub(ims_jobs); clicking one loads its specialty into the simulator.
- * Ported from design_handoff_hub/src/dashboard.html.
+ * hub-client.ts (a transparent multiplier model). Base rates + multipliers are
+ * REAL curated 2025-26 market data from the rate engine (src/lib/hub/rate-engine
+ * — ported from the IAS dashboard). The simulator quotes a BILL rate and derives
+ * clinician pay at the chosen margin; it's a modeled estimate, labeled as such.
+ * "Latest 5 jobs" is REAL: server-rendered from aggregateHub(ims_jobs); clicking
+ * one loads its specialty into the simulator. Ported from design_handoff_hub.
  */
 import type { LatestJob } from '../../lib/hub/hub-data';
+import { SIM_SPECIALTIES, SIM_REGIONS, SIM_SHIFTS, SIM_URGENCY } from '../../lib/hub/rate-engine';
 interface Props { latestJobs: LatestJob[]; }
 const { latestJobs } = Astro.props;
 ---
@@ -41,44 +44,34 @@ const { latestJobs } = Astro.props;
       <div class="field">
         <label class="field__label" for="sim-spec">Specialty</label>
         <select class="select" id="sim-spec">
-          <option value="260">Anesthesiology · MD</option>
-          <option value="240">CRNA</option>
-          <option value="300">Emergency Medicine</option>
-          <option value="250">OB-GYN</option>
-          <option value="245">Hospitalist</option>
-          <option value="335">General Surgery</option>
-          <option value="315">Urology</option>
-          <option value="230">Radiology · Teleread</option>
+          {SIM_SPECIALTIES.map((s) => <option value={s.billBase}>{s.label}</option>)}
         </select>
       </div>
 
       <div class="field">
-        <label class="field__label">Region<b id="sim-region-lbl">National</b></label>
+        <label class="field__label">Region<b id="sim-region-lbl">{SIM_REGIONS[0].label}</b></label>
         <div class="seg" id="sim-region" role="group" aria-label="Region">
-          <button class="seg__opt is-active" data-mult="1" data-lbl="National">National</button>
-          <button class="seg__opt" data-mult="1.12" data-lbl="West">West</button>
-          <button class="seg__opt" data-mult="1.05" data-lbl="NE">NE</button>
-          <button class="seg__opt" data-mult="0.94" data-lbl="SE">SE</button>
-          <button class="seg__opt" data-mult="0.9" data-lbl="Midwest">Midwest</button>
+          {SIM_REGIONS.map((r, i) => (
+            <button class={`seg__opt${i === 0 ? ' is-active' : ''}`} data-mult={r.mult} data-lbl={r.label}>{r.label}</button>
+          ))}
         </div>
       </div>
 
       <div class="field">
-        <label class="field__label">Shift type<b id="sim-shift-lbl">Day</b></label>
+        <label class="field__label">Shift type<b id="sim-shift-lbl">{SIM_SHIFTS[0].label}</b></label>
         <div class="seg" id="sim-shift">
-          <button class="seg__opt is-active" data-mult="1" data-lbl="Day">Day</button>
-          <button class="seg__opt" data-mult="1.08" data-lbl="Swing">Swing</button>
-          <button class="seg__opt" data-mult="1.18" data-lbl="Nights">Nights</button>
-          <button class="seg__opt" data-mult="1.25" data-lbl="Weekend">Weekend</button>
+          {SIM_SHIFTS.map((s, i) => (
+            <button class={`seg__opt${i === 0 ? ' is-active' : ''}`} data-mult={s.mult} data-lbl={s.label}>{s.label}</button>
+          ))}
         </div>
       </div>
 
       <div class="field">
-        <label class="field__label">Urgency<b id="sim-urg-lbl">Standard</b></label>
+        <label class="field__label">Urgency<b id="sim-urg-lbl">{SIM_URGENCY[0].label}</b></label>
         <div class="seg" id="sim-urg">
-          <button class="seg__opt is-active" data-mult="1" data-lbl="Standard">Standard</button>
-          <button class="seg__opt" data-mult="1.06" data-lbl="Priority">Priority</button>
-          <button class="seg__opt" data-mult="1.15" data-lbl="Emergent">Emergent</button>
+          {SIM_URGENCY.map((u, i) => (
+            <button class={`seg__opt${i === 0 ? ' is-active' : ''}`} data-mult={u.mult} data-lbl={u.label}>{u.label}</button>
+          ))}
         </div>
       </div>
 
@@ -96,15 +89,15 @@ const { latestJobs } = Astro.props;
     <div class="sim__result">
       <div class="sim__result-glow" aria-hidden="true"></div>
       <div class="sim__result-label">Recommended bill rate</div>
-      <div class="sim__result-rate">$<span id="sim-bill">312</span><small>/hr</small></div>
-      <div class="sim__result-band">Modeled estimate <b id="sim-band" style="color:var(--cream-soft);">$298–$330</b> · base rates are a porting placeholder</div>
+      <div class="sim__result-rate">$<span id="sim-bill">463</span><small>/hr</small></div>
+      <div class="sim__result-band">Modeled estimate <b id="sim-band" style="color:var(--cream-soft);">$440–$491</b> · curated market base rates</div>
       <div class="sim__breakdown">
-        <div class="sim__brk-row"><span class="sim__brk-label">Base (specialty median)</span><span class="sim__brk-val" id="brk-base">$260</span></div>
+        <div class="sim__brk-row"><span class="sim__brk-label">Base (curated bill rate)</span><span class="sim__brk-val" id="brk-base">$463</span></div>
         <div class="sim__brk-row"><span class="sim__brk-label">Region adjustment</span><span class="sim__brk-val pos" id="brk-region">×1.00</span></div>
         <div class="sim__brk-row"><span class="sim__brk-label">Shift premium</span><span class="sim__brk-val pos" id="brk-shift">×1.00</span></div>
         <div class="sim__brk-row"><span class="sim__brk-label">Urgency</span><span class="sim__brk-val pos" id="brk-urg">×1.00</span></div>
-        <div class="sim__brk-row"><span class="sim__brk-label">Pay rate to clinician</span><span class="sim__brk-val" id="brk-pay">$243</span></div>
-        <div class="sim__brk-row"><span class="sim__brk-label">Est. gross margin</span><span class="sim__brk-val pos" id="brk-margin">$69/hr · 22%</span></div>
+        <div class="sim__brk-row"><span class="sim__brk-label">Pay rate to clinician</span><span class="sim__brk-val" id="brk-pay">$361</span></div>
+        <div class="sim__brk-row"><span class="sim__brk-label">Est. gross margin</span><span class="sim__brk-val pos" id="brk-margin">$102/hr · 22%</span></div>
       </div>
     </div>
   </div>

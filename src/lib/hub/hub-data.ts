@@ -1,12 +1,18 @@
 // Pure aggregation of the real ims_jobs feed into the Overview/Simulator
 // shapes the dashboard renders. No fabricated pay (always "Rate on request").
 // `now` is unix seconds (passed in to keep this deterministic + testable).
+import { SIM_SPECIALTIES } from './rate-engine';
+
 export interface HubJobRow {
   specialty_slug: string;
   specialty_name: string | null;
   facility_state: string | null;
   facility_city: string | null;
   public_facility_label: string | null;
+  // organization = the health-system / client (staff-hub-only; never on /jobs).
+  // Used by hub-analytics topFacilities. organization_id is the stable key.
+  organization: string | null;
+  organization_id: string | null;
   length_category: string | null;
   call_type: string | null;
   coverage_type: string | null;
@@ -32,20 +38,29 @@ const COLORS = [
   'var(--ink)',
   'var(--mn-cyan,#59BFE7)',
 ];
-// Maps a specialty slug to the simulator's base-rate <option> value so a
-// "latest job" click loads a matching specialty. Default 260 when unknown.
-const SPEC_VAL: Record<string, string> = {
-  anesthesia: '260',
-  crna: '240',
-  'emergency-medicine': '300',
-  emergency: '300',
-  'ob-gyn': '250',
-  obgyn: '250',
-  hospitalist: '245',
-  'general-surgery': '335',
-  surgery: '335',
-  urology: '315',
-  radiology: '230',
+// Maps an ims_jobs specialty slug to the simulator's bill-base <option> value
+// (from the rate engine) so a "latest job" click loads a matching specialty.
+// Derived from SIM_SPECIALTIES so it can never drift from the simulator options;
+// slugs with no curated sim specialty fall back to the first option.
+const SIM_BY_LABEL: Record<string, number> = Object.fromEntries(SIM_SPECIALTIES.map((s) => [s.label, s.billBase]));
+const DEFAULT_SIM_BASE = String(SIM_SPECIALTIES[0]?.billBase ?? 0);
+const SLUG_TO_SIM_LABEL: Record<string, string> = {
+  anesthesiology: 'Anesthesiology · MD',
+  anesthesia: 'Anesthesiology · MD',
+  crna: 'CRNA',
+  'emergency-medicine': 'Emergency Medicine',
+  emergency: 'Emergency Medicine',
+  'ob-gyn': 'OB-GYN',
+  obgyn: 'OB-GYN',
+  hospitalist: 'Hospitalist',
+  'general-surgery': 'General Surgery',
+  surgery: 'General Surgery',
+  radiology: 'Radiology · Teleread',
+};
+const simBaseForSlug = (slug: string): string => {
+  const label = SLUG_TO_SIM_LABEL[slug];
+  const base = label ? SIM_BY_LABEL[label] : undefined;
+  return base !== undefined ? String(base) : DEFAULT_SIM_BASE;
 };
 
 const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -98,7 +113,7 @@ export function aggregateHub(rows: HubJobRow[], now: number): HubOverview {
       city,
       pay: 'Rate on request',
       age: age(r.ls_last_modified, now),
-      specVal: SPEC_VAL[r.specialty_slug] ?? '260',
+      specVal: simBaseForSlug(r.specialty_slug),
     };
   });
 

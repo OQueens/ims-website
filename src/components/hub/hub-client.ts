@@ -1,21 +1,11 @@
 // IMS Hub dashboard client — view switching, theme toggle, rate simulator, PDF
-// dropzone, weekly-sync board, analytics/costs charts. Bundled by Astro from
-// 'self' (CSP-clean). Ported from design_handoff_hub/src/hub.js with the data
-// source swapped from window.HUB to the typed seed module, and the Overview
+// dropzone, weekly-sync board, analytics charts. Bundled by Astro from 'self'
+// (CSP-clean). Ported from design_handoff_hub/src/hub.js with the data source
+// swapped from window.HUB to the typed seed module, and the Overview
 // pipeline/activity + Simulator latest-list left to the server (we only wire
 // their interactions here).
 import {
   type BarRow,
-  type FeedItem,
-  DONUT,
-  LINE_MONTHS,
-  LINE_PLACEMENTS,
-  LINE_FILL_DAYS,
-  FILLTIME,
-  FACILITIES,
-  COST_ROWS,
-  COST_CATS,
-  COST_TOOLS,
   PDF_CHIPS,
   SYNC_SEED,
   type SyncSeed,
@@ -24,6 +14,8 @@ import {
 const $ = <T extends Element = HTMLElement>(s: string, c: ParentNode = document): T | null => c.querySelector<T>(s);
 const $$ = <T extends Element = HTMLElement>(s: string, c: ParentNode = document): T[] => Array.from(c.querySelectorAll<T>(s));
 const fillClass = (f: string) => 'fill--' + f;
+// Escape DB-derived strings (specialty / organization names) before any innerHTML.
+const esc = (s: unknown) => String(s).replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m] as string));
 
 // ── Theme (default dark, persisted) ───────────────────────────────────────────
 const THEME_KEY = 'imsHubTheme';
@@ -45,7 +37,7 @@ function applyTheme(t: string) {
 // ── View switching ────────────────────────────────────────────────────────────
 const VIEW_TITLES: Record<string, string> = {
   overview: 'Overview', simulator: 'Rate Simulator', analytics: 'Analytics',
-  sync: 'Weekly Sync', costs: 'Costs',
+  sync: 'Weekly Sync',
 };
 function showView(id: string) {
   $$('.hub-view').forEach((v) => v.classList.toggle('is-active', (v as HTMLElement).dataset.view === id));
@@ -58,7 +50,7 @@ function showView(id: string) {
 $$('.hub-nav__item').forEach((b) => b.addEventListener('click', () => showView((b as HTMLElement).dataset.view || 'overview')));
 $$<HTMLElement>('[data-goto]').forEach((el) => el.addEventListener('click', () => showView(el.dataset.goto || 'overview')));
 
-// ── Renderers (used by Analytics + Costs; Overview is server-rendered) ─────────
+// ── Renderers (used by Analytics; Overview is server-rendered) ─────────────────
 function renderBars(host: HTMLElement | null, rows: BarRow[], maxOverride?: number) {
   if (!host) return;
   const max = maxOverride || Math.max(...rows.map((r) => r.val));
@@ -66,20 +58,11 @@ function renderBars(host: HTMLElement | null, rows: BarRow[], maxOverride?: numb
     const pct = Math.round((r.val / (r.max || max)) * 100);
     return `
       <div class="bar__row">
-        <span class="bar__name">${r.name}</span>
+        <span class="bar__name">${esc(r.name)}</span>
         <span class="bar__track"><span class="bar__fill ${fillClass(r.fill)}" style="width:${pct}%"></span></span>
-        <span class="bar__val">${r.label || r.val}</span>
+        <span class="bar__val">${esc(r.label ?? r.val)}</span>
       </div>`;
   }).join('');
-}
-function renderFeed(host: HTMLElement | null, items: FeedItem[]) {
-  if (!host) return;
-  host.innerHTML = items.map((i) => `
-    <div class="feed__item">
-      <span class="feed__dot" style="background:${i.color};${i.txtColor ? 'color:' + i.txtColor + ';' : ''}">${i.who}</span>
-      <span class="feed__txt">${i.txt}</span>
-      <span class="feed__time">${i.time}</span>
-    </div>`).join('');
 }
 
 // ── Overview: priorities checkbox toggle (server-rendered items) ───────────────
@@ -112,9 +95,11 @@ $$('#priorities .todo__check').forEach((c) => {
 
 // ── Rate Simulator ─────────────────────────────────────────────────────────────
 (function simulator() {
-  const sim = { base: 260, region: 1, shift: 1, urg: 1, weeks: 12, margin: 22 };
   const specSel = $<HTMLSelectElement>('#sim-spec');
   if (!specSel) return;
+  // Base is the selected specialty's curated bill rate (rate-engine), not a
+  // hardcoded constant — so init matches whatever the first <option> renders.
+  const sim = { base: +specSel.value || 0, region: 1, shift: 1, urg: 1, weeks: 12, margin: 22 };
 
   function bindSeg(wrapId: string, key: 'region' | 'shift' | 'urg', lblId: string) {
     $$('#' + wrapId + ' .seg__opt').forEach((opt) => opt.addEventListener('click', () => {
@@ -187,7 +172,7 @@ $$('#priorities .todo__check').forEach((c) => {
         `<span class="chip"><span class="chip__dot" style="background:var(--mn-cyan,#59BFE7);"></span>${c}</span>`).join('');
       (idle as HTMLElement).hidden = true;
       (loaded as HTMLElement).hidden = false;
-      specSel.value = '260';
+      specSel.selectedIndex = 0;
       specSel.dispatchEvent(new Event('change'));
       const seg = (wrap: string, lbl: string) => {
         const b = $$('#' + wrap + ' .seg__opt').find((o) => (o as HTMLElement).dataset.lbl === lbl);
@@ -206,11 +191,11 @@ $$('#priorities .todo__check').forEach((c) => {
   }
 })();
 
-// ── Weekly sync · editable three-team board ────────────────────────────────────
+// ── Weekly sync · editable three-team board (shared via hub_weekly_sync) ───────
+interface SyncIsland { weekKey: string; data: SyncSeed; persisted: Record<keyof SyncSeed, boolean>; }
 (function weeklySync() {
   const board = $('#sync-board');
   if (!board) return;
-  const KEY = 'imsHubSync';
   const COLS = [
     { id: 'recruiting' as const, name: 'Recruiting', color: 'var(--pop-magenta,#C44569)',
       icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>' },
@@ -219,11 +204,43 @@ $$('#priorities .todo__check').forEach((c) => {
     { id: 'operations' as const, name: 'Operations', color: 'var(--mn-cyan,#59BFE7)',
       icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
   ];
-  let data: SyncSeed;
-  try { data = JSON.parse(localStorage.getItem(KEY) || 'null') || JSON.parse(JSON.stringify(SYNC_SEED)); }
-  catch (e) { data = JSON.parse(JSON.stringify(SYNC_SEED)); }
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* ignore */ } };
-  const escapeHtml = (s: string) => String(s).replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  const colIds = COLS.map((c) => c.id);
+  // Hydrate from the server island: this week's board + per-column persisted
+  // flags. A persisted column uses the server value; an un-persisted column
+  // prefers the user's localStorage edits, else the seed starter template.
+  let island: SyncIsland | null = null;
+  const islandEl = document.getElementById('hub-sync');
+  if (islandEl?.textContent) { try { island = JSON.parse(islandEl.textContent) as SyncIsland; } catch (e) { island = null; } }
+  const weekKey = island?.weekKey ?? '';
+  const LS_KEY = 'imsHubSync:' + weekKey;
+  const seed = (): SyncSeed => JSON.parse(JSON.stringify(SYNC_SEED));
+  let local: SyncSeed | null = null;
+  try { local = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { local = null; }
+  const base = island?.data ?? seed();
+  const data: SyncSeed = { recruiting: [], marketing: [], operations: [] };
+  colIds.forEach((id) => {
+    if (island?.persisted?.[id]) data[id] = [...base[id]];
+    else if (local && Array.isArray(local[id])) data[id] = [...local[id]];
+    else data[id] = [...base[id]];
+  });
+
+  const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ } };
+  // Persist a column: localStorage immediately (offline mirror) + a debounced
+  // POST to the shared store. A failed POST is non-fatal — localStorage holds it.
+  const timers: Partial<Record<keyof SyncSeed, ReturnType<typeof setTimeout>>> = {};
+  function persist(col: keyof SyncSeed) {
+    save();
+    if (!weekKey) return;
+    clearTimeout(timers[col]);
+    timers[col] = setTimeout(() => {
+      fetch('/hub/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ weekKey, columnKey: col, items: data[col] }),
+      }).catch(() => { /* offline — localStorage holds it */ });
+    }, 700);
+  }
 
   function render() {
     board!.innerHTML = COLS.map((c) => `
@@ -239,7 +256,7 @@ $$('#priorities .todo__check').forEach((c) => {
           ${data[c.id].map((t, i) => `
             <div class="sync2-item">
               <span class="sync2-item__tick"></span>
-              <div class="sync2-item__txt" contenteditable="true" data-col="${c.id}" data-i="${i}">${escapeHtml(t)}</div>
+              <div class="sync2-item__txt" contenteditable="true" data-col="${c.id}" data-i="${i}">${esc(t)}</div>
               <button class="sync2-item__del" data-col="${c.id}" data-i="${i}" aria-label="Remove">×</button>
             </div>`).join('')}
           <button class="sync2-add" data-col="${c.id}"><span>+</span> Add a focus</button>
@@ -252,89 +269,107 @@ $$('#priorities .todo__check').forEach((c) => {
       el.addEventListener('blur', () => {
         const col = el.dataset.col as keyof SyncSeed;
         data[col][+(el.dataset.i || 0)] = (el.textContent || '').trim();
-        save();
+        persist(col);
       });
       el.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); el.blur(); } });
     });
     $$<HTMLElement>('.sync2-item__del', board!).forEach((b) => b.addEventListener('click', () => {
       const col = b.dataset.col as keyof SyncSeed;
-      data[col].splice(+(b.dataset.i || 0), 1); save(); render();
+      data[col].splice(+(b.dataset.i || 0), 1); persist(col); render();
     }));
     $$<HTMLElement>('.sync2-add', board!).forEach((b) => b.addEventListener('click', () => {
       const col = b.dataset.col as keyof SyncSeed;
-      data[col].push(''); save(); render();
+      data[col].push(''); persist(col); render();
       const colEl = $$('.sync2-col', board!).find((c) => (c as HTMLElement).dataset.col === col);
       const items = colEl ? $$('.sync2-item__txt', colEl) : [];
       const last = items[items.length - 1];
       if (last) (last as HTMLElement).focus();
     }));
   }
-  $('#sync-reset')?.addEventListener('click', () => { data = JSON.parse(JSON.stringify(SYNC_SEED)); save(); render(); });
+  $('#sync-reset')?.addEventListener('click', () => {
+    const fresh = seed();
+    colIds.forEach((id) => { data[id] = fresh[id]; persist(id); });
+    render();
+  });
   render();
 })();
 
-// ── Costs ──────────────────────────────────────────────────────────────────────
-(function costs() {
-  const rows = $('#cost-rows');
-  if (rows) rows.innerHTML = COST_ROWS.map((r) => `    <tr>
-      <td><span class="cost-agent"><span class="cost-agent__av" style="background:${r.color}">${r.av}</span><span class="cost-agent__name">${r.name}</span></span></td>
-      <td>${r.reqs}</td>
-      <td>${r.placements}</td>
-      <td><span class="cost-bar"><span class="cost-bar__fill" style="width:${r.share}%"></span></span></td>
-      <td class="num">${r.spend}</td>
-    </tr>`).join('');
-  renderBars($('#cost-cats'), COST_CATS);
-  renderFeed($('#cost-tools'), COST_TOOLS);
-})();
-
-// ── Analytics charts (drawn on first view) ─────────────────────────────────────
+// ── Analytics charts — drawn on first view from the #hub-analytics data island ──
+// (aggregateAnalytics over ims_jobs + ls_events). If the island is missing/empty
+// we render an honest empty state — never fabricated seed numbers.
+interface AnBar { name: string; val: number; fill: string; max: number; label?: string; }
+interface MonthPoint { key: string; label: string; opened: number; avgDaysToClose: number | null; }
+interface AnalyticsIsland {
+  activeReqs: number;
+  monthly: MonthPoint[];
+  specialtyDonut: { name: string; val: number; color: string }[];
+  topFacilities: AnBar[];
+  daysToCloseBySpecialty: AnBar[];
+}
+function readAnalytics(): AnalyticsIsland | null {
+  const el = document.getElementById('hub-analytics');
+  if (!el || !el.textContent) return null;
+  try { return JSON.parse(el.textContent) as AnalyticsIsland; } catch (e) { return null; }
+}
+function barsOrEmpty(host: HTMLElement | null, rows: AnBar[], empty: string) {
+  if (!host) return;
+  if (!rows.length) { host.innerHTML = `<p class="subtle">${empty}</p>`; return; }
+  renderBars(host, rows);
+}
 let analyticsDrawn = false;
 function drawAnalytics() {
-  renderBars($('#an-filltime'), FILLTIME);
-  renderBars($('#an-facilities'), FACILITIES);
+  const a = readAnalytics();
+  barsOrEmpty($('#an-filltime'), a?.daysToCloseBySpecialty ?? [], 'No close-time history yet.');
+  barsOrEmpty($('#an-facilities'), a?.topFacilities ?? [], 'No facility data yet.');
   if (analyticsDrawn) return;
   analyticsDrawn = true;
-  drawLine();
-  drawDonut();
+  drawLine(a?.monthly ?? []);
+  drawDonut(a?.specialtyDonut ?? [], a?.activeReqs ?? 0);
 }
-function drawLine() {
+function drawLine(monthly: MonthPoint[]) {
   const svg = $('#line-chart');
   if (!svg) return;
-  const W = 600, Hh = 240, pad = 24;
-  const months = LINE_MONTHS, p = LINE_PLACEMENTS, f = LINE_FILL_DAYS;
-  const maxP = Math.max(...p) * 1.15, maxF = Math.max(...f) * 1.2;
-  const x = (i: number) => pad + (i * (W - pad * 2)) / (months.length - 1);
-  const yP = (v: number) => Hh - pad - (v / maxP) * (Hh - pad * 2);
-  const yF = (v: number) => Hh - pad - (v / maxF) * (Hh - pad * 2);
-  const path = (arr: number[], y: (v: number) => number) => arr.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
-  const area = path(p, yP) + ` L${x(p.length - 1)} ${Hh - pad} L${x(0)} ${Hh - pad} Z`;
+  if (!monthly.length) { svg.innerHTML = ''; return; }
+  const W = 600, Hh = 240, pad = 24, n = monthly.length;
+  const opened = monthly.map((m, i) => ({ i, v: m.opened }));
+  const days = monthly.map((m, i) => ({ i, v: m.avgDaysToClose })).filter((p): p is { i: number; v: number } => p.v !== null);
+  const maxO = Math.max(1, ...opened.map((p) => p.v)) * 1.15;
+  const maxD = Math.max(1, ...days.map((p) => p.v)) * 1.2;
+  const x = (i: number) => pad + (n === 1 ? (W - pad * 2) / 2 : (i * (W - pad * 2)) / (n - 1));
+  const yO = (v: number) => Hh - pad - (v / maxO) * (Hh - pad * 2);
+  const yD = (v: number) => Hh - pad - (v / maxD) * (Hh - pad * 2);
+  const line = (pts: { i: number; v: number }[], y: (v: number) => number) =>
+    pts.map((p, k) => (k ? 'L' : 'M') + x(p.i).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
+  const area = line(opened, yO) + ` L${x(n - 1)} ${Hh - pad} L${x(0)} ${Hh - pad} Z`;
   let grid = '';
   for (let g = 0; g <= 4; g++) { const yy = pad + g * (Hh - pad * 2) / 4; grid += `<line class="lc-grid" x1="${pad}" y1="${yy}" x2="${W - pad}" y2="${yy}"/>`; }
   let labels = '';
-  months.forEach((m, i) => { if (i % 2 === 0) labels += `<text class="lc-label" x="${x(i)}" y="${Hh - 6}" text-anchor="middle">${m}</text>`; });
-  const dots = (arr: number[], y: (v: number) => number, color: string) => arr.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="3" fill="${color}"/>`).join('');
+  monthly.forEach((m, i) => { if (i % 2 === 0) labels += `<text class="lc-label" x="${x(i)}" y="${Hh - 6}" text-anchor="middle">${esc(m.label)}</text>`; });
+  const dots = (pts: { i: number; v: number }[], y: (v: number) => number, color: string) =>
+    pts.map((p) => `<circle cx="${x(p.i)}" cy="${y(p.v)}" r="3" fill="${color}"/>`).join('');
   svg.innerHTML = grid +
     `<path d="${area}" fill="url(#lg)" opacity="0.18"/>` +
     `<defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C44569"/><stop offset="100%" stop-color="#C44569" stop-opacity="0"/></linearGradient></defs>` +
-    `<path d="${path(p, yP)}" fill="none" stroke="#C44569" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` +
-    `<path d="${path(f, yF)}" fill="none" stroke="#59BFE7" stroke-width="2.5" stroke-dasharray="5 5" stroke-linecap="round"/>` +
-    dots(p, yP, '#C44569') + dots(f, yF, '#59BFE7') + labels;
+    `<path d="${line(opened, yO)}" fill="none" stroke="#C44569" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` +
+    (days.length > 1 ? `<path d="${line(days, yD)}" fill="none" stroke="#59BFE7" stroke-width="2.5" stroke-dasharray="5 5" stroke-linecap="round"/>` : '') +
+    dots(opened, yO, '#C44569') + dots(days, yD, '#59BFE7') + labels;
 }
-function drawDonut() {
+function drawDonut(slices: { name: string; val: number; color: string }[], centerTotal: number) {
   const svg = $('#donut'), legend = $('#donut-legend');
   if (!svg || !legend) return;
-  const total = DONUT.reduce((s, d) => s + d.val, 0);
+  if (!slices.length) { svg.innerHTML = ''; legend.innerHTML = '<p class="subtle">No active reqs to chart.</p>'; return; }
+  const total = slices.reduce((s, d) => s + d.val, 0) || 1;
   let offset = 25;
   const r = 15.915, c = 2 * Math.PI * r;
   svg.innerHTML = `<circle cx="21" cy="21" r="${r}" fill="none" stroke="var(--bone)" stroke-width="6"/>` +
-    DONUT.map((d) => {
+    slices.map((d) => {
       const len = (d.val / total) * 100;
       const seg = `<circle cx="21" cy="21" r="${r}" fill="none" stroke="${d.color}" stroke-width="6" stroke-dasharray="${(len / 100) * c} ${c}" stroke-dashoffset="${-((100 - offset) / 100) * c}" transform="rotate(-90 21 21)"/>`;
       offset += len;
       return seg;
     }).join('') +
-    `<text class="donut-center" x="21" y="20" text-anchor="middle" font-size="6">214</text>` +
-    `<text class="donut-sub" x="21" y="25" text-anchor="middle" font-size="2.6" letter-spacing="0.1">PLACEMENTS</text>`;
-  legend.innerHTML = DONUT.map((d) => `
-    <div class="legend__row"><span class="legend__sw" style="background:${d.color}"></span><span class="legend__name">${d.name}</span><span class="legend__val">${d.val}%</span></div>`).join('');
+    `<text class="donut-center" x="21" y="20" text-anchor="middle" font-size="6">${centerTotal}</text>` +
+    `<text class="donut-sub" x="21" y="25" text-anchor="middle" font-size="2.6" letter-spacing="0.1">ACTIVE REQS</text>`;
+  legend.innerHTML = slices.map((d) => `
+    <div class="legend__row"><span class="legend__sw" style="background:${d.color}"></span><span class="legend__name">${esc(d.name)}</span><span class="legend__val">${Math.round((d.val / total) * 100)}%</span></div>`).join('');
 }

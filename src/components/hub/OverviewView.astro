@@ -3,12 +3,20 @@
  * Overview view. REAL data (from aggregateHub over ims_jobs): Active-reqs KPI,
  * pipeline bars (by state + specialty), activity feed. Bars are server-rendered
  * with their width baked into the markup (handoff gotcha #1 — no rAF/JS width).
- * Priorities are seed (no real source yet). The other three KPIs (fill time,
- * bill rate, fill rate) are SEED placeholders — the porting starting point we
- * replace section-by-section; they are not live IMS metrics.
+ * Priorities are seed (no real source yet).
+ *
+ * The other three KPIs are honest nullables — they render "—" until a real
+ * source exists (CLAUDE.md no-fake-data):
+ *   • Avg fill time — null now; step 4 fills the labeled "avg days to close"
+ *     proxy from ls_events (first archive − first Receive per assignment).
+ *   • Avg bill rate — null (no rate source in ims_jobs/ls_events yet; the public
+ *     site is Rate-on-request, the staff hub may surface it once a source lands).
+ *   • Fill rate — null; a TRUE fill rate needs an LS Bids + Agreements feed
+ *     (only Receive/Update/Cancel/Reject flow today), so it stays "—".
  */
 import type { BarRow, ActivityItem } from '../../lib/hub/hub-data';
 import { PRIORITIES } from '../../lib/hub/hub-seed';
+import { SIM_SPECIALTIES, SIM_REGIONS } from '../../lib/hub/rate-engine';
 
 interface Props {
   activeReqs: number;
@@ -16,8 +24,23 @@ interface Props {
   pipelineStates: BarRow[];
   pipelineSpecs: BarRow[];
   activity: ActivityItem[];
+  /** Avg "days to close" proxy (step 4). null → "—". */
+  fillTimeDays?: number | null;
+  /** Blended bill rate. null → "—" (no source yet). */
+  billRate?: number | null;
+  /** True fill rate %. null → "—" (needs LS Bids + Agreements feed). */
+  fillRatePct?: number | null;
 }
-const { activeReqs, facilityCount, pipelineStates, pipelineSpecs, activity } = Astro.props;
+const {
+  activeReqs,
+  facilityCount,
+  pipelineStates,
+  pipelineSpecs,
+  activity,
+  fillTimeDays = null,
+  billRate = null,
+  fillRatePct = null,
+} = Astro.props;
 
 const pct = (val: number, max: number) => (max > 0 ? Math.round((val / max) * 100) : 0);
 const barMax = (rows: BarRow[]) => Math.max(1, ...rows.map((r) => r.val));
@@ -32,24 +55,22 @@ const specsMax = barMax(pipelineSpecs);
       <span class="kpi__delta kpi__delta--flat">Live feed</span>
       <div class="kpi__foot">Across {facilityCount} {facilityCount === 1 ? 'facility' : 'facilities'}</div>
     </div>
-    {/* SEED placeholders — replace when we port real ops metrics together. */}
+    {/* Honest nullables — render "—" until a real source exists (see frontmatter). */}
     <div class="kpi"><div class="kpi__accent kpi__accent--cyan"></div>
       <div class="kpi__label">Avg fill time</div>
-      <div class="kpi__val">18<small>days</small></div>
-      <span class="kpi__delta kpi__delta--up">▼ 2.3 days vs Q1</span>
-      <div class="kpi__foot">Goal: under 21 days</div>
+      <div class="kpi__val">{fillTimeDays === null ? '—' : <Fragment>{fillTimeDays}<small>days</small></Fragment>}</div>
+      {fillTimeDays !== null && <span class="kpi__delta kpi__delta--flat">avg days to close · proxy</span>}
+      <div class="kpi__foot">{fillTimeDays === null ? 'Awaiting close-time history' : 'First archive − first receive'}</div>
     </div>
     <div class="kpi"><div class="kpi__accent kpi__accent--butter"></div>
       <div class="kpi__label">Avg bill rate</div>
-      <div class="kpi__val">$268<small>/hr</small></div>
-      <span class="kpi__delta kpi__delta--up">▲ 3.1%</span>
-      <div class="kpi__foot">Blended, all specialties</div>
+      <div class="kpi__val">{billRate === null ? '—' : <Fragment>${billRate}<small>/hr</small></Fragment>}</div>
+      <div class="kpi__foot">{billRate === null ? 'Rate on request' : 'Blended, all specialties'}</div>
     </div>
     <div class="kpi"><div class="kpi__accent kpi__accent--rose"></div>
       <div class="kpi__label">Fill rate</div>
-      <div class="kpi__val">94<small>%</small></div>
-      <span class="kpi__delta kpi__delta--flat">· flat MoM</span>
-      <div class="kpi__foot">Trailing 90 days</div>
+      <div class="kpi__val">{fillRatePct === null ? '—' : <Fragment>{fillRatePct}<small>%</small></Fragment>}</div>
+      <div class="kpi__foot">{fillRatePct === null ? 'Needs LS Bids + Agreements feed' : 'Trailing 90 days'}</div>
     </div>
   </div>
 
@@ -91,25 +112,15 @@ const specsMax = barMax(pipelineSpecs);
       <p style="position:relative; z-index:1; color:rgba(251,246,238,0.6); font-size:13px; margin:-6px 0 18px;">Ballpark a bill rate without leaving the desk.</p>
       <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:12px;">
         <select class="select" id="qr-spec" style="background-color:rgba(251,246,238,0.08); color:var(--cream-soft); border-color:rgba(251,246,238,0.2);">
-          <option value="260">Anesthesiology · MD</option>
-          <option value="240">CRNA</option>
-          <option value="300">Emergency Medicine</option>
-          <option value="250">OB-GYN</option>
-          <option value="245">Hospitalist</option>
-          <option value="335">General Surgery</option>
-          <option value="315">Urology</option>
+          {SIM_SPECIALTIES.map((s) => <option value={s.billBase}>{s.label}</option>)}
         </select>
         <select class="select" id="qr-region" style="background-color:rgba(251,246,238,0.08); color:var(--cream-soft); border-color:rgba(251,246,238,0.2);">
-          <option value="1">National average</option>
-          <option value="1.12">West / High cost</option>
-          <option value="1.05">Northeast</option>
-          <option value="0.94">Southeast</option>
-          <option value="0.9">Midwest / Rural</option>
+          {SIM_REGIONS.map((r) => <option value={r.mult}>{r.label}</option>)}
         </select>
       </div>
       <div style="position:relative; z-index:1; margin-top:20px; padding-top:18px; border-top:1px solid rgba(251,246,238,0.15);">
         <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; font-weight:700; color:var(--pop-butter);">Estimated bill rate</div>
-        <div style="font-family:var(--font-display); font-weight:900; font-size:54px; line-height:1; letter-spacing:-0.03em; color:var(--cream-soft); margin-top:8px;"><span id="qr-rate">$260</span><span style="font-size:0.32em; color:rgba(251,246,238,0.6);">/hr</span></div>
+        <div style="font-family:var(--font-display); font-weight:900; font-size:54px; line-height:1; letter-spacing:-0.03em; color:var(--cream-soft); margin-top:8px;"><span id="qr-rate">$463</span><span style="font-size:0.32em; color:rgba(251,246,238,0.6);">/hr</span></div>
         <button class="card__link" data-goto="simulator" style="margin-top:14px; display:inline-block; color:var(--pop-magenta,#C44569);">Open full simulator →</button>
       </div>
     </div>
@@ -122,7 +133,7 @@ const specsMax = barMax(pipelineSpecs);
         {activity.length === 0 && <p class="subtle">No recent activity in the feed.</p>}
         {activity.map((i) => (
           <div class="feed__item">
-            <span class="feed__dot" style={`background:${i.color};${i.txtColor ? 'color:' + i.txtColor + ';' : ''}`}>{i.who}</span>
+            <span class="feed__dot" style={`background:${i.color}`}>{i.who}</span>
             <span class="feed__txt" set:html={i.txt}></span>
             <span class="feed__time">{i.time}</span>
           </div>

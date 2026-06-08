@@ -1,18 +1,30 @@
 ---
 /* Weekly Sync view — three editable team columns (Recruiting/Marketing/
-   Operations). hub-client.ts renders the board from hub-seed and persists edits
-   to localStorage.imsHubSync (v1; shared-table persistence is a planned
-   upgrade). Ported from design_handoff_hub/src/dashboard.html. */
+   Operations) persisted to the shared hub_weekly_sync table. hub-client.ts
+   hydrates the board from the #hub-sync data-island below (this week's server
+   rows, with per-column persisted flags), renders the columns, and on each edit
+   saves to localStorage (offline mirror) + POSTs the changed column to
+   /hub/api/sync (debounced). Ported from design_handoff_hub/src/dashboard.html. */
+import type { SyncSeed } from '../../lib/hub/hub-seed';
+interface Props {
+  weekKey: string;
+  data: SyncSeed;
+  persisted: { recruiting: boolean; marketing: boolean; operations: boolean };
+}
+const { weekKey, data, persisted } = Astro.props;
+// '<' escaped so a board item can never break out of the data script.
+const islandJson = JSON.stringify({ weekKey, data, persisted }).replace(/</g, '\\u003c');
 ---
 <section class="hub-view" data-view="sync">
+  <script id="hub-sync" type="application/json" is:inline set:html={islandJson}></script>
   <div class="sync2-head">
     <div>
-      <div class="sync2-eyebrow">Monday standup · this week</div>
+      <div class="sync2-eyebrow">Monday standup · {weekKey}</div>
       <h2 class="sync2-title">This week, by team</h2>
     </div>
     <div class="sync2-head__actions">
       <span class="chip"><span class="chip__dot" style="background:var(--mn-cyan,#59BFE7);"></span>9:00 AM</span>
-      <button class="sync2-reset" id="sync-reset" title="Reset to last saved seed">Reset board</button>
+      <button class="sync2-reset" id="sync-reset" title="Reset to the starter template">Reset board</button>
     </div>
   </div>
 

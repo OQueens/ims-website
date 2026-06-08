@@ -1,10 +1,10 @@
 ---
 /*
- * /hub — internal operations dashboard (5 views). SSR (prerender=false), gated
- * by the middleware hub guard (Google @iastaffing.com session). Real Overview +
- * Simulator-latest data comes from the live ims_jobs feed via aggregateHub
- * (same Supabase service-role pattern as /jobs); Analytics/Costs/Sync render the
- * seed starting point. Faithful port of design_handoff_hub.
+ * /hub — internal operations dashboard (4 views: Overview, Rate Simulator,
+ * Analytics, Weekly Sync). SSR (prerender=false), gated by the middleware hub
+ * guard (Google @iastaffing.com session). Real Overview + Simulator-latest data
+ * comes from the live ims_jobs feed via aggregateHub (same Supabase service-role
+ * pattern as /jobs). Faithful port of design_handoff_hub.
  */
 import HubLayout from '../../layouts/HubLayout.astro';
 import HubSidebar from '../../components/hub/HubSidebar.astro';
@@ -13,37 +13,80 @@ import OverviewView from '../../components/hub/OverviewView.astro';
 import SimulatorView from '../../components/hub/SimulatorView.astro';
 import AnalyticsView from '../../components/hub/AnalyticsView.astro';
 import SyncView from '../../components/hub/SyncView.astro';
-import CostsView from '../../components/hub/CostsView.astro';
 import { readHubEnv } from '../../lib/hub/hub-env';
 import { aggregateHub, type HubJobRow } from '../../lib/hub/hub-data';
+import { aggregateAnalytics, activityFromEvents, type HubEventRow } from '../../lib/hub/hub-analytics';
 import { getHubSupabase } from '../../lib/hub/hub-supabase';
+import { getWeekKey, COLUMN_KEYS, type ColumnKey } from '../../lib/hub/sync-data';
+import { SYNC_SEED } from '../../lib/hub/hub-seed';
 
 export const prerender = false;
 
 const env = readHubEnv(Astro.locals);
 const supabase = getHubSupabase(env);
 
+// Two independent service-role reads through the shared seam: the current active
+// ims_jobs snapshot (Overview + Analytics snapshot metrics) and the append-only
+// ls_events log (Analytics time-series + the days-to-close proxy). Read in
+// parallel; each degrades to an empty honest state on error.
+const weekKey = getWeekKey(new Date());
 let rows: HubJobRow[] = [];
+let events: HubEventRow[] = [];
+let syncRows: Array<{ column_key: string; items: unknown }> = [];
 if (supabase) {
+  const jobsQ = supabase
+    .from('ims_jobs')
+    .select(
+      'specialty_slug, specialty_name, facility_state, facility_city, public_facility_label, organization, organization_id, length_category, call_type, coverage_type, ls_last_modified',
+    )
+    .eq('status', 'active')
+    .order('ls_last_modified', { ascending: false, nullsFirst: false })
+    .limit(1000);
+  const eventsQ = supabase
+    .from('ls_events')
+    .select('occurred_at, event_type, assignment_id, status_after, specialty_slug, specialty_name, facility_state, facility_city, organization')
+    .order('occurred_at', { ascending: false, nullsFirst: false })
+    .limit(5000);
+  const syncQ = supabase
+    .from('hub_weekly_sync')
+    .select('column_key, items')
+    .eq('week_key', weekKey);
   try {
-    const { data, error } = await supabase
-      .from('ims_jobs')
-      .select(
-        'specialty_slug, specialty_name, facility_state, facility_city, public_facility_label, length_category, call_type, coverage_type, ls_last_modified',
-      )
-      .eq('status', 'active')
-      .order('ls_last_modified', { ascending: false, nullsFirst: false })
-      .limit(1000);
-    if (error) console.error('[/hub] supabase read failed:', error.message);
-    else if (data) rows = data as HubJobRow[];
+    const [jobsRes, eventsRes, syncRes] = await Promise.all([jobsQ, eventsQ, syncQ]);
+    if (jobsRes.error) console.error('[/hub] ims_jobs read failed:', jobsRes.error.message);
+    else if (jobsRes.data) rows = jobsRes.data as HubJobRow[];
+    if (eventsRes.error) console.error('[/hub] ls_events read failed:', eventsRes.error.message);
+    else if (eventsRes.data) events = eventsRes.data as HubEventRow[];
+    // hub_weekly_sync is tolerant: a missing table (pre-migration) or error just
+    // falls back to the seed board — the client still works via localStorage.
+    if (syncRes.error) console.error('[/hub] hub_weekly_sync read failed:', syncRes.error.message);
+    else if (syncRes.data) syncRows = syncRes.data as Array<{ column_key: string; items: unknown }>;
   } catch (e) {
     console.error('[/hub] supabase client crash:', e);
   }
 } else {
-  console.warn('[/hub] supabase env not configured — overview renders empty real-data state');
+  console.warn('[/hub] supabase env not configured — hub renders empty real-data state');
 }
 
-const overview = aggregateHub(rows, Math.floor(Date.now() / 1000));
+// Build the current week's board: a persisted server row wins per column; an
+// un-persisted column falls back to the seed starter template. Per-column
+// `persisted` flags let the client preserve local edits for not-yet-saved columns.
+const syncData = { recruiting: [...SYNC_SEED.recruiting], marketing: [...SYNC_SEED.marketing], operations: [...SYNC_SEED.operations] };
+const syncPersisted = { recruiting: false, marketing: false, operations: false };
+for (const r of syncRows) {
+  if ((COLUMN_KEYS as readonly string[]).includes(r.column_key) && Array.isArray(r.items)) {
+    const col = r.column_key as ColumnKey;
+    syncData[col] = (r.items as unknown[]).filter((i): i is string => typeof i === 'string');
+    syncPersisted[col] = true;
+  }
+}
+
+const nowSec = Math.floor(Date.now() / 1000);
+const overview = aggregateHub(rows, nowSec);
+const analytics = aggregateAnalytics(rows, events, nowSec);
+// Prefer the true ls_events activity stream; fall back to the latest-modified
+// jobs feed (aggregateHub) only when the event log is empty.
+const activity = events.length ? activityFromEvents(events, nowSec) : overview.activity;
 
 // Server-rendered eyebrow date (no client clock).
 const eyebrow = new Intl.DateTimeFormat('en-US', {
@@ -62,12 +105,12 @@ const eyebrow = new Intl.DateTimeFormat('en-US', {
         facilityCount={overview.facilityCount}
         pipelineStates={overview.pipelineStates}
         pipelineSpecs={overview.pipelineSpecs}
-        activity={overview.activity}
+        activity={activity}
+        fillTimeDays={analytics.daysToClose.avg}
       />
       <SimulatorView latestJobs={overview.latestJobs} />
-      <AnalyticsView />
-      <SyncView />
-      <CostsView />
+      <AnalyticsView analytics={analytics} />
+      <SyncView weekKey={weekKey} data={syncData} persisted={syncPersisted} />
     </div>
   </div>
 </HubLayout>
