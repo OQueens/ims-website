@@ -29,8 +29,13 @@ jobs:
             echo "CONTACT_SWEEP_TOKEN secret not set — skipping (endpoint would 401)."
             exit 0
           fi
+          # Content-Type: application/json is REQUIRED — Astro's CSRF origin check
+          # rejects cross-site form-content-type POSTs ("Cross-site POST form
+          # submissions are forbidden") before the handler runs; application/json
+          # is a non-simple type and is exempt.
           resp="$(curl -sS -m 60 -w '\n%{http_code}' -X POST "$SWEEP_URL" \
-            -H "Authorization: Bearer $CONTACT_SWEEP_TOKEN")"
+            -H "Authorization: Bearer $CONTACT_SWEEP_TOKEN" \
+            -H "Content-Type: application/json")"
           body="$(printf '%s' "$resp" | sed '$d')"
           code="$(printf '%s' "$resp" | tail -n1)"
           echo "HTTP $code"
