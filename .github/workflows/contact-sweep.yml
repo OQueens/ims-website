@@ -1,0 +1,39 @@
+name: Contact lead sweep (INC-3)
+
+# Scheduled reconcile so no captured lead is silently lost: re-attempts the
+# primary recruiting notification for any unsent ims_contact_messages row.
+#
+# Setup (one-time):
+#   1. Set the same secret value in BOTH places:
+#        - Cloudflare Pages (ims-website) env var:  CONTACT_SWEEP_TOKEN
+#        - GitHub repo secret:                       CONTACT_SWEEP_TOKEN
+#   2. (Optional) override SWEEP_URL repo variable for a non-prod target.
+# The endpoint is disabled (503) until CONTACT_SWEEP_TOKEN is set, so this
+# workflow is a safe no-op until then.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # every 15 minutes
+  workflow_dispatch: {}     # allow a manual run from the Actions tab
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger contact-sweep
+        env:
+          SWEEP_URL: ${{ vars.SWEEP_URL || 'https://innovativemedicalstaffing.com/api/contact-sweep' }}
+          CONTACT_SWEEP_TOKEN: ${{ secrets.CONTACT_SWEEP_TOKEN }}
+        run: |
+          if [ -z "$CONTACT_SWEEP_TOKEN" ]; then
+            echo "CONTACT_SWEEP_TOKEN secret not set — skipping (endpoint would 401)."
+            exit 0
+          fi
+          resp="$(curl -sS -m 60 -w '\n%{http_code}' -X POST "$SWEEP_URL" \
+            -H "Authorization: Bearer $CONTACT_SWEEP_TOKEN")"
+          body="$(printf '%s' "$resp" | sed '$d')"
+          code="$(printf '%s' "$resp" | tail -n1)"
+          echo "HTTP $code"
+          echo "$body"
+          # Fail the run on a non-2xx so a broken sweep is visible in Actions.
+          case "$code" in 2*) exit 0 ;; *) echo "::error::contact-sweep returned $code"; exit 1 ;; esac
