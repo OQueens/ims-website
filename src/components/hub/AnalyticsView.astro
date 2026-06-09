@@ -14,8 +14,9 @@
  * an honest empty state, never fabricated seed numbers.
  */
 import type { HubAnalytics } from '../../lib/hub/hub-analytics';
-interface Props { analytics: HubAnalytics; }
-const { analytics } = Astro.props;
+import type { LsKpis } from '../../lib/hub/ls-analytics';
+interface Props { analytics: HubAnalytics; lsAnalytics?: LsKpis | null; }
+const { analytics, lsAnalytics = null } = Astro.props;
 
 const t = analytics.reqsTrend;
 const trendChip =
@@ -24,6 +25,30 @@ const trendChip =
   : { cls: 'kpi__delta--flat', txt: '· flat · 3 mo' };
 
 const dtc = analytics.daysToClose;
+
+// ── LocumSmart Sisense KPIs (real, surfaced verbatim) ────────────────────────
+// Each headline = the most recent month's value (labeled with its month); shows
+// "—" when no snapshot has synced (table empty / pre-migration).
+const ls = lsAnalytics;
+const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthLabel = (m: string | null) => {
+  if (!m) return '';
+  const [y, mm] = m.split('-');
+  const i = Number(mm) - 1;
+  return i >= 0 && i < 12 ? `${MONTH_ABBR[i]} ${y}` : y;
+};
+const pctF = (x: number | null | undefined) => (x == null ? '—' : (x * 100).toFixed(1) + '%');
+const hrsF = (x: number | null | undefined) => (x == null ? '—' : Math.round(x) + 'h');
+const moneyF = (x: number | null | undefined) => {
+  if (x == null) return '—';
+  const a = Math.abs(x);
+  if (a >= 1e6) return '$' + (x / 1e6).toFixed(2) + 'M';
+  if (a >= 1e3) return '$' + Math.round(x / 1e3) + 'K';
+  return '$' + Math.round(x);
+};
+const lsAsOf = ls?.capturedAt
+  ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(ls.capturedAt))
+  : null;
 
 // JSON island for the SVG charts. Escape '<' so a DB-derived org/specialty name
 // can never break out of the <script> or inject markup (the script is parsed as
@@ -57,10 +82,41 @@ const analyticsJson = JSON.stringify(island).replace(/</g, '\\u003c');
     </div>
     <div class="kpi"><div class="kpi__accent kpi__accent--rose"></div>
       <div class="kpi__label">Fill rate</div>
-      <div class="kpi__val">—</div>
-      <div class="kpi__foot">Needs LS Bids + Agreements feed</div>
+      <div class="kpi__val">{ls?.fillRate.latest == null ? '—' : pctF(ls.fillRate.latest)}</div>
+      <div class="kpi__foot">{ls?.fillRate.latest == null ? 'Awaiting LocumSmart sync' : `LocumSmart · ${monthLabel(ls.fillRate.latestMonth)}`}</div>
     </div>
   </div>
+
+  {ls && (
+    <div class="card mt-5">
+      <div class="card__head">
+        <h2 class="card__title">LocumSmart analytics</h2>
+        <span class="subtle">live from your Sisense{lsAsOf ? ` · as of ${lsAsOf}` : ''}</span>
+      </div>
+      <div class="grid grid--kpi">
+        <div class="kpi"><div class="kpi__accent kpi__accent--magenta"></div>
+          <div class="kpi__label">Bid acceptance</div>
+          <div class="kpi__val">{pctF(ls.bidAcceptance.latest)}</div>
+          <div class="kpi__foot">{ls.bidAcceptance.latestMonth ? monthLabel(ls.bidAcceptance.latestMonth) : '—'}</div>
+        </div>
+        <div class="kpi"><div class="kpi__accent kpi__accent--butter"></div>
+          <div class="kpi__label">Speed to bid</div>
+          <div class="kpi__val">{hrsF(ls.speedToBidHrs.latest)}</div>
+          <div class="kpi__foot">{ls.speedToBidHrs.latestMonth ? `avg · ${monthLabel(ls.speedToBidHrs.latestMonth)}` : '—'}</div>
+        </div>
+        <div class="kpi"><div class="kpi__accent kpi__accent--cyan"></div>
+          <div class="kpi__label">Market share</div>
+          <div class="kpi__val">{pctF(ls.marketShare.latest)}</div>
+          <div class="kpi__foot">{ls.marketShare.latestMonth ? monthLabel(ls.marketShare.latestMonth) : '—'}</div>
+        </div>
+        <div class="kpi"><div class="kpi__accent kpi__accent--rose"></div>
+          <div class="kpi__label">Invoiced · YTD</div>
+          <div class="kpi__val">{moneyF(ls.invoicedThisYear)}</div>
+          <div class="kpi__foot">{ls.invoicedYoY == null ? 'this year' : `${ls.invoicedYoY >= 0 ? '▲' : '▼'} ${Math.abs(ls.invoicedYoY * 100).toFixed(0)}% vs prior yr`}</div>
+        </div>
+      </div>
+    </div>
+  )}
 
   <div class="grid grid--2 mt-5">
     <div class="chart-card">
