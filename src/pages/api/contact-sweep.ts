@@ -14,7 +14,7 @@
 import type { APIRoute } from 'astro';
 import { createClient } from '@supabase/supabase-js';
 import { sendContactEmail, sendLeadAlert, type ResendEnv } from '../../lib/resend-server';
-import { constantTimeEqual } from '../../lib/hub/session';
+import { constantTimeEqual } from '../../lib/crypto-equal';
 import { runSweep, MAX_ATTEMPTS, DEFAULT_LIMIT, type SweepDeps, type SweepLead } from '../../lib/contact-sweep';
 
 export const prerender = false;
