@@ -49,6 +49,12 @@ const moneyF = (x: number | null | undefined) => {
 const lsAsOf = ls?.capturedAt
   ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(ls.capturedAt))
   : null;
+// Honesty guard: the tap refreshes ~every 6h. If the newest snapshot is older
+// than ~3 missed pulls, the tap has likely stalled — so DON'T call frozen numbers
+// "live". Surface "sync delayed" instead (the project's no-fake-data bar).
+const LS_STALE_MS = 18 * 60 * 60 * 1000;
+const lsAgeMs = ls?.capturedAt ? Date.now() - new Date(ls.capturedAt).getTime() : null;
+const lsStale = lsAgeMs != null && Number.isFinite(lsAgeMs) && lsAgeMs > LS_STALE_MS;
 
 // JSON island for the SVG charts. Escape '<' so a DB-derived org/specialty name
 // can never break out of the <script> or inject markup (the script is parsed as
@@ -91,7 +97,7 @@ const analyticsJson = JSON.stringify(island).replace(/</g, '\\u003c');
     <div class="card mt-5">
       <div class="card__head">
         <h2 class="card__title">LocumSmart analytics</h2>
-        <span class="subtle">live from your Sisense{lsAsOf ? ` · as of ${lsAsOf}` : ''}</span>
+        <span class="subtle">{lsStale ? `last synced ${lsAsOf} · sync delayed` : `live from your Sisense${lsAsOf ? ` · as of ${lsAsOf}` : ''}`}</span>
       </div>
       <div class="grid grid--kpi">
         <div class="kpi"><div class="kpi__accent kpi__accent--magenta"></div>
