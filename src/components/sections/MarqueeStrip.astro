@@ -4,27 +4,29 @@
  * Reused on home + facilities. The CSS marquee animation lives in kit.css
  * (.marquee, .marquee__track). Pure CSS, no JS.
  *
- * NOTE (content pass): the facility names + "200+ facilities" are kit demo
- * content (named health systems = fabricated client claims). Replicated per the
- * exact-replication directive; gated from indexed production until reconciled.
+ * NOTE (content pass): facility names are REAL IMS clients sourced from
+ * LocumSmart confirmation agreements (Confirmation Agreement List Export) —
+ * organizations + facility brands IMS actually holds active/past placements with.
+ * The eyebrow avoids a specific facility/state count — the real footprint is ~9
+ * organizations across ~12 states, far below the old "200+/47" kit demo copy.
  */
 const facilities = [
-  'Mercy Health',
-  "St. Luke's · Houston",
-  'Cedars Network',
-  'Methodist · Dallas',
-  'Sutter Health',
-  'BJC HealthCare',
-  'CommonSpirit',
-  'Trinity Health',
-  'Sentara',
-  'Banner · Phoenix',
+  'Community Health Systems',
+  'Advocate Health',
+  'Atrium Health · NC',
+  'Tenet Healthcare',
+  'Ochsner Health',
+  'Northwest Medical Center · AZ',
+  'MountainView Regional · NM',
+  'LifePoint Health',
+  'Providence',
+  'United Surgical Partners',
 ];
 const items = [...facilities, ...facilities]; // double for a seamless loop
 ---
 <section class="section section--sm marquee-section" aria-label="Facilities we've staffed">
   <div class="marquee-eyebrow">
-    <span class="eyebrow"><span class="eyebrow__dot"></span>Trusted at 200+ facilities, in 47 states</span>
+    <span class="eyebrow"><span class="eyebrow__dot"></span>Trusted by leading U.S. health systems</span>
   </div>
   <div class="marquee">
     <div class="marquee__track">
