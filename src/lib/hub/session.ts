@@ -1,5 +1,10 @@
 // HMAC-SHA256 sealed cookie value via Web Crypto (Cloudflare Workers + Node 22).
 // Format: base64url(utf8(JSON)) + "." + base64url(HMAC). No external deps.
+// The constant-time primitives (hmac / timingSafeEqual / constantTimeEqual) live
+// in the hub-free ../crypto-equal so the public contact-sweep endpoint can reuse
+// constantTimeEqual without importing any hub module.
+import { hmac, timingSafeEqual } from '../crypto-equal';
+
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
@@ -16,19 +21,6 @@ function b64urlToBytes(s: string): Uint8Array {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }
-async function hmac(secret: string, data: string): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey(
-    'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
-  );
-  return new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(data)));
-}
-function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-  return diff === 0;
-}
-
 export async function seal(payload: Record<string, unknown>, secret: string): Promise<string> {
   const body = bytesToB64url(enc.encode(JSON.stringify(payload)));
   const sig = bytesToB64url(await hmac(secret, body));
@@ -43,14 +35,6 @@ export async function unseal<T = Record<string, unknown>>(token: string, secret:
   const expected = await hmac(secret, body);
   if (!timingSafeEqual(expected, given)) return null;
   try { return JSON.parse(dec.decode(b64urlToBytes(body))) as T; } catch { return null; }
-}
-
-// Constant-time string compare (passcode/secret checks). Compares HMACs of the
-// inputs so length is not leaked and timing is uniform regardless of where the
-// first differing byte is.
-export async function constantTimeEqual(a: string, b: string, key = 'ct-compare'): Promise<boolean> {
-  const [ha, hb] = await Promise.all([hmac(key, a), hmac(key, b)]);
-  return timingSafeEqual(ha, hb);
 }
 
 export interface HubSession { email: string; name: string; iat: number; exp: number; gen?: string }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seal, unseal, signSession, verifySession, constantTimeEqual } from './session';
+import { seal, unseal, signSession, verifySession } from './session';
 
 const SECRET = 'test-secret-0123456789-abcdefghij';
 
@@ -47,13 +47,5 @@ describe('signSession/verifySession', () => {
     const tok = await signSession('z@iastaffing.com', 'Z', SECRET, now, { generation: '1' });
     expect((await verifySession(tok, SECRET, now + 10, '1'))?.email).toBe('z@iastaffing.com');
     expect(await verifySession(tok, SECRET, now + 10, '2')).toBeNull();
-  });
-});
-
-describe('constantTimeEqual', () => {
-  it('is true for equal strings, false otherwise', async () => {
-    expect(await constantTimeEqual('hunter2', 'hunter2')).toBe(true);
-    expect(await constantTimeEqual('hunter2', 'hunter3')).toBe(false);
-    expect(await constantTimeEqual('', 'x')).toBe(false);
   });
 });

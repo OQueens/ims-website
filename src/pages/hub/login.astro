@@ -8,7 +8,8 @@
  */
 import HubLayout from '../../layouts/HubLayout.astro';
 import { readHubEnv } from '../../lib/hub/hub-env';
-import { signSession, verifySession, constantTimeEqual, sessionSetCookie } from '../../lib/hub/session';
+import { signSession, verifySession, sessionSetCookie } from '../../lib/hub/session';
+import { constantTimeEqual } from '../../lib/crypto-equal';
 import { getCookie } from '../../lib/hub/cookies';
 import { safeReturnTo } from '../../lib/hub/safe-redirect';
 
