@@ -68,13 +68,17 @@ const ogImageAbsolute = /^https?:\/\//.test(ogImage)
   ? ogImage
   : new URL(ogImage, SITE).toString();
 
+// Plausible property key — kept as innovativemedicalstaffing.com so analytics
+// stay in one continuous property across the 2026-06-11 imstaffing.ai canonical
+// flip (no data gap). Switch to a new imstaffing.ai Plausible site only after
+// it's created in the Plausible dashboard, or events are silently dropped.
 const PLAUSIBLE_DOMAIN = 'innovativemedicalstaffing.com';
 const ORG_JSON_LD = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'Innovative Medical Staffing',
-  url: 'https://innovativemedicalstaffing.com',
-  logo: 'https://innovativemedicalstaffing.com/ims-logo-mark.png',
+  url: 'https://imstaffing.ai',
+  logo: 'https://imstaffing.ai/ims-logo-mark.png',
   contactPoint: [
     {
       '@type': 'ContactPoint',

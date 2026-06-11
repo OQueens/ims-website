@@ -3,7 +3,9 @@ import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import sitemap from '@astrojs/sitemap';
 
-const SITE_URL = 'https://innovativemedicalstaffing.com';
+// Canonical FLIP (2026-06-11): imstaffing.ai is the new primary host. This
+// drives Astro.site → <link rel=canonical>, og:url, and the sitemap base.
+const SITE_URL = 'https://imstaffing.ai';
 
 export default defineConfig({
   site: SITE_URL,
