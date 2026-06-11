@@ -106,7 +106,7 @@ if (existsSync(middlewareBundlePath)) {
   );
   check(
     'middleware bundle inlines CANONICAL_HOSTNAME literal',
-    middlewareBundle.includes('innovativemedicalstaffing.com'),
+    middlewareBundle.includes('imstaffing.ai'),
   );
   check(
     'middleware bundle constructs 301 redirect with Location header',
@@ -228,15 +228,15 @@ if (existsSync(robotsPath)) {
   // both wrong-case-host AND wrong-case-path.
   check(
     'robots.txt has canonical Sitemap directive (exact host + path, case-sensitive)',
-    /^Sitemap:\s+https:\/\/innovativemedicalstaffing\.com\/sitemap-index\.xml\s*$/m.test(robots),
+    /^Sitemap:\s+https:\/\/imstaffing\.ai\/sitemap-index\.xml\s*$/m.test(robots),
   );
 }
 
 if (existsSync(sitemapIndexPath)) {
   const sitemap = readFileSync(sitemapIndexPath, 'utf8');
   check(
-    'sitemap-index.xml references innovativemedicalstaffing.com',
-    sitemap.includes('innovativemedicalstaffing.com'),
+    'sitemap-index.xml references imstaffing.ai',
+    sitemap.includes('imstaffing.ai'),
   );
 }
 

@@ -8,7 +8,11 @@ import {
 } from "./middleware-logic";
 
 describe("buildCanonicalRedirect", () => {
-  it("redirects exact-match ims-website.pages.dev/ → innovativemedicalstaffing.com/", () => {
+  it("pins the canonical host to imstaffing.ai (post 2026-06-11 flip)", () => {
+    expect(CANONICAL_HOSTNAME).toBe("imstaffing.ai");
+  });
+
+  it("redirects exact-match ims-website.pages.dev/ → imstaffing.ai/", () => {
     const r = buildCanonicalRedirect(`https://${PAGES_DEV_HOSTNAME}/`);
     expect(r).not.toBeNull();
     expect(r!.status).toBe(301);
@@ -23,6 +27,87 @@ describe("buildCanonicalRedirect", () => {
     expect(r!.headers.get("Location")).toBe(
       `https://${CANONICAL_HOSTNAME}/jobs?specialty=anesthesiology`,
     );
+  });
+
+  // ── Canonical FLIP: the retired primary domain 301s to imstaffing.ai ──
+  it("redirects legacy innovativemedicalstaffing.com/ → imstaffing.ai/", () => {
+    const r = buildCanonicalRedirect("https://innovativemedicalstaffing.com/");
+    expect(r).not.toBeNull();
+    expect(r!.status).toBe(301);
+    expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/");
+  });
+
+  it("redirects legacy domain preserving deep path + query", () => {
+    const r = buildCanonicalRedirect(
+      "https://innovativemedicalstaffing.com/jobs/crna-texas?ref=email",
+    );
+    expect(r!.headers.get("Location")).toBe(
+      "https://imstaffing.ai/jobs/crna-texas?ref=email",
+    );
+  });
+
+  it("redirects www.innovativemedicalstaffing.com → imstaffing.ai", () => {
+    const r = buildCanonicalRedirect(
+      "https://www.innovativemedicalstaffing.com/about",
+    );
+    expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/about");
+  });
+
+  it("redirects www.imstaffing.ai → apex imstaffing.ai", () => {
+    const r = buildCanonicalRedirect("https://www.imstaffing.ai/contact");
+    expect(r).not.toBeNull();
+    expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/contact");
+  });
+
+  // ── Careers domain → job board ──
+  it("redirects imstaffing.careers/ root → imstaffing.ai/jobs", () => {
+    const r = buildCanonicalRedirect("https://imstaffing.careers/");
+    expect(r).not.toBeNull();
+    expect(r!.status).toBe(301);
+    expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/jobs");
+  });
+
+  it("redirects www.imstaffing.careers/ root → imstaffing.ai/jobs", () => {
+    const r = buildCanonicalRedirect("https://www.imstaffing.careers/");
+    expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/jobs");
+  });
+
+  it("preserves careers deep paths onto canonical (no forced /jobs)", () => {
+    const r = buildCanonicalRedirect(
+      "https://imstaffing.careers/jobs/anesthesiology-fl?ref=ad",
+    );
+    expect(r!.headers.get("Location")).toBe(
+      "https://imstaffing.ai/jobs/anesthesiology-fl?ref=ad",
+    );
+  });
+
+  // ── API routes must NEVER be 301'd, on ANY host. The live LocumSmart webhook
+  //    POSTs to innovativemedicalstaffing.com/api/locumsmart-events and does not
+  //    follow redirects — a 301 would silently kill job-board + ls_events ingest.
+  it("does NOT redirect the LocumSmart webhook on the legacy host", () => {
+    const r = buildCanonicalRedirect(
+      "https://innovativemedicalstaffing.com/api/locumsmart-events",
+    );
+    expect(r).toBeNull();
+  });
+
+  it("does NOT redirect /api/* on any redirect-source host (legacy, www, pages.dev, careers)", () => {
+    for (const u of [
+      "https://innovativemedicalstaffing.com/api/contact",
+      "https://www.innovativemedicalstaffing.com/api/apply",
+      `https://${PAGES_DEV_HOSTNAME}/api/locumsmart-events`,
+      "https://www.imstaffing.ai/api/contact",
+      "https://imstaffing.careers/api/locumsmart-events",
+    ]) {
+      expect(buildCanonicalRedirect(u)).toBeNull();
+    }
+  });
+
+  it("still redirects NON-api paths that merely contain 'api' in a segment", () => {
+    // Guard against an over-broad match: /apiary or /capital must still flip.
+    const r = buildCanonicalRedirect("https://innovativemedicalstaffing.com/apiary");
+    expect(r).not.toBeNull();
+    expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/apiary");
   });
 
   it("does NOT redirect preview deploys (<hash>.ims-website.pages.dev)", () => {
@@ -53,6 +138,19 @@ describe("buildCanonicalRedirect", () => {
     expect(r).not.toBeNull();
     for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
       expect(r!.headers.get(name)).toBe(value);
+    }
+  });
+
+  it("attaches SECURITY_HEADERS on legacy + careers redirects too", () => {
+    for (const u of [
+      "https://innovativemedicalstaffing.com/",
+      "https://imstaffing.careers/",
+    ]) {
+      const r = buildCanonicalRedirect(u);
+      expect(r).not.toBeNull();
+      for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+        expect(r!.headers.get(name)).toBe(value);
+      }
     }
   });
 });

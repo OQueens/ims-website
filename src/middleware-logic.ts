@@ -16,7 +16,29 @@ import { getCookie } from "./lib/hub/cookies";
 import { verifySession } from "./lib/hub/session";
 
 export const PAGES_DEV_HOSTNAME = "ims-website.pages.dev";
-export const CANONICAL_HOSTNAME = "innovativemedicalstaffing.com";
+// Canonical FLIP (2026-06-11): imstaffing.ai is the new primary brand host.
+// innovativemedicalstaffing.com now 301s here (path-preserving) — see
+// buildCanonicalRedirect + LEGACY_HOSTNAMES below.
+export const CANONICAL_HOSTNAME = "imstaffing.ai";
+
+// Hosts that 301 to the canonical apex, path + query preserved. Includes the
+// pages.dev prod alias, the www apex variant, and the retired primary domain
+// (+ its www). Preview deploys (<hash>.ims-website.pages.dev) are NOT exact
+// matches and keep serving on their own hostname.
+export const LEGACY_HOSTNAMES: readonly string[] = [
+  PAGES_DEV_HOSTNAME,
+  "www.imstaffing.ai",
+  "innovativemedicalstaffing.com",
+  "www.innovativemedicalstaffing.com",
+];
+
+// Job-board domain. Root → the canonical job board; deeper paths are
+// preserved onto the canonical host (e.g. /jobs/<slug> stays intact).
+export const CAREERS_HOSTNAMES: readonly string[] = [
+  "imstaffing.careers",
+  "www.imstaffing.careers",
+];
+export const CAREERS_LANDING_PATH = "/jobs";
 
 export const SECURITY_HEADERS: Record<string, string> = {
   // X-Robots-Tag dropped at LAUNCH HARD GATE (T14 paired with T15+T16+T28).
@@ -47,12 +69,43 @@ export const SECURITY_HEADERS: Record<string, string> = {
 
 // Exact-host match only. Preview deploys (<hash>.ims-website.pages.dev,
 // <branch>.ims-website.pages.dev) keep their own hostnames so the preview
-// workflow is unaffected.
+// workflow is unaffected. Requests already on the canonical apex return null
+// (served, not redirected).
 export function buildCanonicalRedirect(requestUrl: string): Response | null {
   const url = new URL(requestUrl);
-  if (url.hostname !== PAGES_DEV_HOSTNAME) return null;
-  url.hostname = CANONICAL_HOSTNAME;
-  url.protocol = "https:";
+  const host = url.hostname;
+
+  // NEVER canonical-redirect API routes. They are not indexed, and they are hit
+  // by non-browser POST clients — notably the LIVE LocumSmart webhook at
+  // innovativemedicalstaffing.com/api/locumsmart-events — that do NOT follow a
+  // 301 (clients downgrade POST→GET and drop the body/auth header; LS retries
+  // 5xx but not 4xx, so the resulting 401 is a silent permanent drop). The route
+  // still exists in this same deployment on every attached host, so falling
+  // through serves it normally. This also protects /api/contact + /api/apply.
+  if (url.pathname.startsWith("/api/")) return null;
+
+  // Job-board domain: send the bare root to the canonical job board, preserve
+  // every deeper path/query verbatim onto the canonical host.
+  if (CAREERS_HOSTNAMES.includes(host)) {
+    url.hostname = CANONICAL_HOSTNAME;
+    url.protocol = "https:";
+    if (url.pathname === "/" || url.pathname === "") {
+      url.pathname = CAREERS_LANDING_PATH;
+    }
+    return redirect301(url);
+  }
+
+  // Legacy / non-canonical hosts → canonical apex, path + query preserved.
+  if (LEGACY_HOSTNAMES.includes(host)) {
+    url.hostname = CANONICAL_HOSTNAME;
+    url.protocol = "https:";
+    return redirect301(url);
+  }
+
+  return null;
+}
+
+function redirect301(url: URL): Response {
   return new Response(null, {
     status: 301,
     headers: { Location: url.toString(), ...SECURITY_HEADERS },
