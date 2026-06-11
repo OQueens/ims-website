@@ -72,6 +72,15 @@ export function buildCanonicalRedirect(requestUrl: string): Response | null {
   const url = new URL(requestUrl);
   const host = url.hostname;
 
+  // NEVER canonical-redirect API routes. They are not indexed, and they are hit
+  // by non-browser POST clients — notably the LIVE LocumSmart webhook at
+  // innovativemedicalstaffing.com/api/locumsmart-events — that do NOT follow a
+  // 301 (clients downgrade POST→GET and drop the body/auth header; LS retries
+  // 5xx but not 4xx, so the resulting 401 is a silent permanent drop). The route
+  // still exists in this same deployment on every attached host, so falling
+  // through serves it normally. This also protects /api/contact + /api/apply.
+  if (url.pathname.startsWith("/api/")) return null;
+
   // Job-board domain: send the bare root to the canonical job board, preserve
   // every deeper path/query verbatim onto the canonical host.
   if (CAREERS_HOSTNAMES.includes(host)) {

@@ -81,6 +81,35 @@ describe("buildCanonicalRedirect", () => {
     );
   });
 
+  // ── API routes must NEVER be 301'd, on ANY host. The live LocumSmart webhook
+  //    POSTs to innovativemedicalstaffing.com/api/locumsmart-events and does not
+  //    follow redirects — a 301 would silently kill job-board + ls_events ingest.
+  it("does NOT redirect the LocumSmart webhook on the legacy host", () => {
+    const r = buildCanonicalRedirect(
+      "https://innovativemedicalstaffing.com/api/locumsmart-events",
+    );
+    expect(r).toBeNull();
+  });
+
+  it("does NOT redirect /api/* on any redirect-source host (legacy, www, pages.dev, careers)", () => {
+    for (const u of [
+      "https://innovativemedicalstaffing.com/api/contact",
+      "https://www.innovativemedicalstaffing.com/api/apply",
+      `https://${PAGES_DEV_HOSTNAME}/api/locumsmart-events`,
+      "https://www.imstaffing.ai/api/contact",
+      "https://imstaffing.careers/api/locumsmart-events",
+    ]) {
+      expect(buildCanonicalRedirect(u)).toBeNull();
+    }
+  });
+
+  it("still redirects NON-api paths that merely contain 'api' in a segment", () => {
+    // Guard against an over-broad match: /apiary or /capital must still flip.
+    const r = buildCanonicalRedirect("https://innovativemedicalstaffing.com/apiary");
+    expect(r).not.toBeNull();
+    expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/apiary");
+  });
+
   it("does NOT redirect preview deploys (<hash>.ims-website.pages.dev)", () => {
     const r = buildCanonicalRedirect(
       `https://abc123.${PAGES_DEV_HOSTNAME}/`,
