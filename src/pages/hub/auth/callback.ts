@@ -37,7 +37,6 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       clientId: env.GOOGLE_OAUTH_CLIENT_ID,
       clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET,
       redirectUri,
-      allowedDomain: env.HUB_ALLOWED_DOMAIN,
     },
     code,
   );
@@ -45,7 +44,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
   const result = validateIdTokenClaims(decodeJwtPayload(tok.id_token), {
     clientId: env.GOOGLE_OAUTH_CLIENT_ID,
-    allowedDomain: env.HUB_ALLOWED_DOMAIN,
+    allowedDomains: env.HUB_ALLOWED_DOMAINS,
     nonce: sealed.nonce,
     now,
   });

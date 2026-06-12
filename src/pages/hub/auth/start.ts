@@ -18,7 +18,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
   const now = Math.floor(Date.now() / 1000);
   const oauth = await seal({ state, nonce, returnTo, exp: now + 600 }, env.HUB_SESSION_SECRET);
   const authUrl = buildAuthUrl(
-    { clientId: env.GOOGLE_OAUTH_CLIENT_ID, redirectUri, allowedDomain: env.HUB_ALLOWED_DOMAIN },
+    { clientId: env.GOOGLE_OAUTH_CLIENT_ID, redirectUri, allowedDomains: env.HUB_ALLOWED_DOMAINS },
     state,
     nonce,
   );
