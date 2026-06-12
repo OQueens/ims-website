@@ -97,6 +97,45 @@ describe('sendContactEmail', () => {
   });
 });
 
+describe('sendContactEmail — job inquiry (role + direct link)', () => {
+  const JOB_URL = 'https://imstaffing.ai/jobs/11111111-2222-3333-4444-555555555555';
+  it('leads the subject with the role and renders a clickable link to the posting', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'j1' }, error: null });
+    await sendContactEmail(ENV, {
+      name: 'Dana Lee', email: 'dana@x.co', audience: 'clinician', role: 'CRNA · Ref A-123',
+      message: 'Available in July.', jobUrl: JOB_URL, jobRole: 'CRNA', jobRef: 'A-123', jobCity: 'Austin, TX',
+    });
+    const arg = sendMock.mock.calls[0][0];
+    expect(arg.subject).toContain('IMS Job');
+    expect(arg.subject).toContain('CRNA');
+    expect(arg.html).toContain('Regarding this role');
+    expect(arg.html).toContain('Austin, TX');
+    expect(arg.html).toContain('A-123');
+    expect(arg.html).toContain(`href="${JOB_URL}"`);
+    expect(arg.html).toContain('View the job posting');
+  });
+
+  it('drops a non-http(s) jobUrl (no javascript: href reaches the email)', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'j2' }, error: null });
+    await sendContactEmail(ENV, {
+      name: 'X', email: 'x@y.co', audience: 'clinician', role: '', message: '',
+      jobUrl: 'javascript:alert(1)', jobRole: 'Hospitalist',
+    });
+    const html = sendMock.mock.calls[0][0].html as string;
+    expect(html).not.toContain('javascript:');
+    expect(html).not.toContain('View the job posting'); // no link rendered
+    expect(html).toContain('Regarding this role'); // role still shown
+  });
+
+  it('a non-job contact has no job block and keeps the audience-typed subject', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'j3' }, error: null });
+    await sendContactEmail(ENV, { name: 'A', email: 'a@b.co', audience: 'facility', role: '', message: 'hi' });
+    const arg = sendMock.mock.calls[0][0];
+    expect(arg.subject).toContain('IMS Contact');
+    expect(arg.html).not.toContain('Regarding this role');
+  });
+});
+
 describe('sendContactEmail — BCC (owner copy)', () => {
   it('adds bcc when LEAD_NOTIFY_BCC is set (comma-split + header-stripped)', async () => {
     sendMock.mockResolvedValue({ data: { id: 'm' }, error: null });

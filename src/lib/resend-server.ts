@@ -33,6 +33,14 @@ export interface LeadPayload {
   audience: Audience;
   role?: string;
   message?: string;
+  /** Job-inquiry context — only set from the /jobs apply form. When present, the
+   *  email leads with the role + a clickable direct link so the recruiter knows
+   *  exactly which posting the lead is about. jobUrl is built server-side from the
+   *  job's uuid slug + the request origin (trusted), so it's a safe https link. */
+  jobUrl?: string;
+  jobRole?: string;
+  jobRef?: string;
+  jobCity?: string;
 }
 
 const AUDIENCE_LABEL: Record<Audience, string> = {
@@ -87,24 +95,51 @@ function renderLead(p: LeadPayload, opts?: { safetyNet?: boolean }): { subject: 
   // the lookup is always defined — no raw-user-string fallback that could leak
   // un-escaped input into the subject line.
   const label = AUDIENCE_LABEL[p.audience];
-  const prefix = opts?.safetyNet ? `[IMS Lead · safety-net] ` : `[IMS Contact · ${label}] `;
-  const subject = stripHeader(`${prefix}${p.name}`);
   const role = (p.role ?? '').trim();
   const message = (p.message ?? '').trim();
+
+  // Job-inquiry context (set only from the /jobs apply form). The link is
+  // server-built (uuid + request origin) so it's a trusted https URL; still gate
+  // the href on an http(s) scheme as defense-in-depth before it reaches the email.
+  const jobRole = (p.jobRole ?? '').trim();
+  const jobCity = (p.jobCity ?? '').trim();
+  const jobRef = (p.jobRef ?? '').trim();
+  const jobUrlRaw = (p.jobUrl ?? '').trim();
+  const jobUrl = /^https?:\/\//i.test(jobUrlRaw) ? jobUrlRaw : '';
+  const isJob = !!(jobUrl || jobRole);
+  const jobLabel = [jobRole, jobCity].filter(Boolean).join(' · ');
+
+  // Subject: a job inquiry leads with the role so the recruiter knows the posting
+  // at a glance in their inbox list; otherwise the audience-typed contact subject.
+  const prefix = opts?.safetyNet
+    ? `[IMS Lead · safety-net] `
+    : isJob
+      ? `[IMS Job · ${(jobRole || jobLabel || 'role').slice(0, 80)}] `
+      : `[IMS Contact · ${label}] `;
+  const subject = stripHeader(`${prefix}${p.name}`);
+
   const banner = opts?.safetyNet
     ? `<p style="background:#FBE9C9;border:1px solid #E8C465;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5">` +
       `<strong>Safety-net copy.</strong> The primary notification to recruiting@iastaffing.com did not send ` +
       `(the sending domain is not yet verified, or Resend errored). Reply here or follow up directly — this lead is captured.</p>`
     : '';
+  // Job block — the recruiter's at-a-glance "which role + click straight to it".
+  const jobBlock = isJob
+    ? `<p style="background:#F6DCE2;border:1px solid #E8B9C6;padding:10px 12px;border-radius:8px;line-height:1.6">` +
+      `<strong>Regarding this role:</strong> ${escapeHtml(jobLabel || 'see link')}${jobRef ? ` (Ref ${escapeHtml(jobRef)})` : ''}` +
+      (jobUrl ? `<br><a href="${escapeHtml(jobUrl)}">View the job posting →</a>` : '') +
+      `</p>`
+    : '';
   const html =
-    `<h2>New contact inquiry</h2>` +
+    `<h2>${isJob ? 'New job inquiry' : 'New contact inquiry'}</h2>` +
     banner +
+    jobBlock +
     `<p><strong>Name:</strong> ${escapeHtml(p.name)}</p>` +
     `<p><strong>Email:</strong> ${escapeHtml(p.email)}</p>` +
     `<p><strong>I am a:</strong> ${escapeHtml(label)}</p>` +
     (role ? `<p><strong>Role or specialty:</strong> ${escapeHtml(role)}</p>` : '') +
     (message ? `<p><strong>Message:</strong><br>${escapeHtml(message).replace(/\n/g, '<br>')}</p>` : '') +
-    `<hr><p style="color:#888;font-size:12px">Sent from the iastaffing.com Get-in-touch form.</p>`;
+    `<hr><p style="color:#888;font-size:12px">Sent from the imstaffing.ai contact form.</p>`;
   return { subject, html };
 }
 

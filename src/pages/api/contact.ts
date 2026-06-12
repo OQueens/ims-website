@@ -15,7 +15,7 @@
  * is belt-and-suspenders. No rate-limit yet (deferred).
  */
 import type { APIRoute } from 'astro';
-import { parseContactForm, wantsJson, type ContactFields } from '../../lib/contact-submission';
+import { parseContactForm, wantsJson, buildJobUrl, type ContactFields } from '../../lib/contact-submission';
 import { verifyTurnstile } from '../../lib/turnstile-server';
 import { sendContactEmail, sendLeadAlert, type ResendEnv, type SendResult } from '../../lib/resend-server';
 import { hashIp } from '../../lib/ip-hash';
@@ -91,6 +91,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // 1. Parse the form body.
   let fields: ContactFields;
   let phone = '';
+  // Job-inquiry context — present only on the /jobs apply form. Read raw + capped
+  // here; the trusted link is built from jobSlug below (after env is available).
+  const job = { slug: '', role: '', ref: '', city: '' };
+  const clip = (s: string, n: number): string => s.replace(/[\r\n\t]+/g, ' ').trim().slice(0, n);
   try {
     const form = await request.formData();
     const get = (k: string): string => {
@@ -112,7 +116,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     };
     // Optional phone (only on the /jobs apply form). Read server-side + capped so
     // a no-JS native POST still captures it; folded into the message below.
-    phone = get('phone').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 40);
+    phone = clip(get('phone'), 40);
+    job.slug = get('jobSlug').trim();
+    job.role = clip(get('jobRole'), 160);
+    job.ref = clip(get('jobRef'), 80);
+    job.city = clip(get('jobCity'), 120);
   } catch {
     return fail(400, 'validation');
   }
@@ -135,6 +143,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (phone) {
     data.message = data.message ? `Phone: ${phone}\n${data.message}` : `Phone: ${phone}`;
   }
+
+  // Build a TRUSTED link to the exact job posting (validated uuid slug + request
+  // origin — never a client-supplied URL) and fold it into the captured message so
+  // BOTH the recruiter email AND the durable row reference the role + link, even on
+  // a no-JS native POST. The email also renders it as a clickable block (renderLead).
+  const jobUrl = buildJobUrl(job.slug, request.url);
+  if (jobUrl && !data.message.includes(jobUrl)) {
+    data.message = data.message ? `${data.message}\nJob: ${jobUrl}` : `Job: ${jobUrl}`;
+  }
+  // Hard final bound on the stored/emailed message. parseContactForm caps the USER
+  // message at 4000; the server then prepends phone + appends the job link. Cap the
+  // result so it can't grow unbounded — generous enough that the appended link
+  // (added last, ~80 chars over a ≤4000 user message) is never truncated.
+  if (data.message.length > 4500) data.message = data.message.slice(0, 4500);
 
   const env = readEnv(locals);
 
@@ -170,6 +192,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     audience: data.audience,
     role: data.role,
     message: data.message,
+    // Job-inquiry context → renderLead leads with the role + a clickable link.
+    jobUrl,
+    jobRole: job.role,
+    jobRef: job.ref,
+    jobCity: job.city,
   };
   const sent = await sendContactEmail(env, lead);
   if (!sent.ok) {
