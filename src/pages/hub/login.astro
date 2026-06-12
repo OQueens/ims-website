@@ -18,6 +18,16 @@ export const prerender = false;
 const env = readHubEnv(Astro.locals);
 const previewEnabled = !!env.HUB_PREVIEW_PASSCODE;
 
+// Show the actual allowed Google domains so the copy never drifts from the
+// HUB_ALLOWED_DOMAINS allowlist enforced server-side in google-oauth.ts.
+const atDomains = env.HUB_ALLOWED_DOMAINS.map((d) => '@' + d);
+const domainPhrase =
+  atDomains.length <= 1
+    ? atDomains[0] ?? ''
+    : atDomains.length === 2
+      ? atDomains.join(' or ')
+      : atDomains.slice(0, -1).join(', ') + ', or ' + atDomains[atDomains.length - 1];
+
 // Same-origin /hub-only returnTo (normalized — no open redirect / traversal).
 const returnTo = safeReturnTo(Astro.url.searchParams.get('returnTo'));
 const startHref = '/hub/auth/start?returnTo=' + encodeURIComponent(returnTo);
@@ -50,7 +60,7 @@ if (env.HUB_SESSION_SECRET) {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  domain: 'Use your @iastaffing.com Google account to sign in.',
+  domain: `Use your ${domainPhrase} Google account to sign in.`,
   state: 'Sign-in expired or could not be verified. Please try again.',
   verify: 'Sign-in failed. Please try again.',
   config: 'Hub sign-in is not configured yet. Contact an admin.',
@@ -105,7 +115,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.ve
           Continue with Google Workspace
           <span class="login-google__puck" aria-hidden="true">→</span>
         </a>
-        <p class="login-note">IMS Google accounts only · <b>@iastaffing.com</b></p>
+        <p class="login-note">IMS Google accounts only · {atDomains.map((d, i) => (<>{i > 0 && (i === atDomains.length - 1 ? ' or ' : ', ')}<b>{d}</b></>))}</p>
 
         {previewEnabled && (
           <form class="login-preview" method="post" action="/hub/login">
