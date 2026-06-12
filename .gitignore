@@ -51,6 +51,10 @@ design-imports/
 # The leading "/" anchors to root, so src/**/*.png stays trackable.
 .playwright-mcp/
 /*.png
+/*.jpeg
 /*.yml
 /*.yaml
 iastaffing-snapshot.md
+
+# Chromia benchmark teardown artifacts (2026-06-12 design study)
+chromia-study/
