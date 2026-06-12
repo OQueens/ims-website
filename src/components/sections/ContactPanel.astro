@@ -14,6 +14,8 @@
  * /api/contact endpoint + Cloudflare Turnstile + success-state UX are wired
  * separately.
  */
+import TurnstileWidget from '../forms/TurnstileWidget.astro';
+
 interface Props {
   /** Heading tag for the panel title. Home renders it as a sub-section (h2);
    *  /contact renders it as the page title (h1). Default h2. */
@@ -78,6 +80,22 @@ const { as: Heading = 'h2' } = Astro.props;
         </select>
         <input class="input full" name="role" placeholder="Role or specialty (optional)" aria-label="Role or specialty" />
         <textarea class="input full" name="message" rows="4" placeholder="What can we help with?" aria-label="What can we help with?"></textarea>
+
+        <!-- Honeypot: off-screen, never display:none, no <label>, named website_url
+             (not "company") so password managers don't autofill it and drop a real
+             lead. A filled value = bot → server drops silently. Parity with the
+             /contact + /jobs forms. -->
+        <div class="contact-b__hp full" aria-hidden="true">
+          <input name="website_url" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <!-- Turnstile: REQUIRED. Without it the native POST carries no token and
+             /api/contact rejects every submission (403 'verify'). Injects the hidden
+             turnstileToken the endpoint siteverifies. -->
+        <div class="full">
+          <TurnstileWidget form=".contact-b__form" />
+        </div>
+
         <div class="full">
           <button class="pill pill--swing pill--swing--magenta" type="submit">
             Send it
@@ -90,6 +108,15 @@ const { as: Heading = 'h2' } = Astro.props;
 </section>
 
 <style>
+  /* Honeypot — off-screen, never display:none (some bots skip those). */
+  .contact-b__hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
   /* Custom select chevron (kit inlined this as a style prop; moved to scoped
    * CSS). Single-quoted SVG + %23 for the # so it survives the attribute. */
   .contact-b__form select.input {

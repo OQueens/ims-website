@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ordering, success-on-persist, and the both-fail->502 guard.
 const parseContactForm = vi.hoisted(() => vi.fn());
 const wantsJson = vi.hoisted(() => vi.fn());
+const buildJobUrl = vi.hoisted(() => vi.fn());
 const verifyTurnstile = vi.hoisted(() => vi.fn());
 const sendContactEmail = vi.hoisted(() => vi.fn());
 const sendLeadAlert = vi.hoisted(() => vi.fn());
@@ -14,7 +15,7 @@ const buildContactRow = vi.hoisted(() => vi.fn());
 const insertContactMessage = vi.hoisted(() => vi.fn());
 const markResendOutcome = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/lib/contact-submission', () => ({ parseContactForm, wantsJson }));
+vi.mock('../src/lib/contact-submission', () => ({ parseContactForm, wantsJson, buildJobUrl }));
 vi.mock('../src/lib/turnstile-server', () => ({ verifyTurnstile }));
 vi.mock('../src/lib/resend-server', () => ({ sendContactEmail, sendLeadAlert }));
 vi.mock('../src/lib/ip-hash', () => ({ hashIp }));
@@ -55,6 +56,7 @@ beforeEach(() => {
   // shared object reference would leak across tests.
   parseContactForm.mockReturnValue({ kind: 'ok', data: { ...VALID_DATA } });
   wantsJson.mockReturnValue(true);
+  buildJobUrl.mockReturnValue(''); // no job context by default (general contact form)
   verifyTurnstile.mockResolvedValue('verified');
   hashIp.mockResolvedValue('iphash');
   buildContactRow.mockReturnValue({ name: 'Jordan', email: 'j@x.co', audience: 'facility', role: null, message: null, ip_hash: 'iphash', user_agent: 'TestUA/1.0' });
@@ -197,5 +199,32 @@ describe('POST /api/contact orchestration', () => {
     // Honeypot plumbing: the HTML field `website_url` must feed the `company`
     // slot that parseContactForm inspects — otherwise the honeypot is dead.
     expect(parseContactForm).toHaveBeenCalledWith(expect.objectContaining({ company: 'bot-filled-this' }));
+  });
+
+  it('job inquiry: folds the trusted job link into the message + passes job context to the email', async () => {
+    buildJobUrl.mockReturnValue('https://imstaffing.ai/jobs/11111111-2222-3333-4444-555555555555');
+    const body =
+      'name=Jordan&email=j@x.co&audience=clinician&turnstileToken=tok' +
+      '&jobSlug=11111111-2222-3333-4444-555555555555&jobRole=CRNA&jobRef=A-123&jobCity=Austin%2C+TX';
+    const request = new Request('https://ims.test/api/contact', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/x-www-form-urlencoded',
+        'content-length': String(body.length),
+        'cf-connecting-ip': '203.0.113.7',
+        'user-agent': 'TestUA/1.0',
+      },
+      body,
+    });
+    await POST({ request, locals: { runtime: { env: ENV } } } as never);
+    // The link is folded into the captured row's message (durable + no-JS safe)…
+    expect(buildContactRow.mock.calls[0][0].message).toContain('Job: https://imstaffing.ai/jobs/');
+    // …and the job context reaches the recruiter email (renderLead → clickable link).
+    const lead = sendContactEmail.mock.calls[0][1];
+    expect(lead.jobUrl).toBe('https://imstaffing.ai/jobs/11111111-2222-3333-4444-555555555555');
+    expect(lead.jobRole).toBe('CRNA');
+    expect(lead.jobRef).toBe('A-123');
+    expect(lead.jobCity).toBe('Austin, TX');
   });
 });

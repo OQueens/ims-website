@@ -353,6 +353,10 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
                   <input type="hidden" name="jobRole" value={spec} />
                   <input type="hidden" name="jobRef" value={ref ?? job.id} />
                   <input type="hidden" name="jobCity" value={cityTitle} />
+                  {/* The uuid slug → the server builds a TRUSTED direct link to
+                      THIS posting for the recruiter email (see /api/contact); the
+                      client never supplies the URL, so it can't be tampered. */}
+                  <input type="hidden" name="jobSlug" value={job.id} />
 
                   <div class="jd-field">
                     <label for="jdName">Your name</label>

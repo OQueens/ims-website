@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseContactForm, wantsJson } from './contact-submission';
+import { parseContactForm, wantsJson, buildJobUrl } from './contact-submission';
 
 const base = {
   name: 'Jordan Rivers',
@@ -10,6 +10,29 @@ const base = {
   turnstileToken: 'tok',
   company: '',
 };
+
+describe('buildJobUrl', () => {
+  const UUID = '11111111-2222-3333-4444-555555555555';
+  const REQ = 'https://imstaffing.ai/api/contact';
+
+  it('builds a trusted /jobs/<uuid> link from the request origin', () => {
+    expect(buildJobUrl(UUID, REQ)).toBe(`https://imstaffing.ai/jobs/${UUID}`);
+  });
+  it('uses the request origin (not a hardcoded domain) so it follows the live host', () => {
+    expect(buildJobUrl(UUID, 'https://innovativemedicalstaffing.com/api/contact'))
+      .toBe(`https://innovativemedicalstaffing.com/jobs/${UUID}`);
+  });
+  it('rejects a non-uuid slug (no link rather than an off-pattern URL)', () => {
+    expect(buildJobUrl('../admin', REQ)).toBe('');
+    expect(buildJobUrl('not-a-uuid', REQ)).toBe('');
+    expect(buildJobUrl('', REQ)).toBe('');
+    expect(buildJobUrl(undefined, REQ)).toBe('');
+  });
+  it('returns empty when the base URL is unparseable', () => {
+    expect(buildJobUrl(UUID, 'not a url')).toBe('');
+    expect(buildJobUrl(UUID, undefined)).toBe('');
+  });
+});
 
 describe('parseContactForm', () => {
   it('accepts a complete valid submission', () => {

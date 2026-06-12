@@ -79,3 +79,25 @@ export function parseContactForm(f: ContactFields): ParseOutcome {
 export function wantsJson(accept: string | null): boolean {
   return !!accept && accept.includes('application/json');
 }
+
+// A job slug is the ims_jobs row uuid (see /jobs/[slug].astro). Match /contact's
+// route guard exactly so a tampered slug can't steer the link off-pattern.
+const JOB_SLUG_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Build a TRUSTED, clickable link to a job posting for the recruiter email.
+ * The slug is validated as a uuid and the URL is constructed from the request
+ * origin — so a client-tampered `jobSlug` can NEVER inject a `javascript:` (or
+ * any off-origin) href into the email. Returns '' when the slug isn't a uuid or
+ * the base URL is unparseable (→ the email simply omits the job link).
+ */
+export function buildJobUrl(slug: string | undefined, requestUrl: string | undefined): string {
+  const s = (slug ?? '').trim();
+  if (!JOB_SLUG_RE.test(s)) return '';
+  try {
+    const u = new URL(`/jobs/${s}`, requestUrl);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : '';
+  } catch {
+    return '';
+  }
+}
