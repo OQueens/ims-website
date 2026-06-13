@@ -97,6 +97,25 @@ const specialties: { slug: string; name: string; query: string; framing: string 
     framing: 'Inpatient consult, stroke coverage, and outpatient clinic. Tele-neurology arms also matched where the facility supports.',
   },
 ];
+
+// V5 specialty→color coding (Zach 2026-06-12): one hue per specialty FAMILY,
+// the same map as the /jobs board SPEC_TINT and the homepage grid —
+// coral=anesthesia · rose=OB/peds · butter=urology/psych · mint=emergency ·
+// sky=internal-medicine family · violet=surgical/neuro.
+const TONE: Record<string, string> = {
+  anesthesiology: 'coral',
+  crna: 'coral',
+  hospitalist: 'sky',
+  'emergency-medicine': 'mint',
+  'family-medicine': 'sky',
+  psychiatry: 'butter',
+  'ob-gyn': 'rose',
+  'general-surgery': 'lilac',
+  radiology: 'coral',
+  pediatrics: 'rose',
+  cardiology: 'sky',
+  neurology: 'lilac',
+};
 ---
 <MarketingLayout
   title="Specialties — Innovative Medical Staffing"
@@ -122,7 +141,7 @@ const specialties: { slug: string; name: string; query: string; framing: string 
       <ul class="grid reveal-group">
         {specialties.map((s, i) => (
           <li class="reveal" style={`--i:${Math.min(i, 5)}`}>
-            <a class="card" href={`/jobs?q=${encodeURIComponent(s.query)}`}>
+            <a class="card" data-tone={TONE[s.slug] ?? 'coral'} href={`/jobs?q=${encodeURIComponent(s.query)}`}>
               <h3 class="name">{s.name}</h3>
               <p class="framing">{s.framing}</p>
               <span class="link-affordance">
@@ -261,6 +280,25 @@ const specialties: { slug: string; name: string; query: string; framing: string 
     margin: 0;
     letter-spacing: -0.005em;
   }
+  /* V5 specialty coding: each card wears its specialty's deep hue as a dot
+   * marker + hover border — the same map as /jobs and the homepage grid. */
+  .card { --tone: var(--coral-deep, #E04E2E); }
+  .card[data-tone='coral']  { --tone: var(--coral-deep, #E04E2E); }
+  .card[data-tone='rose']   { --tone: var(--rose-deep, #E25C7E); }
+  .card[data-tone='butter'] { --tone: var(--butter-deep, #F0B021); }
+  .card[data-tone='mint']   { --tone: var(--mint-deep, #2EA878); }
+  .card[data-tone='sky']    { --tone: var(--sky-deep, #2E8BC0); }
+  .card[data-tone='lilac']  { --tone: var(--violet-deep, #6C5CE0); }
+  .name::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 12px;
+    background: var(--tone);
+  }
+  .card:hover { border-color: var(--tone); }
   .framing {
     font-family: var(--font-body);
     font-size: 17px;

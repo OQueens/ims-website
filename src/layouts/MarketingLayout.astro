@@ -20,14 +20,15 @@
 // Self-hosted fonts (CSP font-src 'self' — no Google Fonts) + the ported
 // design system. Cascade order is load-bearing: colors_and_type (tokens + base
 // type) → kit (components) → palette-active (Magenta Noir overrides).
-import '@fontsource-variable/inter/index.css';
-import '@fontsource-variable/fraunces/index.css';
-import '@fontsource-variable/fraunces/standard-italic.css';
-import '@fontsource/jetbrains-mono/400.css';
-import '@fontsource/jetbrains-mono/500.css';
+// V5 reskin (2026-06-12): GT America replaces Inter/Fraunces/JetBrains on
+// marketing pages — the @fontsource imports are gone (all marketing styles
+// resolve fonts via tokens; v5-reskin.css re-points every font token). The
+// cascade order below is load-bearing; v5-reskin.css MUST stay last and MUST
+// stay marketing-only (HubLayout never imports it — hub keeps Magenta Noir).
 import '../styles/colors_and_type.css';
 import '../styles/kit.css';
 import '../styles/palette-active.css';
+import '../styles/v5-reskin.css';
 
 interface Props {
   title?: string;
@@ -122,11 +123,13 @@ const ORG_JSON_LD = {
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="generator" content={Astro.generator} />
     <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#F4ECDF" />
+    <meta name="theme-color" content="#F6F1EA" />
     <link rel="icon" href="/ims-logo-mark.png" type="image/png" />
-    <!-- Preload the display face used above the fold (Battlefin Black 900) -->
-    <link rel="preload" href="/fonts/Battlefin-Black.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/Battlefin-Bold.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Preload the faces used above the fold (GT America Black display +
+         Regular body + Mono eyebrows). 🔴 TRIAL fonts — license before prod. -->
+    <link rel="preload" href="/fonts/gt-america/GT-America-Standard-Black-Trial.otf" as="font" type="font/otf" crossorigin />
+    <link rel="preload" href="/fonts/gt-america/GT-America-Standard-Regular-Trial.otf" as="font" type="font/otf" crossorigin />
+    <link rel="preload" href="/fonts/gt-america/GT-America-Mono-Regular-Trial.otf" as="font" type="font/otf" crossorigin />
     <title>{title}</title>
     <!-- Plausible Cloud — privacy-friendly, no cookie banner per spec §0.5.8.
          LEGAL CONTRACT: this is the ONLY third-party telemetry permitted (cookieless,

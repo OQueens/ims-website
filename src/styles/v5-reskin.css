@@ -1,0 +1,487 @@
+/* ════════════════════════════════════════════════════════════════════════════
+ * V5 RESKIN — "Polychrome Poster" over the V3 structure
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Marketing-ONLY override layer. Cascade position is load-bearing:
+ *   colors_and_type.css → kit.css → palette-active.css → THIS FILE (last).
+ * HubLayout never imports this file — the hub keeps Magenta Noir untouched.
+ *
+ * What this layer does:
+ *   1. GT America everywhere (Standard 400/500/700/900 + Mono). 🔴 TRIAL fonts
+ *      — prod gate = Grilli Type web license (public/fonts/gt-america/LICENSE-NOTE.md).
+ *   2. Re-points the V3/Magenta-Noir token system to the V4.1 polychrome
+ *      palette (sky leads; coral/violet/mint/butter/rose carry sections).
+ *      palette-active.css sets the pop/soft/cream tokens with !important, so
+ *      the re-points here carry !important too — later source order wins.
+ *   3. Per-section color identities (the Chromia/Superlist color-mix Zach
+ *      asked for): paper hero → ink marquee → slate stats → slate/butter
+ *      audience pair → ink-vs-paper compare → BUTTER FIELD cta → PLUM process
+ *      band → 8-hue specialty grid → tinted-rule values → ink contact →
+ *      DAWN footer.
+ *   4. Motion polish on the existing (tested) reveal system — no Lenis, no
+ *      engine port; the V3 never-invisible + reduced-motion contracts hold.
+ * ════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────── 1 · GT America ─────────────────────────────── */
+
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Regular-Trial.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Medium-Trial.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Bold-Trial.otf') format('opentype');
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Black-Trial.otf') format('opentype');
+  font-weight: 800 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Black-Italic-Trial.otf') format('opentype');
+  font-weight: 800 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GT America Mono';
+  src: url('/fonts/gt-america/GT-America-Mono-Regular-Trial.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GT America Mono';
+  src: url('/fonts/gt-america/GT-America-Mono-Medium-Trial.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GT America Mono';
+  src: url('/fonts/gt-america/GT-America-Mono-Bold-Trial.otf') format('opentype');
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+/* Metric-tuned local fallback so swap doesn't shift layout (CLS guard). */
+@font-face {
+  font-family: 'GT America Fallback';
+  src: local('Arial');
+  size-adjust: 99.5%;
+  ascent-override: 97%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+
+/* ──────────────────── 2 · Token re-point (V4.1 polychrome) ──────────────── */
+
+:root {
+  /* V4.1 palette handles — new names, marketing-only (hub never loads this) */
+  --sky: #45B0DC;        --sky-deep: #2E8BC0;
+  --coral: #FF6B4A;      --coral-deep: #E04E2E;
+  --violet: #8B7CF6;     --violet-deep: #6C5CE0;
+  --mint: #3FC993;       --mint-deep: #2EA878;
+  --butter: #FFC94A;     --butter-deep: #F0B021;
+  --rose: #FF87A6;       --rose-deep: #E25C7E;
+  --dawn-1: #9FD4EC;     --dawn-2: #5FB8E0;
+  --paper: #F6F1EA;      --paper-bright: #FBF8F1;
+  --slate-900: #15242F;  --slate-800: #182A38;
+  --plum-900: #211731;   --plum-800: #2B1E3E;
+  --field-butter: #FFD978;
+  --tint-sky: #BFE3F2;   --tint-sand: #F5DFA8;  --tint-sage: #BFE3CC;
+  --tint-rose: #FFD3DE;  --tint-violet: #DDD6FB; --tint-coral: #FFD8CB;
+
+  /* Surfaces */
+  --cream: var(--paper) !important;
+  --cream-soft: var(--paper-bright);
+  --cream-warm: #F1EADF;
+  --bone: #F2EDE3;
+
+  /* Ink — V4 deep navy-ink replaces the plum-black */
+  --ink: #0C1C30;
+  --ink-soft: rgba(12, 28, 48, 0.68);
+  --ink-mute: rgba(12, 28, 48, 0.46);
+  --ink-emphasis: var(--sky-deep);
+
+  /* Pop accents → the V4.1 family (these were Magenta-Noir !important) */
+  --pop-coral: var(--coral) !important;
+  --pop-rose: var(--rose) !important;
+  --pop-butter: var(--butter) !important;
+  --pop-mint: var(--mint) !important;
+  --pop-sky: var(--sky) !important;
+  --pop-lilac: var(--violet) !important;
+  --pop-magenta: var(--violet-deep) !important;
+
+  /* Soft tints → V4 sticker tints */
+  --soft-coral: var(--tint-coral) !important;
+  --soft-rose: var(--tint-rose) !important;
+  --soft-butter: var(--tint-sand) !important;
+  --soft-mint: var(--tint-sage) !important;
+  --soft-sky: var(--tint-sky) !important;
+  --soft-lilac: var(--tint-violet) !important;
+
+  /* Magenta-Noir named tokens — components reference these directly */
+  --mn-magenta: var(--coral);
+  --mn-black: var(--ink);
+  --mn-butter: var(--butter);
+  --mn-rose: var(--rose);
+  --mn-cyan: var(--mint);   /* confirmation role → mint-✓ (V4.1) */
+  --mn-cream: var(--paper);
+
+  /* Lines, shadows, dots — re-keyed to the new ink */
+  --rule: rgba(12, 28, 48, 0.12);
+  --rule-strong: rgba(12, 28, 48, 0.22);
+  --shadow-pill: 0 6px 30px rgba(12, 28, 48, 0.18);
+  --shadow-card: 0 8px 32px rgba(12, 28, 48, 0.07);
+  --shadow-lift: 0 12px 40px rgba(12, 28, 48, 0.10);
+  --dot-color: rgba(12, 28, 48, 0.09);
+
+  /* Emphasis hooks (link hover, ::selection) */
+  --ink-aubergine: var(--sky-deep);
+  --ink-teal: var(--sky-deep);
+
+  /* Type — GT America replaces Battlefin/Fraunces/Inter/JetBrains */
+  --font-display: 'GT America', 'GT America Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-display-italic: 'GT America', 'GT America Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'GT America', 'GT America Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'GT America Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* ─────────────────────── 3 · Global type craft ──────────────────────────── */
+
+/* GT America Black wants tighter tracking at display sizes than Battlefin. */
+h1, .h1, h2, .h2 { letter-spacing: -0.035em; }
+
+/* Eyebrows + labels go GT Mono — the V4.1 signature. */
+.eyebrow, .label {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 11.5px;
+  letter-spacing: 0.13em;
+}
+
+/* Pills read cleaner in Medium than synthetic-bold. */
+.pill { font-weight: 500; letter-spacing: 0.01em; }
+
+/* ───────────────────────── 4 · Chrome (nav / cloak) ─────────────────────── */
+
+.topnav { font-weight: 500; }
+.topnav__cta { font-weight: 500; }
+
+/* ───────────────────────────── 5 · Hero ─────────────────────────────────── */
+
+.hero__headline {
+  font-size: clamp(58px, 9.5vw, 144px);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+}
+
+/* Per-word color rotator — every word arrives in its own accent (V4.1).
+ * V3 markup order: Personal, Curated, Thoughtful, Human (+ sizer last). */
+.hero__rotator { color: var(--sky); }
+.hero__rotator-word:nth-of-type(1) { color: var(--sky); }
+.hero__rotator-word:nth-of-type(2) { color: var(--coral); }
+.hero__rotator-word:nth-of-type(3) { color: var(--violet); }
+.hero__rotator-word:nth-of-type(4) { color: var(--mint); }
+
+/* Calmer, V4-hued ambient blobs (slower drift, lower opacity). */
+.hero__blob--coral  { background: var(--coral);  opacity: 0.16; animation-duration: 16s; }
+.hero__blob--butter { background: var(--butter); opacity: 0.26; animation-duration: 18s; }
+.hero__blob--lilac  { background: var(--violet); opacity: 0.18; animation-duration: 21s; }
+
+/* ──────────────────────────── 6 · Marquee ───────────────────────────────── */
+
+/* Ink band; the stats band below it is slate — one continuous dark passage
+ * with an internal temperature shift. */
+.marquee-section.section--ink { background: var(--ink) !important; }
+.marquee-section .marquee__item { color: var(--paper) !important; font-weight: 900; }
+/* Separator dots alternate the complementary pair (sky ↔ coral) — one accent
+ * family per moment, not confetti (Zach color-theory correction 2026-06-12). */
+.marquee-section .marquee__item:nth-child(2n+1) .marquee__dot { color: var(--sky) !important; }
+.marquee-section .marquee__item:nth-child(2n) .marquee__dot { color: var(--coral) !important; }
+/* Let the reader hold a name still. */
+.marquee:hover .marquee__track { animation-play-state: paused; }
+
+/* ─────────────────── 7 · Stats band (4-color numerals) ──────────────────── */
+
+.section--ink { background: linear-gradient(165deg, var(--slate-900), var(--slate-800)); }
+.section--ink .statchip__num--coral  { color: var(--sky) !important; }
+.section--ink .statchip__num--butter { color: var(--coral) !important; }
+.section--ink .statchip__num--mint   { color: var(--mint) !important; }
+.section--ink .statchip__num--lilac  { color: var(--violet) !important; }
+.statchip__num { letter-spacing: -0.04em; }
+.statchip__label { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.12em; }
+
+/* Numeral pop: when the reveal-group fires, each numeral lands with a soft
+ * spring (composes with the chip's own reveal translate — num scales only). */
+html.js .reveal-group.is-revealed > .statchip .statchip__num {
+  animation: v5NumPop 640ms var(--ease-spring) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger-step, 80ms) + 120ms);
+  transform-origin: 50% 100%;
+}
+@keyframes v5NumPop {
+  from { scale: 0.94; }
+  to   { scale: 1; }
+}
+@media (prefers-reduced-motion: reduce), print {
+  html.js .reveal-group.is-revealed > .statchip .statchip__num { animation: none; }
+}
+
+/* ─────────────── 8 · Audience pair: slate card × butter field ───────────── */
+
+.audience-mix-section .section-anchor__heading .em { color: var(--coral-deep); }
+
+.aud-mix__card--fac {
+  background: linear-gradient(165deg, var(--slate-900), var(--slate-800));
+  color: var(--paper);
+}
+.aud-mix__card--fac .aud-mix__title { color: var(--paper); }
+.aud-mix__card--fac .aud-mix__title span { color: var(--sky); }
+.aud-mix__card--fac .aud-mix__body { color: rgba(246, 241, 234, 0.82); }
+.aud-mix__card--fac .aud-mix__chip { background: var(--paper); color: var(--ink); }
+.aud-mix__card--fac .aud-mix__roles { background: rgba(246, 241, 234, 0.08); }
+.aud-mix__card--fac .aud-mix__roles-label { color: var(--paper); opacity: 0.75; }
+.aud-mix__card--fac .pill--swing { background: var(--paper); color: var(--ink); }
+.aud-mix__card--fac .pill--swing .pill__puck { background: var(--coral); color: var(--paper); }
+
+.aud-mix__card--cli {
+  background: linear-gradient(170deg, var(--field-butter), var(--butter));
+}
+.aud-mix__card--cli .aud-mix__title span { color: var(--coral-deep); }
+.aud-mix__card--cli .aud-mix__roles { background: rgba(12, 28, 48, 0.07); }
+.aud-mix__card--cli .role-card__dot { background: var(--coral); }
+/* Keep the butter card's CTA in the warm family (kit puck was --pop-magenta,
+ * which is violet in V5 — banned next to butter). */
+.aud-mix__card--cli .pill--swing--magenta .pill__puck { background: var(--coral); color: var(--paper); }
+
+/* ───────────────── 9 · Compare: rose-✕ vs ink card mint-✓ ───────────────── */
+
+.compare .section-anchor__heading .em { color: var(--sky-deep); }
+.compare__col--old { background: var(--paper-bright); }
+.compare__mark--x { background: var(--tint-rose); color: var(--rose-deep); }
+.compare__col--ims { background: linear-gradient(165deg, var(--ink), #11253D); }
+
+/* ───────────────── 10 · CTA band: the coral color-field ─────────────────── *
+ * Redesigned per Zach (2026-06-12): butter field + violet em was a yellow ×
+ * purple clash. New: ONE warm family — saturated coral field, ink type, the
+ * emphasis word knocked out to paper, paper note-cards, ink pill. The dot
+ * grid carries through so the field still feels like the same site. */
+.cta-band.section--butter {
+  background:
+    radial-gradient(rgba(12, 28, 48, 0.10) 1px, transparent 1px),
+    linear-gradient(168deg, #FF7B58, #EF512D) !important;
+  background-size: 22px 22px, auto;
+}
+.cta-band__inner { padding: var(--space-9) 0; }
+.cta-band__headline { color: var(--ink) !important; }
+.cta-band__headline .em { color: var(--paper-bright) !important; }
+.cta-band__sub { color: rgba(12, 28, 48, 0.78) !important; }
+.cta-band .eyebrow { color: rgba(12, 28, 48, 0.66); }
+/* Floating proof notes: paper cards with deep-coral eyebrows (ink pills stay). */
+.cta-band .cta-pop__card { background: var(--paper-bright); color: var(--ink); box-shadow: 0 14px 34px rgba(140, 38, 12, 0.30); }
+.cta-band .cta-pop__card-eyebrow { color: var(--coral-deep); }
+/* Calmer drift — notes breathe, they don't bounce. */
+.cta-band .cta-pop { --cta-pop-y: -5px; --cta-pop-x: 2px; }
+/* The pill puck flips to paper so the arrow stays legible on the ink pill. */
+.cta-band .pill--swing--magenta .pill__puck { background: var(--paper-bright); color: var(--ink); }
+
+/* ─────────────────── 11 · Process: the plum band (2nd dark) ─────────────── */
+
+.process-section.section--lilac {
+  background: linear-gradient(165deg, var(--plum-900), var(--plum-800)) !important;
+}
+.process-section .section-anchor { border-bottom-color: rgba(246, 241, 234, 0.22); }
+.process-section .section-anchor__heading { color: var(--paper); }
+/* Rose accents on plum — analogous family, never yellow-on-purple. */
+.process-section .section-anchor__heading .em,
+.process-section .section-anchor__heading span { color: var(--rose) !important; }
+.process-section .section-anchor__sub { color: rgba(246, 241, 234, 0.75); }
+.process-section .eyebrow { color: rgba(246, 241, 234, 0.62); }
+.process-section .eyebrow__dot { background: var(--rose) !important; }
+.process-section .proc-card { box-shadow: 0 24px 60px rgba(12, 10, 20, 0.35); }
+
+/* ───────── 12 · Specialty grid: specialty-coded colors (system-wide) ────── *
+ * Each SPECIALTY owns a hue, and the SAME map drives the homepage grid, the
+ * /jobs board card tints, and the /jobs/[slug] hero tone (Zach 2026-06-12):
+ *   anesthesia/radiology→coral · ob-gyn→rose · urology/psychiatry→butter ·
+ *   emergency→mint · internal medicine→sky · surgery→violet.
+ * Card backgrounds resolve via the re-pointed --soft-* tokens; here we key
+ * the index numeral + live dot to each specialty's DEEP hue. */
+
+.spec-section .section-anchor__heading .em { color: var(--coral-deep); }
+
+.spec-card--coral  .spec-card__number { color: var(--coral-deep); }
+.spec-card--coral  .spec-card__dot    { background: var(--coral-deep); }
+.spec-card--rose   .spec-card__number { color: var(--rose-deep); }
+.spec-card--rose   .spec-card__dot    { background: var(--rose-deep); }
+.spec-card--butter .spec-card__number { color: var(--butter-deep); }
+.spec-card--butter .spec-card__dot    { background: var(--butter-deep); }
+.spec-card--mint   .spec-card__number { color: var(--mint-deep); }
+.spec-card--mint   .spec-card__dot    { background: var(--mint-deep); }
+.spec-card--sky    .spec-card__number { color: var(--sky-deep); }
+.spec-card--sky    .spec-card__dot    { background: var(--sky-deep); }
+.spec-card--lilac  .spec-card__number { color: var(--violet-deep); }
+.spec-card--lilac  .spec-card__dot    { background: var(--violet-deep); }
+
+/* Hover affordance: hue-tinted lift + an arrow that slides in. */
+.spec-card { isolation: isolate; }
+.spec-card::after {
+  content: '→' / '';
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 260ms var(--ease-out), transform 260ms var(--ease-snap);
+}
+@media (hover: hover) and (pointer: fine) {
+  .spec-card:hover::after { opacity: 1; transform: translateX(0); }
+  .spec-card--coral:hover  { box-shadow: 0 18px 44px rgba(255, 107, 74, 0.30); }
+  .spec-card--rose:hover   { box-shadow: 0 18px 44px rgba(255, 135, 166, 0.32); }
+  .spec-card--butter:hover { box-shadow: 0 18px 44px rgba(240, 176, 33, 0.28); }
+  .spec-card--mint:hover   { box-shadow: 0 18px 44px rgba(63, 201, 147, 0.30); }
+  .spec-card--sky:hover    { box-shadow: 0 18px 44px rgba(69, 176, 220, 0.30); }
+  .spec-card--lilac:hover  { box-shadow: 0 18px 44px rgba(139, 124, 246, 0.30); }
+}
+
+/* ────────────── 13 · Values: tinted rules + ghost numerals ──────────────── */
+
+.values-section .section-anchor__heading .em { color: var(--coral-deep); }
+.value-card { border-top-width: 6px; position: relative; overflow: hidden; }
+/* palette-active rerouted the mint rule to rose; restore the true mint so the
+ * rule matches the card's ghost numeral. */
+.value-card--mint { border-top-color: var(--mint) !important; }
+.value-card::after {
+  position: absolute;
+  right: 16px;
+  bottom: -14px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 104px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  pointer-events: none;
+}
+.values > .value-card:nth-child(1)::after { content: '01' / ''; color: rgba(255, 107, 74, 0.16); }
+.values > .value-card:nth-child(2)::after { content: '02' / ''; color: rgba(240, 176, 33, 0.20); }
+.values > .value-card:nth-child(3)::after { content: '03' / ''; color: rgba(63, 201, 147, 0.18); }
+
+/* ──────────────────── 14 · Footer: the dawn field ───────────────────────── */
+
+.footer-b {
+  background:
+    radial-gradient(rgba(12, 28, 48, 0.10) 1px, transparent 1px),
+    linear-gradient(160deg, var(--dawn-1), var(--dawn-2) 70%, var(--sky)) !important;
+  background-size: 22px 22px, auto;
+  color: var(--ink);
+}
+.footer-b__signoff { color: var(--ink); }
+/* Accent word: butter marker-highlight instead of a low-contrast hue flip. */
+.footer-b__signoff span {
+  color: var(--ink) !important;
+  background: linear-gradient(transparent 64%, var(--butter) 64%, var(--butter) 94%, transparent 94%);
+}
+.footer-b__eyebrow { color: rgba(12, 28, 48, 0.65); }
+.footer-b__eyebrow .eyebrow__dot { background: var(--ink); }
+.footer-b__nl .input {
+  background: var(--paper-bright);
+  color: var(--ink);
+  border: 1px solid rgba(12, 28, 48, 0.20);
+}
+.footer-b__nl .input::placeholder { color: var(--ink-mute); }
+.footer-b__nl .input:focus { border-color: var(--ink); background: var(--paper-bright); }
+.footer-b__col .label { color: var(--ink); }
+.footer-b__col a { color: rgba(12, 28, 48, 0.74); }
+.footer-b__col a:hover { color: var(--ink); }
+.footer-b__bottom { border-top-color: rgba(12, 28, 48, 0.22); }
+.footer-b__bottom small { color: rgba(12, 28, 48, 0.62); }
+.footer-b__socials a { background: var(--ink); color: var(--paper); }
+.footer-b__socials a:hover { background: var(--coral); }
+.footer-b__blob--coral { background: var(--paper-bright); opacity: 0.35; }
+.footer-b__blob--butter { background: var(--butter); opacity: 0.30; }
+
+/* ───────────── 15 · Catch-all restoration (true polychrome) ─────────────── *
+ * palette-active re-routes inline pop-mint/lilac/sky fills to Magenta-Noir
+ * stand-ins (mint was literally BLACK there). The V4.1 tokens are real colors
+ * again — restore author intent. */
+[style*="background: var(--pop-mint)"],
+[style*="background:var(--pop-mint)"]   { background: var(--mint) !important; }
+[style*="background: var(--pop-lilac)"],
+[style*="background:var(--pop-lilac)"]  { background: var(--violet) !important; }
+[style*="background: var(--pop-sky)"],
+[style*="background:var(--pop-sky)"]    { background: var(--sky) !important; }
+
+/* ──────────────── 15b · Inner-page fixes (recon-driven) ─────────────────── */
+
+/* /how-it-works step numerals: two-hue alternation on the complementary
+ * spine (sky ↔ coral) instead of flat grey — restrained, not confetti. */
+.hw-process .steps .step:nth-child(odd) .num  { color: var(--sky-deep); }
+.hw-process .steps .step:nth-child(even) .num { color: var(--coral-deep); }
+
+/* /about stat numerals: palette-active routed mint→magenta and lilac→rose
+ * (both weak on paper). Deep hues read properly and stay polychrome. */
+.au__stat-num--mint  { color: var(--mint-deep) !important; }
+.au__stat-num--lilac { color: var(--violet-deep) !important; }
+
+/* Homepage contact panel glows: complementary coral × sky on ink — no purple
+ * sharing a frame with the butter info labels (yellow-purple ban). */
+.contact-b__glow--magenta { background: var(--coral); }
+.contact-b__glow--rose { background: var(--sky-deep); }
+.contact-b .pill--swing--magenta .pill__puck { background: var(--coral); color: var(--paper); }
+/* Form accents join the warm family (token default was violet — clashes with
+ * the panel's butter labels). */
+.contact-b__form-tag { color: var(--coral-deep) !important; }
+.contact-b__form .input:focus {
+  border-color: var(--coral);
+  outline: 2px solid color-mix(in srgb, var(--coral) 30%, transparent);
+}
+
+/* Calendar caption ties to the mint "first shift" mark instead of violet
+ * (the step-03 card already carries a coral badge — two hues max per card). */
+.cal-mock__caption { color: var(--mint-deep); }
+
+/* /jobs board: the specialty dot wears the specialty's DEEP hue — the same
+ * specialty→color map as the homepage grid and the detail-page hero, so the
+ * coding reads as a system. Hover shadows match each card's hue. */
+.jb-b__card--coral  .jb-b__card-spec::before { background: var(--coral-deep); }
+.jb-b__card--rose   .jb-b__card-spec::before { background: var(--rose-deep); }
+.jb-b__card--butter .jb-b__card-spec::before { background: var(--butter-deep); }
+.jb-b__card--mint   .jb-b__card-spec::before { background: var(--mint-deep); }
+.jb-b__card--sky    .jb-b__card-spec::before { background: var(--sky-deep); }
+.jb-b__card--lilac  .jb-b__card-spec::before { background: var(--violet-deep); }
+@media (hover: hover) and (pointer: fine) {
+  .jb-b__card--coral:hover  { box-shadow: 0 20px 48px rgba(255, 107, 74, 0.26); }
+  .jb-b__card--rose:hover   { box-shadow: 0 20px 48px rgba(255, 135, 166, 0.28); }
+  .jb-b__card--butter:hover { box-shadow: 0 20px 48px rgba(240, 176, 33, 0.24); }
+  .jb-b__card--mint:hover   { box-shadow: 0 20px 48px rgba(63, 201, 147, 0.26); }
+  .jb-b__card--sky:hover    { box-shadow: 0 20px 48px rgba(69, 176, 220, 0.26); }
+  .jb-b__card--lilac:hover  { box-shadow: 0 20px 48px rgba(139, 124, 246, 0.26); }
+}
+
+/* ────────────────────── 16 · Motion polish (global) ─────────────────────── */
+
+/* Card hovers get a touch more travel; press stays as-is. */
+@media (hover: hover) and (pointer: fine) {
+  .value-card:hover { transform: translateY(-4px); }
+}

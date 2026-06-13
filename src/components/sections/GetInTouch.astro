@@ -148,7 +148,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
     <!-- SUCCESS STATE -->
     <div class="gt-thanks" id="gtThanks" class:list={['gt-thanks', { 'is-active': sent }]} role="status" aria-live="polite" tabindex="-1">
       <div class="gt-thanks__check" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#FBF6EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0C1C30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
       </div>
       <div class="gt-thanks__eyebrow">Message received</div>
       <h2 class="gt-thanks__title">Thank you for <em>reaching out</em>.</h2>
@@ -171,7 +171,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
      it only applies where .gt-page renders (/contact), leaving the cream site
      untouched. */
   :global(body:has(.gt-page)) {
-    background: #0A0A0F;
+    background: #0C1C30;
   }
   /* Continuous full-viewport glow: a position:fixed pseudo behind all content
      (z-index:-1) so the dark gradient spans the ENTIRE page — form AND footer —
@@ -184,18 +184,19 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
     z-index: -1;
     pointer-events: none;
     background:
-      radial-gradient(1100px 820px at 88% 2%, rgba(196, 69, 105, 0.40), transparent 62%),
-      radial-gradient(960px 720px at -6% 98%, rgba(216, 139, 159, 0.26), transparent 62%);
+      radial-gradient(1100px 820px at 88% 2%, rgba(255, 107, 74, 0.34), transparent 62%),
+      radial-gradient(960px 720px at -6% 98%, rgba(69, 176, 220, 0.24), transparent 62%);
   }
 
   .gt-page {
-    --magenta: #C44569;   /* primary accent */
-    --butter:  #E8C465;   /* eyebrow / labels */
-    --rose:    #D88B9F;   /* secondary glow + confetti */
-    --cyan:    #59BFE7;   /* confetti only */
-    --black:   #0A0A0F;   /* page ground */
-    --ink:     #1F1A23;   /* checked segment, puck */
-    --cream:   #FBF6EE;   /* text on dark, form card */
+    --magenta: #FF6B4A;   /* primary accent (V5: coral) */
+    --butter:  #FFC94A;   /* eyebrow / labels */
+    --rose:    #FF87A6;   /* secondary glow + confetti */
+    --cyan:    #45B0DC;   /* confetti only */
+    --mint:    #3FC993;   /* confirmation / success check */
+    --black:   #0C1C30;   /* page ground */
+    --ink:     #0C1C30;   /* checked segment, puck */
+    --cream:   #FBF8F1;   /* text on dark, form card */
     --hair-dark:  rgba(251, 246, 238, 0.12);
     --hair-cream: #E7DFD3;
 
@@ -300,7 +301,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
   .gt-field textarea { min-height: 112px; resize: vertical; }
   .gt-field input:focus, .gt-field textarea:focus {
     outline: none; border-color: var(--magenta);
-    box-shadow: 0 0 0 3px rgba(196, 69, 105, 0.26);
+    box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.26);
   }
   .gt-field input::placeholder, .gt-field textarea::placeholder { color: #b3a99d; }
 
@@ -319,7 +320,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
     color: var(--ink); background: #fff; cursor: pointer; transition: all 0.15s;
   }
   .gt-seg__opt input:checked + .gt-seg__btn { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-  .gt-seg__opt input:focus-visible + .gt-seg__btn { box-shadow: 0 0 0 3px rgba(196, 69, 105, 0.3); }
+  .gt-seg__opt input:focus-visible + .gt-seg__btn { box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.3); }
 
   /* Submit */
   .gt-submit {
@@ -336,7 +337,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
 
   /* Hover-alive: gated to true pointer devices to avoid stuck-hover on touch. */
   @media (hover: hover) and (pointer: fine) {
-    .gt-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(196,69,105,0.45); }
+    .gt-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(255,107,74,0.45); }
     .gt-submit:active { transform: scale(0.98); transition-duration: 110ms; }
     .gt-submit:hover .gt-submit__puck { transform: translateX(3px); }
     .gt-seg__opt:active .gt-seg__btn { transform: scale(0.97); }
@@ -357,9 +358,9 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
     margin: 0;
     padding: 12px 14px;
     border-radius: 12px;
-    background: rgba(196, 69, 105, 0.10);
-    border: 1px solid rgba(196, 69, 105, 0.35);
-    color: #8f2f48;
+    background: rgba(224, 78, 46, 0.10);
+    border: 1px solid rgba(224, 78, 46, 0.35);
+    color: #A33417;
     font-family: var(--font-body);
     font-size: 14px;
     line-height: 1.45;
@@ -374,9 +375,9 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
   .gt-thanks:focus { outline: none; }
   .gt-thanks.is-active { display: block; }
   .gt-thanks__check {
-    width: 96px; height: 96px; border-radius: 50%; background: var(--magenta);
+    width: 96px; height: 96px; border-radius: 50%; background: var(--mint);
     display: grid; place-items: center; margin: 0 auto 32px;
-    box-shadow: 0 18px 50px rgba(196, 69, 105, 0.5);
+    box-shadow: 0 18px 50px rgba(63, 201, 147, 0.45);
   }
   .gt-thanks__check svg { width: 48px; height: 48px; }
   .gt-thanks__eyebrow {
@@ -569,7 +570,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
     };
     window.addEventListener('resize', onResize);
 
-    const colors = ['#C44569', '#E8C465', '#D88B9F', '#59BFE7', '#F4ECDF'];
+    const colors = ['#FF6B4A', '#FFC94A', '#8B7CF6', '#3FC993', '#45B0DC'];
     const N = 160;
     const pieces = Array.from({ length: N }, () => ({
       x: W / 2 + (Math.random() - 0.5) * 120,
