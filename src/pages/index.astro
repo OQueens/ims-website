@@ -149,8 +149,13 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
 
     <div class="container hero__inner hero-stage">
       <div class="eyebrow hero__eyebrow" style="--i:0"><span class="eyebrow__dot"></span>Locum tenens · est. 2022</div>
+      <!-- V5 r2 (Zach): the rotating word lives on ITS OWN line — short words
+           were leaving a visible gap beside "A More" inside the widest-word
+           sizer box. Own-line keeps the sizer (no reflow/bounce) and the gap
+           becomes invisible centered whitespace. Same words, same order. -->
       <h1 class="hero__headline" id="hero-headline" style="--i:1">
-        A More <span class="hero__rotator" aria-label={ROTATING_WORDS[0]}>
+        A More<br />
+        <span class="hero__rotator" aria-label={ROTATING_WORDS[0]}>
           {ROTATING_WORDS.map((w) => (
             <span class="hero__rotator-word" aria-hidden="true">{w}</span>
           ))}
