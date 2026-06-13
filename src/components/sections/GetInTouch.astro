@@ -184,17 +184,17 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
     z-index: -1;
     pointer-events: none;
     background:
-      radial-gradient(1100px 820px at 88% 2%, rgba(63, 163, 90, 0.30), transparent 62%),
+      radial-gradient(1100px 820px at 88% 2%, rgba(255, 135, 166, 0.30), transparent 62%),
       radial-gradient(960px 720px at -6% 98%, rgba(69, 176, 220, 0.24), transparent 62%);
   }
 
   .gt-page {
-    --magenta: #4FA77D;   /* primary accent — GHIBLI PASTEL sage. Used for the
-                             headline em + glow + focus on the DARK island
-                             (pops on ink). The submit button uses a pastel
-                             sage fill with INK text (see .gt-submit). */
+    --magenta: #F26B8E;   /* primary accent — the "Human" ROSE pink (Zach r4).
+                             Headline em + glow + focus on the DARK island.
+                             The submit button uses a pastel rose fill with INK
+                             text (see .gt-submit). */
     --butter:  #93D0EE;   /* eyebrow / labels — pastel sky (identity light voice) */
-    --rose:    #FF87A6;   /* confetti only (flower pink) */
+    --rose:    #FF87A6;   /* confetti / pastel rose */
     --cyan:    #93D0EE;   /* confetti / sky glow */
     --mint:    #3FC993;   /* confirmation / success check */
     --black:   #0C1C30;   /* page ground */
@@ -304,7 +304,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
   .gt-field textarea { min-height: 112px; resize: vertical; }
   .gt-field input:focus, .gt-field textarea:focus {
     outline: none; border-color: var(--magenta);
-    box-shadow: 0 0 0 3px rgba(79, 167, 125, 0.30);
+    box-shadow: 0 0 0 3px rgba(242, 107, 142, 0.30);
   }
   .gt-field input::placeholder, .gt-field textarea::placeholder { color: #b3a99d; }
 
@@ -323,14 +323,14 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
     color: var(--ink); background: #fff; cursor: pointer; transition: all 0.15s;
   }
   .gt-seg__opt input:checked + .gt-seg__btn { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-  .gt-seg__opt input:focus-visible + .gt-seg__btn { box-shadow: 0 0 0 3px rgba(79, 167, 125, 0.35); }
+  .gt-seg__opt input:focus-visible + .gt-seg__btn { box-shadow: 0 0 0 3px rgba(242, 107, 142, 0.35); }
 
   /* Submit */
-  /* Pastel sage button with INK text (soft + 9:1 legible). The dark puck keeps
+  /* Pastel rose button with INK text (soft + 8:1 legible). The dark puck keeps
      a cream arrow so it stays visible on the light button. */
   .gt-submit {
     grid-column: 1 / -1; display: flex; align-items: center; justify-content: center;
-    gap: 12px; background: #84CB9C; color: var(--ink); border: none;
+    gap: 12px; background: #FF87A6; color: var(--ink); border: none;
     border-radius: 999px; padding: 16px 24px; font-family: var(--font-body);
     font-weight: 700; font-size: 16px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
   }
@@ -342,7 +342,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
 
   /* Hover-alive: gated to true pointer devices to avoid stuck-hover on touch. */
   @media (hover: hover) and (pointer: fine) {
-    .gt-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(79,167,125,0.45); }
+    .gt-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(242,107,142,0.45); }
     .gt-submit:active { transform: scale(0.98); transition-duration: 110ms; }
     .gt-submit:hover .gt-submit__puck { transform: translateX(3px); }
     .gt-seg__opt:active .gt-seg__btn { transform: scale(0.97); }
@@ -575,7 +575,7 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.se
     };
     window.addEventListener('resize', onResize);
 
-    const colors = ['#93D0EE', '#84CB9C', '#FF87A6', '#FFC94A', '#3FC993'];
+    const colors = ['#93D0EE', '#FF87A6', '#8B7CF6', '#FFC94A', '#3FC993'];
     const N = 160;
     const pieces = Array.from({ length: N }, () => ({
       x: W / 2 + (Math.random() - 0.5) * 120,

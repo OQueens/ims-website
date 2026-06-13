@@ -108,15 +108,18 @@
    * each has a DEEP companion for legible text/buttons on the cream canvas.
    * Coral survives only in the 6-hue specialty-coding system. */
   --sky-soft: #93D0EE;     /* his pastel sky — pops on dark, soft fields */
-  --sage: #84CB9C;         /* his pastel green — soft CTA field, on-dark pops, tints */
-  --sage-mid: #4FA77D;     /* general green accent (rotator word, pucks, dots, rules) */
-  --sage-deep: #2F7E57;    /* sage text/emphasis on cream + white-text buttons */
-  --sage-tint: #CDEBD8;
-  /* `--grass*` names kept as aliases so the section rules below need no rewrite. */
-  --grass: var(--sage-mid);
-  --grass-deep: var(--sage-deep);
-  --grass-bright: var(--sage);
-  --grass-tint: var(--sage-tint);
+  /* ACTION ACCENT = the "Human" rotator pink (Zach 2026-06-13 r4): soft rose
+   * replaces the sage green. Sky stays identity; sky + rose = soft blue+pink.
+   * Pastel rose pops on dark + as ink-text fields/buttons; deep rose carries
+   * text on cream. (Specialty `--rose-deep` #E25C7E is left alone below.) */
+  --rose-mid: #F26B8E;     /* action pink mid — pucks, dots, rules, ink-text fills */
+  --rose-ink: #BE3E62;     /* action pink deep — emphasis on cream + white-text buttons */
+  /* `--grass*` names kept as aliases so the section rules below need no rewrite
+   * — they now resolve to ROSE, not green. */
+  --grass: var(--rose-mid);
+  --grass-deep: var(--rose-ink);
+  --grass-bright: var(--rose);   /* #FF87A6 pastel — on-dark pops + soft fields */
+  --grass-tint: var(--tint-rose);
 
   --paper: #F6F1EA;      --paper-bright: #FBF8F1;
   --slate-900: #15242F;  --slate-800: #182A38;
@@ -242,10 +245,11 @@ h1, .h1, h2, .h2 { letter-spacing: -0.035em; }
   transform: translateY(40%) rotate(-3deg);
   animation-name: v5HeroWordCycle;
 }
-/* The one sanctioned polychrome flourish — now Ghibli-keyed: sky, grass,
- * violet pop, flower-rose. Both brand colors (sky+grass) lead. */
+/* The one sanctioned polychrome flourish — 4 distinct hues: sky (identity),
+ * coral, violet, and the rose that "Human" wears (now the brand action accent).
+ * No green (Zach r4). */
 .hero__rotator-word:nth-of-type(1) { color: var(--sky); }
-.hero__rotator-word:nth-of-type(2) { color: var(--grass); }
+.hero__rotator-word:nth-of-type(2) { color: var(--coral); }
 .hero__rotator-word:nth-of-type(3) { color: var(--violet); }
 .hero__rotator-word:nth-of-type(4) { color: var(--rose); }
 @keyframes v5HeroWordCycle {
@@ -275,7 +279,7 @@ h1, .h1, h2, .h2 { letter-spacing: -0.035em; }
 /* Separator dots alternate the two brand voices — pastel sky ↔ pastel sage
  * (on the dark marquee ink they read soft and bright). */
 .marquee-section .marquee__item:nth-child(2n+1) .marquee__dot { color: var(--sky-soft) !important; }
-.marquee-section .marquee__item:nth-child(2n) .marquee__dot { color: var(--sage) !important; }
+.marquee-section .marquee__item:nth-child(2n) .marquee__dot { color: var(--rose) !important; }
 /* r2 innovation: every other name renders as OUTLINED poster type — solid /
  * stroked alternation, the Swiss-marquee move. @supports-guarded (Codex r2
  * MED fold): without text-stroke support, transparent color = invisible
@@ -295,9 +299,9 @@ h1, .h1, h2, .h2 { letter-spacing: -0.035em; }
 /* Stat numerals alternate the two brand voices — PASTEL sky / pastel sage,
  * which pop softly on the dark slate (stats are not categories). */
 .section--ink .statchip__num--coral  { color: var(--sky-soft) !important; }
-.section--ink .statchip__num--butter { color: var(--sage) !important; }
+.section--ink .statchip__num--butter { color: var(--rose) !important; }
 .section--ink .statchip__num--mint   { color: var(--sky-soft) !important; }
-.section--ink .statchip__num--lilac  { color: var(--sage) !important; }
+.section--ink .statchip__num--lilac  { color: var(--rose) !important; }
 /* r2 innovation: poster-scale numerals — the band reads as a stat WALL. */
 .statchip__num { letter-spacing: -0.04em; font-size: clamp(60px, 7.5vw, 112px); }
 .statchip__label { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.12em; }
@@ -368,20 +372,20 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 @media (hover: hover) and (pointer: fine) {
   .compare__col--ims:hover {
     box-shadow: 0 22px 60px rgba(12, 28, 48, 0.34),
-                0 0 0 1px rgba(63, 163, 90, 0.45),
-                0 0 60px -10px rgba(63, 163, 90, 0.35);
+                0 0 0 1px rgba(255, 135, 166, 0.5),
+                0 0 60px -10px rgba(255, 135, 166, 0.4);
   }
 }
 
-/* ───────────────── 10 · CTA band: the SOFT SAGE meadow field ────────────── *
- * Ghibli pastel pivot (Zach 2026-06-13 r2): a soft sage-green field. Because
- * the field is light, ALL type is ink (high contrast) and the emphasis word
- * gets a cloud-white marker-highlight instead of a white knockout (which would
- * vanish on a pastel field). The cream dot-grid carries through. */
+/* ───────────────── 10 · CTA band: the SOFT ROSE field ───────────────────── *
+ * Action accent = the "Human" pink (Zach r4). Soft rose field; because it's a
+ * light field, ALL type is ink and the emphasis word gets a cloud-white
+ * marker-highlight (a white knockout would vanish on a light field). The cream
+ * dot-grid carries through. */
 .cta-band.section--butter {
   background:
     radial-gradient(rgba(12, 28, 48, 0.10) 1px, transparent 1px),
-    linear-gradient(168deg, #8BD0A6, #5FB386) !important;
+    linear-gradient(168deg, #FFA7BD, #F47C9B) !important;
   background-size: 22px 22px, auto;
 }
 .cta-band__inner { padding: var(--space-9) 0; }
@@ -395,7 +399,7 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 .cta-band .eyebrow { color: rgba(12, 28, 48, 0.72); }
 /* Floating proof notes: paper cards with deep-sage eyebrows (ink pills stay). */
 .cta-band .cta-pop__card { background: var(--paper-bright); color: var(--ink); box-shadow: 0 14px 34px rgba(18, 64, 32, 0.26); }
-.cta-band .cta-pop__card-eyebrow { color: var(--sage-deep); }
+.cta-band .cta-pop__card-eyebrow { color: var(--rose-ink); }
 /* Calmer drift — notes breathe, they don't bounce. */
 .cta-band .cta-pop { --cta-pop-y: -5px; --cta-pop-x: 2px; }
 /* The pill puck flips to paper so the arrow stays legible on the ink pill. */

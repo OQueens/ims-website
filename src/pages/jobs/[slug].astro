@@ -465,7 +465,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
     font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
     text-transform: uppercase; font-weight: 700; color: var(--ink);
   }
-  .jd-hero__spec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grass-deep, #2C7A45); }
+  .jd-hero__spec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grass-deep, #BE3E62); }
   .jd-hero__badge {
     display: inline-flex; align-items: center; border-radius: 999px;
     background: var(--ink); color: var(--cream-soft);
@@ -508,7 +508,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
 
   .jd-highlights { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
   .jd-highlights__item { display: flex; gap: 14px; font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--ink); }
-  .jd-highlights__arrow { color: var(--grass-deep, #2C7A45); font-weight: 700; flex-shrink: 0; }
+  .jd-highlights__arrow { color: var(--grass-deep, #BE3E62); font-weight: 700; flex-shrink: 0; }
 
   .jd-facility { margin: 0; display: flex; flex-direction: column; }
   .jd-facility__row { display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: baseline; padding: 13px 0; border-bottom: 1px solid var(--rule); }
@@ -526,12 +526,12 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4);
   }
   .jd-apply__glow { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; }
-  .jd-apply__glow--a { width: 260px; height: 260px; background: rgba(132, 203, 156, 0.34); top: -110px; right: -80px; }
+  .jd-apply__glow--a { width: 260px; height: 260px; background: rgba(255, 135, 166, 0.34); top: -110px; right: -80px; }
   .jd-apply__glow--b { width: 220px; height: 220px; background: rgba(69, 176, 220, 0.24); bottom: -120px; left: -90px; }
   .jd-apply__eyebrow { position: relative; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: #93D0EE; margin-bottom: 14px; }
   .jd-apply__dot { width: 8px; height: 8px; border-radius: 50%; background: #93D0EE; }
   .jd-apply__title { position: relative; font-family: var(--font-display); font-weight: 900; font-size: clamp(26px, 3vw, 34px); line-height: 1.04; letter-spacing: -0.03em; color: var(--cream-soft); margin: 0 0 10px; }
-  .jd-apply__title em { font-style: normal; color: #84CB9C; }
+  .jd-apply__title em { font-style: normal; color: #FF87A6; }
   .jd-apply__sub { position: relative; font-family: var(--font-body); font-size: 14px; line-height: 1.55; color: rgba(251, 246, 238, 0.72); margin: 0 0 18px; }
   .jd-apply__chip { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid rgba(251, 246, 238, 0.14); border-radius: 12px; padding: 11px 14px; margin-bottom: 18px; }
   .jd-apply__chip-role { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; color: rgba(251, 246, 238, 0.82); }
@@ -549,7 +549,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
   }
   .jd-field textarea { min-height: 96px; resize: vertical; }
   .jd-field input::placeholder, .jd-field textarea::placeholder { color: rgba(251, 246, 238, 0.4); }
-  .jd-field input:focus, .jd-field textarea:focus { outline: none; border-color: #4FA77D; box-shadow: 0 0 0 3px rgba(79, 167, 125, 0.28); }
+  .jd-field input:focus, .jd-field textarea:focus { outline: none; border-color: #F26B8E; box-shadow: 0 0 0 3px rgba(242, 107, 142, 0.28); }
 
   .jd-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
@@ -558,14 +558,14 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
 
   .jd-submit {
     display: flex; align-items: center; justify-content: center; gap: 12px;
-    background: #84CB9C; color: #0C1C30; border: none; border-radius: 999px;
+    background: #FF87A6; color: #0C1C30; border: none; border-radius: 999px;
     padding: 15px 22px; font-family: var(--font-body); font-weight: 700; font-size: 15px;
     cursor: pointer; margin-top: 4px; transition: transform 0.15s, box-shadow 0.15s;
   }
   .jd-submit:focus-visible { outline: 3px solid var(--cream-soft); outline-offset: 3px; }
   .jd-submit__puck { width: 26px; height: 26px; border-radius: 50%; background: #0C1C30; color: var(--cream-soft); display: grid; place-items: center; font-size: 13px; transition: transform 0.15s; }
   @media (hover: hover) and (pointer: fine) {
-    .jd-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(79, 167, 125, 0.4); }
+    .jd-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(242, 107, 142, 0.4); }
     .jd-submit:active { transform: scale(0.98); transition-duration: 110ms; }
     .jd-submit:hover .jd-submit__puck { transform: translateX(3px); }
   }
@@ -597,7 +597,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
 
   /* ── 404 ── */
   .jd-404 { text-align: center; padding: var(--space-9) 0; max-width: 560px; margin: 0 auto; }
-  .jd-404__eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; font-weight: 700; color: var(--grass-deep, #2C7A45); }
+  .jd-404__eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; font-weight: 700; color: var(--grass-deep, #BE3E62); }
   .jd-404__title { font-family: var(--font-display); font-weight: 900; font-size: clamp(34px, 5vw, 56px); line-height: 1.02; letter-spacing: -0.03em; color: var(--ink); margin: 14px 0 16px; }
   .jd-404__body { font-family: var(--font-body); font-size: 17px; line-height: 1.6; color: var(--ink-soft); margin: 0 0 28px; }
 </style>
@@ -696,7 +696,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
     let H = (c.height = window.innerHeight);
     const onResize = () => { W = c.width = window.innerWidth; H = c.height = window.innerHeight; };
     window.addEventListener('resize', onResize);
-    const colors = ['#93D0EE', '#84CB9C', '#FF87A6', '#FFC94A', '#3FC993'];
+    const colors = ['#93D0EE', '#FF87A6', '#8B7CF6', '#FFC94A', '#3FC993'];
     const pieces = Array.from({ length: 160 }, () => ({
       x: W / 2 + (Math.random() - 0.5) * 120,
       y: H / 2 + (Math.random() - 0.5) * 40,
