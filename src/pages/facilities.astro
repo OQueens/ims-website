@@ -28,7 +28,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           <div class="fb__roster reveal-group">
             <div class="fb__roster-label">Available this week · roster snapshot</div>
             <div class="fb__roster-item reveal" style="--i:0">
-              <div class="fb__roster-avatar" style="background: var(--pop-coral);">JM</div>
+              <div class="fb__roster-avatar" style="background: var(--grass);">JM</div>
               <div class="fb__roster-info">
                 <b>Dr. Jordan M.</b>
                 <small>Anesthesia · 10y · TX</small>
@@ -71,17 +71,17 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
       <div class="marquee">
         <div class="marquee__track">
           <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-mint);">✦</span>One account lead</span>
-          <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-coral);">✦</span>Three real candidates</span>
+          <span class="marquee__item"><span class="marquee__dot" style="color: var(--grass);">✦</span>Three real candidates</span>
           <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-butter);">✦</span>Credentialing under 60 days</span>
           <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-lilac);">✦</span>Malpractice covered</span>
           <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-mint);">✦</span>Emergency credentialing available</span>
-          <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-coral);">✦</span>Response within one business day</span>
+          <span class="marquee__item"><span class="marquee__dot" style="color: var(--grass);">✦</span>Response within one business day</span>
           <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-mint);">✦</span>One account lead</span>
-          <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-coral);">✦</span>Three real candidates</span>
+          <span class="marquee__item"><span class="marquee__dot" style="color: var(--grass);">✦</span>Three real candidates</span>
           <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-butter);">✦</span>Credentialing under 60 days</span>
           <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-lilac);">✦</span>Malpractice covered</span>
           <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-mint);">✦</span>Emergency credentialing available</span>
-          <span class="marquee__item"><span class="marquee__dot" style="color: var(--pop-coral);">✦</span>Response within one business day</span>
+          <span class="marquee__item"><span class="marquee__dot" style="color: var(--grass);">✦</span>Response within one business day</span>
         </div>
       </div>
     </section>
@@ -298,7 +298,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   }
   .atmosphere--coral {
     width: 600px; height: 600px;
-    background: var(--pop-coral);
+    background: var(--grass);
     opacity: 0.12;
     top: 20vh; right: -200px;
     animation: blobFloatA 28s ease-in-out infinite;
@@ -348,7 +348,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     letter-spacing: -0.025em; color: var(--cream-soft);
     margin: 0 0 var(--space-4); max-width: 18ch;
   }
-  .wns-card__title span { color: var(--pop-coral); }
+  .wns-card__title span { color: var(--grass); }
   .wns-card__sub {
     font-family: var(--font-body); font-size: 17px; line-height: 1.55;
     color: rgba(251,246,238,0.75); margin: 0 0 var(--space-5);
@@ -380,7 +380,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   .wns-card__blob {
     position: absolute; pointer-events: none;
     width: 280px; height: 280px; border-radius: 50%;
-    background: var(--pop-coral); filter: blur(80px);
+    background: var(--grass); filter: blur(80px);
     opacity: 0.28;
     bottom: -120px; right: -80px;
   }
@@ -436,14 +436,14 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   .fa-a__quote-mark {
     font-family: var(--font-display); font-weight: 900;
     font-size: 96px; line-height: 0.6;
-    color: var(--pop-coral); margin-bottom: var(--space-3);
+    color: var(--grass); margin-bottom: var(--space-3);
   }
   .fa-a__quote-text {
     font-family: var(--font-display); font-weight: 900;
     font-size: clamp(32px, 4.5vw, 64px); line-height: 1.1;
     letter-spacing: -0.025em; margin: 0 0 var(--space-5);
   }
-  .fa-a__quote-text span { color: var(--pop-coral); }
+  .fa-a__quote-text span { color: var(--grass); }
   .fa-a__quote-attr {
     font-family: var(--font-body); font-size: 15px;
     color: rgba(251,246,238,0.7);
@@ -511,8 +511,9 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     letter-spacing: -0.035em; color: var(--ink);
     margin: var(--space-3) 0 var(--space-4);
   }
-  /* V5: deep coral on the sand hero card — warm family, never violet-on-butter. */
-  .fb__hero-title span { color: var(--coral-deep, #E04E2E); }
+  /* V5 Ghibli: facilities is the green side — grass-deep emphasis on the sand
+   * hero card (Zach 2026-06-13). */
+  .fb__hero-title span { color: var(--grass-deep, #2C7A45); }
   .fb__hero-sub {
     font-family: var(--font-body); font-size: 18px; line-height: 1.55;
     color: var(--ink); margin: 0 0 var(--space-5); max-width: 48ch;
@@ -537,7 +538,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   }
   .fb__roster-label::before {
     content: ''; width: 8px; height: 8px; border-radius: 50%;
-    background: var(--pop-coral); animation: pulse 2.8s ease-in-out infinite;
+    background: var(--grass); animation: pulse 2.8s ease-in-out infinite;
   }
   .fb__roster-item {
     display: flex; align-items: center; gap: 12px;
@@ -616,7 +617,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   .fb__pillar-list li::before {
     content: '✓';
     width: 18px; height: 18px;
-    border-radius: 50%; background: var(--pop-coral);
+    border-radius: 50%; background: var(--grass);
     color: var(--cream-soft);
     display: inline-flex; align-items: center; justify-content: center;
     font-size: 10px; font-weight: 700;
