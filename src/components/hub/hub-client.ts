@@ -15,6 +15,9 @@ import {
   type ColumnData,
   type ColumnKey,
 } from '../../lib/hub/sync-data';
+import { applyOp, type SyncOp } from '../../lib/hub/sync-ops';
+import { comparableCol, mergeAdopt } from '../../lib/hub/sync-merge';
+import { rosterEntry } from '../../lib/hub/hub-roster';
 
 const $ = <T extends Element = HTMLElement>(s: string, c: ParentNode = document): T | null => c.querySelector<T>(s);
 const $$ = <T extends Element = HTMLElement>(s: string, c: ParentNode = document): T[] => Array.from(c.querySelectorAll<T>(s));
@@ -202,7 +205,7 @@ $$('#priorities .todo__check').forEach((c) => {
 // changed column (debounced POST) + a localStorage mirror, and polls the viewed
 // week to surface teammates' edits without clobbering what you are editing.
 type Columns = Record<ColumnKey, ColumnData>;
-interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
+interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: string; }
 (function weeklySync() {
   const board = $('#sync-board');
   if (!board) return;
@@ -223,8 +226,10 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   if (islandEl?.textContent) { try { island = JSON.parse(islandEl.textContent) as SyncIsland; } catch (e) { island = null; } }
   const currentWeek = island?.weekKey ?? '';
   let viewedWeek = currentWeek;
+  const me: string = island?.me ?? '';
+  const nowS = () => Math.floor(Date.now() / 1000);
 
-  const blankCols = (): Columns => ({ recruiting: { v: 2, sections: [] }, marketing: { v: 2, sections: [] }, operations: { v: 2, sections: [] } });
+  const blankCols = (): Columns => ({ recruiting: { v: 3, sections: [] }, marketing: { v: 3, sections: [] }, operations: { v: 3, sections: [] } });
   // Ids land in data-* attributes + querySelector strings. Clean every incoming
   // id to the same [A-Za-z0-9_-] allowlist the server uses — a poll/island
   // response is never trusted raw (defense-in-depth vs a polluted DB row). html
@@ -238,12 +243,20 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
       const c = input[id];
       if (!c || !Array.isArray(c.sections)) return;
       out[id] = {
-        v: 2,
+        v: 3,
         sections: c.sections.map((s) => ({
           id: safeId(s && s.id, 's'),
           title: s && typeof s.title === 'string' ? s.title : '',
+          by: s && typeof s.by === 'string' ? s.by : undefined,
           focuses: s && Array.isArray(s.focuses)
-            ? s.focuses.map((f) => ({ id: safeId(f && f.id, 'f'), html: f && typeof f.html === 'string' ? f.html : '' }))
+            ? s.focuses.map((f) => ({
+                id: safeId(f && f.id, 'f'),
+                html: f && typeof f.html === 'string' ? f.html : '',
+                by: f && typeof f.by === 'string' ? f.by : '',
+                createdAt: f && typeof f.createdAt === 'number' ? f.createdAt : 0,
+                editedBy: f && typeof f.editedBy === 'string' ? f.editedBy : undefined,
+                editedAt: f && typeof f.editedAt === 'number' ? f.editedAt : undefined,
+              }))
             : [],
         })),
       };
@@ -258,16 +271,9 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   function ensureSection(c: ColumnData) { if (c.sections.length === 0) c.sections.push({ id: genId('s'), title: '', focuses: [] }); }
   function ensureAll() { colIds.forEach((id) => ensureSection(cols[id])); }
 
-  // Comparable shape of ONE column (drops empty untitled sections + section ids)
-  // so the live poll adopts a column only on real content change, not on cosmetic
-  // empty-section churn.
-  function comparableCol(cd: ColumnData): string {
-    return JSON.stringify(
-      cd.sections
-        .filter((s) => s.focuses.length > 0 || s.title.trim() !== '')
-        .map((s) => ({ t: s.title, f: s.focuses.map((x) => x.id + ':' + x.html) })),
-    );
-  }
+  // comparableCol + mergeAdopt are imported from sync-merge (unit-tested
+  // independently of the DOM): comparableCol gives a stable content key that
+  // includes attribution, so the poll/response adopts only on real change.
 
   // localStorage mirror (resilience if a POST fails), keyed by the viewed week.
   const lsKey = (week: string) => 'imsHubSyncV2:' + week;
@@ -280,7 +286,7 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
       colIds.forEach((id) => {
         const serverEmpty = !cols[id].sections.some((s) => s.focuses.length || s.title.trim());
         const localHas = local?.[id]?.sections?.some((s) => s.focuses.length || s.title.trim());
-        if (serverEmpty && localHas) cols[id] = { v: 2, sections: local[id].sections };
+        if (serverEmpty && localHas) cols[id] = { v: 3, sections: local[id].sections };
       });
     } catch (e) { /* ignore */ }
   }
@@ -306,51 +312,69 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
     }, 2200);
   }
 
-  // ── Persistence (per-column, debounced) ──────────────────────────────────────
-  // `redirect:'manual'` so an auth 302 is NOT followed to the login HTML (the
-  // old silent-save bug); an opaque redirect / 401 surfaces as a sign-in lapse.
-  // A column stays in `pending` (which gates the poll for THAT column only) until
-  // its save SUCCEEDS — so a failed save never clobbers the unsaved edit and never
-  // blinds the other columns. Transient errors auto-retry; a sign-in lapse holds
-  // pending until the user refreshes (the localStorage mirror survives meanwhile).
-  // A reset / week-switch bumps `epoch`, voiding any in-flight or queued write.
-  const timers: Partial<Record<ColumnKey, ReturnType<typeof setTimeout>>> = {};
-  const pending = new Set<ColumnKey>();
-  function persist(col: ColumnKey) {
+  // ── Persistence (per-op, optimistic) ─────────────────────────────────────────
+  // Each edit is a single intent op (applyOp already mutated `cols` optimistically
+  // at the call site). `sendOp` POSTs that ONE op; the server applies it
+  // atomically via the RPC and echoes the authoritative column back, which we
+  // `adopt` (mergeAdopt keeps the focus under the live caret). `redirect:'manual'`
+  // so an auth 302 is NOT followed to the login HTML (the old silent-save bug); an
+  // opaque redirect / 401 surfaces as a sign-in lapse. A reset / week-switch bumps
+  // `epoch`, voiding any in-flight or queued op so it can't clobber the new view.
+  //
+  // Per-column version monotonicity: the server stamps each column with a version;
+  // `adopt` drops a response/poll older than what we've already adopted. Per-focus
+  // sequence (latestSeqByFocus): a retry only fires if no NEWER op for that focus
+  // has since been sent — a stale retry can never resurrect superseded text.
+  const colVersion: Partial<Record<ColumnKey, number>> = {};
+  let opSeq = 0;
+  const latestSeqByFocus = new Map<string, number>();
+
+  function activeFocusId(): string | null {
+    const a = document.activeElement as HTMLElement | null;
+    return a && board!.contains(a) ? (a.dataset?.foc ?? null) : null;
+  }
+  function adopt(col: ColumnKey, incoming: ColumnData, version?: number) {
+    if (typeof version === 'number') {
+      if ((colVersion[col] ?? -1) > version) return;
+      colVersion[col] = version;
+    }
+    const shaped = shape({ [col]: incoming } as Partial<Columns>)[col];
+    if (comparableCol(shaped) === comparableCol(cols[col])) return;
+    cols[col] = mergeAdopt(cols[col], shaped, activeFocusId());
+    ensureSection(cols[col]); saveLocal(); render();
+  }
+  function scheduleRetry(col: ColumnKey, op: SyncOp, focusKey: string | undefined, mySeq: number) {
+    setStatus('error');
+    setTimeout(() => {
+      if (focusKey && latestSeqByFocus.get(col + ':' + focusKey) !== mySeq) return;
+      sendOp(col, op, focusKey);
+    }, 3000);
+  }
+  function sendOp(col: ColumnKey, op: SyncOp, focusKey?: string) {
     saveLocal();
     if (!viewedWeek) return;
-    pending.add(col);
-    clearTimeout(timers[col]);
+    const myEpoch = epoch, myWeek = viewedWeek, mySeq = ++opSeq;
+    if (focusKey) latestSeqByFocus.set(col + ':' + focusKey, mySeq);
     setStatus('saving');
-    const myEpoch = epoch;
-    const myWeek = viewedWeek;
-    timers[col] = setTimeout(async () => {
-      if (epoch !== myEpoch || viewedWeek !== myWeek) { pending.delete(col); return; } // superseded before send
-      const body = JSON.stringify({ weekKey: myWeek, columnKey: col, column: cols[col] });
+    (async () => {
       try {
         const res = await fetch('/hub/api/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          redirect: 'manual',
-          body,
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin', redirect: 'manual',
+          body: JSON.stringify({ weekKey: myWeek, columnKey: col, op }),
         });
-        if (epoch !== myEpoch || viewedWeek !== myWeek) return; // superseded mid-flight — ignore result
-        if (res.type === 'opaqueredirect' || res.status === 401) {
-          setStatus('signedout'); // keep pending: don't clobber the unsaved edit; needs refresh/re-auth
-        } else if (res.ok) {
-          pending.delete(col);
+        if (epoch !== myEpoch || viewedWeek !== myWeek) return;
+        if (res.type === 'opaqueredirect' || res.status === 401) { setStatus('signedout'); return; }
+        if (res.ok) {
+          const b = await res.json();
           setStatus('saved');
-        } else {
-          setStatus('error'); // transient (5xx) → retry; keep pending so the poll can't clobber
-          timers[col] = setTimeout(() => persist(col), 3000);
-        }
+          if (b && b.ok && b.column && epoch === myEpoch && viewedWeek === myWeek) adopt(col, b.column, b.version);
+        } else { scheduleRetry(col, op, focusKey, mySeq); }
       } catch (e) {
         if (epoch !== myEpoch || viewedWeek !== myWeek) return;
-        setStatus('error'); // network error → retry; keep pending
-        timers[col] = setTimeout(() => persist(col), 3000);
+        scheduleRetry(col, op, focusKey, mySeq);
       }
-    }, 700);
+    })();
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -359,6 +383,18 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   function readFocusHtml(el: HTMLElement): string {
     const h = el.innerHTML.replace(/<\/(div|p)>/gi, ' ').replace(/<(div|p)[^>]*>/gi, '').replace(/&nbsp;/gi, ' ');
     return sanitizeHtml(h).trim();
+  }
+
+  // Attribution chip: the colored initials of the author (and, on hover, the
+  // editor if different). Author/editor never fabricated — an empty `by` shows a
+  // neutral "Author unknown" avatar. esc() guards every roster string.
+  function avatarHtml(f: { by?: string; editedBy?: string }): string {
+    const who = f.by || '';
+    const e = rosterEntry(who);
+    const title = who
+      ? `Added by ${esc(e.name)}${f.editedBy && f.editedBy !== who ? ' · edited by ' + esc(rosterEntry(f.editedBy).name) : ''}`
+      : 'Author unknown';
+    return `<span class="sync2-item__avatar" style="--av:${e.color}" title="${title}" aria-label="${title}">${esc(e.initials)}</span>`;
   }
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -379,6 +415,7 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
             <div class="sync2-item" data-col="${c.id}" data-sec="${sec.id}" data-foc="${f.id}">
               <span class="sync2-item__tick"></span>
               <div class="sync2-item__txt" contenteditable="true" role="textbox" aria-label="Focus" data-ph="Add a focus…" data-col="${c.id}" data-sec="${sec.id}" data-foc="${f.id}">${sanitizeHtml(f.html)}</div>
+              ${avatarHtml(f)}
               <button class="sync2-item__del" data-col="${c.id}" data-sec="${sec.id}" data-foc="${f.id}" aria-label="Remove focus">×</button>
             </div>`).join('')}
             <button class="sync2-add" data-col="${c.id}" data-sec="${sec.id}"><span>+</span> Add a focus</button>
@@ -418,68 +455,88 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   }
 
   function bind() {
-    // Focus (rich-text) edits.
+    // Focus (rich-text) edits → upsertFocus op (idempotent; only stamps editedBy
+    // when html actually changes — applyOp enforces that).
     $$<HTMLElement>('.sync2-item__txt', board!).forEach((el) => {
       el.addEventListener('blur', () => {
+        const col = el.dataset.col as ColumnKey;
         const s = findSec(el.dataset.col, el.dataset.sec);
         const f = s ? s.focuses.find((x) => x.id === el.dataset.foc) : undefined;
         hideRt();
         if (!f) return;
         const html = readFocusHtml(el);
         if (html === f.html) return;
-        f.html = html;
-        el.innerHTML = html; // reflect the sanitized result
-        updateCount(el.dataset.col as ColumnKey);
-        persist(el.dataset.col as ColumnKey);
+        const op = { type: 'upsertFocus', sectionId: el.dataset.sec!, focus: { id: el.dataset.foc!, html } } as const;
+        cols[col] = applyOp(cols[col], op, { email: me, now: nowS() });
+        // Reflect the authoritative sanitized result back into the editable.
+        const updated = cols[col].sections.find((x) => x.id === el.dataset.sec)?.focuses.find((x) => x.id === el.dataset.foc);
+        el.innerHTML = updated ? updated.html : html;
+        updateCount(col);
+        sendOp(col, op, el.dataset.foc!);
       });
       el.addEventListener('keydown', (e) => {
         const ke = e as KeyboardEvent;
         if (ke.key === 'Enter' && !ke.shiftKey) { e.preventDefault(); el.blur(); }
       });
     });
-    // Section title edits.
+    // Section title edits → setSectionTitle op.
     $$<HTMLElement>('.sync2-sec__title', board!).forEach((el) => {
       el.addEventListener('blur', () => {
+        const col = el.dataset.col as ColumnKey;
         const s = findSec(el.dataset.col, el.dataset.sec); if (!s) return;
         const title = escapeText((el.textContent || '').trim()).slice(0, MAX_TITLE_LEN);
         if (title === s.title) return;
-        s.title = title; el.innerHTML = title;
-        persist(el.dataset.col as ColumnKey);
+        const op = { type: 'setSectionTitle', sectionId: el.dataset.sec!, title } as const;
+        cols[col] = applyOp(cols[col], op, { email: me, now: nowS() });
+        // Reflect the canonical title (applyOp escapes + caps it).
+        const updated = cols[col].sections.find((x) => x.id === el.dataset.sec);
+        el.innerHTML = updated ? updated.title : title;
+        sendOp(col, op);
       });
       el.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); el.blur(); } });
     });
-    // Delete a focus.
+    // Delete a focus → deleteFocus op.
     $$<HTMLElement>('.sync2-item__del', board!).forEach((b) => b.addEventListener('click', () => {
+      const col = b.dataset.col as ColumnKey;
       const s = findSec(b.dataset.col, b.dataset.sec); if (!s) return;
-      s.focuses = s.focuses.filter((f) => f.id !== b.dataset.foc);
-      persist(b.dataset.col as ColumnKey); render();
+      const op = { type: 'deleteFocus', sectionId: b.dataset.sec!, focusId: b.dataset.foc! } as const;
+      cols[col] = applyOp(cols[col], op, { email: me, now: nowS() });
+      sendOp(col, op); render();
     }));
-    // Delete a section (confirm if it holds anything).
+    // Delete a section (confirm if it holds anything) → deleteSection op.
     $$<HTMLElement>('.sync2-sec__del', board!).forEach((b) => b.addEventListener('click', () => {
-      const c = cols[b.dataset.col as ColumnKey]; if (!c) return;
+      const col = b.dataset.col as ColumnKey;
+      const c = cols[col]; if (!c) return;
       const sec = c.sections.find((s) => s.id === b.dataset.sec);
       if (sec && (sec.focuses.length || sec.title.trim()) && !confirm('Remove this section and its focuses?')) return;
-      c.sections = c.sections.filter((s) => s.id !== b.dataset.sec);
-      ensureSection(c);
-      persist(b.dataset.col as ColumnKey); render();
+      const op = { type: 'deleteSection', sectionId: b.dataset.sec! } as const;
+      cols[col] = applyOp(cols[col], op, { email: me, now: nowS() });
+      ensureSection(c); // keep >= 1 section for the UI (matches prior behavior)
+      sendOp(col, op); render();
     }));
-    // Add a focus (to this section).
+    // Add a focus (to this section) → upsertFocus op (blank html; caret moves in).
     $$<HTMLElement>('.sync2-add', board!).forEach((b) => b.addEventListener('click', () => {
       const s = findSec(b.dataset.col, b.dataset.sec); if (!s) return;
+      const col = b.dataset.col as ColumnKey;
       const f = { id: genId('f'), html: '' };
-      s.focuses.push(f);
-      persist(b.dataset.col as ColumnKey); render();
+      const op = { type: 'upsertFocus', sectionId: s.id, focus: f } as const;
+      cols[col] = applyOp(cols[col], op, { email: me, now: nowS() });
+      render();
       const el = board!.querySelector(`.sync2-item__txt[data-foc="${f.id}"]`) as HTMLElement | null;
       if (el) focusEnd(el);
+      sendOp(col, op, f.id);
     }));
-    // Add a section (to this column).
+    // Add a section (to this column) → addSection op.
     $$<HTMLElement>('.sync2-addsec', board!).forEach((b) => b.addEventListener('click', () => {
-      const c = cols[b.dataset.col as ColumnKey]; if (!c) return;
-      const sec = { id: genId('s'), title: '', focuses: [] };
-      c.sections.push(sec);
-      persist(b.dataset.col as ColumnKey); render();
+      const col = b.dataset.col as ColumnKey;
+      const c = cols[col]; if (!c) return;
+      const sec = { id: genId('s'), title: '' };
+      const op = { type: 'addSection', section: sec } as const;
+      cols[col] = applyOp(cols[col], op, { email: me, now: nowS() });
+      render();
       const el = board!.querySelector(`.sync2-sec__title[data-sec="${sec.id}"]`) as HTMLElement | null;
       if (el) el.focus();
+      sendOp(col, op);
     }));
   }
 
@@ -563,37 +620,26 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   $('#sync-reset')?.addEventListener('click', () => {
     const which = viewedWeek === currentWeek ? "this week's" : `the ${viewedWeek}`;
     if (!confirm(`Clear ${which} board for the whole team? This can't be undone.`)) return;
-    epoch++; // void any in-flight pre-reset write so it can't resurrect cleared content
-    colIds.forEach((id) => { cols[id] = { v: 2, sections: [] }; });
-    ensureAll();
-    colIds.forEach((id) => persist(id));
+    epoch++; // void any in-flight pre-reset op so it can't resurrect cleared content
+    colIds.forEach((id) => { cols[id] = { v: 3, sections: [] }; ensureSection(cols[id]); sendOp(id, { type: 'clearColumn' }); });
     render();
   });
 
   // ── Live polling (merge teammates' edits; never clobber active editing) ─────────
-  // Per-column: adopt the server's version of a column only when it has no
-  // unsaved local edit (pending). Skip the whole cycle while a focus is being
-  // edited (re-render would drop the caret). `epoch`/`viewedWeek` guards drop a
-  // response that arrives after a reset or week-switch.
+  // Per-focus adoption is delegated to adopt()/mergeAdopt: it keeps the focus
+  // currently under the caret as the LIVE local copy and adopts everything else,
+  // and the per-column version guard drops a stale snapshot. `epoch`/`viewedWeek`
+  // guards drop a response that arrives after a reset or week-switch.
   async function poll() {
     if (!viewedWeek) return;
-    if (document.activeElement && board!.contains(document.activeElement)) return;
-    const myWeek = viewedWeek;
-    const myEpoch = epoch;
+    const myWeek = viewedWeek, myEpoch = epoch;
     try {
       const res = await fetch('/hub/api/sync?week=' + encodeURIComponent(myWeek), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
       if (!res.ok || res.type === 'opaqueredirect') return;
       if (myWeek !== viewedWeek || myEpoch !== epoch) return;
       const b = await res.json();
-      if (!b || !b.ok || !b.columns) return;
-      if (myWeek !== viewedWeek || myEpoch !== epoch) return;
-      const incoming = shape(b.columns);
-      let changed = false;
-      colIds.forEach((id) => {
-        if (pending.has(id)) return; // unsaved local edit — don't clobber this column
-        if (comparableCol(incoming[id]) !== comparableCol(cols[id])) { cols[id] = incoming[id]; changed = true; }
-      });
-      if (changed) { ensureAll(); saveLocal(); render(); }
+      if (!b || !b.ok || !b.columns || myWeek !== viewedWeek || myEpoch !== epoch) return;
+      colIds.forEach((id) => { if (b.columns[id]) adopt(id, b.columns[id], b.columns[id].version); });
     } catch (e) { /* offline; keep local */ }
   }
 

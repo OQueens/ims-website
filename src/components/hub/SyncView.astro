@@ -15,10 +15,11 @@ interface Props {
   weekKey: string;
   columns: Record<ColumnKey, ColumnData>;
   weeks: string[];
+  me: string;
 }
-const { weekKey, columns, weeks } = Astro.props;
+const { weekKey, columns, weeks, me } = Astro.props;
 // '<' escaped so a board focus can never break out of the data script island.
-const islandJson = JSON.stringify({ weekKey, columns, weeks }).replace(/</g, '\\u003c');
+const islandJson = JSON.stringify({ weekKey, columns, weeks, me }).replace(/</g, '\\u003c');
 ---
 <section class="hub-view" data-view="sync">
   <script id="hub-sync" type="application/json" is:inline set:html={islandJson}></script>

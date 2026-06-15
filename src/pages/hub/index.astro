@@ -14,6 +14,8 @@ import SimulatorView from '../../components/hub/SimulatorView.astro';
 import AnalyticsView from '../../components/hub/AnalyticsView.astro';
 import SyncView from '../../components/hub/SyncView.astro';
 import { readHubEnv } from '../../lib/hub/hub-env';
+import { getCookie } from '../../lib/hub/cookies';
+import { verifySession, SESSION_COOKIE } from '../../lib/hub/session';
 import { aggregateHub, type HubJobRow } from '../../lib/hub/hub-data';
 import { aggregateAnalytics, activityFromEvents, type HubEventRow } from '../../lib/hub/hub-analytics';
 import { getHubSupabase } from '../../lib/hub/hub-supabase';
@@ -24,6 +26,16 @@ export const prerender = false;
 
 const env = readHubEnv(Astro.locals);
 const supabase = getHubSupabase(env);
+
+// The authenticated session email (mirrors authedEmail in /hub/api/sync.ts) →
+// passed into the Weekly Sync island so the client can stamp attribution
+// optimistically (the server is still authoritative on every op apply).
+const _token = getCookie(Astro.request.headers.get('cookie'), SESSION_COOKIE);
+const _now = Math.floor(Date.now() / 1000);
+const _session = _token && env.HUB_SESSION_SECRET
+  ? await verifySession(_token, env.HUB_SESSION_SECRET, _now, env.HUB_SESSION_GENERATION)
+  : null;
+const me = _session?.email ?? '';
 
 // Two independent service-role reads through the shared seam: the current active
 // ims_jobs snapshot (Overview + Analytics snapshot metrics) and the append-only
@@ -134,7 +146,7 @@ const eyebrow = new Intl.DateTimeFormat('en-US', {
       />
       <SimulatorView latestJobs={overview.latestJobs} />
       <AnalyticsView analytics={analytics} lsAnalytics={lsAnalytics} />
-      <SyncView weekKey={weekKey} columns={syncColumns} weeks={syncWeeks} />
+      <SyncView weekKey={weekKey} columns={syncColumns} weeks={syncWeeks} me={me} />
     </div>
   </div>
 </HubLayout>
