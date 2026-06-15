@@ -57,6 +57,42 @@ describe('applyOp', () => {
     applyOp(input, { type: 'upsertFocus', sectionId: 'sec1', focus: { id: 'f1', html: 'x' } }, ctx);
     expect(JSON.stringify(input)).toBe(snap);
   });
+
+  // Auto-create: the FIRST focus/title of a blank week targets the client's
+  // auto-ensured (never-addSection'd) section — applyOp + the RPC must create it
+  // rather than silently drop the edit.
+  it('upsertFocus into a NON-EXISTENT section auto-creates the section (stamped) + adds the focus', () => {
+    const out = applyOp(emptyColumn(), { type: 'upsertFocus', sectionId: 'secNEW', focus: { id: 'fNEW', html: 'hi' } }, ctx);
+    expect(out.sections).toHaveLength(1);
+    expect(out.sections[0]).toMatchObject({ id: 'secNEW', title: '', by: 'zach@iastaffing.com' });
+    expect(out.sections[0].focuses[0]).toMatchObject({ id: 'fNEW', html: 'hi', by: 'zach@iastaffing.com', createdAt: 1000 });
+  });
+  it('auto-create on upsertFocus is idempotent (identical re-apply is a no-op)', () => {
+    const op = { type: 'upsertFocus', sectionId: 'secNEW', focus: { id: 'fNEW', html: 'hi' } } as const;
+    const once = applyOp(emptyColumn(), op, ctx);
+    const twice = applyOp(once, op, { email: 'matt@iastaffing.com', now: 9999 });
+    expect(twice).toEqual(once); // no second section, no editedBy
+  });
+  it('setSectionTitle into a NON-EXISTENT section auto-creates it with the title', () => {
+    const out = applyOp(emptyColumn(), { type: 'setSectionTitle', sectionId: 'secT', title: 'Recruiting' }, ctx);
+    expect(out.sections).toHaveLength(1);
+    expect(out.sections[0]).toMatchObject({ id: 'secT', title: 'Recruiting', by: 'zach@iastaffing.com' });
+  });
+  it('deleteFocus into a non-existent section does NOT auto-create (stays a no-op)', () => {
+    const out = applyOp(emptyColumn(), { type: 'deleteFocus', sectionId: 'secX', focusId: 'fX' }, ctx);
+    expect(out.sections).toHaveLength(0);
+  });
+  it('auto-create respects MAX_SECTIONS (upsert into a 17th section is dropped)', () => {
+    let col: ColumnData = emptyColumn();
+    for (let i = 0; i < 16; i++) col = applyOp(col, { type: 'addSection', section: { id: 'sec' + i } }, ctx);
+    expect(col.sections.length).toBe(16);
+    const out = applyOp(col, { type: 'upsertFocus', sectionId: 'sec99', focus: { id: 'f', html: 'x' } }, ctx);
+    expect(out.sections.length).toBe(16); // no 17th section created
+  });
+  it('trims section-title whitespace (matches readColumn on read)', () => {
+    expect(applyOp(withSection(), { type: 'setSectionTitle', sectionId: 'sec1', title: '  Ops  ' }, ctx).sections[0].title).toBe('Ops');
+    expect(applyOp(emptyColumn(), { type: 'addSection', section: { id: 'secW', title: '  Mktg ' } }, ctx).sections[0].title).toBe('Mktg');
+  });
 });
 
 describe('validateOp', () => {

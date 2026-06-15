@@ -325,7 +325,11 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
   // `adopt` drops a response/poll older than what we've already adopted. Per-focus
   // sequence (latestSeqByFocus): a retry only fires if no NEWER op for that focus
   // has since been sent — a stale retry can never resurrect superseded text.
-  const colVersion: Partial<Record<ColumnKey, number>> = {};
+  // NOTE: version is per-(week,column), so this map MUST be reset on a week switch
+  // (and on reset) — otherwise after editing the current week to a high version,
+  // switching to a lower-versioned past week would make every poll's adopt fail
+  // the monotonicity guard and the past week would stop receiving live updates.
+  let colVersion: Partial<Record<ColumnKey, number>> = {};
   let opSeq = 0;
   const latestSeqByFocus = new Map<string, number>();
 
@@ -575,7 +579,9 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
         if (!el.isConnected) return; // detached by an adopt-driven re-render — not a real commit
         const col = el.dataset.col as ColumnKey;
         const s = findSec(el.dataset.col, el.dataset.sec); if (!s) return;
-        const title = escapeText((el.textContent || '').trim()).slice(0, MAX_TITLE_LEN);
+        // slice the RAW text to the cap THEN escape (matches the adopt() snapshot
+        // path), so a near-cap title can't be cut mid-entity into "&am".
+        const title = escapeText((el.textContent || '').trim().slice(0, MAX_TITLE_LEN));
         if (title === s.title) return;
         const op = { type: 'setSectionTitle', sectionId: el.dataset.sec!, title } as const;
         cols[col] = applyOp(cols[col], op, { email: me, now: nowS() });
@@ -691,6 +697,7 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
   weekSel?.addEventListener('change', async () => {
     viewedWeek = weekSel.value || currentWeek;
     const myEpoch = ++epoch; // void in-flight writes/polls for the previous view
+    colVersion = {}; // version is per-(week,column); the new week starts its own timeline
     const myWeek = viewedWeek;
     updateHeader();
     if (statusEl) { statusEl.textContent = 'Loading…'; statusEl.className = 'sync2-status is-saving'; }
@@ -712,6 +719,7 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
     const which = viewedWeek === currentWeek ? "this week's" : `the ${viewedWeek}`;
     if (!confirm(`Clear ${which} board for the whole team? This can't be undone.`)) return;
     epoch++; // void any in-flight pre-reset op so it can't resurrect cleared content
+    colVersion = {}; // re-baseline the version guard for the cleared board
     colIds.forEach((id) => { cols[id] = { v: 3, sections: [] }; ensureSection(cols[id]); sendOp(id, { type: 'clearColumn' }); });
     render();
   });

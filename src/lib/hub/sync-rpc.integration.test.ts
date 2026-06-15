@@ -82,4 +82,28 @@ const WEEK = '9999-W99', COL = 'recruiting';
     const { data } = await sb.from('hub_weekly_sync').select('items').eq('week_key', WEEK).eq('column_key', COL).single();
     expect(readColumn(data!.items).sections[0].focuses[0].editedBy).toBeUndefined();
   });
+
+  it('upsertFocus into a NEVER-ADDED section auto-creates it (blank-week first focus) + trims a padded title, matching the oracle', async () => {
+    await sb.from('hub_weekly_sync').delete().eq('week_key', WEEK);
+    let oracle: ColumnData = emptyColumn();
+    const apply = async (op: SyncOp, email: string) => {
+      const { error } = await sb.rpc('hub_sync_apply', { p_week: WEEK, p_col: COL, p_op: op, p_email: email });
+      expect(error).toBeNull();
+      oracle = applyOp(oracle, op, { email, now: 0 });
+    };
+    // NO addSection first — the section must be auto-created by the upsertFocus.
+    await apply({ type: 'upsertFocus', sectionId: 'secAUTO', focus: { id: 'fAUTO', html: 'first focus of a blank week' } }, 'zach@iastaffing.com');
+    // BOUNDARY-length padded title guards the trim-then-truncate parity: the RPC
+    // must trim BEFORE its left(,80) or the leading spaces eat the budget and the
+    // stored title diverges from the oracle (a short title wouldn't expose it).
+    const padded = '  ' + 'A'.repeat(80) + '  ';
+    await apply({ type: 'setSectionTitle', sectionId: 'secAUTO', title: padded }, 'zach@iastaffing.com');
+    const { data } = await sb.from('hub_weekly_sync').select('items').eq('week_key', WEEK).eq('column_key', COL).single();
+    const dbCol = readColumn(data!.items);
+    expect(strip(dbCol)).toEqual(strip(oracle));
+    expect(dbCol.sections).toHaveLength(1);
+    expect(dbCol.sections[0]).toMatchObject({ id: 'secAUTO', by: 'zach@iastaffing.com' });
+    expect(dbCol.sections[0].title).toBe('A'.repeat(80)); // 80 content chars survive (padding trimmed first)
+    expect(dbCol.sections[0].focuses[0]).toMatchObject({ id: 'fAUTO', by: 'zach@iastaffing.com' });
+  });
 });

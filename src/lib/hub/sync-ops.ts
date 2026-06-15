@@ -24,9 +24,24 @@ const cloneCol = (c: ColumnData): ColumnData => ({ v: 3, sections: c.sections.ma
 
 export function applyOp(column: ColumnData, op: SyncOp, ctx: ApplyCtx): ColumnData {
   const col = cloneCol(column);
+  // Find the target section, or CREATE it (stamped by the author) if it doesn't
+  // exist yet — the client's auto-ensured "Add a focus" section is a UI affordance
+  // that is never sent as an addSection op, so the FIRST focus/title of a blank
+  // week would otherwise target a non-existent section and be silently dropped.
+  // Self-creating here (and identically in the RPC) makes the op order-independent
+  // and retry-safe. Returns null only when the section cap is already reached.
+  const findOrCreateSection = (id: string): Section | null => {
+    let sec = col.sections.find((s) => s.id === id);
+    if (!sec) {
+      if (col.sections.length >= MAX_SECTIONS) return null;
+      sec = { id, title: '', by: ctx.email, focuses: [] };
+      col.sections.push(sec);
+    }
+    return sec;
+  };
   switch (op.type) {
     case 'upsertFocus': {
-      const sec = col.sections.find((s) => s.id === op.sectionId);
+      const sec = findOrCreateSection(op.sectionId);
       if (!sec) return col;
       const html = sanitizeHtml(op.focus.html);
       const existing = sec.focuses.find((f) => f.id === op.focus.id);
@@ -48,14 +63,14 @@ export function applyOp(column: ColumnData, op: SyncOp, ctx: ApplyCtx): ColumnDa
       return col;
     }
     case 'setSectionTitle': {
-      const sec = col.sections.find((s) => s.id === op.sectionId);
-      if (sec) sec.title = escapeText(op.title).slice(0, MAX_TITLE_LEN);
+      const sec = findOrCreateSection(op.sectionId);
+      if (sec) sec.title = escapeText(op.title.trim()).slice(0, MAX_TITLE_LEN);
       return col;
     }
     case 'addSection': {
       if (col.sections.some((s) => s.id === op.section.id)) return col;
       if (col.sections.length >= MAX_SECTIONS) return col;
-      const section: Section = { id: op.section.id, title: escapeText(op.section.title ?? '').slice(0, MAX_TITLE_LEN), by: ctx.email, focuses: [] };
+      const section: Section = { id: op.section.id, title: escapeText((op.section.title ?? '').trim()).slice(0, MAX_TITLE_LEN), by: ctx.email, focuses: [] };
       col.sections.push(section);
       return col;
     }
