@@ -215,7 +215,7 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
       icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
   ];
   const colIds = COLS.map((c) => c.id);
-  const genId = (p: string) => p + '_' + (crypto.randomUUID?.() ?? String(Math.random())).replace(/-/g, '').slice(0, 16);
+  const genId = (p: string) => p + '_' + (globalThis.crypto?.randomUUID?.() ?? String(Math.random())).replace(/-/g, '').slice(0, 16);
 
   // ── State (hydrate from the SSR island: { weekKey, columns, weeks }) ──────────
   let island: SyncIsland | null = null;
@@ -225,28 +225,48 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   let viewedWeek = currentWeek;
 
   const blankCols = (): Columns => ({ recruiting: { v: 2, sections: [] }, marketing: { v: 2, sections: [] }, operations: { v: 2, sections: [] } });
+  // Ids land in data-* attributes + querySelector strings. Clean every incoming
+  // id to the same [A-Za-z0-9_-] allowlist the server uses — a poll/island
+  // response is never trusted raw (defense-in-depth vs a polluted DB row). html
+  // and title are neutralized later (sanitizeHtml / escapeText at render time).
+  const safeId = (raw: unknown, p: string) =>
+    (typeof raw === 'string' && /^[A-Za-z0-9_-]{3,40}$/.test(raw)) ? raw : genId(p);
   function shape(input: Partial<Columns> | undefined): Columns {
     const out = blankCols();
-    if (input) colIds.forEach((id) => { const c = input[id]; if (c && Array.isArray(c.sections)) out[id] = { v: 2, sections: c.sections }; });
+    if (!input) return out;
+    colIds.forEach((id) => {
+      const c = input[id];
+      if (!c || !Array.isArray(c.sections)) return;
+      out[id] = {
+        v: 2,
+        sections: c.sections.map((s) => ({
+          id: safeId(s && s.id, 's'),
+          title: s && typeof s.title === 'string' ? s.title : '',
+          focuses: s && Array.isArray(s.focuses)
+            ? s.focuses.map((f) => ({ id: safeId(f && f.id, 'f'), html: f && typeof f.html === 'string' ? f.html : '' }))
+            : [],
+        })),
+      };
+    });
     return out;
   }
   let cols: Columns = shape(island?.columns);
+  let epoch = 0; // bumped on reset / week-switch so stale in-flight writes + polls are ignored
 
   // Every column keeps >= 1 section so "Add a focus" is always available; a
   // brand-new (blank) week has zero sections server-side until the first edit.
   function ensureSection(c: ColumnData) { if (c.sections.length === 0) c.sections.push({ id: genId('s'), title: '', focuses: [] }); }
   function ensureAll() { colIds.forEach((id) => ensureSection(cols[id])); }
 
-  // Comparable shape (drops empty untitled sections + section ids) so the live
-  // poll only re-renders on real content change, not on empty-section churn.
-  function comparable(c: Columns): string {
-    const norm: Record<string, unknown> = {};
-    colIds.forEach((id) => {
-      norm[id] = c[id].sections
+  // Comparable shape of ONE column (drops empty untitled sections + section ids)
+  // so the live poll adopts a column only on real content change, not on cosmetic
+  // empty-section churn.
+  function comparableCol(cd: ColumnData): string {
+    return JSON.stringify(
+      cd.sections
         .filter((s) => s.focuses.length > 0 || s.title.trim() !== '')
-        .map((s) => ({ t: s.title, f: s.focuses.map((x) => x.id + ':' + x.html) }));
-    });
-    return JSON.stringify(norm);
+        .map((s) => ({ t: s.title, f: s.focuses.map((x) => x.id + ':' + x.html) })),
+    );
   }
 
   // localStorage mirror (resilience if a POST fails), keyed by the viewed week.
@@ -289,33 +309,46 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   // ── Persistence (per-column, debounced) ──────────────────────────────────────
   // `redirect:'manual'` so an auth 302 is NOT followed to the login HTML (the
   // old silent-save bug); an opaque redirect / 401 surfaces as a sign-in lapse.
-  // `pending`/`inFlight` gate the live poll so it can't clobber an unsaved edit.
+  // A column stays in `pending` (which gates the poll for THAT column only) until
+  // its save SUCCEEDS — so a failed save never clobbers the unsaved edit and never
+  // blinds the other columns. Transient errors auto-retry; a sign-in lapse holds
+  // pending until the user refreshes (the localStorage mirror survives meanwhile).
+  // A reset / week-switch bumps `epoch`, voiding any in-flight or queued write.
   const timers: Partial<Record<ColumnKey, ReturnType<typeof setTimeout>>> = {};
   const pending = new Set<ColumnKey>();
-  let inFlight = 0;
   function persist(col: ColumnKey) {
     saveLocal();
     if (!viewedWeek) return;
     pending.add(col);
     clearTimeout(timers[col]);
     setStatus('saving');
+    const myEpoch = epoch;
+    const myWeek = viewedWeek;
     timers[col] = setTimeout(async () => {
-      inFlight++;
+      if (epoch !== myEpoch || viewedWeek !== myWeek) { pending.delete(col); return; } // superseded before send
+      const body = JSON.stringify({ weekKey: myWeek, columnKey: col, column: cols[col] });
       try {
         const res = await fetch('/hub/api/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
           redirect: 'manual',
-          body: JSON.stringify({ weekKey: viewedWeek, columnKey: col, column: cols[col] }),
+          body,
         });
-        if (res.type === 'opaqueredirect' || res.status === 401) setStatus('signedout');
-        else if (res.ok) { pending.delete(col); setStatus('saved'); }
-        else setStatus('error');
+        if (epoch !== myEpoch || viewedWeek !== myWeek) return; // superseded mid-flight — ignore result
+        if (res.type === 'opaqueredirect' || res.status === 401) {
+          setStatus('signedout'); // keep pending: don't clobber the unsaved edit; needs refresh/re-auth
+        } else if (res.ok) {
+          pending.delete(col);
+          setStatus('saved');
+        } else {
+          setStatus('error'); // transient (5xx) → retry; keep pending so the poll can't clobber
+          timers[col] = setTimeout(() => persist(col), 3000);
+        }
       } catch (e) {
-        setStatus('error');
-      } finally {
-        inFlight--;
+        if (epoch !== myEpoch || viewedWeek !== myWeek) return;
+        setStatus('error'); // network error → retry; keep pending
+        timers[col] = setTimeout(() => persist(col), 3000);
       }
     }, 700);
   }
@@ -338,7 +371,7 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
         <div class="sync2-sec" data-col="${c.id}" data-sec="${sec.id}">
           ${showTitles ? `
           <div class="sync2-sec__head">
-            <div class="sync2-sec__title" contenteditable="true" role="textbox" aria-label="Section name" data-ph="Name this section" data-col="${c.id}" data-sec="${sec.id}">${sec.title}</div>
+            <div class="sync2-sec__title" contenteditable="true" role="textbox" aria-label="Section name" data-ph="Name this section" data-col="${c.id}" data-sec="${sec.id}">${escapeText(sec.title)}</div>
             <button class="sync2-sec__del" data-col="${c.id}" data-sec="${sec.id}" aria-label="Remove section" title="Remove section">×</button>
           </div>` : ''}
           <div class="sync2-sec__items">
@@ -509,15 +542,18 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   }
   weekSel?.addEventListener('change', async () => {
     viewedWeek = weekSel.value || currentWeek;
+    const myEpoch = ++epoch; // void in-flight writes/polls for the previous view
+    const myWeek = viewedWeek;
     updateHeader();
     if (statusEl) { statusEl.textContent = 'Loading…'; statusEl.className = 'sync2-status is-saving'; }
     try {
-      const res = await fetch('/hub/api/sync?week=' + encodeURIComponent(viewedWeek), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
+      const res = await fetch('/hub/api/sync?week=' + encodeURIComponent(myWeek), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
+      if (myEpoch !== epoch || myWeek !== viewedWeek) return; // switched again mid-load
       if (res.type === 'opaqueredirect' || res.status === 401) { setStatus('signedout'); return; }
-      if (res.ok) { const b = await res.json(); cols = b && b.ok && b.columns ? shape(b.columns) : blankCols(); }
+      if (res.ok) { const b = await res.json(); if (myEpoch !== epoch || myWeek !== viewedWeek) return; cols = b && b.ok && b.columns ? shape(b.columns) : blankCols(); }
       else cols = blankCols();
-    } catch (e) { cols = blankCols(); }
-    recoverFromLocal();
+    } catch (e) { if (myEpoch !== epoch || myWeek !== viewedWeek) return; cols = blankCols(); }
+    if (viewedWeek === currentWeek) recoverFromLocal(); // only the live week recovers local drafts
     ensureAll();
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'sync2-status'; }
     render();
@@ -527,6 +563,7 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   $('#sync-reset')?.addEventListener('click', () => {
     const which = viewedWeek === currentWeek ? "this week's" : `the ${viewedWeek}`;
     if (!confirm(`Clear ${which} board for the whole team? This can't be undone.`)) return;
+    epoch++; // void any in-flight pre-reset write so it can't resurrect cleared content
     colIds.forEach((id) => { cols[id] = { v: 2, sections: [] }; });
     ensureAll();
     colIds.forEach((id) => persist(id));
@@ -534,17 +571,29 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
   });
 
   // ── Live polling (merge teammates' edits; never clobber active editing) ─────────
+  // Per-column: adopt the server's version of a column only when it has no
+  // unsaved local edit (pending). Skip the whole cycle while a focus is being
+  // edited (re-render would drop the caret). `epoch`/`viewedWeek` guards drop a
+  // response that arrives after a reset or week-switch.
   async function poll() {
     if (!viewedWeek) return;
-    const editing = document.activeElement ? board!.contains(document.activeElement) : false;
-    if (editing || pending.size > 0 || inFlight > 0) return; // don't clobber unsaved local edits
+    if (document.activeElement && board!.contains(document.activeElement)) return;
+    const myWeek = viewedWeek;
+    const myEpoch = epoch;
     try {
-      const res = await fetch('/hub/api/sync?week=' + encodeURIComponent(viewedWeek), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
+      const res = await fetch('/hub/api/sync?week=' + encodeURIComponent(myWeek), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
       if (!res.ok || res.type === 'opaqueredirect') return;
+      if (myWeek !== viewedWeek || myEpoch !== epoch) return;
       const b = await res.json();
       if (!b || !b.ok || !b.columns) return;
+      if (myWeek !== viewedWeek || myEpoch !== epoch) return;
       const incoming = shape(b.columns);
-      if (comparable(incoming) !== comparable(cols)) { cols = incoming; ensureAll(); saveLocal(); render(); }
+      let changed = false;
+      colIds.forEach((id) => {
+        if (pending.has(id)) return; // unsaved local edit — don't clobber this column
+        if (comparableCol(incoming[id]) !== comparableCol(cols[id])) { cols[id] = incoming[id]; changed = true; }
+      });
+      if (changed) { ensureAll(); saveLocal(); render(); }
     } catch (e) { /* offline; keep local */ }
   }
 
