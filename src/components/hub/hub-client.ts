@@ -7,9 +7,14 @@
 import {
   type BarRow,
   PDF_CHIPS,
-  SYNC_SEED,
-  type SyncSeed,
 } from '../../lib/hub/hub-seed';
+import {
+  sanitizeHtml,
+  escapeText,
+  MAX_TITLE_LEN,
+  type ColumnData,
+  type ColumnKey,
+} from '../../lib/hub/sync-data';
 
 const $ = <T extends Element = HTMLElement>(s: string, c: ParentNode = document): T | null => c.querySelector<T>(s);
 const $$ = <T extends Element = HTMLElement>(s: string, c: ParentNode = document): T[] => Array.from(c.querySelectorAll<T>(s));
@@ -191,8 +196,13 @@ $$('#priorities .todo__check').forEach((c) => {
   }
 })();
 
-// ── Weekly sync · editable three-team board (shared via hub_weekly_sync) ───────
-interface SyncIsland { weekKey: string; data: SyncSeed; persisted: Record<keyof SyncSeed, boolean>; }
+// ── Weekly Sync · live, shared standup board (v2: sections + rich-text focuses) ─
+// Rebuilt 2026-06-15: blank-new-week, named sections, rich text, live polling,
+// past-week history, confirm-Reset. Hydrates from #hub-sync, persists each
+// changed column (debounced POST) + a localStorage mirror, and polls the viewed
+// week to surface teammates' edits without clobbering what you are editing.
+type Columns = Record<ColumnKey, ColumnData>;
+interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; }
 (function weeklySync() {
   const board = $('#sync-board');
   if (!board) return;
@@ -205,30 +215,57 @@ interface SyncIsland { weekKey: string; data: SyncSeed; persisted: Record<keyof 
       icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
   ];
   const colIds = COLS.map((c) => c.id);
-  // Hydrate from the server island: this week's board + per-column persisted
-  // flags. A persisted column uses the server value; an un-persisted column
-  // prefers the user's localStorage edits, else the seed starter template.
+  const genId = (p: string) => p + '_' + (crypto.randomUUID?.() ?? String(Math.random())).replace(/-/g, '').slice(0, 16);
+
+  // ── State (hydrate from the SSR island: { weekKey, columns, weeks }) ──────────
   let island: SyncIsland | null = null;
   const islandEl = document.getElementById('hub-sync');
   if (islandEl?.textContent) { try { island = JSON.parse(islandEl.textContent) as SyncIsland; } catch (e) { island = null; } }
-  const weekKey = island?.weekKey ?? '';
-  const LS_KEY = 'imsHubSync:' + weekKey;
-  const seed = (): SyncSeed => JSON.parse(JSON.stringify(SYNC_SEED));
-  let local: SyncSeed | null = null;
-  try { local = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { local = null; }
-  const base = island?.data ?? seed();
-  const data: SyncSeed = { recruiting: [], marketing: [], operations: [] };
-  colIds.forEach((id) => {
-    if (island?.persisted?.[id]) data[id] = [...base[id]];
-    else if (local && Array.isArray(local[id])) data[id] = [...local[id]];
-    else data[id] = [...base[id]];
-  });
+  const currentWeek = island?.weekKey ?? '';
+  let viewedWeek = currentWeek;
 
-  const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ } };
+  const blankCols = (): Columns => ({ recruiting: { v: 2, sections: [] }, marketing: { v: 2, sections: [] }, operations: { v: 2, sections: [] } });
+  function shape(input: Partial<Columns> | undefined): Columns {
+    const out = blankCols();
+    if (input) colIds.forEach((id) => { const c = input[id]; if (c && Array.isArray(c.sections)) out[id] = { v: 2, sections: c.sections }; });
+    return out;
+  }
+  let cols: Columns = shape(island?.columns);
 
-  // Visible save status. The board used to POST and `.catch(()=>{})` — so a
-  // lapsed session (302→login, followed by fetch, resolving as a 200 login page)
-  // looked like a success while persisting nothing. We now surface every state.
+  // Every column keeps >= 1 section so "Add a focus" is always available; a
+  // brand-new (blank) week has zero sections server-side until the first edit.
+  function ensureSection(c: ColumnData) { if (c.sections.length === 0) c.sections.push({ id: genId('s'), title: '', focuses: [] }); }
+  function ensureAll() { colIds.forEach((id) => ensureSection(cols[id])); }
+
+  // Comparable shape (drops empty untitled sections + section ids) so the live
+  // poll only re-renders on real content change, not on empty-section churn.
+  function comparable(c: Columns): string {
+    const norm: Record<string, unknown> = {};
+    colIds.forEach((id) => {
+      norm[id] = c[id].sections
+        .filter((s) => s.focuses.length > 0 || s.title.trim() !== '')
+        .map((s) => ({ t: s.title, f: s.focuses.map((x) => x.id + ':' + x.html) }));
+    });
+    return JSON.stringify(norm);
+  }
+
+  // localStorage mirror (resilience if a POST fails), keyed by the viewed week.
+  const lsKey = (week: string) => 'imsHubSyncV2:' + week;
+  function saveLocal() { try { localStorage.setItem(lsKey(viewedWeek), JSON.stringify(cols)); } catch (e) { /* ignore */ } }
+  function recoverFromLocal() {
+    try {
+      const raw = localStorage.getItem(lsKey(viewedWeek));
+      if (!raw) return;
+      const local = JSON.parse(raw) as Columns;
+      colIds.forEach((id) => {
+        const serverEmpty = !cols[id].sections.some((s) => s.focuses.length || s.title.trim());
+        const localHas = local?.[id]?.sections?.some((s) => s.focuses.length || s.title.trim());
+        if (serverEmpty && localHas) cols[id] = { v: 2, sections: local[id].sections };
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  // ── Visible save status ───────────────────────────────────────────────────────
   const statusEl = document.getElementById('sync-status');
   let statusClear: ReturnType<typeof setTimeout> | undefined;
   type SaveState = 'saving' | 'saved' | 'signedout' | 'error';
@@ -249,83 +286,274 @@ interface SyncIsland { weekKey: string; data: SyncSeed; persisted: Record<keyof 
     }, 2200);
   }
 
-  // Persist a column: localStorage immediately (offline mirror) + a debounced
-  // POST to the shared store. `redirect:'manual'` so an auth 302 is NOT followed
-  // to the login HTML; an opaque redirect / 401 is reported as a sign-in lapse.
-  const timers: Partial<Record<keyof SyncSeed, ReturnType<typeof setTimeout>>> = {};
-  function persist(col: keyof SyncSeed) {
-    save();
-    if (!weekKey) return;
+  // ── Persistence (per-column, debounced) ──────────────────────────────────────
+  // `redirect:'manual'` so an auth 302 is NOT followed to the login HTML (the
+  // old silent-save bug); an opaque redirect / 401 surfaces as a sign-in lapse.
+  // `pending`/`inFlight` gate the live poll so it can't clobber an unsaved edit.
+  const timers: Partial<Record<ColumnKey, ReturnType<typeof setTimeout>>> = {};
+  const pending = new Set<ColumnKey>();
+  let inFlight = 0;
+  function persist(col: ColumnKey) {
+    saveLocal();
+    if (!viewedWeek) return;
+    pending.add(col);
     clearTimeout(timers[col]);
     setStatus('saving');
     timers[col] = setTimeout(async () => {
+      inFlight++;
       try {
         const res = await fetch('/hub/api/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
           redirect: 'manual',
-          body: JSON.stringify({ weekKey, columnKey: col, items: data[col] }),
+          body: JSON.stringify({ weekKey: viewedWeek, columnKey: col, column: cols[col] }),
         });
-        if (res.type === 'opaqueredirect' || res.status === 0 || res.status === 401) setStatus('signedout');
-        else if (res.ok) setStatus('saved');
+        if (res.type === 'opaqueredirect' || res.status === 401) setStatus('signedout');
+        else if (res.ok) { pending.delete(col); setStatus('saved'); }
         else setStatus('error');
       } catch (e) {
         setStatus('error');
+      } finally {
+        inFlight--;
       }
     }, 700);
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+  const findSec = (col?: string, sec?: string) => (col && cols[col as ColumnKey] ? cols[col as ColumnKey].sections.find((s) => s.id === sec) : undefined) || null;
+  // contenteditable can wrap content in block tags / &nbsp; flatten to one line.
+  function readFocusHtml(el: HTMLElement): string {
+    const h = el.innerHTML.replace(/<\/(div|p)>/gi, ' ').replace(/<(div|p)[^>]*>/gi, '').replace(/&nbsp;/gi, ' ');
+    return sanitizeHtml(h).trim();
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
   function render() {
-    board!.innerHTML = COLS.map((c) => `
+    board!.innerHTML = COLS.map((c) => {
+      const col = cols[c.id];
+      const count = col.sections.reduce((n, s) => n + s.focuses.length, 0);
+      const showTitles = col.sections.length > 1 || col.sections.some((s) => s.title.trim() !== '');
+      const sections = col.sections.map((sec) => `
+        <div class="sync2-sec" data-col="${c.id}" data-sec="${sec.id}">
+          ${showTitles ? `
+          <div class="sync2-sec__head">
+            <div class="sync2-sec__title" contenteditable="true" role="textbox" aria-label="Section name" data-ph="Name this section" data-col="${c.id}" data-sec="${sec.id}">${sec.title}</div>
+            <button class="sync2-sec__del" data-col="${c.id}" data-sec="${sec.id}" aria-label="Remove section" title="Remove section">×</button>
+          </div>` : ''}
+          <div class="sync2-sec__items">
+            ${sec.focuses.map((f) => `
+            <div class="sync2-item" data-col="${c.id}" data-sec="${sec.id}" data-foc="${f.id}">
+              <span class="sync2-item__tick"></span>
+              <div class="sync2-item__txt" contenteditable="true" role="textbox" aria-label="Focus" data-ph="Add a focus…" data-col="${c.id}" data-sec="${sec.id}" data-foc="${f.id}">${sanitizeHtml(f.html)}</div>
+              <button class="sync2-item__del" data-col="${c.id}" data-sec="${sec.id}" data-foc="${f.id}" aria-label="Remove focus">×</button>
+            </div>`).join('')}
+            <button class="sync2-add" data-col="${c.id}" data-sec="${sec.id}"><span>+</span> Add a focus</button>
+          </div>
+        </div>`).join('');
+      return `
       <div class="sync2-col" style="--c:${c.color}" data-col="${c.id}">
         <div class="sync2-col__head">
           <span class="sync2-col__ic" style="background:${c.color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${c.icon}</svg></span>
           <div>
             <div class="sync2-col__name">${c.name}</div>
-            <div class="sync2-col__count">${data[c.id].length} this week</div>
+            <div class="sync2-col__count">${count} ${count === 1 ? 'focus' : 'focuses'}${col.sections.length > 1 ? ' · ' + col.sections.length + ' sections' : ''}</div>
           </div>
         </div>
         <div class="sync2-col__body">
-          ${data[c.id].map((t, i) => `
-            <div class="sync2-item">
-              <span class="sync2-item__tick"></span>
-              <div class="sync2-item__txt" contenteditable="true" data-col="${c.id}" data-i="${i}">${esc(t)}</div>
-              <button class="sync2-item__del" data-col="${c.id}" data-i="${i}" aria-label="Remove">×</button>
-            </div>`).join('')}
-          <button class="sync2-add" data-col="${c.id}"><span>+</span> Add a focus</button>
+          ${sections}
+          <button class="sync2-addsec" data-col="${c.id}"><span>+</span> Add section</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     bind();
   }
+
+  function focusEnd(el: HTMLElement) {
+    el.focus();
+    const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+    const sel = window.getSelection(); if (sel) { sel.removeAllRanges(); sel.addRange(r); }
+  }
+
+  function updateCount(col: ColumnKey) {
+    const colEl = $$('.sync2-col', board!).find((c) => (c as HTMLElement).dataset.col === col);
+    const countEl = colEl ? colEl.querySelector('.sync2-col__count') : null;
+    if (!countEl) return;
+    const c = cols[col];
+    const n = c.sections.reduce((acc, s) => acc + s.focuses.length, 0);
+    countEl.textContent = `${n} ${n === 1 ? 'focus' : 'focuses'}` + (c.sections.length > 1 ? ' · ' + c.sections.length + ' sections' : '');
+  }
+
   function bind() {
+    // Focus (rich-text) edits.
     $$<HTMLElement>('.sync2-item__txt', board!).forEach((el) => {
       el.addEventListener('blur', () => {
-        const col = el.dataset.col as keyof SyncSeed;
-        data[col][+(el.dataset.i || 0)] = (el.textContent || '').trim();
-        persist(col);
+        const s = findSec(el.dataset.col, el.dataset.sec);
+        const f = s ? s.focuses.find((x) => x.id === el.dataset.foc) : undefined;
+        hideRt();
+        if (!f) return;
+        const html = readFocusHtml(el);
+        if (html === f.html) return;
+        f.html = html;
+        el.innerHTML = html; // reflect the sanitized result
+        updateCount(el.dataset.col as ColumnKey);
+        persist(el.dataset.col as ColumnKey);
+      });
+      el.addEventListener('keydown', (e) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === 'Enter' && !ke.shiftKey) { e.preventDefault(); el.blur(); }
+      });
+    });
+    // Section title edits.
+    $$<HTMLElement>('.sync2-sec__title', board!).forEach((el) => {
+      el.addEventListener('blur', () => {
+        const s = findSec(el.dataset.col, el.dataset.sec); if (!s) return;
+        const title = escapeText((el.textContent || '').trim()).slice(0, MAX_TITLE_LEN);
+        if (title === s.title) return;
+        s.title = title; el.innerHTML = title;
+        persist(el.dataset.col as ColumnKey);
       });
       el.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); el.blur(); } });
     });
+    // Delete a focus.
     $$<HTMLElement>('.sync2-item__del', board!).forEach((b) => b.addEventListener('click', () => {
-      const col = b.dataset.col as keyof SyncSeed;
-      data[col].splice(+(b.dataset.i || 0), 1); persist(col); render();
+      const s = findSec(b.dataset.col, b.dataset.sec); if (!s) return;
+      s.focuses = s.focuses.filter((f) => f.id !== b.dataset.foc);
+      persist(b.dataset.col as ColumnKey); render();
     }));
+    // Delete a section (confirm if it holds anything).
+    $$<HTMLElement>('.sync2-sec__del', board!).forEach((b) => b.addEventListener('click', () => {
+      const c = cols[b.dataset.col as ColumnKey]; if (!c) return;
+      const sec = c.sections.find((s) => s.id === b.dataset.sec);
+      if (sec && (sec.focuses.length || sec.title.trim()) && !confirm('Remove this section and its focuses?')) return;
+      c.sections = c.sections.filter((s) => s.id !== b.dataset.sec);
+      ensureSection(c);
+      persist(b.dataset.col as ColumnKey); render();
+    }));
+    // Add a focus (to this section).
     $$<HTMLElement>('.sync2-add', board!).forEach((b) => b.addEventListener('click', () => {
-      const col = b.dataset.col as keyof SyncSeed;
-      data[col].push(''); persist(col); render();
-      const colEl = $$('.sync2-col', board!).find((c) => (c as HTMLElement).dataset.col === col);
-      const items = colEl ? $$('.sync2-item__txt', colEl) : [];
-      const last = items[items.length - 1];
-      if (last) (last as HTMLElement).focus();
+      const s = findSec(b.dataset.col, b.dataset.sec); if (!s) return;
+      const f = { id: genId('f'), html: '' };
+      s.focuses.push(f);
+      persist(b.dataset.col as ColumnKey); render();
+      const el = board!.querySelector(`.sync2-item__txt[data-foc="${f.id}"]`) as HTMLElement | null;
+      if (el) focusEnd(el);
+    }));
+    // Add a section (to this column).
+    $$<HTMLElement>('.sync2-addsec', board!).forEach((b) => b.addEventListener('click', () => {
+      const c = cols[b.dataset.col as ColumnKey]; if (!c) return;
+      const sec = { id: genId('s'), title: '', focuses: [] };
+      c.sections.push(sec);
+      persist(b.dataset.col as ColumnKey); render();
+      const el = board!.querySelector(`.sync2-sec__title[data-sec="${sec.id}"]`) as HTMLElement | null;
+      if (el) el.focus();
     }));
   }
-  $('#sync-reset')?.addEventListener('click', () => {
-    const fresh = seed();
-    colIds.forEach((id) => { data[id] = fresh[id]; persist(id); });
+
+  // ── Rich-text toolbar (floating; Bold / Italic / Highlight) ─────────────────────
+  const rt = document.getElementById('sync-rt');
+  try { document.execCommand('styleWithCSS', false, 'false'); } catch (e) { /* emit <b>/<i>, not spans */ }
+  function hideRt() { if (rt) rt.hidden = true; }
+  function showRtForSelection() {
+    if (!rt) return;
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) { hideRt(); return; }
+    const node = sel.anchorNode;
+    const host = node ? (node.nodeType === 1 ? (node as HTMLElement) : node.parentElement) : null;
+    const focusEl = host ? (host.closest('.sync2-item__txt') as HTMLElement | null) : null;
+    if (!focusEl || !board!.contains(focusEl)) { hideRt(); return; }
+    const rect = sel.getRangeAt(0).getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) { hideRt(); return; }
+    rt.hidden = false;
+    const top = window.scrollY + rect.top - rt.offsetHeight - 8;
+    const left = window.scrollX + rect.left + rect.width / 2 - rt.offsetWidth / 2;
+    rt.style.top = Math.max(window.scrollY + 8, top) + 'px';
+    rt.style.left = Math.max(8, left) + 'px';
+  }
+  document.addEventListener('selectionchange', showRtForSelection);
+  function toggleMark() {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    let anc: Node | null = range.commonAncestorContainer;
+    let markEl: HTMLElement | null = null;
+    while (anc && anc !== board) { if (anc.nodeType === 1 && (anc as HTMLElement).tagName === 'MARK') { markEl = anc as HTMLElement; break; } anc = anc.parentNode; }
+    if (markEl) {
+      const parent = markEl.parentNode; if (!parent) return;
+      while (markEl.firstChild) parent.insertBefore(markEl.firstChild, markEl);
+      parent.removeChild(markEl);
+    } else {
+      try { const m = document.createElement('mark'); range.surroundContents(m); }
+      catch (e) { document.execCommand('insertHTML', false, '<mark>' + escapeText(sel.toString()) + '</mark>'); }
+    }
+  }
+  rt?.querySelectorAll<HTMLElement>('[data-rt]').forEach((btn) => {
+    btn.addEventListener('mousedown', (e) => {
+      e.preventDefault(); // keep the editable's selection + focus
+      const cmd = btn.dataset.rt;
+      if (cmd === 'bold') document.execCommand('bold');
+      else if (cmd === 'italic') document.execCommand('italic');
+      else if (cmd === 'mark') toggleMark();
+    });
+  });
+
+  // ── Week picker (past-week history) ─────────────────────────────────────────────
+  const weekSel = document.getElementById('sync-week') as HTMLSelectElement | null;
+  function updateHeader() {
+    const label = document.getElementById('sync-week-label'); if (label) label.textContent = viewedWeek;
+    const title = document.getElementById('sync-title');
+    const eyebrow = document.getElementById('sync-eyebrow');
+    const isCurrent = viewedWeek === currentWeek;
+    if (title) title.textContent = isCurrent ? 'This week, by team' : 'Earlier week, by team';
+    if (eyebrow) eyebrow.textContent = isCurrent ? 'Monday standup' : 'Past standup';
+  }
+  weekSel?.addEventListener('change', async () => {
+    viewedWeek = weekSel.value || currentWeek;
+    updateHeader();
+    if (statusEl) { statusEl.textContent = 'Loading…'; statusEl.className = 'sync2-status is-saving'; }
+    try {
+      const res = await fetch('/hub/api/sync?week=' + encodeURIComponent(viewedWeek), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
+      if (res.type === 'opaqueredirect' || res.status === 401) { setStatus('signedout'); return; }
+      if (res.ok) { const b = await res.json(); cols = b && b.ok && b.columns ? shape(b.columns) : blankCols(); }
+      else cols = blankCols();
+    } catch (e) { cols = blankCols(); }
+    recoverFromLocal();
+    ensureAll();
+    if (statusEl) { statusEl.textContent = ''; statusEl.className = 'sync2-status'; }
     render();
   });
+
+  // ── Reset (shared + destructive → confirm) ─────────────────────────────────────
+  $('#sync-reset')?.addEventListener('click', () => {
+    const which = viewedWeek === currentWeek ? "this week's" : `the ${viewedWeek}`;
+    if (!confirm(`Clear ${which} board for the whole team? This can't be undone.`)) return;
+    colIds.forEach((id) => { cols[id] = { v: 2, sections: [] }; });
+    ensureAll();
+    colIds.forEach((id) => persist(id));
+    render();
+  });
+
+  // ── Live polling (merge teammates' edits; never clobber active editing) ─────────
+  async function poll() {
+    if (!viewedWeek) return;
+    const editing = document.activeElement ? board!.contains(document.activeElement) : false;
+    if (editing || pending.size > 0 || inFlight > 0) return; // don't clobber unsaved local edits
+    try {
+      const res = await fetch('/hub/api/sync?week=' + encodeURIComponent(viewedWeek), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
+      if (!res.ok || res.type === 'opaqueredirect') return;
+      const b = await res.json();
+      if (!b || !b.ok || !b.columns) return;
+      const incoming = shape(b.columns);
+      if (comparable(incoming) !== comparable(cols)) { cols = incoming; ensureAll(); saveLocal(); render(); }
+    } catch (e) { /* offline; keep local */ }
+  }
+
+  // ── Init ────────────────────────────────────────────────────────────────────
+  recoverFromLocal();
+  ensureAll();
+  updateHeader();
   render();
+  window.setInterval(poll, 4000);
 })();
 
 // ── Analytics charts — drawn on first view from the #hub-analytics data island ──

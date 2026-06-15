@@ -1,35 +1,56 @@
 ---
-/* Weekly Sync view — three editable team columns (Recruiting/Marketing/
-   Operations) persisted to the shared hub_weekly_sync table. hub-client.ts
-   hydrates the board from the #hub-sync data-island below (this week's server
-   rows, with per-column persisted flags), renders the columns, and on each edit
-   saves to localStorage (offline mirror) + POSTs the changed column to
-   /hub/api/sync (debounced). Ported from design_handoff_hub/src/dashboard.html. */
-import type { SyncSeed } from '../../lib/hub/hub-seed';
+/* Weekly Sync view — a live, shared, three-team standup board (Recruiting /
+   Marketing / Operations) persisted to hub_weekly_sync. Rebuilt 2026-06-15:
+   • Blank on a brand-new week (no starter template).
+   • Each column = named sections, each section holds rich-text focuses.
+   • "Add a focus" + "Add section" per column (client-rendered).
+   • Live updates by polling our own guarded GET /hub/api/sync?week= every few
+     seconds (merge-by-id; never clobbers the focus you're editing).
+   • Past-week history via the week picker.
+   • Reset clears the whole team's board for the week (with confirm).
+   hub-client.ts hydrates from the #hub-sync island, renders, and persists each
+   changed column (debounced POST) to the shared table + a localStorage mirror. */
+import type { ColumnData, ColumnKey } from '../../lib/hub/sync-data';
 interface Props {
   weekKey: string;
-  data: SyncSeed;
-  persisted: { recruiting: boolean; marketing: boolean; operations: boolean };
+  columns: Record<ColumnKey, ColumnData>;
+  weeks: string[];
 }
-const { weekKey, data, persisted } = Astro.props;
-// '<' escaped so a board item can never break out of the data script.
-const islandJson = JSON.stringify({ weekKey, data, persisted }).replace(/</g, '\\u003c');
+const { weekKey, columns, weeks } = Astro.props;
+// '<' escaped so a board focus can never break out of the data script island.
+const islandJson = JSON.stringify({ weekKey, columns, weeks }).replace(/</g, '\\u003c');
 ---
 <section class="hub-view" data-view="sync">
   <script id="hub-sync" type="application/json" is:inline set:html={islandJson}></script>
   <div class="sync2-head">
     <div>
-      <div class="sync2-eyebrow">Monday standup · {weekKey}</div>
-      <h2 class="sync2-title">This week, by team</h2>
+      <div class="sync2-eyebrow">
+        <span id="sync-eyebrow">Monday standup</span> · <span id="sync-week-label">{weekKey}</span>
+      </div>
+      <h2 class="sync2-title" id="sync-title">This week, by team</h2>
     </div>
     <div class="sync2-head__actions">
       <span class="sync2-status" id="sync-status" role="status" aria-live="polite"></span>
-      <span class="chip"><span class="chip__dot" style="background:var(--mn-cyan,#59BFE7);"></span>9:00 AM</span>
-      <button class="sync2-reset" id="sync-reset" title="Reset to the starter template">Reset board</button>
+      <span class="sync2-live" id="sync-live" title="Live — updates from the team appear automatically">
+        <span class="sync2-live__dot"></span>Live
+      </span>
+      <select id="sync-week" class="sync2-week-select" aria-label="View a week">
+        {weeks.map((w) => (
+          <option value={w} selected={w === weekKey}>{w === weekKey ? `${w} · this week` : w}</option>
+        ))}
+      </select>
+      <button class="sync2-reset" id="sync-reset" title="Clear this week's board for the whole team">Reset</button>
     </div>
   </div>
 
   <div class="sync2-board" id="sync-board">
     <!-- columns rendered by hub-client.ts -->
+  </div>
+
+  <!-- Floating rich-text toolbar: appears above a text selection inside a focus. -->
+  <div class="sync2-rt" id="sync-rt" role="toolbar" aria-label="Text formatting" hidden>
+    <button type="button" class="sync2-rt__btn" data-rt="bold" title="Bold (Ctrl+B)" aria-label="Bold"><b>B</b></button>
+    <button type="button" class="sync2-rt__btn" data-rt="italic" title="Italic (Ctrl+I)" aria-label="Italic"><i>I</i></button>
+    <button type="button" class="sync2-rt__btn" data-rt="mark" title="Highlight" aria-label="Highlight"><span class="sync2-rt__hl">H</span></button>
   </div>
 </section>
