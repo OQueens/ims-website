@@ -5,6 +5,10 @@
 -- Mirrors src/lib/hub/sync-ops.ts applyOp (A1: 6 ops). HTML/title are stored
 -- raw here and normalized+escaped+sanitized on READ by readColumn (sync-data.ts),
 -- matching the existing sanitize-on-read posture — the RPC contains NO sanitizer.
+-- NOTE: COALESCE is a SQL parser construct (a keyword), NOT a pg_catalog function,
+-- so it must be written BARE — `pg_catalog.coalesce(...)` raises "function does not
+-- exist" at runtime (search_path='' does not affect keyword constructs). Real
+-- functions stay pg_catalog-qualified for search_path safety.
 
 ALTER TABLE public.hub_weekly_sync
   ADD COLUMN IF NOT EXISTS version int NOT NULL DEFAULT 0;
@@ -28,10 +32,10 @@ BEGIN
     -- and readColumn's trim), so a leading-whitespace title near the 80-char cap
     -- doesn't lose content chars to the truncation budget and diverge from applyOp.
     RETURN pg_catalog.jsonb_set(s, '{title}', pg_catalog.to_jsonb(
-      pg_catalog.left(pg_catalog.regexp_replace(pg_catalog.coalesce(p_op->>'title',''), '^\s+|\s+$', '', 'g'), 80)));
+      pg_catalog.left(pg_catalog.regexp_replace(coalesce(p_op->>'title',''), '^\s+|\s+$', '', 'g'), 80)));
 
   ELSIF v_type = 'deleteFocus' THEN
-    SELECT pg_catalog.coalesce(pg_catalog.jsonb_agg(f ORDER BY ord), '[]'::jsonb) INTO v_focs
+    SELECT coalesce(pg_catalog.jsonb_agg(f ORDER BY ord), '[]'::jsonb) INTO v_focs
       FROM pg_catalog.jsonb_array_elements(s->'focuses') WITH ORDINALITY AS t(f, ord)
       WHERE f->>'id' <> (p_op->>'focusId');
     RETURN pg_catalog.jsonb_set(s, '{focuses}', v_focs);
@@ -42,7 +46,7 @@ BEGIN
     v_exists := EXISTS (SELECT 1 FROM pg_catalog.jsonb_array_elements(s->'focuses') f WHERE f->>'id' = v_foc_id);
     IF v_exists THEN
       -- update in place ONLY when html differs (idempotent-on-no-change → retry-safe)
-      SELECT pg_catalog.coalesce(pg_catalog.jsonb_agg(
+      SELECT coalesce(pg_catalog.jsonb_agg(
         CASE WHEN f->>'id' = v_foc_id AND f->>'html' IS DISTINCT FROM v_html
              THEN f || pg_catalog.jsonb_build_object('html', v_html, 'editedBy', p_email, 'editedAt', p_now)
              ELSE f END
@@ -52,13 +56,13 @@ BEGIN
       -- append only if under the 50-focus cap (mirrors MAX_FOCUSES). coalesce so a
       -- section that somehow lacks a focuses array (legacy/hand-edited row) is
       -- treated as empty rather than tripping NULL arithmetic into a null section.
-      IF pg_catalog.jsonb_array_length(pg_catalog.coalesce(s->'focuses', '[]'::jsonb)) < 50 THEN
-        SELECT pg_catalog.coalesce(pg_catalog.jsonb_agg(f ORDER BY ord), '[]'::jsonb) INTO v_focs
-          FROM pg_catalog.jsonb_array_elements(pg_catalog.coalesce(s->'focuses', '[]'::jsonb)) WITH ORDINALITY AS t(f, ord);
+      IF pg_catalog.jsonb_array_length(coalesce(s->'focuses', '[]'::jsonb)) < 50 THEN
+        SELECT coalesce(pg_catalog.jsonb_agg(f ORDER BY ord), '[]'::jsonb) INTO v_focs
+          FROM pg_catalog.jsonb_array_elements(coalesce(s->'focuses', '[]'::jsonb)) WITH ORDINALITY AS t(f, ord);
         v_focs := v_focs || pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
           'id', v_foc_id, 'html', v_html, 'by', p_email, 'createdAt', p_now));
       ELSE
-        v_focs := pg_catalog.coalesce(s->'focuses', '[]'::jsonb);
+        v_focs := coalesce(s->'focuses', '[]'::jsonb);
       END IF;
     END IF;
     RETURN pg_catalog.jsonb_set(s, '{focuses}', v_focs);
@@ -116,7 +120,7 @@ BEGIN
       v_new := v_items || pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
         'id', p_op->'section'->>'id',
         -- trim-then-truncate (matches the oracle + readColumn); see setSectionTitle.
-        'title', pg_catalog.left(pg_catalog.regexp_replace(pg_catalog.coalesce(p_op->'section'->>'title',''), '^\s+|\s+$', '', 'g'), 80),
+        'title', pg_catalog.left(pg_catalog.regexp_replace(coalesce(p_op->'section'->>'title',''), '^\s+|\s+$', '', 'g'), 80),
         'by', p_email,
         'focuses', '[]'::jsonb));
     ELSE
@@ -124,7 +128,7 @@ BEGIN
     END IF;
 
   ELSIF v_type = 'deleteSection' THEN
-    SELECT pg_catalog.coalesce(pg_catalog.jsonb_agg(s ORDER BY ord), '[]'::jsonb) INTO v_new
+    SELECT coalesce(pg_catalog.jsonb_agg(s ORDER BY ord), '[]'::jsonb) INTO v_new
       FROM pg_catalog.jsonb_array_elements(v_items) WITH ORDINALITY AS t(s, ord)
       WHERE s->>'id' <> (p_op->>'sectionId');
 
@@ -144,7 +148,7 @@ BEGIN
   ELSE
     -- section-targeted ops on an EXISTING section (upsertFocus / deleteFocus /
     -- setSectionTitle); a deleteFocus targeting a missing section is a no-op.
-    SELECT pg_catalog.coalesce(pg_catalog.jsonb_agg(
+    SELECT coalesce(pg_catalog.jsonb_agg(
       CASE WHEN s->>'id' = v_sec_id THEN public.hub_sync_apply_section(s, p_op, p_email, v_now) ELSE s END
       ORDER BY ord), '[]'::jsonb) INTO v_new
       FROM pg_catalog.jsonb_array_elements(v_items) WITH ORDINALITY AS t(s, ord);

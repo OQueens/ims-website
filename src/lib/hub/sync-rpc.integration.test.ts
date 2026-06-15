@@ -62,18 +62,19 @@ const WEEK = '9999-W99', COL = 'recruiting';
   it('two concurrent upserts to DIFFERENT focuses both survive (the no-lost-update guarantee)', async () => {
     await sb.from('hub_weekly_sync').delete().eq('week_key', WEEK);
     await sb.rpc('hub_sync_apply', { p_week: WEEK, p_col: COL, p_op: { type: 'addSection', section: { id: 'secCON', title: '' } }, p_email: 'a@iastaffing.com' });
+    // ids must be >= 3 chars (ID_RE / cleanId); the real client never sends shorter.
     await Promise.all([
-      sb.rpc('hub_sync_apply', { p_week: WEEK, p_col: COL, p_op: { type: 'upsertFocus', sectionId: 'secCON', focus: { id: 'fX', html: 'X' } }, p_email: 'a@iastaffing.com' }),
-      sb.rpc('hub_sync_apply', { p_week: WEEK, p_col: COL, p_op: { type: 'upsertFocus', sectionId: 'secCON', focus: { id: 'fY', html: 'Y' } }, p_email: 'b@iastaffing.com' }),
+      sb.rpc('hub_sync_apply', { p_week: WEEK, p_col: COL, p_op: { type: 'upsertFocus', sectionId: 'secCON', focus: { id: 'fXX', html: 'X' } }, p_email: 'a@iastaffing.com' }),
+      sb.rpc('hub_sync_apply', { p_week: WEEK, p_col: COL, p_op: { type: 'upsertFocus', sectionId: 'secCON', focus: { id: 'fYY', html: 'Y' } }, p_email: 'b@iastaffing.com' }),
     ]);
     const { data } = await sb.from('hub_weekly_sync').select('items').eq('week_key', WEEK).eq('column_key', COL).single();
-    expect(readColumn(data!.items).sections[0].focuses.map((f) => f.id).sort()).toEqual(['fX', 'fY']);
+    expect(readColumn(data!.items).sections[0].focuses.map((f) => f.id).sort()).toEqual(['fXX', 'fYY']);
   });
 
   it('re-applying an identical create op does NOT bump version or add editedBy (idempotent)', async () => {
     await sb.from('hub_weekly_sync').delete().eq('week_key', WEEK);
     await sb.rpc('hub_sync_apply', { p_week: WEEK, p_col: COL, p_op: { type: 'addSection', section: { id: 'secIDEM' } }, p_email: 'a@iastaffing.com' });
-    const op = { type: 'upsertFocus', sectionId: 'secIDEM', focus: { id: 'fI', html: 'same' } };
+    const op = { type: 'upsertFocus', sectionId: 'secIDEM', focus: { id: 'fII', html: 'same' } };
     const r1 = await sb.rpc('hub_sync_apply', { p_week: WEEK, p_col: COL, p_op: op, p_email: 'a@iastaffing.com' });
     const r2 = await sb.rpc('hub_sync_apply', { p_week: WEEK, p_col: COL, p_op: op, p_email: 'b@iastaffing.com' });
     const v1 = (Array.isArray(r1.data) ? r1.data[0] : r1.data).r_version;
