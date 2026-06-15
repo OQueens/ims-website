@@ -23,10 +23,11 @@ export const MAX_FOCUSES = 50; // per section
 export const MAX_HTML_LEN = 2000; // per focus (post-sanitize)
 export const MAX_TITLE_LEN = 80; // per section title
 export const MAX_ID_LEN = 40;
+export const MAX_EMAIL_LEN = 120;
 
-export interface Focus { id: string; html: string; }
-export interface Section { id: string; title: string; focuses: Focus[]; }
-export interface ColumnData { v: 2; sections: Section[]; }
+export interface Focus { id: string; html: string; by: string; createdAt: number; editedBy?: string; editedAt?: number; }
+export interface Section { id: string; title: string; by?: string; focuses: Focus[]; }
+export interface ColumnData { v: 3; sections: Section[]; }
 
 /** ISO 8601 week key (YYYY-Wxx), computed in UTC. Week 1 contains the first
  *  Thursday of the year; the returned year is the ISO week-year (which can
@@ -114,6 +115,16 @@ function cleanId(raw: unknown, gen: () => string): string {
   return gen();
 }
 
+function cleanEmail(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  const s = raw.trim().slice(0, MAX_EMAIL_LEN);
+  return /^[^\s@]+@[^\s@]+$/.test(s) ? s : '';
+}
+
+function cleanTs(raw: unknown): number {
+  return typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 ? Math.floor(raw) : 0;
+}
+
 /** An id generator. Server passes one backed by crypto.randomUUID; tests pass a
  *  deterministic counter. Always yields a string >= 3 chars. */
 export type IdGen = (prefix: string) => string;
@@ -125,7 +136,7 @@ export function makeIdGen(): IdGen {
 }
 
 export function emptyColumn(): ColumnData {
-  return { v: 2, sections: [] };
+  return { v: 3, sections: [] };
 }
 
 function normalizeSections(sectionsRaw: unknown[], gen: IdGen): Section[] {
@@ -137,10 +148,23 @@ function normalizeSections(sectionsRaw: unknown[], gen: IdGen): Section[] {
       const focuses: Focus[] = focusesRaw
         .slice(0, MAX_FOCUSES)
         .filter((f): f is Record<string, unknown> => !!f && typeof f === 'object')
-        .map((f) => ({ id: cleanId(f.id, () => gen('f')), html: sanitizeHtml(f.html) }));
+        .map((f) => {
+          const focus: Focus = {
+            id: cleanId(f.id, () => gen('f')),
+            html: sanitizeHtml(f.html),
+            by: cleanEmail(f.by),
+            createdAt: cleanTs(f.createdAt),
+          };
+          const editedBy = cleanEmail(f.editedBy);
+          if (editedBy) focus.editedBy = editedBy;
+          const editedAt = cleanTs(f.editedAt);
+          if (editedAt) focus.editedAt = editedAt;
+          return focus;
+        });
       return {
         id: cleanId(s.id, () => gen('s')),
         title: escapeText(typeof s.title === 'string' ? s.title.trim() : '').slice(0, MAX_TITLE_LEN),
+        by: cleanEmail(s.by) || undefined,
         focuses,
       };
     });
@@ -159,16 +183,16 @@ export function normalizeColumn(raw: unknown, gen: IdGen): ColumnData {
     if (raw.length > 0 && raw.every((el) => typeof el === 'string')) {
       const focuses: Focus[] = raw
         .slice(0, MAX_FOCUSES)
-        .map((s) => ({ id: gen('f'), html: escapeText((s as string).trim()) }))
+        .map((s) => ({ id: gen('f'), html: escapeText((s as string).trim()), by: '', createdAt: 0 }))
         .filter((f) => f.html.length > 0);
-      return { v: 2, sections: focuses.length ? [{ id: gen('s'), title: '', focuses }] : [] };
+      return { v: 3, sections: focuses.length ? [{ id: gen('s'), title: '', focuses }] : [] };
     }
-    // Otherwise it's a v2 sections array (or an empty array → blank column).
-    return { v: 2, sections: normalizeSections(raw, gen) };
+    // Otherwise it's a v2/v3 sections array (or an empty array → blank column).
+    return { v: 3, sections: normalizeSections(raw, gen) };
   }
-  // v2 object form `{ sections: [...] }` (client POST body).
+  // v2/v3 object form `{ sections: [...] }` (client POST body).
   if (raw && typeof raw === 'object' && Array.isArray((raw as { sections?: unknown }).sections)) {
-    return { v: 2, sections: normalizeSections((raw as { sections: unknown[] }).sections, gen) };
+    return { v: 3, sections: normalizeSections((raw as { sections: unknown[] }).sections, gen) };
   }
   return emptyColumn();
 }

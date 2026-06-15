@@ -13,6 +13,7 @@ import {
   MAX_FOCUSES,
   MAX_HTML_LEN,
   type IdGen,
+  type Focus,
 } from './sync-data';
 
 // Deterministic id generator for stable assertions.
@@ -106,7 +107,7 @@ describe('escapeText (no tags survive)', () => {
 describe('normalizeColumn', () => {
   it('migrates a v1 string[] into one untitled section (escaped, ids assigned)', () => {
     const c = normalizeColumn(['Close Austin', '<b>not bold</b>'], counterGen());
-    expect(c.v).toBe(2);
+    expect(c.v).toBe(3);
     expect(c.sections.length).toBe(1);
     expect(c.sections[0].title).toBe('');
     expect(c.sections[0].focuses.map((f) => f.html)).toEqual(['Close Austin', '&lt;b&gt;not bold&lt;/b&gt;']);
@@ -196,9 +197,27 @@ describe('readColumn', () => {
   it('reads null as an empty column', () => {
     expect(readColumn(null, counterGen())).toEqual(emptyColumn());
   });
-  it('reads a v1 row as a migrated v2 column', () => {
+  it('reads a v1 row as a migrated v3 column', () => {
     const c = readColumn(['x'], counterGen());
-    expect(c.v).toBe(2);
+    expect(c.v).toBe(3);
     expect(c.sections[0].focuses[0].html).toBe('x');
+  });
+});
+
+describe('v3 read enrichment', () => {
+  it('migrates a v1 string[] item to a v3 focus with empty attribution', () => {
+    const col = readColumn(['Ship the thing'], (p) => p + '_x');
+    expect(col.v).toBe(3);
+    const f = col.sections[0].focuses[0] as Focus;
+    expect(f.html).toBe('Ship the thing');
+    expect(f.by).toBe('');
+    expect(f.createdAt).toBe(0);
+  });
+  it('preserves by/createdAt/editedBy/editedAt on a stored focus', () => {
+    const stored = [{ id: 'sec1', title: 'T', focuses: [
+      { id: 'foc1', html: '<b>x</b>', by: 'a@iastaffing.com', createdAt: 100, editedBy: 'b@iastaffing.com', editedAt: 200 },
+    ] }];
+    const f = readColumn(stored, (p) => p + '_x').sections[0].focuses[0];
+    expect(f).toMatchObject({ id: 'foc1', by: 'a@iastaffing.com', createdAt: 100, editedBy: 'b@iastaffing.com', editedAt: 200 });
   });
 });
