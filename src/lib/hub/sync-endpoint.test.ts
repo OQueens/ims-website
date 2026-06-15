@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { POST, GET } from '../../pages/hub/api/sync';
 import { signSession } from './session';
+import { validateOp } from './sync-ops';
 
 const SECRET = 'test-secret-0123456789-abcdef';
 
@@ -50,27 +51,55 @@ describe('POST /hub/api/sync', () => {
     expect(res.status).toBe(400);
   });
 
-  it('400s on a bad payload (unknown column)', async () => {
-    const res = await callPost({ weekKey: '2026-W24', columnKey: 'finance', column: emptyCol }, { cookie: await validCookie() });
+  it('400s on a bad column key (unknown column)', async () => {
+    const res = await callPost({ weekKey: '2026-W24', columnKey: 'finance', op: { type: 'clearColumn' } }, { cookie: await validCookie() });
     expect(res.status).toBe(400);
   });
 
-  it('400s when neither column nor items is present', async () => {
-    const res = await callPost({ weekKey: '2026-W24', columnKey: 'recruiting' }, { cookie: await validCookie() });
+  it('400s on a malformed op (deleteFocus missing focusId)', async () => {
+    const res = await callPost(
+      { weekKey: '2026-W24', columnKey: 'recruiting', op: { type: 'deleteFocus', sectionId: 'abcd' } },
+      { cookie: await validCookie() },
+    );
     expect(res.status).toBe(400);
   });
 
-  it('503s when storage is unconfigured (no Supabase env) for a valid v2 write', async () => {
-    const body = { weekKey: '2026-W24', columnKey: 'recruiting', column: { v: 2, sections: [{ id: 'abc', title: '', focuses: [{ id: 'def', html: '<b>x</b>' }] }] } };
+  it('503s when storage is unconfigured (no Supabase env) for a valid op', async () => {
+    const body = { weekKey: '2026-W24', columnKey: 'recruiting', op: { type: 'clearColumn' } };
     const res = await callPost(body, { cookie: await validCookie() });
     expect(res.status).toBe(503);
     const json = await res.json();
     expect(json.error).toBe('storage-unconfigured');
   });
 
-  it('503s (passes validation) for a legacy { items } write too', async () => {
-    const res = await callPost({ weekKey: '2026-W24', columnKey: 'operations', items: ['x'] }, { cookie: await validCookie() });
+  it('503s for a valid addSection op (passes op validation, fails at storage)', async () => {
+    const res = await callPost(
+      { weekKey: '2026-W24', columnKey: 'operations', op: { type: 'addSection', section: { id: 'sec01', title: 'Planning' } } },
+      { cookie: await validCookie() },
+    );
     expect(res.status).toBe(503);
+  });
+});
+
+describe('validateOp — pure contract checks', () => {
+  it('rejects undefined', () => {
+    expect(validateOp(undefined).ok).toBe(false);
+  });
+
+  it('rejects an unknown op type', () => {
+    expect(validateOp({ type: 'evil' }).ok).toBe(false);
+  });
+
+  it('rejects deleteFocus missing focusId', () => {
+    const result = validateOp({ type: 'deleteFocus', sectionId: 'abcd' });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('bad-deleteFocus');
+  });
+
+  it('accepts a valid clearColumn op', () => {
+    const result = validateOp({ type: 'clearColumn' });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.op.type).toBe('clearColumn');
   });
 });
 

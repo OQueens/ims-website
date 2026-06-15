@@ -4,13 +4,13 @@ import { getCookie } from '../../../lib/hub/cookies';
 import { verifySession, SESSION_COOKIE } from '../../../lib/hub/session';
 import { getHubSupabase } from '../../../lib/hub/hub-supabase';
 import {
-  validateSyncPayload,
+  sanitizeHtml,
   readColumn,
-  emptyColumn,
   isWeekKey,
   COLUMN_KEYS,
   type ColumnData,
 } from '../../../lib/hub/sync-data';
+import { validateOp } from '../../../lib/hub/sync-ops';
 
 // Weekly Sync read/write endpoint. Lives UNDER /hub so the Path=/hub session
 // cookie is sent AND the middleware hub guard applies (a second auth layer that
@@ -43,35 +43,33 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const email = await authedEmail(request, env);
   if (!email) return json(401, { ok: false, error: 'unauthorized' });
 
-  // 2) Parse + validate + sanitize the body (HTML allowlist, count/length caps).
+  // 2) Parse + validate the single-intent op.
   let raw: unknown;
-  try {
-    raw = await request.json();
-  } catch {
-    return json(400, { ok: false, error: 'invalid-json' });
-  }
-  const parsed = validateSyncPayload(raw);
+  try { raw = await request.json(); } catch { return json(400, { ok: false, error: 'invalid-json' }); }
+  const r = raw as { weekKey?: unknown; columnKey?: unknown; op?: unknown };
+  if (!isWeekKey(r.weekKey)) return json(400, { ok: false, error: 'bad-week-key' });
+  if (typeof r.columnKey !== 'string' || !(COLUMN_KEYS as readonly string[]).includes(r.columnKey)) return json(400, { ok: false, error: 'bad-column' });
+  const parsed = validateOp(r.op);
   if (!parsed.ok) return json(400, { ok: false, error: parsed.reason });
 
-  // 3) Persist (service-role; RLS-on table, no public policy).
+  // Sanitize html the op carries BEFORE the DB (the RPC stores raw).
+  const op = parsed.op.type === 'upsertFocus'
+    ? { ...parsed.op, focus: { ...parsed.op.focus, html: sanitizeHtml(parsed.op.focus.html) } }
+    : parsed.op;
+
+  // 3) Apply atomically via the RPC (service-role).
   const supabase = getHubSupabase(env);
   if (!supabase) return json(503, { ok: false, error: 'storage-unconfigured' });
-
-  const now = Math.floor(Date.now() / 1000);
-  const { weekKey, columnKey, column } = parsed.value;
-  // Persist the SECTIONS ARRAY (the table CHECK-constrains `items` to a JSON
-  // array). readColumn re-wraps it into a ColumnData on the way out.
-  const { error } = await supabase
-    .from('hub_weekly_sync')
-    .upsert(
-      { week_key: weekKey, column_key: columnKey, items: column.sections, updated_by: email, updated_at: new Date(now * 1000).toISOString() },
-      { onConflict: 'week_key,column_key' },
-    );
+  const { data, error } = await supabase.rpc('hub_sync_apply', {
+    p_week: r.weekKey, p_col: r.columnKey, p_op: op, p_email: email,
+  });
   if (error) {
-    console.error('[/hub/api/sync] upsert failed:', error.message);
+    console.error('[/hub/api/sync POST] rpc failed:', error.message);
     return json(502, { ok: false, error: 'storage-failed' });
   }
-  return json(200, { ok: true });
+  const row = Array.isArray(data) ? data[0] : data;
+  const column = readColumn(row?.r_items);
+  return json(200, { ok: true, columnKey: r.columnKey, version: row?.r_version ?? 0, column });
 };
 
 export const GET: APIRoute = async ({ request, locals }) => {
@@ -104,19 +102,19 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   const { data, error } = await supabase
     .from('hub_weekly_sync')
-    .select('column_key, items')
+    .select('column_key, items, version')
     .eq('week_key', week);
   if (error) {
     console.error('[/hub/api/sync GET week] read failed:', error.message);
     return json(502, { ok: false, error: 'storage-failed' });
   }
 
-  const columns: Record<string, ColumnData> = {};
-  for (const key of COLUMN_KEYS) columns[key] = emptyColumn();
+  const columns: Record<string, { v: 3; version: number; sections: ColumnData['sections'] }> = {};
+  for (const key of COLUMN_KEYS) columns[key] = { v: 3, version: 0, sections: [] };
   for (const row of data ?? []) {
-    const r = row as { column_key: string; items: unknown };
-    if ((COLUMN_KEYS as readonly string[]).includes(r.column_key)) {
-      columns[r.column_key] = readColumn(r.items);
+    const rr = row as { column_key: string; items: unknown; version: number | null };
+    if ((COLUMN_KEYS as readonly string[]).includes(rr.column_key)) {
+      columns[rr.column_key] = { v: 3, version: rr.version ?? 0, sections: readColumn(rr.items).sections };
     }
   }
   return json(200, { ok: true, week, columns });
