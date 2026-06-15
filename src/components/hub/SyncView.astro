@@ -23,6 +23,7 @@ const islandJson = JSON.stringify({ weekKey, data, persisted }).replace(/</g, '\
       <h2 class="sync2-title">This week, by team</h2>
     </div>
     <div class="sync2-head__actions">
+      <span class="sync2-status" id="sync-status" role="status" aria-live="polite"></span>
       <span class="chip"><span class="chip__dot" style="background:var(--mn-cyan,#59BFE7);"></span>9:00 AM</span>
       <button class="sync2-reset" id="sync-reset" title="Reset to the starter template">Reset board</button>
     </div>

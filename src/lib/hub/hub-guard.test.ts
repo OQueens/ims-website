@@ -40,4 +40,25 @@ describe('hubGuardRedirect', () => {
   it('does not guard public paths', async () => {
     expect(await hubGuardRedirect('/hub/login', null, env, 1000)).toBeNull();
   });
+
+  // The 302-to-login was the Weekly Sync save bug: fetch() follows the redirect
+  // to the login HTML (a 200), so a save with a lapsed session silently no-ops.
+  // API routes under /hub must return a clean 401 JSON the client can detect.
+  it('returns 401 JSON (not a 302) for an unauthenticated /hub/api/* request', async () => {
+    const r = await hubGuardRedirect('/hub/api/sync', null, env, 1000);
+    expect(r?.status).toBe(401);
+    expect(r?.headers.get('Content-Type')).toContain('application/json');
+    expect(r?.headers.get('Location')).toBeNull();
+    const body = await r!.json();
+    expect(body.ok).toBe(false);
+  });
+  it('still 401s an /hub/api/* request whose session is expired', async () => {
+    const tok = await signSession('z@iastaffing.com', 'Z', SECRET, 1000, { ttlSeconds: 60 });
+    const r = await hubGuardRedirect('/hub/api/sync', `hub_session=${tok}`, env, 2000);
+    expect(r?.status).toBe(401);
+  });
+  it('allows a valid session through to /hub/api/*', async () => {
+    const tok = await signSession('z@iastaffing.com', 'Z', SECRET, 1000);
+    expect(await hubGuardRedirect('/hub/api/sync', `hub_session=${tok}`, env, 1010)).toBeNull();
+  });
 });

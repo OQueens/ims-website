@@ -319,6 +319,13 @@
 .sync2-head__actions { display: flex; align-items: center; gap: 10px; }
 .sync2-reset { border: 1px solid var(--rule); background: var(--surface); color: var(--ink-soft); border-radius: 999px; padding: 8px 14px; font-family: var(--font-body); font-size: 12px; font-weight: 600; cursor: pointer; transition: border-color 160ms, color 160ms; }
 .sync2-reset:hover { border-color: var(--ink-mute); color: var(--ink); }
+/* Save status — empty by default, fills as the board persists to the shared
+   table. is-error draws attention (sign-in lapse / failed write); is-saved
+   fades after a couple seconds (handled in hub-client.ts). */
+.sync2-status { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; font-weight: 700; min-height: 14px; transition: color 160ms; }
+.sync2-status.is-saving { color: var(--ink-mute); }
+.sync2-status.is-saved { color: var(--mn-cyan, #59BFE7); }
+.sync2-status.is-error { color: var(--pop-magenta, #C44569); }
 
 .sync2-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); align-items: start; }
 @media (max-width: 1000px) { .sync2-board { grid-template-columns: 1fr; } }

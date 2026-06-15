@@ -225,20 +225,54 @@ interface SyncIsland { weekKey: string; data: SyncSeed; persisted: Record<keyof 
   });
 
   const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ } };
+
+  // Visible save status. The board used to POST and `.catch(()=>{})` — so a
+  // lapsed session (302→login, followed by fetch, resolving as a 200 login page)
+  // looked like a success while persisting nothing. We now surface every state.
+  const statusEl = document.getElementById('sync-status');
+  let statusClear: ReturnType<typeof setTimeout> | undefined;
+  type SaveState = 'saving' | 'saved' | 'signedout' | 'error';
+  function setStatus(state: SaveState) {
+    if (!statusEl) return;
+    clearTimeout(statusClear);
+    const map: Record<SaveState, { txt: string; cls: string }> = {
+      saving: { txt: 'Saving…', cls: 'is-saving' },
+      saved: { txt: 'Saved ✓', cls: 'is-saved' },
+      signedout: { txt: 'Sign-in expired — refresh to save', cls: 'is-error' },
+      error: { txt: 'Couldn’t save — will retry', cls: 'is-error' },
+    };
+    const s = map[state];
+    statusEl.textContent = s.txt;
+    statusEl.className = 'sync2-status ' + s.cls;
+    if (state === 'saved') statusClear = setTimeout(() => {
+      if (statusEl.classList.contains('is-saved')) { statusEl.textContent = ''; statusEl.className = 'sync2-status'; }
+    }, 2200);
+  }
+
   // Persist a column: localStorage immediately (offline mirror) + a debounced
-  // POST to the shared store. A failed POST is non-fatal — localStorage holds it.
+  // POST to the shared store. `redirect:'manual'` so an auth 302 is NOT followed
+  // to the login HTML; an opaque redirect / 401 is reported as a sign-in lapse.
   const timers: Partial<Record<keyof SyncSeed, ReturnType<typeof setTimeout>>> = {};
   function persist(col: keyof SyncSeed) {
     save();
     if (!weekKey) return;
     clearTimeout(timers[col]);
-    timers[col] = setTimeout(() => {
-      fetch('/hub/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ weekKey, columnKey: col, items: data[col] }),
-      }).catch(() => { /* offline — localStorage holds it */ });
+    setStatus('saving');
+    timers[col] = setTimeout(async () => {
+      try {
+        const res = await fetch('/hub/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          redirect: 'manual',
+          body: JSON.stringify({ weekKey, columnKey: col, items: data[col] }),
+        });
+        if (res.type === 'opaqueredirect' || res.status === 0 || res.status === 401) setStatus('signedout');
+        else if (res.ok) setStatus('saved');
+        else setStatus('error');
+      } catch (e) {
+        setStatus('error');
+      }
     }, 700);
   }
 
