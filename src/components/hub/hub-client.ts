@@ -329,9 +329,63 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
   let opSeq = 0;
   const latestSeqByFocus = new Map<string, number>();
 
-  function activeFocusId(): string | null {
+  // The editable the caret is in right now — a focus OR a section title, in ANY
+  // column. The board commits to `cols` only on blur, so during active typing the
+  // live DOM is the SOLE holder of the uncommitted text + caret. adopt() snapshots
+  // this before it re-renders and restores it after, so a teammate's edit landing
+  // mid-typing never wipes your keystrokes or jumps your caret (the headline
+  // collaboration guarantee). mergeAdopt protects the model slot; this protects
+  // the on-screen DOM, which mergeAdopt alone cannot (cols is behind the DOM).
+  type ActiveEdit = { el: HTMLElement; col: ColumnKey; sec: string; foc: string | null; kind: 'focus' | 'title' };
+  function activeEdit(): ActiveEdit | null {
     const a = document.activeElement as HTMLElement | null;
-    return a && board!.contains(a) ? (a.dataset?.foc ?? null) : null;
+    if (!a || !board!.contains(a)) return null;
+    const col = a.dataset?.col as ColumnKey | undefined;
+    const sec = a.dataset?.sec;
+    if (!col || !sec || !cols[col]) return null;
+    if (a.classList.contains('sync2-item__txt') && a.dataset.foc) return { el: a, col, sec, foc: a.dataset.foc, kind: 'focus' };
+    if (a.classList.contains('sync2-sec__title')) return { el: a, col, sec, foc: null, kind: 'title' };
+    return null;
+  }
+  // Caret position as a character offset into the editable's textContent. Counting
+  // by visible chars (not DOM nodes) makes it survive the sanitize/re-render
+  // round-trip even across <b>/<mark> formatting. -1 → put the caret at the end.
+  function caretOffset(el: HTMLElement): number {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return -1;
+    const range = sel.getRangeAt(0);
+    if (!el.contains(range.endContainer)) return -1;
+    const pre = range.cloneRange();
+    pre.selectNodeContents(el);
+    pre.setEnd(range.endContainer, range.endOffset);
+    return pre.toString().length;
+  }
+  function restoreCaret(el: HTMLElement, offset: number) {
+    el.focus();
+    const sel = window.getSelection();
+    if (!sel) return;
+    const r = document.createRange();
+    if (offset < 0) { r.selectNodeContents(el); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); return; }
+    let remaining = offset;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+    let node = walker.nextNode();
+    let target: Node | null = null; let pos = 0;
+    while (node) {
+      const len = node.textContent ? node.textContent.length : 0;
+      if (remaining <= len) { target = node; pos = remaining; break; }
+      remaining -= len; target = node; pos = len;
+      node = walker.nextNode();
+    }
+    if (target) r.setStart(target, Math.min(pos, target.textContent ? target.textContent.length : 0));
+    else { r.selectNodeContents(el); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); return; }
+    r.collapse(true);
+    sel.removeAllRanges(); sel.addRange(r);
+  }
+  function findEditable(ed: ActiveEdit): HTMLElement | null {
+    const q = ed.kind === 'focus'
+      ? `.sync2-item__txt[data-foc="${ed.foc}"]`
+      : `.sync2-sec__title[data-sec="${ed.sec}"]`;
+    return board!.querySelector(q) as HTMLElement | null;
   }
   function adopt(col: ColumnKey, incoming: ColumnData, version?: number) {
     if (typeof version === 'number') {
@@ -339,9 +393,34 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
       colVersion[col] = version;
     }
     const shaped = shape({ [col]: incoming } as Partial<Columns>)[col];
+    // Short-circuit on the COMMITTED state: if nothing the team committed changed,
+    // don't touch the DOM (so our own in-progress typing never triggers a render).
     if (comparableCol(shaped) === comparableCol(cols[col])) return;
-    cols[col] = mergeAdopt(cols[col], shaped, activeFocusId());
+    // Something real changed → snapshot whatever editable the caret is in (any
+    // column — render() rebuilds the whole board), merge + render, then restore
+    // that editable's live content + caret verbatim on top of the fresh DOM.
+    const ed = activeEdit();
+    // Snapshot the live editable as its SANITIZED value (what a blur-commit would
+    // store) so the restore below sets sanitized innerHTML — never raw, possibly
+    // pasted, markup. No trim, so a just-typed trailing space isn't dropped.
+    const snap = ed
+      ? {
+          ed,
+          html: ed.kind === 'focus'
+            ? readFocusHtml(ed.el, false)
+            // slice the RAW text to the cap THEN escape, so a near-cap title can't
+            // be cut mid-entity (e.g. "&am") — visible chars, not entity chars.
+            : escapeText((ed.el.textContent || '').slice(0, MAX_TITLE_LEN)),
+          off: caretOffset(ed.el),
+        }
+      : null;
+    const keepFocus = ed && ed.col === col && ed.kind === 'focus' ? ed.foc : null;
+    cols[col] = mergeAdopt(cols[col], shaped, keepFocus);
     ensureSection(cols[col]); saveLocal(); render();
+    if (snap) {
+      const el2 = findEditable(snap.ed);
+      if (el2) { el2.innerHTML = snap.html; restoreCaret(el2, snap.off); }
+    }
   }
   function scheduleRetry(col: ColumnKey, op: SyncOp, focusKey: string | undefined, mySeq: number) {
     setStatus('error');
@@ -379,10 +458,17 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
   const findSec = (col?: string, sec?: string) => (col && cols[col as ColumnKey] ? cols[col as ColumnKey].sections.find((s) => s.id === sec) : undefined) || null;
-  // contenteditable can wrap content in block tags / &nbsp; flatten to one line.
-  function readFocusHtml(el: HTMLElement): string {
-    const h = el.innerHTML.replace(/<\/(div|p)>/gi, ' ').replace(/<(div|p)[^>]*>/gi, '').replace(/&nbsp;/gi, ' ');
-    return sanitizeHtml(h).trim();
+  // contenteditable can wrap lines in block tags (Enter/paste) — flatten them.
+  // Closers become <br>, NOT a space: a <br> contributes 0 chars to textContent
+  // (so caretOffset, which counts visible chars on the LIVE DOM, round-trips when
+  // the snapshot is restored — a space would shift the caret one char per block
+  // boundary) and it's an allowed tag, so the user's line break survives. Drop the
+  // trailing <br> the final closer leaves. `trim` is true for a commit (drop edge
+  // whitespace); false for a live snapshot (keep an in-flight trailing space).
+  function readFocusHtml(el: HTMLElement, trim = true): string {
+    const h = el.innerHTML.replace(/<\/(div|p)>/gi, '<br>').replace(/<(div|p)[^>]*>/gi, '').replace(/&nbsp;/gi, ' ');
+    const s = sanitizeHtml(h).replace(/(?:<br>)+$/gi, '');
+    return trim ? s.trim() : s;
   }
 
   // Attribution chip: the colored initials of the author (and, on hover, the
@@ -459,6 +545,10 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
     // when html actually changes — applyOp enforces that).
     $$<HTMLElement>('.sync2-item__txt', board!).forEach((el) => {
       el.addEventListener('blur', () => {
+        // A blur fired because an adopt-driven render() detached this node is NOT
+        // a real commit — the live text is restored separately. Ignore it so a
+        // half-typed op never leaks out (and stale cols isn't written back).
+        if (!el.isConnected) return;
         const col = el.dataset.col as ColumnKey;
         const s = findSec(el.dataset.col, el.dataset.sec);
         const f = s ? s.focuses.find((x) => x.id === el.dataset.foc) : undefined;
@@ -482,6 +572,7 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
     // Section title edits → setSectionTitle op.
     $$<HTMLElement>('.sync2-sec__title', board!).forEach((el) => {
       el.addEventListener('blur', () => {
+        if (!el.isConnected) return; // detached by an adopt-driven re-render — not a real commit
         const col = el.dataset.col as ColumnKey;
         const s = findSec(el.dataset.col, el.dataset.sec); if (!s) return;
         const title = escapeText((el.textContent || '').trim()).slice(0, MAX_TITLE_LEN);

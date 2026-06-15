@@ -17,9 +17,13 @@ export function comparableCol(cd: ColumnData): string {
   );
 }
 
-// Adopt `incoming`, but if `caretFocusId` is a focus the user is actively typing
-// in, keep the LIVE local copy of that one focus (so a poll/response never yanks
-// text out from under the caret). Everything else adopts.
+// Adopt `incoming`, but if `caretFocusId` is the focus the user is actively
+// typing in, keep `current`'s (the local MODEL's) copy of that one focus rather
+// than overwriting it with the server's, so a concurrent same-focus edit can't
+// stomp the model slot mid-typing. NOTE: this protects the MODEL only — the
+// on-screen contenteditable holds keystrokes not yet committed to the model, so
+// the client (adopt() in hub-client.ts) additionally snapshots + restores the
+// live DOM + caret around the re-render. Everything else adopts.
 export function mergeAdopt(current: ColumnData, incoming: ColumnData, caretFocusId: string | null): ColumnData {
   if (!caretFocusId) return incoming;
   const live = current.sections.flatMap((s) => s.focuses).find((f) => f.id === caretFocusId);
