@@ -2,14 +2,15 @@
 // table). No I/O — the endpoint (/hub/api/sync) and the client both validate
 // through here.
 //
-// DATA MODEL v2 (2026-06-15 rebuild): a column is no longer a flat string[].
-// It is an id-keyed tree of sections → focuses, each focus carrying sanitized
-// rich-text HTML. Ids make concurrent edits and live merge-by-id possible (a
-// write/poll touches one focus, not the whole column blindly). The shape is
-// stored in the SAME `items` jsonb column (no migration needed); a v1 string[]
-// row is migrated to one untitled section on read.
+// DATA MODEL v3 (2026-06-15 innovation pass): a column is an id-keyed tree of
+// sections → focuses; each focus carries sanitized rich-text HTML PLUS typed
+// attribution metadata (by/createdAt + optional editedBy/editedAt). Ids make
+// concurrent edits and live merge-by-id possible (a write/poll touches one
+// focus, not the whole column blindly). The shape is stored in the SAME `items`
+// jsonb column (the synthetic `v` tag is never persisted — only the sections
+// array is); v1 string[] and earlier v2 rows are enriched to v3 on read.
 //
-//   ColumnData = { v: 2, sections: [ { id, title, focuses: [ { id, html } ] } ] }
+//   ColumnData = { v: 3, sections: [ { id, title, by?, focuses: [ { id, html, by, createdAt, editedBy?, editedAt? } ] } ] }
 //
 // getWeekKey is UTC ISO-8601 so the server (Workers, UTC) and any client agree
 // on the week boundary.
