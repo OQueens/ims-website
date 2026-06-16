@@ -256,18 +256,19 @@ const TONE: Record<string, string> = {
   }
 
   .card {
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    padding: clamp(24px, 3vw, 32px);
+    padding: clamp(28px, 3vw, 34px) clamp(24px, 3vw, 32px) clamp(24px, 3vw, 32px);
     border: 1px solid var(--border-hairline);
     border-radius: var(--r-section);
     text-decoration: none;
     background: transparent;
     height: 100%;
-    transition: border-color 200ms var(--ease-out);
+    transition: border-color 200ms var(--ease-out), background-color 200ms var(--ease-out), transform 200ms var(--ease-out);
   }
-  .card:hover { border-color: var(--brand-navy); }
   .card:focus-visible {
     outline: 2px solid var(--brand-navy);
     outline-offset: 2px;
@@ -290,6 +291,13 @@ const TONE: Record<string, string> = {
   .card[data-tone='mint']   { --tone: var(--mint, #3DBE85); }
   .card[data-tone='sky']    { --tone: var(--sky, #3FB3E0); }
   .card[data-tone='lilac']  { --tone: var(--violet, #7C84E8); }
+  /* Each card wears its specialty-family hue at rest: a 4px top accent bar
+   * (the clearest color-code) on top of the name dot. (Zach 2026-06-16) */
+  .card::before {
+    content: '';
+    position: absolute; inset: 0 0 auto 0; height: 4px;
+    background: var(--tone);
+  }
   .name::before {
     content: '';
     display: inline-block;
@@ -299,7 +307,11 @@ const TONE: Record<string, string> = {
     margin-right: 12px;
     background: var(--tone);
   }
-  .card:hover { border-color: var(--tone); }
+  .card:hover {
+    border-color: var(--tone);
+    background: color-mix(in srgb, var(--tone) 7%, transparent);
+    transform: translateY(-2px);
+  }
   .framing {
     font-family: var(--font-body);
     font-size: 17px;
