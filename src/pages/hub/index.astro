@@ -14,17 +14,28 @@ import SimulatorView from '../../components/hub/SimulatorView.astro';
 import AnalyticsView from '../../components/hub/AnalyticsView.astro';
 import SyncView from '../../components/hub/SyncView.astro';
 import { readHubEnv } from '../../lib/hub/hub-env';
+import { getCookie } from '../../lib/hub/cookies';
+import { verifySession, SESSION_COOKIE } from '../../lib/hub/session';
 import { aggregateHub, type HubJobRow } from '../../lib/hub/hub-data';
 import { aggregateAnalytics, activityFromEvents, type HubEventRow } from '../../lib/hub/hub-analytics';
 import { getHubSupabase } from '../../lib/hub/hub-supabase';
-import { getWeekKey, COLUMN_KEYS, type ColumnKey } from '../../lib/hub/sync-data';
-import { SYNC_SEED } from '../../lib/hub/hub-seed';
+import { getWeekKey, COLUMN_KEYS, readColumn, emptyColumn, isWeekKey, type ColumnKey, type ColumnData } from '../../lib/hub/sync-data';
 import { normalizeLsKpis, type LsKpis } from '../../lib/hub/ls-analytics';
 
 export const prerender = false;
 
 const env = readHubEnv(Astro.locals);
 const supabase = getHubSupabase(env);
+
+// The authenticated session email (mirrors authedEmail in /hub/api/sync.ts) →
+// passed into the Weekly Sync island so the client can stamp attribution
+// optimistically (the server is still authoritative on every op apply).
+const _token = getCookie(Astro.request.headers.get('cookie'), SESSION_COOKIE);
+const _now = Math.floor(Date.now() / 1000);
+const _session = _token && env.HUB_SESSION_SECRET
+  ? await verifySession(_token, env.HUB_SESSION_SECRET, _now, env.HUB_SESSION_GENERATION)
+  : null;
+const me = _session?.email ?? '';
 
 // Two independent service-role reads through the shared seam: the current active
 // ims_jobs snapshot (Overview + Analytics snapshot metrics) and the append-only
@@ -34,6 +45,7 @@ const weekKey = getWeekKey(new Date());
 let rows: HubJobRow[] = [];
 let events: HubEventRow[] = [];
 let syncRows: Array<{ column_key: string; items: unknown }> = [];
+let syncWeekRows: Array<{ week_key: string }> = [];
 let lsAnalytics: LsKpis | null = null;
 if (supabase) {
   const jobsQ = supabase
@@ -53,6 +65,10 @@ if (supabase) {
     .from('hub_weekly_sync')
     .select('column_key, items')
     .eq('week_key', weekKey);
+  // Distinct week keys present → the history picker (SSR'd so there's no flash).
+  const syncWeeksQ = supabase
+    .from('hub_weekly_sync')
+    .select('week_key');
   // Latest LocumSmart Sisense KPI snapshot. Tolerant of a missing table
   // (pre-migration) — degrades to the honest "—" Analytics state.
   const lsQ = supabase
@@ -61,15 +77,17 @@ if (supabase) {
     .order('snapshot_at', { ascending: false })
     .limit(1);
   try {
-    const [jobsRes, eventsRes, syncRes, lsRes] = await Promise.all([jobsQ, eventsQ, syncQ, lsQ]);
+    const [jobsRes, eventsRes, syncRes, syncWeeksRes, lsRes] = await Promise.all([jobsQ, eventsQ, syncQ, syncWeeksQ, lsQ]);
     if (jobsRes.error) console.error('[/hub] ims_jobs read failed:', jobsRes.error.message);
     else if (jobsRes.data) rows = jobsRes.data as HubJobRow[];
     if (eventsRes.error) console.error('[/hub] ls_events read failed:', eventsRes.error.message);
     else if (eventsRes.data) events = eventsRes.data as HubEventRow[];
     // hub_weekly_sync is tolerant: a missing table (pre-migration) or error just
-    // falls back to the seed board — the client still works via localStorage.
+    // yields a blank board — the client still works (localStorage + retry on poll).
     if (syncRes.error) console.error('[/hub] hub_weekly_sync read failed:', syncRes.error.message);
     else if (syncRes.data) syncRows = syncRes.data as Array<{ column_key: string; items: unknown }>;
+    if (syncWeeksRes.error) console.error('[/hub] hub_weekly_sync weeks read failed:', syncWeeksRes.error.message);
+    else if (syncWeeksRes.data) syncWeekRows = syncWeeksRes.data as Array<{ week_key: string }>;
     if (lsRes.error) console.error('[/hub] ims_ls_analytics read failed:', lsRes.error.message);
     else if (lsRes.data && lsRes.data.length) lsAnalytics = normalizeLsKpis((lsRes.data[0] as { kpis: unknown }).kpis);
   } catch (e) {
@@ -79,18 +97,25 @@ if (supabase) {
   console.warn('[/hub] supabase env not configured — hub renders empty real-data state');
 }
 
-// Build the current week's board: a persisted server row wins per column; an
-// un-persisted column falls back to the seed starter template. Per-column
-// `persisted` flags let the client preserve local edits for not-yet-saved columns.
-const syncData = { recruiting: [...SYNC_SEED.recruiting], marketing: [...SYNC_SEED.marketing], operations: [...SYNC_SEED.operations] };
-const syncPersisted = { recruiting: false, marketing: false, operations: false };
+// Build the current week's board (v2). Each column is the persisted server row
+// (migrated from v1 if needed) or a blank column — a brand-new week starts EMPTY
+// (no starter template). The client hydrates from this island, then live-polls.
+const syncColumns: Record<ColumnKey, ColumnData> = {
+  recruiting: emptyColumn(),
+  marketing: emptyColumn(),
+  operations: emptyColumn(),
+};
 for (const r of syncRows) {
-  if ((COLUMN_KEYS as readonly string[]).includes(r.column_key) && Array.isArray(r.items)) {
-    const col = r.column_key as ColumnKey;
-    syncData[col] = (r.items as unknown[]).filter((i): i is string => typeof i === 'string');
-    syncPersisted[col] = true;
+  if ((COLUMN_KEYS as readonly string[]).includes(r.column_key)) {
+    syncColumns[r.column_key as ColumnKey] = readColumn(r.items);
   }
 }
+// Distinct weeks present (newest first), with the current week always included
+// so the picker can offer it even before the first save lands.
+const syncWeeks = Array.from(new Set([weekKey, ...syncWeekRows.map((r) => r.week_key)]))
+  .filter(isWeekKey)
+  .sort()
+  .reverse();
 
 const nowSec = Math.floor(Date.now() / 1000);
 const overview = aggregateHub(rows, nowSec);
@@ -121,7 +146,7 @@ const eyebrow = new Intl.DateTimeFormat('en-US', {
       />
       <SimulatorView latestJobs={overview.latestJobs} />
       <AnalyticsView analytics={analytics} lsAnalytics={lsAnalytics} />
-      <SyncView weekKey={weekKey} data={syncData} persisted={syncPersisted} />
+      <SyncView weekKey={weekKey} columns={syncColumns} weeks={syncWeeks} me={me} />
     </div>
   </div>
 </HubLayout>

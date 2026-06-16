@@ -150,6 +150,17 @@ export async function hubGuardRedirect(
     ? await verifySession(token, env.HUB_SESSION_SECRET, now, env.HUB_SESSION_GENERATION ?? "1")
     : null;
   if (session) return null;
+  // API routes under /hub return a clean 401 JSON rather than a 302-to-login.
+  // A browser fetch() follows redirects by default, so a 302 would resolve to
+  // the login HTML (a 200) and a save with a lapsed session would *look* like it
+  // succeeded while persisting nothing (the Weekly Sync "not shared" bug). A 401
+  // lets the client surface "sign-in expired" instead of silently dropping data.
+  if (pathname.startsWith("/hub/api/")) {
+    return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...SECURITY_HEADERS },
+    });
+  }
   const loc = "/hub/login?returnTo=" + encodeURIComponent(pathname);
   return new Response(null, { status: 302, headers: { Location: loc, ...SECURITY_HEADERS } });
 }
