@@ -218,16 +218,22 @@
    We flip the text/canvas/line tokens but NOT --cream-soft, which
    the always-dark sidebar uses as light text.
    ════════════════════════════════════════════════════════════════ */
-[data-hub-theme="dark"] {
+/* html[…] (specificity 0,1,1) + !important so the hub's dark text/line tokens
+ * beat any marketing/base :root token rule that Astro's CSS chunk-sharing drags
+ * onto hub pages — those bare :root rules were winning by load order and turning
+ * hub text dark-on-dark while --cream (!important) kept the bg dark. The text
+ * tokens were missing the !important the canvas tokens already had.
+ * (2026-06-16 hub-text-dark regression fix; root cause = v5 reskin chunking.) */
+html[data-hub-theme="dark"] {
   --cream: #0E0E13 !important;
   --cream-warm: #0E0E13 !important;
   --bone: #20202B !important;
-  --ink: #F4ECDF;
-  --ink-soft: rgba(244, 236, 223, 0.66);
-  --ink-mute: rgba(244, 236, 223, 0.42);
-  --ink-emphasis: #E8638A;
-  --rule: rgba(244, 236, 223, 0.10);
-  --rule-strong: rgba(244, 236, 223, 0.20);
+  --ink: #F4ECDF !important;
+  --ink-soft: rgba(244, 236, 223, 0.66) !important;
+  --ink-mute: rgba(244, 236, 223, 0.42) !important;
+  --ink-emphasis: #E8638A !important;
+  --rule: rgba(244, 236, 223, 0.10) !important;
+  --rule-strong: rgba(244, 236, 223, 0.20) !important;
 }
 [data-hub-theme="dark"] .hub { --surface: #17171F; }
 
