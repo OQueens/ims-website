@@ -27,12 +27,12 @@ import { countMatching, type JobSearchFields } from '../lib/job-search';
 
 export const prerender = false;
 
-const ROTATING_WORDS = ['Personal', 'Curated', 'Thoughtful', 'Human'];
+const ROTATING_WORDS = ['Personal', 'Curated', 'Thoughtful', 'Human', 'Innovative'];
 const widestWord = ROTATING_WORDS.reduce((a, b) => (a.length > b.length ? a : b));
 
 const stats = [
   { num: '47',   label: 'States staffed',        tint: 'coral'  },
-  { num: '2022', label: 'Founded',               tint: 'butter' },
+  { num: 'Both', label: 'Locums + permanent',    tint: 'butter' },
   { num: 'All',  label: 'Specialties',           tint: 'mint'   },
   { num: '1:1',  label: 'Recruiter per clinician', tint: 'lilac'  },
 ];
@@ -148,7 +148,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
     <div class="hero__blob hero__blob--lilac" aria-hidden="true"></div>
 
     <div class="container hero__inner hero-stage">
-      <div class="eyebrow hero__eyebrow" style="--i:0"><span class="eyebrow__dot"></span>Locum tenens · est. 2022</div>
+      <div class="eyebrow hero__eyebrow" style="--i:0"><span class="eyebrow__dot"></span>Permanent placements · Locum tenens</div>
       <!-- V5 r2 (Zach): the rotating word lives on ITS OWN line — short words
            were leaving a visible gap beside "A More" inside the widest-word
            sizer box. Own-line keeps the sizer (no reflow/bounce) and the gap
@@ -233,7 +233,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
             <div class="role-card">
               <div class="role-card__avatar" style="background: var(--pop-butter); color: var(--ink)">KR</div>
               <div class="role-card__main">
-                <b>Dr. Kavi R., CRNA</b>
+                <b>Kavi R., CRNA</b>
                 <small>Anesthesia · 14y · Available now</small>
               </div>
             </div>
@@ -338,7 +338,10 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
       <div class="cta-pop__pill" style="background: var(--mn-black, #0A0A0F); color: var(--mn-cream, #F4ECDF)">● Live phone line</div>
     </div>
     <div class="cta-pop cta-pop--tr" aria-hidden="true">
-      <div class="cta-pop__pill" style="background: var(--mn-black, #0A0A0F); color: var(--mn-cream, #F4ECDF)">★ Replies within one business day</div>
+      <div class="cta-pop__card">
+        <div class="cta-pop__card-eyebrow">Real people</div>
+        <div class="cta-pop__card-line">decide</div>
+      </div>
     </div>
     <div class="cta-pop cta-pop--bl" aria-hidden="true">
       <div class="cta-pop__card">
@@ -347,10 +350,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
       </div>
     </div>
     <div class="cta-pop cta-pop--br" aria-hidden="true">
-      <div class="cta-pop__card">
-        <div class="cta-pop__card-eyebrow">No AI</div>
-        <div class="cta-pop__card-line">Just humans</div>
-      </div>
+      <div class="cta-pop__pill" style="background: var(--mn-black, #0A0A0F); color: var(--mn-cream, #F4ECDF)">★ Replies within one business day</div>
     </div>
 
     <div class="container cta-band__inner reveal-group">
@@ -406,7 +406,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
             </div>
             <div class="cand-card cand-card--2" style="background: var(--soft-butter)">
               <div class="cand-card__avatar" style="background: var(--pop-butter); color: var(--ink)">KR</div>
-              <div class="cand-card__name">Dr. Kavi R.</div>
+              <div class="cand-card__name">Kavi R., CRNA</div>
               <div class="cand-card__meta">14y · Available now</div>
             </div>
             <div class="cand-card cand-card--1" style="background: var(--cream-soft)">

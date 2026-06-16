@@ -94,20 +94,24 @@
 
 :root {
   /* V4.1 palette handles — new names, marketing-only (hub never loads this) */
-  --sky: #45B0DC;        --sky-deep: #2E8BC0;
-  --coral: #FF6B4A;      --coral-deep: #E04E2E;
-  --violet: #8B7CF6;     --violet-deep: #6C5CE0;
-  --mint: #3FC993;       --mint-deep: #2EA878;
-  --butter: #FFC94A;     --butter-deep: #F0B021;
-  --rose: #FF87A6;       --rose-deep: #E25C7E;
-  --dawn-1: #9FD4EC;     --dawn-2: #5FB8E0;
+  /* ── PALETTE A — Superlist-bright (Zach picked 2026-06-15). Names kept; only
+   * the hexes are re-pointed so every section rule below cascades automatically.
+   * Neutrals (paper / slate / plum / ink) are deliberately LEFT UNCHANGED.
+   * --sky is the BLUE identity + action thread. */
+  --sky: #3FB3E0;        --sky-deep: #1A6E8E;    /* blue — identity + action */
+  --coral: #F26A5B;      --coral-deep: #C5402F;  /* red */
+  --violet: #7C84E8;     --violet-deep: #4F57C0; /* periwinkle */
+  --mint: #3DBE85;       --mint-deep: #1F7A52;   /* green */
+  --butter: #F2A03D;     --butter-deep: #9A6310; /* amber-brass (new 6th) */
+  --rose: #D4569E;       --rose-deep: #A8367B;   /* orchid / pink */
+  --dawn-1: #A9DCF0;     --dawn-2: #3FB3E0;      /* blue gradient pair */
 
   /* ── Studio-Ghibli PASTEL palette (Zach 2026-06-13, r2): softer, lower-chroma
    * sky + sage from his swatch. SKY = brand identity, SAGE GREEN = action.
    * Pastels are LIGHT — they carry soft fields + pop on the dark navy bands;
    * each has a DEEP companion for legible text/buttons on the cream canvas.
    * Coral survives only in the 6-hue specialty-coding system. */
-  --sky-soft: #93D0EE;     /* his pastel sky — pops on dark, soft fields */
+  --sky-soft: #79C7E8;     /* soft blue — pops on dark, soft fields */
   /* ACTION ACCENT = the "Thoughtful" rotator violet (Zach 2026-06-13 r5):
    * soft purple replaces the rose pink. Sky stays identity; sky + violet =
    * a calm cool pair. Violet #8B7CF6 pops on dark + works as an ink-text
@@ -115,17 +119,20 @@
    * buttons. (Specialty `--rose-deep` #E25C7E for ob-gyn is left alone below.) */
   /* `--grass*` names kept as aliases so the section rules below need no rewrite
    * — they now resolve to VIOLET. */
-  --grass: var(--violet);             /* #8B7CF6 — pucks, dots, rules, ink-text fills + on-dark pops */
-  --grass-deep: var(--violet-deep);   /* #6C5CE0 — emphasis on cream + white-text buttons */
-  --grass-bright: var(--violet);      /* #8B7CF6 pastel — on-dark pops + soft fields */
-  --grass-tint: var(--tint-violet);
+  /* ACTION = BLUE (Zach 2026-06-15). The `--grass*` action alias now resolves to
+   * --sky, so every CTA puck, the nav "Get in touch", the emphasis word and links
+   * ride the one blue thread that ties the polychrome sections together. */
+  --grass: var(--sky);                /* blue — pucks, dots, rules, ink-text fills + on-dark pops */
+  --grass-deep: var(--sky);           /* PALETTE A: action accent = the BRIGHT six, NO deep companions (Zach 2026-06-15) — drives --ink-emphasis, dots, arrows. */
+  --grass-bright: var(--sky);         /* blue — on-dark pops + soft fields */
+  --grass-tint: var(--tint-sky);
 
   --paper: #F6F1EA;      --paper-bright: #FBF8F1;
   --slate-900: #15242F;  --slate-800: #182A38;
   --plum-900: #211731;   --plum-800: #2B1E3E;
-  --field-butter: #FFD978;
-  --tint-sky: #BFE3F2;   --tint-sand: #F5DFA8;  --tint-sage: #BFE3CC;
-  --tint-rose: #FFD3DE;  --tint-violet: #DDD6FB; --tint-coral: #FFD8CB;
+  --field-butter: #F8E2B8;
+  --tint-sky: #CDE9F5;   --tint-sand: #F8E2B8;  --tint-sage: #C5E9D4;
+  --tint-rose: #F3D2E5;  --tint-violet: #D9DCF7; --tint-coral: #FBD7CF;
 
   /* Surfaces */
   --cream: var(--paper) !important;
@@ -176,8 +183,8 @@
   --dot-color: rgba(12, 28, 48, 0.09);
 
   /* Emphasis hooks (link hover, ::selection) */
-  --ink-aubergine: var(--sky-deep);
-  --ink-teal: var(--sky-deep);
+  --ink-aubergine: var(--sky);
+  --ink-teal: var(--sky);
 
   /* Type — GT America replaces Battlefin/Fraunces/Inter/JetBrains */
   --font-display: 'GT America', 'GT America Fallback', 'Helvetica Neue', Arial, sans-serif;
@@ -208,13 +215,23 @@ h1, .h1, h2, .h2 { letter-spacing: -0.035em; }
  * GRASS = action: every CTA puck is grass; later rules override the few that
  * deliberately speak sky/paper (hero clinician, CTA-band, footer, contact). */
 .eyebrow__dot { background: var(--sky); }
-.pill--swing .pill__puck { background: var(--grass) !important; color: var(--paper) !important; }
+.pill--swing .pill__puck { background: var(--grass) !important; color: var(--ink) !important; }
+/* Puck hover color-cycle (MarketingLayout JS sets bg/color inline on hover, then
+ * removes them on leave). The TRANSITION lives here — not inline — so it eases
+ * both into a bright and back to normal without the JS permanently overriding the
+ * puck's transform transition. Gated to no-preference → reduced-motion = instant. */
+@media (prefers-reduced-motion: no-preference) {
+  .pill__puck, .topnav__cta__puck, .gt-submit__puck, .jd-submit__puck {
+    transition: background-color 420ms ease, color 320ms ease, transform 220ms cubic-bezier(0.34, 1.4, 0.5, 1) !important;
+  }
+}
 
 /* ───────────────────────── 4 · Chrome (nav / cloak) ─────────────────────── */
 
 .topnav { font-weight: 500; }
-/* Nav "Get in touch" is a contact action → grass (deep enough for white text). */
-.topnav__cta { font-weight: 500; background: var(--grass-deep) !important; }
+/* Nav "Get in touch" = the BRIGHT blue identity (Zach 2026-06-15) with INK text
+ * (bright fill + dark text = vivid AND legible; no more dark-teal deep companion). */
+.topnav__cta { font-weight: 500; background: var(--sky) !important; color: var(--ink) !important; }
 .topnav__cta__puck { background: var(--ink) !important; }
 
 /* ───────────────────────────── 5 · Hero ─────────────────────────────────── *
@@ -243,19 +260,22 @@ h1, .h1, h2, .h2 { letter-spacing: -0.035em; }
   left: 0;
   transform: translateY(40%) rotate(-3deg);
   animation-name: v5HeroWordCycle;
+  /* 5 words now (was 4): keep the same ~2.4s-per-word pace → 12s total cycle.
+   * (kit.css set 9.6s for 4; we override to 12s and add the 5th delay below.) */
+  animation-duration: 12s;
 }
-/* The one sanctioned polychrome flourish — 4 distinct hues: sky (identity),
- * coral, violet, and the rose that "Human" wears (now the brand action accent).
- * No green (Zach r4). */
+/* Polychrome flourish — 5 Palette-A brights, one per word, blue (identity) first.
+ * Verdant joins for "Innovative" (the 6-colour Palette A reinstated green). */
 .hero__rotator-word:nth-of-type(1) { color: var(--sky); }
 .hero__rotator-word:nth-of-type(2) { color: var(--coral); }
 .hero__rotator-word:nth-of-type(3) { color: var(--violet); }
 .hero__rotator-word:nth-of-type(4) { color: var(--rose); }
+.hero__rotator-word:nth-of-type(5) { color: var(--mint); animation-delay: 9.6s; }
 @keyframes v5HeroWordCycle {
   0%   { opacity: 0; transform: translateY(40%) rotate(-3deg); }
   3%   { opacity: 1; transform: translateY(0) rotate(0); }
-  25%  { opacity: 1; transform: translateY(0) rotate(0); }
-  28%  { opacity: 0; transform: translateY(-40%) rotate(2deg); }
+  20%  { opacity: 1; transform: translateY(0) rotate(0); }
+  23%  { opacity: 0; transform: translateY(-40%) rotate(2deg); }
   100% { opacity: 0; transform: translateY(-40%) rotate(2deg); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -289,8 +309,40 @@ h1, .h1, h2, .h2 { letter-spacing: -0.035em; }
     -webkit-text-stroke: 2px rgba(246, 241, 234, 0.85);
   }
 }
+/* Scroll pace (Zach 2026-06-14 → 2026-06-15): kit default 32s felt fast; 64s
+ * read too slow → settled on 48s, a calm-but-moving drift. !important to win
+ * over the kit's data-vibe duration variants. */
+.marquee-section .marquee__track { animation-duration: var(--marquee-duration, 48s) !important; }
 /* Let the reader hold a name still. */
 .marquee:hover .marquee__track { animation-play-state: paused; }
+
+/* Logo wall (Zach 2026-06-15): 7 real client health-system logos replace the
+ * text names. Each source PNG is 720×245; a FIXED height + auto width keeps the
+ * row even regardless of how the mark sits on its canvas. The marks are dark /
+ * coloured on transparent, so on the navy ink band they'd vanish — render them
+ * UNIFORM WHITE via brightness(0)+invert(1) (collapses any colour to black,
+ * then flips to white) for the cohesive white-wall look. Slight opacity softens
+ * the pure white without hurting legibility. The 2n outlined-text + dot-colour
+ * rules above are text-only (imgs are replaced elements), so they no-op here. */
+.marquee-section--logos .marquee__logo {
+  display: block;
+  /* Bigger logos (Zach 2026-06-15): bumped from clamp(26,3vw,38) so the marks
+   * carry more presence on the band. */
+  height: clamp(34px, 4.2vw, 52px);
+  width: auto;
+  /* The global reset's `img { max-width: 100% }` + flexbox would let each logo
+   * shrink to ~half width (the box collapses, the mark distorts AND the track
+   * stops overflowing, which kills the scroll). flex:none + max-width:none pin
+   * every logo to its intrinsic 720:245 width so the wall stays true + wide. */
+  max-width: none;
+  flex: 0 0 auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+/* Pin the wrapping flex item too (Codex fold): the track's flex children are
+ * the .marquee__item spans, so make THEM no-shrink as well — the overflow/loop
+ * then never depends on min-content propagating up from the img. */
+.marquee-section--logos .marquee__item { flex: 0 0 auto; }
 
 /* ─────────────────── 7 · Stats band (4-color numerals) ──────────────────── */
 
@@ -341,7 +393,7 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 .aud-mix__card--fac .aud-mix__roles { background: rgba(246, 241, 234, 0.08); }
 .aud-mix__card--fac .aud-mix__roles-label { color: var(--paper); opacity: 0.75; }
 .aud-mix__card--fac .pill--swing { background: var(--paper); color: var(--ink); }
-.aud-mix__card--fac .pill--swing .pill__puck { background: var(--grass) !important; color: var(--paper) !important; }
+.aud-mix__card--fac .pill--swing .pill__puck { background: var(--sky) !important; color: var(--ink) !important; }
 
 /* Clinicians card = warm SAND field with a SKY identity accent (mirrors the
  * hero's facilities-green / clinicians-sky CTA split). */
@@ -352,11 +404,11 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 .aud-mix__card--cli .aud-mix__roles { background: rgba(12, 28, 48, 0.06); }
 .aud-mix__card--cli .role-card__dot { background: var(--grass); }
 /* The clinician=sky nod rides the puck (sits on the dark pill — high contrast). */
-.aud-mix__card--cli .pill--swing--magenta .pill__puck { background: var(--sky-soft) !important; color: var(--ink) !important; }
+.aud-mix__card--cli .pill--swing--magenta .pill__puck { background: var(--coral) !important; color: var(--ink) !important; }
 
 /* ───────────────── 9 · Compare: rose-✕ vs ink card mint-✓ ───────────────── */
 
-.compare .section-anchor__heading .em { color: var(--sky-deep); }
+.compare .section-anchor__heading .em { color: var(--sky); }
 /* "The default" card needs to read as a CARD, not wallpaper (Zach r2):
  * true white surface + hairline + resting shadow separate it from paper. */
 .compare__col--old {
@@ -364,15 +416,15 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
   border: 1px solid rgba(12, 28, 48, 0.14);
   box-shadow: 0 12px 32px rgba(12, 28, 48, 0.07);
 }
-.compare__mark--x { background: var(--tint-rose); color: var(--rose-deep); }
+.compare__mark--x { background: var(--tint-rose); color: var(--rose); }
 .compare__col--ims { background: linear-gradient(165deg, var(--ink), #11253D); }
 /* "THE IMS WAY" chip = grass (action); the hover ring follows. */
 .compare__tag--pop { background: var(--grass) !important; color: var(--ink) !important; }
 @media (hover: hover) and (pointer: fine) {
   .compare__col--ims:hover {
     box-shadow: 0 22px 60px rgba(12, 28, 48, 0.34),
-                0 0 0 1px rgba(139, 124, 246, 0.55),
-                0 0 60px -10px rgba(139, 124, 246, 0.45);
+                0 0 0 1px rgba(124, 132, 232, 0.55),
+                0 0 60px -10px rgba(124, 132, 232, 0.45);
   }
 }
 
@@ -384,7 +436,7 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 .cta-band.section--butter {
   background:
     radial-gradient(rgba(12, 28, 48, 0.10) 1px, transparent 1px),
-    linear-gradient(168deg, #AB9DF9, #8775F4) !important;
+    linear-gradient(168deg, #8E96EC, #6770DE) !important;
   background-size: 22px 22px, auto;
 }
 .cta-band__inner { padding: var(--space-9) 0; }
@@ -396,11 +448,13 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 }
 .cta-band__sub { color: rgba(12, 28, 48, 0.82) !important; }
 .cta-band .eyebrow { color: rgba(12, 28, 48, 0.72); }
-/* Floating proof notes: paper cards with deep-sage eyebrows (ink pills stay). */
-.cta-band .cta-pop__card { background: var(--paper-bright); color: var(--ink); box-shadow: 0 14px 34px rgba(18, 64, 32, 0.26); }
-.cta-band .cta-pop__card-eyebrow { color: var(--violet-deep); }
-/* Calmer drift — notes breathe, they don't bounce. */
-.cta-band .cta-pop { --cta-pop-y: -5px; --cta-pop-x: 2px; }
+/* Floating proof notes — bigger again (Zach 2026-06-16) + a touch more drift. */
+.cta-band .cta-pop__card { background: var(--paper-bright); color: var(--ink); box-shadow: 0 18px 46px rgba(18, 64, 32, 0.30); padding: 22px 28px; min-width: 190px; }
+.cta-band .cta-pop__card-eyebrow { color: var(--violet); font-size: 13px; }
+.cta-band .cta-pop__card-line { font-size: 30px; }
+.cta-band .cta-pop__pill { padding: 16px 32px; font-size: 20px; box-shadow: 0 12px 32px rgba(31, 26, 35, 0.22); }
+/* More flow — larger, slower bob (gentle, not bouncy). */
+.cta-band .cta-pop { --cta-pop-y: -10px; --cta-pop-x: 5px; }
 /* The pill puck flips to paper so the arrow stays legible on the ink pill. */
 .cta-band .pill--swing--magenta .pill__puck { background: var(--paper-bright); color: var(--ink); }
 
@@ -439,18 +493,18 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 
 .spec-section .section-anchor__heading .em { color: var(--grass-deep); }
 
-.spec-card--coral  .spec-card__number { color: var(--coral-deep); }
-.spec-card--coral  .spec-card__dot    { background: var(--coral-deep); }
-.spec-card--rose   .spec-card__number { color: var(--rose-deep); }
-.spec-card--rose   .spec-card__dot    { background: var(--rose-deep); }
-.spec-card--butter .spec-card__number { color: var(--butter-deep); }
-.spec-card--butter .spec-card__dot    { background: var(--butter-deep); }
-.spec-card--mint   .spec-card__number { color: var(--mint-deep); }
-.spec-card--mint   .spec-card__dot    { background: var(--mint-deep); }
-.spec-card--sky    .spec-card__number { color: var(--sky-deep); }
-.spec-card--sky    .spec-card__dot    { background: var(--sky-deep); }
-.spec-card--lilac  .spec-card__number { color: var(--violet-deep); }
-.spec-card--lilac  .spec-card__dot    { background: var(--violet-deep); }
+.spec-card--coral  .spec-card__number { color: var(--coral); }
+.spec-card--coral  .spec-card__dot    { background: var(--coral); }
+.spec-card--rose   .spec-card__number { color: var(--rose); }
+.spec-card--rose   .spec-card__dot    { background: var(--rose); }
+.spec-card--butter .spec-card__number { color: var(--butter); }
+.spec-card--butter .spec-card__dot    { background: var(--butter); }
+.spec-card--mint   .spec-card__number { color: var(--mint); }
+.spec-card--mint   .spec-card__dot    { background: var(--mint); }
+.spec-card--sky    .spec-card__number { color: var(--sky); }
+.spec-card--sky    .spec-card__dot    { background: var(--sky); }
+.spec-card--lilac  .spec-card__number { color: var(--violet); }
+.spec-card--lilac  .spec-card__dot    { background: var(--violet); }
 
 /* r2 innovation: editorial hierarchy — Anesthesia (the origin specialty) is
  * the FEATURED card, double width with a display-scale title; the grid drops
@@ -479,12 +533,12 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 }
 @media (hover: hover) and (pointer: fine) {
   .spec-card:hover::after { opacity: 1; transform: translateX(0); }
-  .spec-card--coral:hover  { box-shadow: 0 18px 44px rgba(255, 107, 74, 0.30); }
-  .spec-card--rose:hover   { box-shadow: 0 18px 44px rgba(255, 135, 166, 0.32); }
-  .spec-card--butter:hover { box-shadow: 0 18px 44px rgba(240, 176, 33, 0.28); }
-  .spec-card--mint:hover   { box-shadow: 0 18px 44px rgba(63, 201, 147, 0.30); }
-  .spec-card--sky:hover    { box-shadow: 0 18px 44px rgba(69, 176, 220, 0.30); }
-  .spec-card--lilac:hover  { box-shadow: 0 18px 44px rgba(139, 124, 246, 0.30); }
+  .spec-card--coral:hover  { box-shadow: 0 18px 44px rgba(242, 106, 91, 0.30); }
+  .spec-card--rose:hover   { box-shadow: 0 18px 44px rgba(212, 86, 158, 0.32); }
+  .spec-card--butter:hover { box-shadow: 0 18px 44px rgba(242, 160, 61, 0.28); }
+  .spec-card--mint:hover   { box-shadow: 0 18px 44px rgba(61, 190, 133, 0.30); }
+  .spec-card--sky:hover    { box-shadow: 0 18px 44px rgba(63, 179, 224, 0.30); }
+  .spec-card--lilac:hover  { box-shadow: 0 18px 44px rgba(124, 132, 232, 0.30); }
 }
 
 /* ────────────── 13 · Values: tinted rules + ghost numerals ──────────────── */
@@ -517,7 +571,7 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 
 .footer-b {
   background:
-    radial-gradient(rgba(69, 176, 220, 0.07) 1px, transparent 1px),
+    radial-gradient(rgba(63, 179, 224, 0.07) 1px, transparent 1px),
     linear-gradient(170deg, #0C1C30, #102338 55%, #0A1828) !important;
   background-size: 22px 22px, auto;
   color: var(--paper);
@@ -534,7 +588,7 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 .footer-b__nl .input::placeholder { color: rgba(246, 241, 234, 0.4); }
 .footer-b__nl .input:focus { border-color: var(--grass); background: rgba(246, 241, 234, 0.1); }
 .footer-b__nl .pill--swing { background: var(--paper); color: var(--ink); }
-.footer-b__nl .pill--swing .pill__puck { background: var(--grass) !important; color: var(--paper) !important; }
+.footer-b__nl .pill--swing .pill__puck { background: var(--grass) !important; color: var(--ink) !important; }
 .footer-b__col .label { color: var(--paper); }
 .footer-b__col a { color: rgba(246, 241, 234, 0.7); }
 .footer-b__col a:hover { color: var(--grass-bright); }
@@ -543,7 +597,7 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 .footer-b__socials a { background: rgba(246, 241, 234, 0.1); color: var(--paper); }
 .footer-b__socials a:hover { background: var(--grass); }
 .footer-b__blob--coral { background: var(--grass); opacity: 0.16; }
-.footer-b__blob--butter { background: var(--sky-deep); opacity: 0.14; }
+.footer-b__blob--butter { background: var(--sky); opacity: 0.14; }
 
 /* ───────────── 15 · Catch-all restoration (true polychrome) ─────────────── *
  * palette-active re-routes inline pop-mint/lilac/sky fills to Magenta-Noir
@@ -559,18 +613,18 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 /* ──────────────── 15b · Inner-page fixes (recon-driven) ─────────────────── */
 
 /* /how-it-works step numerals: two-voice alternation (sky ↔ grass). */
-.hw-process .steps .step:nth-child(odd) .num  { color: var(--sky-deep); }
+.hw-process .steps .step:nth-child(odd) .num  { color: var(--sky); }
 .hw-process .steps .step:nth-child(even) .num { color: var(--grass-deep); }
 
 /* /about stat numerals: alternate the two brand voices (sky / grass). */
-.au__stat-num--mint  { color: var(--sky-deep) !important; }
+.au__stat-num--mint  { color: var(--sky) !important; }
 .au__stat-num--lilac { color: var(--grass-deep) !important; }
 
 /* Homepage contact panel = get-in-touch → GRASS action, with a sky glow.
  * (grass glow + sky glow on the ink panel.) */
 .contact-b__glow--magenta { background: var(--grass); }
-.contact-b__glow--rose { background: var(--sky-deep); }
-.contact-b .pill--swing--magenta .pill__puck { background: var(--grass) !important; color: var(--paper) !important; }
+.contact-b__glow--rose { background: var(--sky); }
+.contact-b .pill--swing--magenta .pill__puck { background: var(--grass) !important; color: var(--ink) !important; }
 .contact-b__form-tag { color: var(--grass) !important; }
 .contact-b__form .input:focus {
   border-color: var(--grass);
@@ -581,20 +635,28 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 .contact-b__eyebrow .eyebrow__dot { background: var(--grass); }
 
 /* Hero CTA pair: facilities = sage puck (global default), clinicians = sky. */
-.hero .pill--swing--mint .pill__puck { background: var(--sky-soft) !important; color: var(--ink) !important; }
+.hero .pill--swing--mint .pill__puck { background: var(--coral) !important; color: var(--ink) !important; }
 
-/* Ambient atmosphere blobs sitewide = the Ghibli meadow (sky + cloud + grass). */
+/* Ambient atmosphere blobs sitewide = the Ghibli meadow (sky + cloud + grass).
+ * (/clinicians re-rotates its own three subtly via its scoped <style>.) */
 .atmosphere--lilac { background: var(--sky) !important; }
 .atmosphere--mint { background: var(--dawn-1) !important; }
 .atmosphere--butter { background: var(--grass) !important; }
 .atmosphere--coral { background: var(--grass) !important; }
 
-/* /clinicians: sky-tint hero; the 4-step timeline alternates grass↔sky. */
+/* /clinicians: sky-tint hero (sky = brand identity for the single hero field);
+ * the 4-step timeline rotates the four hero hues sky→coral→violet→rose so the
+ * page reads as the full complementary system, not a cool-only pair. */
 .cc__hero .container { background: var(--tint-sky) !important; }
-.cc__timeline-line { background: linear-gradient(to bottom, var(--grass), var(--sky)) !important; }
-.cc__step--02 .cc__step-node { background: var(--sky) !important; color: var(--ink) !important; }
-.cc__step--03 .cc__step-node { background: var(--grass) !important; color: var(--paper) !important; }
-.cc__step--04 .cc__step-node { background: var(--sky) !important; color: var(--ink) !important; }
+.cc__timeline-line {
+  background: linear-gradient(to bottom, var(--sky), var(--coral) 35%, var(--violet) 70%, var(--rose)) !important;
+}
+.cc__step--01 .cc__step-node { background: var(--sky) !important; color: var(--ink) !important; }
+.cc__step--02 .cc__step-node { background: var(--coral) !important; color: var(--ink) !important; }
+.cc__step--03 .cc__step-node { background: var(--violet) !important; color: var(--paper) !important; }
+.cc__step--04 .cc__step-node { background: var(--rose) !important; color: var(--ink) !important; }
+/* dark CTA card: eyebrow = sky-soft (identity), title-span = violet, blob = coral
+ * → three hues pop softly on the navy. */
 .cc__cta-card__eyebrow { color: var(--sky-soft) !important; }
 .cc__cta-card__eyebrow::before { background: var(--sky-soft) !important; }
 
@@ -614,24 +676,24 @@ html.js .reveal-group.is-revealed > .statchip .statchip__num {
 
 /* Calendar caption ties to the mint "first shift" mark instead of violet
  * (the step-03 card already carries a coral badge — two hues max per card). */
-.cal-mock__caption { color: var(--mint-deep); }
+.cal-mock__caption { color: var(--mint); }
 
 /* /jobs board: the specialty dot wears the specialty's DEEP hue — the same
  * specialty→color map as the homepage grid and the detail-page hero, so the
  * coding reads as a system. Hover shadows match each card's hue. */
-.jb-b__card--coral  .jb-b__card-spec::before { background: var(--coral-deep); }
-.jb-b__card--rose   .jb-b__card-spec::before { background: var(--rose-deep); }
-.jb-b__card--butter .jb-b__card-spec::before { background: var(--butter-deep); }
-.jb-b__card--mint   .jb-b__card-spec::before { background: var(--mint-deep); }
-.jb-b__card--sky    .jb-b__card-spec::before { background: var(--sky-deep); }
-.jb-b__card--lilac  .jb-b__card-spec::before { background: var(--violet-deep); }
+.jb-b__card--coral  .jb-b__card-spec::before { background: var(--coral); }
+.jb-b__card--rose   .jb-b__card-spec::before { background: var(--rose); }
+.jb-b__card--butter .jb-b__card-spec::before { background: var(--butter); }
+.jb-b__card--mint   .jb-b__card-spec::before { background: var(--mint); }
+.jb-b__card--sky    .jb-b__card-spec::before { background: var(--sky); }
+.jb-b__card--lilac  .jb-b__card-spec::before { background: var(--violet); }
 @media (hover: hover) and (pointer: fine) {
-  .jb-b__card--coral:hover  { box-shadow: 0 20px 48px rgba(255, 107, 74, 0.26); }
-  .jb-b__card--rose:hover   { box-shadow: 0 20px 48px rgba(255, 135, 166, 0.28); }
-  .jb-b__card--butter:hover { box-shadow: 0 20px 48px rgba(240, 176, 33, 0.24); }
-  .jb-b__card--mint:hover   { box-shadow: 0 20px 48px rgba(63, 201, 147, 0.26); }
-  .jb-b__card--sky:hover    { box-shadow: 0 20px 48px rgba(69, 176, 220, 0.26); }
-  .jb-b__card--lilac:hover  { box-shadow: 0 20px 48px rgba(139, 124, 246, 0.26); }
+  .jb-b__card--coral:hover  { box-shadow: 0 20px 48px rgba(242, 106, 91, 0.26); }
+  .jb-b__card--rose:hover   { box-shadow: 0 20px 48px rgba(212, 86, 158, 0.28); }
+  .jb-b__card--butter:hover { box-shadow: 0 20px 48px rgba(242, 160, 61, 0.24); }
+  .jb-b__card--mint:hover   { box-shadow: 0 20px 48px rgba(61, 190, 133, 0.26); }
+  .jb-b__card--sky:hover    { box-shadow: 0 20px 48px rgba(63, 179, 224, 0.26); }
+  .jb-b__card--lilac:hover  { box-shadow: 0 20px 48px rgba(124, 132, 232, 0.26); }
 }
 
 /* ────────────────────── 16 · Motion polish (global) ─────────────────────── */

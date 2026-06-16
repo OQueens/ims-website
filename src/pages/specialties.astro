@@ -280,15 +280,16 @@ const TONE: Record<string, string> = {
     margin: 0;
     letter-spacing: -0.005em;
   }
-  /* V5 specialty coding: each card wears its specialty's deep hue as a dot
-   * marker + hover border — the same map as /jobs and the homepage grid. */
-  .card { --tone: var(--coral-deep, #E04E2E); }
-  .card[data-tone='coral']  { --tone: var(--coral-deep, #E04E2E); }
-  .card[data-tone='rose']   { --tone: var(--rose-deep, #E25C7E); }
-  .card[data-tone='butter'] { --tone: var(--butter-deep, #F0B021); }
-  .card[data-tone='mint']   { --tone: var(--mint-deep, #2EA878); }
-  .card[data-tone='sky']    { --tone: var(--sky-deep, #2E8BC0); }
-  .card[data-tone='lilac']  { --tone: var(--violet-deep, #6C5CE0); }
+  /* V5 specialty coding: each card wears its specialty's BRIGHT Palette-A hue as
+   * a dot marker + hover border — the bright accents are the palette now (Zach
+   * 2026-06-16), matching /jobs and the homepage grid. */
+  .card { --tone: var(--coral, #F26A5B); }
+  .card[data-tone='coral']  { --tone: var(--coral, #F26A5B); }
+  .card[data-tone='rose']   { --tone: var(--rose, #D4569E); }
+  .card[data-tone='butter'] { --tone: var(--butter, #F2A03D); }
+  .card[data-tone='mint']   { --tone: var(--mint, #3DBE85); }
+  .card[data-tone='sky']    { --tone: var(--sky, #3FB3E0); }
+  .card[data-tone='lilac']  { --tone: var(--violet, #7C84E8); }
   .name::before {
     content: '';
     display: inline-block;

@@ -135,6 +135,21 @@ const hintList = [
   ...specialtiesPresent.slice(0, 3).map(specialtyLabel),
   ...[...new Set(jobs.map((j) => j.facility_state).filter((s): s is string => !!s))].slice(0, 2),
 ].slice(0, 4);
+
+// State silhouettes shipped in public/state-shapes/ (2-letter codes, incl. PR).
+// facility_state is a 2-letter code; only emit the card's geographic watermark
+// when we actually have that state's SVG — otherwise the mask URL 404s and the
+// element paints as a solid ink block. Unknown/blank/territory codes → no shape.
+const STATE_SHAPES = new Set([
+  'al', 'ak', 'az', 'ar', 'ca', 'co', 'ct', 'de', 'fl', 'ga', 'hi', 'id', 'il',
+  'in', 'ia', 'ks', 'ky', 'la', 'me', 'md', 'ma', 'mi', 'mn', 'ms', 'mo', 'mt',
+  'ne', 'nv', 'nh', 'nj', 'nm', 'ny', 'nc', 'nd', 'oh', 'ok', 'or', 'pa', 'pr',
+  'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'vt', 'va', 'wa', 'wv', 'wi', 'wy',
+]);
+const stateShape = (j: JobRow): string | null => {
+  const code = (j.facility_state ?? '').trim().toLowerCase();
+  return STATE_SHAPES.has(code) ? `/state-shapes/${code}.svg` : null;
+};
 ---
 <MarketingLayout
   title="Open Roles — Innovative Medical Staffing"
@@ -195,7 +210,9 @@ const hintList = [
 
     <section class="jb-section">
       <div class="jb-b__grid reveal-group" id="jobs-grid">
-        {jobs.map((j, i) => (
+        {jobs.map((j, i) => {
+          const shape = stateShape(j);
+          return (
           <a
             href={`/jobs/${j.id}`}
             aria-label={`${j.specialty_name ?? specialtyLabel(j.specialty_slug)} — ${locationTitle(j)}, view details`}
@@ -206,10 +223,12 @@ const hintList = [
             data-city={(j.facility_city ?? '').toLowerCase()}
             data-keywords={keywords(j)}
           >
+            {shape && (
+              <span class="jb-b__card-state" aria-hidden="true" style={`--state-shape:url(${shape})`}></span>
+            )}
             <span class="jb-b__card-arrow" aria-hidden="true">→</span>
             <span class="jb-b__card-spec">{j.specialty_name ?? specialtyLabel(j.specialty_slug)}</span>
             <h3 class="jb-b__card-title">{locationTitle(j)}</h3>
-            <div class="jb-b__card-pay jb-b__card-pay--text">Rate on request</div>
             <div class="jb-b__card-meta">
               <div class="jb-b__card-meta-row"><span>Facility</span><b>{facilityLabel(j)}</b></div>
               {j.length_category && (
@@ -220,7 +239,8 @@ const hintList = [
               )}
             </div>
           </a>
-        ))}
+          );
+        })}
       </div>
 
       <div class={`jb-b__empty${totalCount === 0 ? ' is-visible' : ''}`} id="jobs-empty">
@@ -276,7 +296,7 @@ const hintList = [
   .jb-b__search-shell.has-text .jb-b__search-clear { display: inline-flex; }
   .jb-b__search-clear:hover { background: rgba(31,26,35,0.16); }
   .jb-b__search-btn { border: none; cursor: pointer; background: var(--ink); color: var(--cream-soft); padding: 12px 22px; border-radius: 999px; font-family: var(--font-body); font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; transition: background 180ms, transform 180ms; }
-  .jb-b__search-btn:hover { background: var(--ink-emphasis); transform: translateX(2px); }
+  .jb-b__search-btn:hover { background: var(--sky); color: var(--ink); transform: translateX(2px); }
   .jb-b__search-hints { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: var(--space-3); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--ink-mute); }
   .jb-b__search-hints-label { color: var(--ink-mute); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
   .jb-b__search-hint { font: inherit; letter-spacing: inherit; border: none; padding: 4px 10px; border-radius: 999px; background: rgba(31,26,35,0.06); color: var(--ink); cursor: pointer; transition: background 160ms; }
@@ -313,7 +333,32 @@ const hintList = [
   .jb-b__card-meta { display: flex; flex-direction: column; gap: 4px; padding-top: var(--space-3); border-top: 1px solid rgba(31,26,35,0.15); margin-top: auto; }
   .jb-b__card-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--ink); letter-spacing: 0.04em; }
   .jb-b__card-meta-row b { font-weight: 700; text-align: right; }
-  .jb-b__card-arrow { position: absolute; top: var(--space-4); right: var(--space-4); width: 32px; height: 32px; border-radius: 999px; background: var(--ink); color: var(--cream-soft); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+  .jb-b__card-arrow { position: absolute; top: var(--space-4); right: var(--space-4); width: 32px; height: 32px; border-radius: 999px; background: var(--ink); color: var(--cream-soft); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; z-index: 2; }
+
+  /* State silhouette watermark (Zach 2026-06-15): the role's home state as a
+   * large, low-opacity ink shape bleeding off the bottom-right corner, behind
+   * the card content — a quiet geographic accent. The shape is painted by
+   * MASKING a solid background, so the source SVG's own fill is ignored and the
+   * colour lives in this one `background-color` line (easy to retint). Only
+   * rendered for states we ship an SVG for (see stateShape() guard). */
+  .jb-b__card-state {
+    position: absolute;
+    right: -14px;
+    bottom: -18px;
+    width: clamp(118px, 48%, 178px);
+    aspect-ratio: 1 / 1;
+    background-color: var(--ink);
+    -webkit-mask: var(--state-shape) center / contain no-repeat;
+    mask: var(--state-shape) center / contain no-repeat;
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 0;
+  }
+  /* Keep text + meta above the watermark — the card is the positioned ancestor,
+   * so an absolute child would otherwise paint over in-flow content. */
+  .jb-b__card-spec,
+  .jb-b__card-title,
+  .jb-b__card-meta { position: relative; z-index: 1; }
 </style>
 
 <script>

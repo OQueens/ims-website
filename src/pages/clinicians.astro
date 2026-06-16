@@ -13,9 +13,9 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   <!-- ─────── Variation C: Career timeline ─────── -->
   <div class="variation">
     <section class="cc__hero">
-      <div class="hero__blob hero__blob--lilac" aria-hidden="true" style="top: -140px; right: -100px; opacity: 0.35;"></div>
-      <div class="hero__blob hero__blob--coral" aria-hidden="true" style="bottom: -100px; left: -60px; opacity: 0.28;"></div>
-      <div class="hero__blob hero__blob--butter" aria-hidden="true" style="top: 40%; right: 20%; width: 220px; height: 220px; opacity: 0.28;"></div>
+      <div class="hero__blob hero__blob--lilac" aria-hidden="true" style="top: -140px; right: -100px; opacity: 0.32; background: var(--violet);"></div>
+      <div class="hero__blob hero__blob--coral" aria-hidden="true" style="bottom: -100px; left: -60px; opacity: 0.26; background: var(--coral);"></div>
+      <div class="hero__blob hero__blob--butter" aria-hidden="true" style="top: 40%; right: 20%; width: 220px; height: 220px; opacity: 0.26; background: var(--rose);"></div>
       <div class="container hero-stage">
         <span class="cc__hero-eyebrow" style="--i:0">For clinicians · the IMS process</span>
         <h1 class="cc__hero-title" style="--i:1">From CV to <span>first shift</span> in four clear steps.</h1>
@@ -125,7 +125,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
       <div class="container">
         <div class="section-anchor reveal-group">
           <div reveal style="--i:0">
-            <span class="eyebrow"><span class="eyebrow__dot" style="background: var(--pop-coral);"></span>§ 06 · From the roster</span>
+            <span class="eyebrow"><span class="eyebrow__dot" style="background: var(--sky);"></span>§ 06 · From the roster</span>
             <h2 class="section-anchor__heading">Don't take our <span class="em">word for it</span>.</h2>
           </div>
           <p class="section-anchor__sub" reveal style="--i:1">Three quick reads from clinicians currently on the IMS roster.</p>
@@ -134,7 +134,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           <article class="cc__quote cc__quote--rose reveal" style="--i:0">
             <p class="cc__quote-text">"IMS has been direct about what the job actually is, whether I'm walking into an independent CRNA room, a medical-direction model, or heavy OB call. It sounds simple, but in locums it <em>saves you from showing up to the wrong practice</em>."</p>
             <div class="cc__quote-attr">
-              <div class="cc__quote-avatar" style="background: var(--pop-magenta);">MR</div>
+              <div class="cc__quote-avatar" style="background: var(--sky-soft); color: var(--ink);">MR</div>
               <div>
                 <b>Maya Reyes, CRNA</b>
                 <small>Mountain West · 14 placements</small>
@@ -144,7 +144,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           <article class="cc__quote cc__quote--butter reveal" style="--i:1">
             <p class="cc__quote-text">"With IMS I can ask the real questions up front: epidural volume, backup, post-call expectations, whether the assignment actually fits my practice. If it doesn't, <em>they tell me</em> instead of selling me on it."</p>
             <div class="cc__quote-attr">
-              <div class="cc__quote-avatar" style="background: var(--pop-coral);">JK</div>
+              <div class="cc__quote-avatar" style="background: var(--violet); color: var(--ink);">JK</div>
               <div>
                 <b>Dr. Jamie Kang</b>
                 <small>OB anesthesia · 3 years with IMS</small>
@@ -154,7 +154,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           <article class="cc__quote cc__quote--mint reveal" style="--i:2">
             <p class="cc__quote-text">"IMS is boring in the best way on the business side: the pay shows up when they said it would, the malpractice coverage is clear, and if a facility changes the schedule I hear it early enough to adjust. In locums, <em>that kind of honesty is worth a lot</em>."</p>
             <div class="cc__quote-attr">
-              <div class="cc__quote-avatar" style="background: var(--pop-butter); color: var(--ink);">RP</div>
+              <div class="cc__quote-avatar" style="background: var(--sky-soft); color: var(--ink);">RP</div>
               <div>
                 <b>Dr. Rae Patel</b>
                 <small>Hospital and ASC · with IMS since 2023</small>
@@ -173,7 +173,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           <h2 class="cc__cta-card__title">Start the <span>conversation</span>.</h2>
           <p class="cc__cta-card__sub">Send your CV and we'll be in touch within one business day. Or browse open jobs first, both work.</p>
           <div class="cc__cta-card__row">
-            <a class="pill pill--swing pill--swing--mint" href="/contact"><span>Submit your CV</span><span class="pill__puck">→</span></a>
+            <a class="pill pill--swing" href="/contact"><span>Submit your CV</span><span class="pill__puck">→</span></a>
             <a class="pill pill--secondary" href="/jobs" style="border-color: var(--cream-soft); color: var(--cream-soft);">See open jobs <span class="pill__arrow">→</span></a>
           </div>
         </div>
@@ -243,24 +243,27 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     border-radius: 50%;
     filter: blur(120px);
   }
+  /* Page atmosphere subtly rotates three of the four hero hues (sky/coral/rose);
+   * blurred + low-opacity so the complements never vibrate. !important needed to
+   * beat the sitewide atmosphere defaults in v5-reskin.css. */
   .atmosphere--mint {
     width: 600px; height: 600px;
-    background: var(--pop-mint);
+    background: var(--sky) !important;
     opacity: 0.14;
     top: 20vh; right: -200px;
     animation: blobFloatA 28s ease-in-out infinite;
   }
   .atmosphere--coral {
     width: 500px; height: 500px;
-    background: var(--pop-coral);
-    opacity: 0.10;
+    background: var(--coral) !important;
+    opacity: 0.09;
     top: 60vh; left: -180px;
     animation: blobFloatB 32s ease-in-out infinite;
   }
   .atmosphere--butter {
     width: 400px; height: 400px;
-    background: var(--pop-butter);
-    opacity: 0.18;
+    background: var(--rose) !important;
+    opacity: 0.14;
     bottom: -100px; right: 30%;
     animation: blobFloatC 24s ease-in-out infinite;
   }
@@ -507,7 +510,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   .cc__timeline-line {
     position: absolute; left: 38px; top: 12px; bottom: 12px;
     width: 2px;
-    background: linear-gradient(to bottom, var(--pop-coral), var(--pop-mint), var(--pop-lilac), var(--pop-magenta));
+    background: linear-gradient(to bottom, var(--sky), var(--violet));
   }
   @media (max-width: 760px) { .cc__timeline-line { left: 28px; } }
   .cc__step {
@@ -528,10 +531,10 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   @media (max-width: 760px) {
     .cc__step-node { left: -44px; width: 52px; height: 52px; font-size: 20px; }
   }
-  .cc__step--01 .cc__step-node { background: var(--pop-coral); }
-  .cc__step--02 .cc__step-node { background: var(--pop-mint); color: var(--ink); }
-  .cc__step--03 .cc__step-node { background: var(--pop-lilac); }
-  .cc__step--04 .cc__step-node { background: var(--pop-magenta); }
+  .cc__step--01 .cc__step-node { background: var(--violet); }
+  .cc__step--02 .cc__step-node { background: var(--sky); color: var(--ink); }
+  .cc__step--03 .cc__step-node { background: var(--violet); }
+  .cc__step--04 .cc__step-node { background: var(--sky); color: var(--ink); }
   .cc__step-card {
     background: var(--cream-soft);
     border: 1px solid var(--rule);
@@ -600,12 +603,12 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   .cc__cta-card__eyebrow {
     font-family: var(--font-mono); font-size: 11px;
     letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700;
-    color: var(--pop-mint); margin-bottom: var(--space-3);
+    color: var(--sky-soft); margin-bottom: var(--space-3);
     display: inline-flex; align-items: center; gap: 8px;
   }
   .cc__cta-card__eyebrow::before {
     content: ''; width: 6px; height: 6px; border-radius: 50%;
-    background: var(--pop-mint);
+    background: var(--sky-soft);
   }
   .cc__cta-card__title {
     font-family: var(--font-display); font-weight: 900;
@@ -613,7 +616,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     letter-spacing: -0.025em; color: var(--cream-soft);
     margin: 0 0 var(--space-4); max-width: 20ch;
   }
-  .cc__cta-card__title span { color: var(--pop-mint); }
+  .cc__cta-card__title span { color: var(--violet); }
   .cc__cta-card__sub {
     font-family: var(--font-body); font-size: 17px; line-height: 1.55;
     color: rgba(251,246,238,0.75); margin: 0 0 var(--space-5);
@@ -623,7 +626,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   .cc__cta-card__blob {
     position: absolute; pointer-events: none;
     width: 320px; height: 320px; border-radius: 50%;
-    background: var(--pop-mint); filter: blur(80px);
+    background: var(--violet); filter: blur(80px);
     opacity: 0.22; top: -100px; right: -80px;
   }
 
@@ -641,15 +644,22 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     transition: transform 280ms var(--ease-out), box-shadow 280ms;
   }
   .cc__why-card:hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(31,26,35,0.1); }
-  .cc__why-card--coral { background: var(--soft-coral); }
-  .cc__why-card--butter { background: var(--soft-butter); }
-  .cc__why-card--rose { background: var(--soft-rose); }
-  .cc__why-card--lilac { background: var(--soft-lilac); }
+  /* The 4 why-cards rotate ALL FOUR hero hues by DOM order (sky→coral→violet→rose).
+   * Each card is monochromatic: soft-tint background + deep-hue display glyph. */
+  .cc__why-card--coral  { background: var(--soft-sky); }    /* idx 0 → sky */
+  .cc__why-card--butter { background: var(--soft-coral); }  /* idx 1 → coral */
+  .cc__why-card--rose   { background: var(--soft-lilac); }  /* idx 2 → violet */
+  .cc__why-card--lilac  { background: var(--soft-rose); }   /* idx 3 → rose */
   .cc__why-num {
     font-family: var(--font-display); font-weight: 900;
     font-size: 48px; line-height: 0.85; letter-spacing: -0.04em;
     color: var(--ink);
   }
+  /* glyph wears the card's matching BRIGHT hue (Palette A: the six brights ARE the accents) */
+  .cc__why-card--coral  .cc__why-num { color: var(--sky); }
+  .cc__why-card--butter .cc__why-num { color: var(--coral); }
+  .cc__why-card--rose   .cc__why-num { color: var(--violet); }
+  .cc__why-card--lilac  .cc__why-num { color: var(--rose); }
   .cc__why-title {
     font-family: var(--font-display); font-weight: 900;
     font-size: 20px; line-height: 1.05; letter-spacing: -0.018em;
@@ -671,9 +681,9 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     min-height: 180px;
   }
   .cc__quote:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(31,26,35,0.08); }
-  .cc__quote--rose { background: var(--soft-rose); }
-  .cc__quote--butter { background: var(--soft-butter); }
-  .cc__quote--mint { background: var(--soft-mint); }
+  .cc__quote--rose { background: var(--soft-sky); }
+  .cc__quote--butter { background: var(--soft-lilac); }
+  .cc__quote--mint { background: var(--soft-sky); }
   .cc__quote-text {
     font-family: var(--font-display); font-weight: 700;
     font-size: 15px; line-height: 1.35;

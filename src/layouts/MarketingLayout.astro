@@ -124,7 +124,136 @@ const ORG_JSON_LD = {
     <meta name="generator" content={Astro.generator} />
     <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#F6F1EA" />
-    <link rel="icon" href="/ims-logo-mark.png" type="image/png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Animated favicon: the blue "I" with flowing blue light. The only way an
+         icon actually MOVES across modern browsers is to redraw frames to a
+         canvas and swap the tab icon. Gated: skipped for prefers-reduced-motion,
+         and PAUSED while the tab is hidden (no background battery cost). On no-JS
+         / failure / reduced-motion the static favicon.svg above stays. CSP: inline
+         script-src 'self' is allowed; the data: icon href is allowed by img-src data:. -->
+    <script is:inline>
+      (function () {
+        try {
+          if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+          var c = document.createElement('canvas');
+          c.width = c.height = 64;
+          var ctx = c.getContext('2d');
+          if (!ctx) return;
+          // Offscreen layer: the flowing blue is built here, then masked to the I.
+          var fl = document.createElement('canvas');
+          fl.width = fl.height = 64;
+          var flx = fl.getContext('2d');
+          if (!flx) return;
+
+          // The REAL IMS "I" art. Same-origin → canvas stays untainted → toDataURL OK.
+          var iImg = new Image();
+          var iReady = false;
+          var ix = 0, iy = 0, iw = 0, ih = 0;
+          iImg.onload = function () {
+            var asp = iImg.width / iImg.height;
+            ih = 0.78 * 64; // match the static favicon sizing
+            iw = ih * asp;
+            ix = (64 - iw) / 2;
+            iy = (64 - ih) / 2;
+            iReady = true;
+            if (!document.hidden) start();
+          };
+          iImg.onerror = function () {}; // missing art → stay on the static favicon, no console noise
+          iImg.src = '/ims-i.png';
+
+          function tile() {
+            var r = 14;
+            ctx.beginPath();
+            ctx.moveTo(r, 0);
+            ctx.arcTo(64, 0, 64, 64, r);
+            ctx.arcTo(64, 64, 0, 64, r);
+            ctx.arcTo(0, 64, 0, 0, r);
+            ctx.arcTo(0, 0, 64, 0, r);
+            ctx.closePath();
+          }
+          function blob(g2, x, y, rad, col) {
+            var grad = g2.createRadialGradient(x, y, 0, x, y, rad);
+            grad.addColorStop(0, col);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            g2.fillStyle = grad;
+            g2.beginPath();
+            g2.arc(x, y, rad, 0, 6.2832);
+            g2.fill();
+          }
+
+          var t = 0;
+          function draw() {
+            t += 0.05;
+            // 1) build the blue flow field on the offscreen layer
+            flx.globalCompositeOperation = 'source-over';
+            flx.clearRect(0, 0, 64, 64);
+            flx.fillStyle = '#256f95'; // deep-blue base so the I never reads black
+            flx.fillRect(0, 0, 64, 64);
+            flx.globalCompositeOperation = 'lighter';
+            blob(flx, 32 + Math.sin(t) * 5, 22 + Math.cos(t * 0.7) * 15, 18, 'rgba(120,199,232,0.55)');
+            blob(flx, 30 + Math.cos(t * 0.9) * 5, 40 + Math.sin(t * 1.2) * 13, 15, 'rgba(173,230,247,0.5)');
+            blob(flx, 34 + Math.sin(t * 1.4) * 4, 32 + Math.cos(t * 0.5) * 16, 13, 'rgba(63,179,224,0.6)');
+            // 2) clip the flow to the REAL I silhouette
+            flx.globalCompositeOperation = 'destination-in';
+            flx.drawImage(iImg, ix, iy, iw, ih);
+            flx.globalCompositeOperation = 'source-over';
+            // 3) main: dark tile + the I-shaped flow composited on top
+            ctx.clearRect(0, 0, 64, 64);
+            tile();
+            ctx.fillStyle = '#0C1C30';
+            ctx.fill();
+            ctx.drawImage(fl, 0, 0);
+          }
+
+          var dyn = null;
+          var staticCleared = false;
+          var timer = null;
+          function frame() {
+            draw();
+            try {
+              var next = document.createElement('link');
+              next.rel = 'icon';
+              next.type = 'image/png';
+              next.href = c.toDataURL('image/png');
+              // Clear the static icon <link>s exactly once (not the apple-touch one).
+              if (!staticCleared) {
+                var olds = document.querySelectorAll('link[rel="icon"]');
+                for (var i = 0; i < olds.length; i++) olds[i].parentNode.removeChild(olds[i]);
+                staticCleared = true;
+              }
+              // Remove+append a FRESH <link> each frame (not just .href mutate) —
+              // the only pattern Safari reliably re-reads, and it dodges Chrome/FF
+              // data-URL caching. Cheap at 64x64 / ~14fps.
+              if (dyn && dyn.parentNode) dyn.parentNode.removeChild(dyn);
+              document.head.appendChild(next);
+              dyn = next;
+            } catch (e) {
+              stop();
+            }
+          }
+          function start() {
+            if (timer || !iReady) return; // wait until the I art has loaded
+            frame(); // draw + swap immediately, then keep going
+            timer = setInterval(frame, 70); // ~14fps — smooth for a slow flow, light on CPU
+          }
+          function stop() {
+            if (timer) {
+              clearInterval(timer);
+              timer = null;
+            }
+          }
+          document.addEventListener('visibilitychange', function () {
+            document.hidden ? stop() : start();
+          });
+          // start() is kicked off by iImg.onload (and guarded by iReady), so a
+          // not-yet-loaded image never tries to animate; static favicon shows first.
+        } catch (e) {
+          /* leave the static favicon.svg in place */
+        }
+      })();
+    </script>
     <!-- Preload the faces used above the fold (GT America Black display +
          Regular body + Mono eyebrows). 🔴 TRIAL fonts — license before prod. -->
     <link rel="preload" href="/fonts/gt-america/GT-America-Standard-Black-Trial.otf" as="font" type="font/otf" crossorigin />
@@ -239,6 +368,53 @@ const ORG_JSON_LD = {
           });
         });
       })();
+    </script>
+    <!-- Action-puck hover color-cycle (Palette A): pucks keep their NORMAL
+         colors at rest; while you HOVER the button they cycle through random
+         brights, and they ease back to normal when the mouse LEAVES (Zach
+         2026-06-15). Bundled from 'self' → CSP-safe. Inline-!important so it
+         beats the per-context puck rules. Reduced-motion = a single instant
+         color on hover, no looping. Hub never renders these pucks. -->
+    <script>
+      const PUCK_SEL = '.pill__puck, .topnav__cta__puck, .gt-submit__puck, .jd-submit__puck';
+      const PUCK_COLORS = ['#3FB3E0', '#F26A5B', '#7C84E8', '#3DBE85', '#D4569E', '#F2A03D'];
+      const PUCK_INK = '#0C1C30';
+      const puckReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const pickPuck = (not) => {
+        let c;
+        do { c = PUCK_COLORS[(Math.random() * PUCK_COLORS.length) | 0]; } while (c === not);
+        return c;
+      };
+      document.querySelectorAll('.pill, .topnav__cta, .gt-submit, .jd-submit').forEach((host) => {
+        if (!host.querySelector(PUCK_SEL)) return;
+        let cur = null;
+        let timer = null;
+        const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+        const paint = () => {
+          // Stop if the host left the DOM OR got hidden mid-hover (e.g. the
+          // contact form's success path sets display:none with no mouseleave) —
+          // else the timer would run forever. Zero client rects = not rendered.
+          if (!host.isConnected || !host.getClientRects().length) { stop(); return; }
+          // re-query: the contact + apply forms rebuild the button's puck on error (Codex)
+          const live = host.querySelector(PUCK_SEL);
+          if (!live) return;
+          cur = pickPuck(cur);
+          live.style.setProperty('color', PUCK_INK, 'important');
+          live.style.setProperty('background-color', cur, 'important');
+        };
+        host.addEventListener('mouseenter', () => {
+          stop();
+          paint();
+          if (!puckReduce) timer = window.setInterval(paint, 700);
+        });
+        host.addEventListener('mouseleave', () => {
+          stop();
+          cur = null;
+          // ease back to the puck's normal color (the transition lingers from paint)
+          const live = host.querySelector(PUCK_SEL);
+          if (live) { live.style.removeProperty('background-color'); live.style.removeProperty('color'); }
+        });
+      });
     </script>
   </body>
 </html>

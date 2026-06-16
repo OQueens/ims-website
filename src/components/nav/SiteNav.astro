@@ -10,10 +10,12 @@
  * already lives in kit.css; this only wires the scroll listener.
  * Per design_handoff_motion §2 (2026-06-02).
  *
- * NOTE (iterate): kit.css hides .topnav__links on mobile (<=768px) with no
- * hamburger — only logo + CTA show there. The footer sitemap carries full
- * navigation on mobile. A mobile menu is a follow-up (mirrors the prior dark
- * nav's Codex r1 accessibility fold).
+ * Mobile (<=768px): the inline .topnav__links are hidden; a hamburger button
+ * (.topnav__burger) opens a full-screen overlay (.mobile-menu) with the same
+ * links + the Get-in-touch CTA. Burger animates to an ✕; the menu fades in with
+ * staggered links. A11y: aria-expanded/-controls, focus moves into the menu and
+ * is trapped, ESC + link-click + scrim close it, body scroll locks while open,
+ * reduced-motion drops the animation. The footer sitemap still carries nav too.
  */
 const path = Astro.url.pathname.replace(/\/+$/, '') || '/';
 const links: { href: string; label: string }[] = [
@@ -27,7 +29,16 @@ const isCurrent = (href: string) => path === href || path.startsWith(href + '/')
 <a href="#main" class="skip-to-content">Skip to content</a>
 <nav class="topnav" aria-label="Primary">
   <a class="topnav__logo" href="/" aria-label="IMS, Innovative Medical Staffing, home">
-    <img src="/ims-logo-light.png" alt="IMS" />
+    <span class="topnav__logo-wrap">
+      <img src="/ims-logo-light.png" alt="IMS" />
+      <!-- living-blue liquid light: blobs drift inside a layer masked to the
+           logo + clipped to just the blue "I" (see kit.css .topnav__logo-flow) -->
+      <span class="topnav__logo-flow" aria-hidden="true">
+        <span class="topnav__logo-flow__blob topnav__logo-flow__blob--a"></span>
+        <span class="topnav__logo-flow__blob topnav__logo-flow__blob--b"></span>
+        <span class="topnav__logo-flow__blob topnav__logo-flow__blob--c"></span>
+      </span>
+    </span>
   </a>
   <div class="topnav__links">
     {links.map((l) => (
@@ -38,7 +49,26 @@ const isCurrent = (href: string) => path === href || path.startsWith(href + '/')
     Get in touch
     <span class="topnav__cta__puck" aria-hidden="true">→</span>
   </a>
+  <button class="topnav__burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+    <span class="topnav__burger-lines" aria-hidden="true"></span>
+  </button>
 </nav>
+
+<!-- Mobile full-screen menu (opened by .topnav__burger; floating pill stays on
+     top so the burger doubles as the ✕). aria-hidden flips with .is-open. -->
+<div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+  <div class="mobile-menu__inner">
+    <nav class="mobile-menu__nav" aria-label="Mobile primary">
+      {links.map((l) => (
+        <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
+      ))}
+    </nav>
+    <a class="mobile-menu__cta" href="/contact">
+      Get in touch
+      <span class="mobile-menu__cta-puck" aria-hidden="true">→</span>
+    </a>
+  </div>
+</div>
 
 <script>
   // Nav hide-on-scroll (design_handoff_motion §2). Astro bundles this from
@@ -50,11 +80,23 @@ const isCurrent = (href: string) => path === href || path.startsWith(href + '/')
     let ticking = false;
     const update = () => {
       const y = window.scrollY;
+      if (y < 80) {
+        nav.classList.remove('topnav--hidden');
+        lastY = y;
+        ticking = false;
+        return;
+      }
+      // Accumulate distance since the last toggle (NOT per-frame): only move
+      // lastY when we cross the threshold, so SLOW scrolling still adds up and
+      // toggles — the old per-frame `d` never reached 12px on a gentle scroll.
       const d = y - lastY;
-      if (y < 80) nav.classList.remove('topnav--hidden');
-      else if (d > 12) nav.classList.add('topnav--hidden');
-      else if (d < -12) nav.classList.remove('topnav--hidden');
-      lastY = y;
+      if (d > 6) {
+        nav.classList.add('topnav--hidden');
+        lastY = y;
+      } else if (d < -6) {
+        nav.classList.remove('topnav--hidden');
+        lastY = y;
+      }
       ticking = false;
     };
     window.addEventListener(
@@ -69,5 +111,67 @@ const isCurrent = (href: string) => path === href || path.startsWith(href + '/')
     );
     // A11y: never leave the nav hidden when a keyboard user focuses into it.
     nav.addEventListener('focusin', () => nav.classList.remove('topnav--hidden'));
+  }
+
+  // Mobile full-screen menu. CSP-safe (bundled from 'self'). Toggles .is-open,
+  // locks body scroll, traps focus across [burger + menu links/CTA], closes on
+  // ESC / link click / outside-content tap, and restores focus on close.
+  const burger = document.querySelector('.topnav__burger') as HTMLButtonElement | null;
+  const menu = document.getElementById('mobileMenu');
+  if (burger && menu && nav) {
+    const focusables = () =>
+      [burger, ...Array.from(menu.querySelectorAll<HTMLElement>('a, button'))].filter(
+        (el) => el && !el.hasAttribute('disabled'),
+      );
+    let lastFocus: HTMLElement | null = null;
+
+    const setOpen = (open: boolean) => {
+      burger.setAttribute('aria-expanded', String(open));
+      burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      menu.classList.toggle('is-open', open);
+      menu.setAttribute('aria-hidden', String(!open));
+      document.documentElement.classList.toggle('menu-open', open);
+      if (open) {
+        nav.classList.remove('topnav--hidden'); // keep the ✕ reachable
+        lastFocus = document.activeElement as HTMLElement;
+        const first = menu.querySelector<HTMLElement>('a, button');
+        if (first) first.focus();
+      } else if (lastFocus && typeof lastFocus.focus === 'function') {
+        lastFocus.focus();
+      }
+    };
+
+    burger.addEventListener('click', () => setOpen(burger.getAttribute('aria-expanded') !== 'true'));
+    menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+
+    document.addEventListener('keydown', (e) => {
+      if (!menu.classList.contains('is-open')) return;
+      if (e.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+      if (e.key === 'Tab') {
+        const f = focusables();
+        if (f.length === 0) return;
+        const first = f[0];
+        const last = f[f.length - 1];
+        // If focus has escaped the trap set entirely, pull it back in.
+        if (f.indexOf(document.activeElement as HTMLElement) === -1) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+        } else if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    // Tap the empty scrim (the overlay itself, outside the content) to close.
+    menu.addEventListener('click', (e) => {
+      if (e.target === menu) setOpen(false);
+    });
   }
 </script>

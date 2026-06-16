@@ -231,22 +231,47 @@ if (job) {
   ].filter((f) => f.value);
 
   // About: the public description when present, else a factual summary composed
-  // from the structured fields (prose-ifying real data; nothing invented).
+  // from the structured fields (prose-ifying real data; nothing invented). The
+  // facility TYPE is grounded in the location so a generic public label (e.g.
+  // "Hospital") reads as "...at a hospital in Portsmouth, NH" rather than the
+  // old standalone "Hosted at a hospital." nonsense (Zach 2026-06-14).
   aboutText = clean(job.public_description);
   if (!aboutText) {
-    const setting = clean(job.practice_setting);
-    const specialtyName = clean(job.specialty_name) || 'clinician';
-    aboutText = [
-      `A locum assignment for ${anA(specialtyName)} ${specialtyName} role${cityTitle !== 'Nationwide' ? ` in ${cityTitle}` : ''}${lengthVal ? `, ${lengthVal.toLowerCase()}` : ''}.`,
-      setting
-        ? `${titleCase(setting)} setting${coverageVal ? `, ${coverageVal.toLowerCase()}` : ''}.`
-        : coverageVal
-          ? `${coverageVal}.`
-          : '',
-      job.public_facility_label ? `Hosted at ${anA(job.public_facility_label)} ${job.public_facility_label.toLowerCase()}.` : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
+    const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+    const specHuman =
+      clean(job.specialty_name) || (job.specialty_slug ? titleCase(job.specialty_slug) : 'Locum');
+    const fac = clean(job.public_facility_label);
+    // A generic category label (vs. a real facility name) — articled + lowercased.
+    // NB: "regional / community / teaching / rural" are deliberately NOT prefixes
+    // here — they belong to real hospital NAMES ("Portsmouth Regional Hospital")
+    // far more than to standalone generic labels, so including them misclassified
+    // named facilities (Codex/review fold 2026-06-14). A bare generic label still
+    // matches via the terminal alternation.
+    const GENERIC_FAC =
+      /^((acute[- ]care|critical[- ]access|tertiary)\s+)*(hospital|medical\s+center|health(\s*(system|care))?(\s*(facility|center|system))?|clinic|surgery\s+center|ambulatory\s+surgery\s+center|asc|outpatient\s+(center|clinic)|practice|facility)$/i;
+    const facIsName = Boolean(fac) && !GENERIC_FAC.test(fac);
+    const where = cityTitle !== 'Nationwide' ? cityTitle : '';
+
+    // S1 — what + where. The location grounds a generic facility type so it
+    // never renders as an orphan "at a hospital." with no place attached.
+    let s1: string;
+    if (facIsName && where) s1 = `${specHuman} locum coverage at ${fac} in ${where}.`;
+    else if (facIsName) s1 = `${specHuman} locum coverage at ${fac}.`;
+    else if (fac && where) s1 = `${specHuman} locum coverage at ${anA(fac)} ${fac.toLowerCase()} in ${where}.`;
+    else if (where) s1 = `${specHuman} locum coverage in ${where}.`;
+    else s1 = `${specHuman} locum tenens assignment.`;
+
+    // S2 — schedule: length + start + openings, only the parts we actually have.
+    const sched: string[] = [];
+    if (lengthVal) sched.push(lengthVal);
+    if (startVal) sched.push(`starting ${startVal}`);
+    if (spots > 0) sched.push(`${spots} ${spots === 1 ? 'opening' : 'openings'}`);
+    const s2 = sched.length ? `${cap(sched.join(', '))}.` : '';
+
+    // S3 — coverage / call model when present.
+    const s3 = coverageVal ? `${cap(coverageVal)} coverage.` : '';
+
+    aboutText = [s1, s2, s3].filter(Boolean).join(' ');
   }
 }
 
@@ -275,10 +300,6 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
             </div>
             <h1 class="jd-hero__title">{cityTitle}</h1>
             {sub && <p class="jd-hero__sub">{sub}</p>}
-            <div class="jd-hero__pay">
-              <span class="jd-hero__pay-fig">Rate on request</span>
-              <span class="jd-hero__pay-note">shared with qualified candidates · 1099 contract</span>
-            </div>
           </section>
 
           <!-- STAT STRIP -->
@@ -425,12 +446,12 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
 <style>
   /* Tone tints (soft brand pastels from the active palette). The hero wears the
      job's tone as a soft wash + a stronger corner glow. */
-  .jd-hero--coral  { --jd-tint: #FFD8CB; --jd-glow: rgba(255, 107, 74, 0.32); }
-  .jd-hero--rose   { --jd-tint: #FFD3DE; --jd-glow: rgba(255, 135, 166, 0.34); }
-  .jd-hero--butter { --jd-tint: #F5DFA8; --jd-glow: rgba(255, 201, 74, 0.36); }
-  .jd-hero--mint   { --jd-tint: #BFE3CC; --jd-glow: rgba(63, 201, 147, 0.28); }
-  .jd-hero--sky    { --jd-tint: #BFE3F2; --jd-glow: rgba(69, 176, 220, 0.28); }
-  .jd-hero--lilac  { --jd-tint: #DDD6FB; --jd-glow: rgba(139, 124, 246, 0.26); }
+  .jd-hero--coral  { --jd-tint: #FBD7CF; --jd-glow: rgba(242, 106, 91, 0.32); }
+  .jd-hero--rose   { --jd-tint: #F3D2E5; --jd-glow: rgba(212, 86, 158, 0.34); }
+  .jd-hero--butter { --jd-tint: #F8E2B8; --jd-glow: rgba(242, 160, 61, 0.36); }
+  .jd-hero--mint   { --jd-tint: #C5E9D4; --jd-glow: rgba(61, 190, 133, 0.28); }
+  .jd-hero--sky    { --jd-tint: #CDE9F5; --jd-glow: rgba(63, 179, 224, 0.28); }
+  .jd-hero--lilac  { --jd-tint: #D9DCF7; --jd-glow: rgba(124, 132, 232, 0.26); }
 
   .jd { padding: var(--space-7) 0 var(--space-10); }
 
@@ -465,7 +486,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
     font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
     text-transform: uppercase; font-weight: 700; color: var(--ink);
   }
-  .jd-hero__spec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grass-deep, #6C5CE0); }
+  .jd-hero__spec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sky, #3FB3E0); }
   .jd-hero__badge {
     display: inline-flex; align-items: center; border-radius: 999px;
     background: var(--ink); color: var(--cream-soft);
@@ -508,7 +529,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
 
   .jd-highlights { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
   .jd-highlights__item { display: flex; gap: 14px; font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--ink); }
-  .jd-highlights__arrow { color: var(--grass-deep, #6C5CE0); font-weight: 700; flex-shrink: 0; }
+  .jd-highlights__arrow { color: var(--sky, #3FB3E0); font-weight: 700; flex-shrink: 0; }
 
   .jd-facility { margin: 0; display: flex; flex-direction: column; }
   .jd-facility__row { display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: baseline; padding: 13px 0; border-bottom: 1px solid var(--rule); }
@@ -526,16 +547,16 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4);
   }
   .jd-apply__glow { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; }
-  .jd-apply__glow--a { width: 260px; height: 260px; background: rgba(139, 124, 246, 0.34); top: -110px; right: -80px; }
-  .jd-apply__glow--b { width: 220px; height: 220px; background: rgba(69, 176, 220, 0.24); bottom: -120px; left: -90px; }
-  .jd-apply__eyebrow { position: relative; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: #93D0EE; margin-bottom: 14px; }
-  .jd-apply__dot { width: 8px; height: 8px; border-radius: 50%; background: #93D0EE; }
+  .jd-apply__glow--a { width: 260px; height: 260px; background: rgba(63, 179, 224, 0.34); top: -110px; right: -80px; }
+  .jd-apply__glow--b { width: 220px; height: 220px; background: rgba(212, 86, 158, 0.24); bottom: -120px; left: -90px; }
+  .jd-apply__eyebrow { position: relative; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: #79C7E8; margin-bottom: 14px; }
+  .jd-apply__dot { width: 8px; height: 8px; border-radius: 50%; background: #79C7E8; }
   .jd-apply__title { position: relative; font-family: var(--font-display); font-weight: 900; font-size: clamp(26px, 3vw, 34px); line-height: 1.04; letter-spacing: -0.03em; color: var(--cream-soft); margin: 0 0 10px; }
-  .jd-apply__title em { font-style: normal; color: #8B7CF6; }
+  .jd-apply__title em { font-style: normal; color: #3FB3E0; }
   .jd-apply__sub { position: relative; font-family: var(--font-body); font-size: 14px; line-height: 1.55; color: rgba(251, 246, 238, 0.72); margin: 0 0 18px; }
   .jd-apply__chip { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid rgba(251, 246, 238, 0.14); border-radius: 12px; padding: 11px 14px; margin-bottom: 18px; }
   .jd-apply__chip-role { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; color: rgba(251, 246, 238, 0.82); }
-  .jd-apply__chip-id { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: #93D0EE; white-space: nowrap; }
+  .jd-apply__chip-id { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: #79C7E8; white-space: nowrap; }
 
   .jd-form { position: relative; display: flex; flex-direction: column; gap: 12px; }
   .jd-field { display: flex; flex-direction: column; gap: 6px; }
@@ -549,23 +570,23 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
   }
   .jd-field textarea { min-height: 96px; resize: vertical; }
   .jd-field input::placeholder, .jd-field textarea::placeholder { color: rgba(251, 246, 238, 0.4); }
-  .jd-field input:focus, .jd-field textarea:focus { outline: none; border-color: #8B7CF6; box-shadow: 0 0 0 3px rgba(139, 124, 246, 0.30); }
+  .jd-field input:focus, .jd-field textarea:focus { outline: none; border-color: #3FB3E0; box-shadow: 0 0 0 3px rgba(63, 179, 224, 0.30); }
 
   .jd-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
-  .jd-form__error { margin: 0; padding: 11px 13px; border-radius: 10px; background: rgba(255, 107, 74, 0.14); border: 1px solid rgba(255, 107, 74, 0.4); color: #FFC9B8; font-family: var(--font-body); font-size: 13px; line-height: 1.45; }
+  .jd-form__error { margin: 0; padding: 11px 13px; border-radius: 10px; background: rgba(242, 106, 91, 0.14); border: 1px solid rgba(242, 106, 91, 0.4); color: #FFC9B8; font-family: var(--font-body); font-size: 13px; line-height: 1.45; }
   .jd-form__error[hidden] { display: none; }
 
   .jd-submit {
     display: flex; align-items: center; justify-content: center; gap: 12px;
-    background: #8B7CF6; color: #0C1C30; border: none; border-radius: 999px;
+    background: #3FB3E0; color: #0C1C30; border: none; border-radius: 999px;
     padding: 15px 22px; font-family: var(--font-body); font-weight: 700; font-size: 15px;
     cursor: pointer; margin-top: 4px; transition: transform 0.15s, box-shadow 0.15s;
   }
   .jd-submit:focus-visible { outline: 3px solid var(--cream-soft); outline-offset: 3px; }
   .jd-submit__puck { width: 26px; height: 26px; border-radius: 50%; background: #0C1C30; color: var(--cream-soft); display: grid; place-items: center; font-size: 13px; transition: transform 0.15s; }
   @media (hover: hover) and (pointer: fine) {
-    .jd-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(139, 124, 246, 0.4); }
+    .jd-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(63, 179, 224, 0.4); }
     .jd-submit:active { transform: scale(0.98); transition-duration: 110ms; }
     .jd-submit:hover .jd-submit__puck { transform: translateX(3px); }
   }
@@ -575,7 +596,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
   .jd-sent { display: none; position: relative; background: #0C1C30; color: var(--cream-soft); border-radius: 24px; padding: clamp(28px, 3vw, 36px); text-align: center; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4); }
   .jd-sent.is-active { display: block; }
   .jd-sent:focus { outline: none; }
-  .jd-sent__check { width: 72px; height: 72px; border-radius: 50%; background: #3FC993; display: grid; place-items: center; margin: 0 auto 20px; box-shadow: 0 16px 40px rgba(63, 201, 147, 0.45); }
+  .jd-sent__check { width: 72px; height: 72px; border-radius: 50%; background: #3DBE85; display: grid; place-items: center; margin: 0 auto 20px; box-shadow: 0 16px 40px rgba(61, 190, 133, 0.45); }
   .jd-sent__check svg { width: 36px; height: 36px; }
   .jd-sent__title { font-family: var(--font-display); font-weight: 900; font-size: clamp(26px, 3vw, 34px); letter-spacing: -0.03em; margin: 0 0 12px; color: var(--cream-soft); }
   .jd-sent__body { font-family: var(--font-body); font-size: 15px; line-height: 1.6; color: rgba(251, 246, 238, 0.78); margin: 0 0 22px; }
@@ -597,7 +618,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
 
   /* ── 404 ── */
   .jd-404 { text-align: center; padding: var(--space-9) 0; max-width: 560px; margin: 0 auto; }
-  .jd-404__eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; font-weight: 700; color: var(--grass-deep, #6C5CE0); }
+  .jd-404__eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; font-weight: 700; color: var(--sky, #3FB3E0); }
   .jd-404__title { font-family: var(--font-display); font-weight: 900; font-size: clamp(34px, 5vw, 56px); line-height: 1.02; letter-spacing: -0.03em; color: var(--ink); margin: 14px 0 16px; }
   .jd-404__body { font-family: var(--font-body); font-size: 17px; line-height: 1.6; color: var(--ink-soft); margin: 0 0 28px; }
 </style>
@@ -696,7 +717,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
     let H = (c.height = window.innerHeight);
     const onResize = () => { W = c.width = window.innerWidth; H = c.height = window.innerHeight; };
     window.addEventListener('resize', onResize);
-    const colors = ['#93D0EE', '#FF87A6', '#8B7CF6', '#FFC94A', '#3FC993'];
+    const colors = ['#3FB3E0', '#F26A5B', '#7C84E8', '#3DBE85', '#D4569E', '#F2A03D'];
     const pieces = Array.from({ length: 160 }, () => ({
       x: W / 2 + (Math.random() - 0.5) * 120,
       y: H / 2 + (Math.random() - 0.5) * 40,

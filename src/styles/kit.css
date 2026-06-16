@@ -159,7 +159,73 @@
   line-height: 0;
   flex-shrink: 0;
 }
-.topnav__logo img { height: 24px; width: auto; display: block; }
+.topnav__logo img { height: 36px; width: auto; display: block; }
+/* Living-blue "liquid light" on the blue "I" of the IMS wordmark. A layer masked
+ * to the logo's pixels + clip-path'd to the left ~24% (the blue I) holds three
+ * soft blue blobs that drift on slow, out-of-sync looping paths, so blue light
+ * flows and glides along the letter (Apple-style organic motion). `screen` blend
+ * lays the light onto the existing blue I = light moving through the blue. */
+.topnav__logo-wrap { position: relative; display: inline-block; line-height: 0; }
+.topnav__logo-flow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: url(/ims-logo-light.png);
+  mask-image: url(/ims-logo-light.png);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: left center;
+  mask-position: left center;
+  clip-path: inset(0 76% 0 0); /* keep only the left 24% = the blue I */
+  mix-blend-mode: screen;
+}
+.topnav__logo-flow__blob {
+  position: absolute;
+  left: -8%;
+  top: -25%;
+  width: 42%;
+  height: 75%;
+  border-radius: 50%;
+  filter: blur(4px);
+  /* no will-change: the parent's mix-blend already promotes one layer; adding it
+   * per-blob would stack 3 extra compositor layers inside the sticky nav. */
+}
+/* Three logo-family blues at different sizes/paths/durations so they never sync
+ * = organic, never-obviously-repeating flow. */
+.topnav__logo-flow__blob--a {
+  background: radial-gradient(circle at 50% 50%, rgba(173, 230, 247, 0.95), rgba(173, 230, 247, 0) 70%);
+  animation: logoFlowA 6.5s ease-in-out infinite;
+}
+.topnav__logo-flow__blob--b {
+  background: radial-gradient(circle at 50% 50%, rgba(63, 179, 224, 0.92), rgba(63, 179, 224, 0) 70%);
+  animation: logoFlowB 8.5s ease-in-out infinite;
+}
+.topnav__logo-flow__blob--c {
+  background: radial-gradient(circle at 50% 50%, rgba(120, 199, 232, 0.85), rgba(120, 199, 232, 0) 72%);
+  animation: logoFlowC 10.5s ease-in-out infinite;
+}
+@keyframes logoFlowA {
+  0%, 100% { transform: translate(0%, 0%) scale(1); }
+  33% { transform: translate(18%, 55%) scale(1.15); }
+  66% { transform: translate(6%, 125%) scale(0.95); }
+}
+@keyframes logoFlowB {
+  0%, 100% { transform: translate(14%, 110%) scale(1.1); }
+  40% { transform: translate(-4%, 38%) scale(0.9); }
+  70% { transform: translate(20%, -8%) scale(1.2); }
+}
+@keyframes logoFlowC {
+  0%, 100% { transform: translate(22%, 45%) scale(0.9); }
+  50% { transform: translate(2%, 92%) scale(1.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Hide the flow entirely (the logo's own solid blue I is the clean static
+   * state); freezing the blobs would leave one awkwardly clipped off-bottom. */
+  .topnav__logo-flow { display: none; }
+}
 .topnav__links {
   display: flex;
   gap: 18px;
@@ -207,8 +273,159 @@
   .topnav__cta:hover .topnav__cta__puck { transform: rotate(-45deg); }
 }
 
+/* ── Mobile menu: hamburger button + full-screen overlay ──
+ * Burger is hidden on desktop (inline links are used); shown <=768px. The
+ * floating pill (z-100) stays on top of the overlay (z-90) so the burger
+ * animates to an ✕ and serves as the close control. */
+.topnav__burger {
+  display: none; /* desktop: inline links instead */
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(251, 246, 238, 0.08);
+  color: var(--cream-soft);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.topnav__burger:hover { background: rgba(251, 246, 238, 0.16); }
+.topnav__burger:focus-visible { outline: 2px solid var(--cream-soft); outline-offset: 2px; }
+.topnav__burger-lines,
+.topnav__burger-lines::before,
+.topnav__burger-lines::after {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 280ms var(--ease-out), opacity 200ms var(--ease-out);
+}
+.topnav__burger-lines { position: relative; }
+.topnav__burger-lines::before { position: absolute; left: 0; top: -6px; }
+.topnav__burger-lines::after { position: absolute; left: 0; top: 6px; }
+/* open → ✕ */
+.topnav__burger[aria-expanded='true'] .topnav__burger-lines { background: transparent; }
+.topnav__burger[aria-expanded='true'] .topnav__burger-lines::before { transform: translateY(6px) rotate(45deg); }
+.topnav__burger[aria-expanded='true'] .topnav__burger-lines::after { transform: translateY(-6px) rotate(-45deg); }
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 96px var(--space-6) var(--space-8);
+  background: var(--ink);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 320ms var(--ease-out), visibility 320ms var(--ease-out);
+  overflow-y: auto;
+  overscroll-behavior: contain; /* don't chain scroll to the locked body behind */
+}
+.mobile-menu::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(680px 520px at 92% 4%, rgba(63, 179, 224, 0.22), transparent 60%),
+    radial-gradient(560px 460px at -6% 100%, rgba(212, 86, 158, 0.16), transparent 60%);
+}
+.mobile-menu.is-open { opacity: 1; visibility: visible; }
+.mobile-menu__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* center the links + CTA horizontally */
+  text-align: center;
+  gap: var(--space-6);
+}
+.mobile-menu__nav { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.mobile-menu__nav a {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(34px, 9vw, 52px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--cream-soft);
+  text-decoration: none;
+  padding: 6px 0;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 380ms var(--ease-out), transform 380ms var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.mobile-menu__nav a[aria-current='page'] { color: var(--sky, #3FB3E0); }
+.mobile-menu.is-open .mobile-menu__nav a { opacity: 1; transform: none; }
+.mobile-menu.is-open .mobile-menu__nav a:nth-child(1) { transition-delay: 80ms; }
+.mobile-menu.is-open .mobile-menu__nav a:nth-child(2) { transition-delay: 140ms; }
+.mobile-menu.is-open .mobile-menu__nav a:nth-child(3) { transition-delay: 200ms; }
+.mobile-menu.is-open .mobile-menu__nav a:nth-child(4) { transition-delay: 260ms; }
+.mobile-menu__cta {
+  display: inline-flex;
+  align-self: center;        /* centered with the links */
+  align-items: center;
+  gap: 14px;
+  margin-top: var(--space-3);
+  padding: 18px 20px 18px 34px;
+  border-radius: 999px;
+  background: var(--sky, #3FB3E0);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 22px;
+  text-decoration: none;
+  box-shadow: 0 16px 40px rgba(63, 179, 224, 0.40);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 380ms var(--ease-out) 320ms, transform 380ms var(--ease-out) 320ms;
+}
+.mobile-menu.is-open .mobile-menu__cta { opacity: 1; transform: none; }
+.mobile-menu__cta-puck {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--cream-soft);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 17px;
+}
+/* Lock background scroll while the overlay is open. */
+html.menu-open, html.menu-open body { overflow: hidden; }
+/* While the menu is open the overlay already shows a big Get-in-touch CTA, so
+ * drop the pill's redundant one (leaving logo + ✕) and keep the ✕ right-aligned. */
+html.menu-open .topnav__cta { display: none; }
+html.menu-open .topnav__burger { margin-left: auto; }
+
+/* Give the floating pill side breathing room instead of spanning edge-to-edge
+ * (the auto side-margins only kick in once the viewport exceeds the max-width). */
+@media (max-width: 1131px) {
+  .topnav { margin-inline: 16px; }
+}
+
 @media (max-width: 768px) {
   .topnav__links { display: none; }
+  .topnav__burger { display: inline-flex; }
+  /* push the CTA + burger cluster to the right edge of the pill */
+  .topnav__cta { margin-left: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu,
+  .mobile-menu__nav a,
+  .mobile-menu__cta,
+  .topnav__burger-lines,
+  .topnav__burger-lines::before,
+  .topnav__burger-lines::after { transition: none; }
 }
 
 /* ─────── Hero ─────── */
@@ -1307,18 +1524,21 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
 }
 /* Mobile/tablet: keep a tasteful 2-node subset (tl + br); hide the two that would
  * crowd the headline. Scale the CHILD content (the parent's transform is animated). */
+/* Mobile/tablet: keep a tasteful diagonal 2-node subset — tl pill + bl card.
+ * (The long "Replies…" pill now lives at br; hiding it on mobile avoids
+ * overflow. The bl card is compact, so it moves to the bottom-right slot.) */
 @media (max-width: 1080px) {
-  .cta-pop--tr, .cta-pop--bl { display: none; }
+  .cta-pop--tr, .cta-pop--br { display: none; }
   .cta-pop--tl { top: 6%; left: 4%; }
-  .cta-pop--br { bottom: 8%; right: 4%; }
+  .cta-pop--bl { bottom: 8%; right: 4%; left: auto; }
   .cta-pop--tl .cta-pop__pill { transform: rotate(var(--cta-pop-tilt, -4deg)) scale(0.82); }
-  .cta-pop--br .cta-pop__card { transform: rotate(var(--cta-pop-tilt, 3deg)) scale(0.82); }
+  .cta-pop--bl .cta-pop__card { transform: rotate(var(--cta-pop-tilt, 3deg)) scale(0.82); }
 }
 @media (max-width: 560px) {
   .cta-pop--tl { top: 3%; left: 2%; }
-  .cta-pop--br { bottom: 5%; right: 2%; }
+  .cta-pop--bl { bottom: 5%; right: 2%; }
   .cta-pop--tl .cta-pop__pill { transform: rotate(var(--cta-pop-tilt, -4deg)) scale(0.72); }
-  .cta-pop--br .cta-pop__card { transform: rotate(var(--cta-pop-tilt, 3deg)) scale(0.72); }
+  .cta-pop--bl .cta-pop__card { transform: rotate(var(--cta-pop-tilt, 3deg)) scale(0.72); }
 }
 @media (prefers-reduced-motion: reduce) { .cta-pop { animation: none !important; } }
 .cta-band__headline {
@@ -1812,6 +2032,10 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   font-size: 20px;
   letter-spacing: -0.018em;
   color: var(--cream-soft);
+  min-width: 0; /* allow the 1fr value column to shrink (see overflow-wrap below) */
+  /* The email is one long unbreakable token; let it wrap so it can't force the
+   * info row — and the whole dark panel — wider than a phone viewport. */
+  overflow-wrap: anywhere;
 }
 .contact-b__info-value a {
   color: var(--cream-soft);
@@ -1834,7 +2058,10 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   border-radius: 20px;
   padding: var(--space-5);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0,1fr) — NOT 1fr (= minmax(auto,1fr)) — so the columns can shrink
+   * below the inputs' intrinsic min-content instead of forcing the form (and
+   * the whole dark panel) wider than a phone viewport. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--space-3);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.25);
   position: relative;
@@ -1842,6 +2069,10 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   align-content: start;
 }
 .contact-b__form .full { grid-column: 1 / -1; }
+/* Single column on phones: two side-by-side inputs don't fit a ~330px form. */
+@media (max-width: 560px) {
+  .contact-b__form { grid-template-columns: 1fr; }
+}
 .contact-b__form-head {
   grid-column: 1 / -1;
   display: flex;
@@ -1872,6 +2103,7 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   border: 1px solid var(--rule);
   background: white;
   color: var(--ink);
+  min-width: 0; /* allow inputs to shrink with the grid track (no min-content blowout) */
 }
 .contact-b__form .input::placeholder { color: var(--ink-mute); }
 .contact-b__form .input:focus {

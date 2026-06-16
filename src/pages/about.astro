@@ -16,7 +16,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     <section class="au__hero au-section">
       <div class="container hero-stage">
         <span class="au__hero-eyebrow" style="--i:0">About IMS · Founded 2022 · Fort Worth, TX</span>
-        <h1 class="au__hero-title" style="--i:1">A boutique firm, <span>built differently</span>.</h1>
+        <h1 class="au__hero-title" style="--i:1">A boutique firm, <span>built differently.</span></h1>
         <p class="au__hero-sub" style="--i:2">Founded by three industry leaders who watched the staffing model break from the inside, then built the one they wished existed — country-club-level concierge support, clinicians and facilities treated like family, and a team that makes sure you're happy, always.</p>
       </div>
     </section>
@@ -86,19 +86,19 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           <div class="au__team-label">Founders</div>
           <div class="au__team-grid au__team-grid--3 reveal-group">
             <article class="au__member reveal" style="--i:0">
-              <div class="au__member-portrait" style="background: var(--pop-coral);">MD</div>
+              <div class="au__member-portrait" style="background: var(--sky); color: var(--ink);">MD</div>
               <h3 class="au__member-name">Matthew Draughon</h3>
               <span class="au__member-role">Founder</span>
               <span class="au__member-loc">Charlotte, NC · Baylor &amp; Wake Forest</span>
             </article>
             <article class="au__member reveal" style="--i:1">
-              <div class="au__member-portrait" style="background: var(--pop-butter); color: var(--ink);">BT</div>
+              <div class="au__member-portrait" style="background: var(--coral); color: var(--ink);">BT</div>
               <h3 class="au__member-name">Brent Toland</h3>
               <span class="au__member-role">Founder</span>
               <span class="au__member-loc">Germantown, TN · Baylor &amp; Drexel</span>
             </article>
             <article class="au__member reveal" style="--i:2">
-              <div class="au__member-portrait" style="background: var(--pop-lilac);">JS</div>
+              <div class="au__member-portrait" style="background: var(--violet); color: var(--ink);">JS</div>
               <h3 class="au__member-name">Jonathan Silva</h3>
               <span class="au__member-role">Founder</span>
               <span class="au__member-loc">Waxhaw, NC · Minnesota &amp; Baylor</span>
@@ -110,19 +110,19 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
           <div class="au__team-label">Leadership</div>
           <div class="au__team-grid au__team-grid--3 reveal-group">
             <article class="au__member reveal" style="--i:0">
-              <div class="au__member-portrait" style="background: var(--pop-lilac);">DK</div>
+              <div class="au__member-portrait" style="background: var(--rose); color: var(--ink);">DK</div>
               <h3 class="au__member-name">Donovan Kading</h3>
               <span class="au__member-role">Director of Operations</span>
               <span class="au__member-loc">Greensboro, NC · Originally San Angelo, TX</span>
             </article>
             <article class="au__member reveal" style="--i:1">
-              <div class="au__member-portrait" style="background: var(--pop-rose);">ZY</div>
+              <div class="au__member-portrait" style="background: var(--sky); color: var(--ink);">ZY</div>
               <h3 class="au__member-name">Zachary Young</h3>
               <span class="au__member-role">Marketing Director</span>
               <span class="au__member-loc">Greensboro, NC · High Point University</span>
             </article>
             <article class="au__member reveal" style="--i:2">
-              <div class="au__member-portrait" style="background: var(--pop-sky); color: var(--ink);">CN</div>
+              <div class="au__member-portrait" style="background: var(--coral); color: var(--ink);">CN</div>
               <h3 class="au__member-name">Chad Nachtigal</h3>
               <span class="au__member-role">Head of Recruiting</span>
               <span class="au__member-loc">Fort Worth, TX</span>
@@ -169,9 +169,9 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
    * rule here (Astro mangles the `body` selector so it never matches). */
   /* Atmospheric blobs */
   .atmosphere { position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(120px); }
-  .atmosphere--lilac { width: 600px; height: 600px; background: var(--pop-lilac); opacity: 0.14; top: 20vh; right: -200px; animation: blobFloatA 28s ease-in-out infinite; }
-  .atmosphere--butter { width: 500px; height: 500px; background: var(--pop-butter); opacity: 0.16; top: 60vh; left: -180px; animation: blobFloatB 32s ease-in-out infinite; }
-  .atmosphere--coral { width: 400px; height: 400px; background: var(--pop-coral); opacity: 0.12; bottom: -100px; right: 30%; animation: blobFloatC 24s ease-in-out infinite; }
+  .atmosphere--lilac { width: 600px; height: 600px; background: var(--sky); opacity: 0.14; top: 20vh; right: -200px; animation: blobFloatA 28s ease-in-out infinite; }
+  .atmosphere--butter { width: 500px; height: 500px; background: var(--violet); opacity: 0.16; top: 60vh; left: -180px; animation: blobFloatB 32s ease-in-out infinite; }
+  .atmosphere--coral { width: 400px; height: 400px; background: var(--coral); opacity: 0.12; bottom: -100px; right: 30%; animation: blobFloatC 24s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) { .atmosphere { animation: none; } }
   .page-content { position: relative; z-index: 1; }
 
@@ -191,7 +191,9 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     letter-spacing: -0.04em; color: var(--ink); margin: 0;
     max-width: 18ch;
   }
-  .au__hero-title span { color: var(--ink-emphasis); }
+  /* Drop the colored phrase to its own line so it never breaks mid-phrase
+   * ("A boutique firm," / "built differently.") — Zach 2026-06-16. */
+  .au__hero-title span { color: var(--ink-emphasis); display: block; }
   .au__hero-sub {
     font-family: var(--font-body); font-size: 20px; line-height: 1.55;
     color: var(--ink-soft); max-width: 60ch; margin: 0;
@@ -200,7 +202,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   /* Mission line */
   .au__mission .container {
     max-width: 920px;
-    background: var(--soft-butter);
+    background: var(--soft-sky);
     border-radius: 28px;
     padding: var(--space-7) var(--space-6);
     text-align: center;
@@ -231,12 +233,12 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     display: flex; flex-direction: column; gap: var(--space-3);
     transition: transform 280ms var(--ease-out), box-shadow 280ms;
     min-height: 320px;
-    border-top: 4px solid var(--pop-coral);
+    border-top: 4px solid var(--sky);
   }
   .au__pillar:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(31,26,35,0.08); }
-  .au__pillar--01 { border-top-color: var(--pop-coral); }
-  .au__pillar--02 { border-top-color: var(--pop-butter); }
-  .au__pillar--03 { border-top-color: var(--pop-lilac); }
+  .au__pillar--01 { border-top-color: var(--sky); }
+  .au__pillar--02 { border-top-color: var(--coral); }
+  .au__pillar--03 { border-top-color: var(--violet); }
   .au__pillar-num {
     font-family: var(--font-display); font-weight: 900;
     font-size: 64px; line-height: 0.9; letter-spacing: -0.04em;
@@ -330,13 +332,13 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   .au__stats-blob {
     position: absolute; pointer-events: none;
     width: 380px; height: 380px; border-radius: 50%;
-    background: var(--pop-coral); filter: blur(100px);
+    background: var(--sky); filter: blur(100px);
     opacity: 0.22; top: -120px; right: -100px;
   }
   .au__stats-eyebrow {
     font-family: var(--font-mono); font-size: 12px;
     letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700;
-    color: var(--pop-butter); margin-bottom: var(--space-4);
+    color: var(--sky-soft); margin-bottom: var(--space-4);
     position: relative; z-index: 1;
   }
   .au__stats-title {
@@ -346,7 +348,7 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     margin: 0 0 var(--space-6); max-width: 20ch;
     position: relative; z-index: 1;
   }
-  .au__stats-title span { color: var(--pop-coral); }
+  .au__stats-title span { color: var(--rose); }
   .au__stats-grid {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6);
     position: relative; z-index: 1; text-align: center;
@@ -358,10 +360,10 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
     letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
     margin-bottom: 4px;
   }
-  .au__stat-num--coral { color: var(--pop-coral); }
-  .au__stat-num--butter { color: var(--pop-butter); }
-  .au__stat-num--mint { color: var(--pop-mint); }
-  .au__stat-num--lilac { color: var(--pop-lilac); }
+  .au__stat-num--coral { color: var(--sky); }
+  .au__stat-num--butter { color: var(--coral); }
+  .au__stat-num--mint { color: var(--violet); }
+  .au__stat-num--lilac { color: var(--rose); }
   .au__stat-label {
     font-family: var(--font-body); font-weight: 600; font-size: 12px;
     letter-spacing: 0.14em; text-transform: uppercase;
