@@ -1,10 +1,16 @@
 ---
 /*
- * /hub/login — dark split-screen sign-in. Google Workspace (@iastaffing.com)
- * is the only real auth (→ /hub/auth/start). A staging-only preview passcode
- * (env HUB_PREVIEW_PASSCODE, never set on prod) renders an extra form so the
- * dashboard can be reviewed before the Google client exists. Faithful port of
- * design_handoff_hub/src/login.html. prerender=false (reads env + POST handler).
+ * /hub/login — "Command Center" dark sign-in. Google Workspace
+ * (@iastaffing.com / @imstaffing.ai) is the only real auth (→ /hub/auth/start).
+ * A staging-only preview passcode (env HUB_PREVIEW_PASSCODE, never set on prod)
+ * renders an extra form so the dashboard can be reviewed before sign-in is wired.
+ *
+ * The aside foregrounds ONE honest, live, NON-SENSITIVE figure — the active
+ * requisition count — bound to the same ims_jobs feed the dashboard counts
+ * (aggregateHub().activeReqs === number of status='active' rows). This page is
+ * PUBLIC (pre-auth), so it surfaces only that non-sensitive count (also visible
+ * on /jobs), never internal financials. Degrades to a hidden figure (never a
+ * fabricated placeholder) if the read fails. prerender=false (env + POST + DB).
  */
 import HubLayout from '../../layouts/HubLayout.astro';
 import { readHubEnv } from '../../lib/hub/hub-env';
@@ -12,6 +18,8 @@ import { signSession, verifySession, sessionSetCookie } from '../../lib/hub/sess
 import { constantTimeEqual } from '../../lib/crypto-equal';
 import { getCookie } from '../../lib/hub/cookies';
 import { safeReturnTo } from '../../lib/hub/safe-redirect';
+import { getHubSupabase } from '../../lib/hub/hub-supabase';
+import { countActiveReqs } from '../../lib/hub/login-data';
 
 export const prerender = false;
 
@@ -38,16 +46,22 @@ if (Astro.request.method === 'POST') {
     const form = await Astro.request.formData();
     const supplied = String(form.get('passcode') ?? '');
     if (await constantTimeEqual(supplied, env.HUB_PREVIEW_PASSCODE ?? '')) {
+      // Honour the deep-link the form carried. The POST URL has no query string,
+      // so read returnTo from the form body (re-normalized, same-origin /hub only).
+      const postReturnTo = safeReturnTo(String(form.get('returnTo') ?? ''));
       const now = Math.floor(Date.now() / 1000);
       const session = await signSession('preview@iastaffing.com', 'Preview', env.HUB_SESSION_SECRET, now, {
         generation: env.HUB_SESSION_GENERATION,
       });
-      const headers = new Headers({ Location: returnTo, 'Cache-Control': 'no-store' });
+      const headers = new Headers({ Location: postReturnTo, 'Cache-Control': 'no-store' });
       headers.append('Set-Cookie', sessionSetCookie(session));
       return new Response(null, { status: 302, headers });
     }
+    return Astro.redirect('/hub/login?error=passcode', 303);
   }
-  return Astro.redirect('/hub/login?error=passcode', 303);
+  // No preview flow configured (prod): don't surface a passcode error for a flow
+  // that doesn't exist — just bounce back to the clean login.
+  return Astro.redirect('/hub/login', 303);
 }
 
 // Already signed in? Skip the login form and go straight to the dashboard — e.g.
@@ -68,73 +82,184 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 const errorCode = Astro.url.searchParams.get('error');
 const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.verify) : null;
+
+// This page varies by auth (signed-in users 302 away above) and by ?error, so it
+// must NOT be shared-cached — a public cache could serve the login HTML to a
+// signed-in user instead of their redirect. Mark private/no-store. The active-req
+// row-count below is therefore read per request; it's a light, capped read on a
+// low-traffic, unadvertised internal URL, so a per-request round-trip is fine.
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+
+// The one live, non-sensitive figure for the aside: the active requisition
+// count — the SAME number the dashboard shows (aggregateHub().activeReqs ===
+// rows.length over status='active' ims_jobs rows). We count it the SAME way the
+// dashboard does — a capped row-select then data.length — NOT a { count:'exact',
+// head:true } head request: that returns count:null in the Cloudflare Workers
+// runtime (the Content-Range header isn't surfaced), which silently hid this
+// figure in prod even though /jobs + the dashboard read the same feed fine. Only
+// `id` is selected (never emitted to the HTML), capped at 1000 to mirror the
+// dashboard. Degrades to null → the figure is hidden, NEVER a fabricated value.
+// Runs only on the GET render path (after the POST/redirect returns above).
+let activeReqs: number | null = null;
+const supabase = getHubSupabase(env);
+if (supabase) {
+  try {
+    const res = await supabase
+      .from('ims_jobs')
+      .select('id')
+      .eq('status', 'active')
+      .limit(1000);
+    activeReqs = countActiveReqs(res);
+  } catch (e) {
+    console.error('[/hub/login] active-req count read failed:', e);
+  }
+}
 ---
 <HubLayout title="Sign in · IMS Hub">
   <div class="login-page">
-    <aside class="login-aside">
-      <div class="login-aside__glow login-aside__glow--m" aria-hidden="true"></div>
-      <div class="login-aside__glow login-aside__glow--r" aria-hidden="true"></div>
+    <div class="ambient" aria-hidden="true">
+      <span class="glow glow--magenta"></span>
+      <span class="glow glow--rose"></span>
+      <span class="glow glow--ember"></span>
+    </div>
+    <div class="grid-tex" aria-hidden="true"></div>
 
-      <a class="login-brand" href="/" aria-label="Back to IMS home">
-        <img src="/ims-logo-light.png" alt="IMS" />
-        <span class="login-brand__tag">Hub</span>
-      </a>
+    <main class="stage">
 
-      <div class="login-aside__body">
-        <div class="login-aside__eyebrow">Internal operations</div>
-        <h1 class="login-aside__headline">The whole desk,<br /><span class="em">one screen</span>.</h1>
-        <p class="login-aside__sub">Live req tracking, fill-time analytics, the rate simulator, weekly sync and spend, all in one place for the IMS team.</p>
-      </div>
-
-      <div class="login-aside__stats">
-        <div class="login-aside__stat">
-          <div class="login-aside__stat-num">37<span class="u">+</span></div>
-          <div class="login-aside__stat-label">Active reqs</div>
-        </div>
-        <div class="login-aside__stat">
-          <div class="login-aside__stat-num">18<span class="u">d</span></div>
-          <div class="login-aside__stat-label">Avg fill time</div>
-        </div>
-        <div class="login-aside__stat">
-          <div class="login-aside__stat-num">94<span class="u">%</span></div>
-          <div class="login-aside__stat-label">Fill rate</div>
-        </div>
-      </div>
-    </aside>
-
-    <main class="login-main">
-      <div class="login-card">
-        <a class="login-card__back" href="/"><span aria-hidden="true">←</span> Back to site</a>
-        <h2 class="login-card__title">Welcome back.</h2>
-        <p class="login-card__sub">Sign in to the IMS Hub with your work Google account.</p>
-
-        {errorMessage && <p class="login-error" role="alert">{errorMessage}</p>}
-
-        <a class="login-google" href={startHref}>
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.96h5.5c-.24 1.26-.97 2.33-2.06 3.05v2.53h3.33C20.74 18.1 21.8 15.4 21.8 12.2c0-.74-.07-1.45-.2-2.13H12Z"/><path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.43l-3.33-2.53c-.92.62-2.1.98-3.29.98-2.53 0-4.67-1.71-5.44-4.01H3.13v2.6A9.99 9.99 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.56 13.99c-.2-.6-.31-1.23-.31-1.89s.11-1.29.3-1.89V7.61H3.13a10 10 0 0 0 0 8.98l3.43-2.6Z"/><path fill="#4285F4" d="M12 6.1c1.47 0 2.78.5 3.81 1.49l2.85-2.85C16.96 3.16 14.7 2.2 12 2.2A9.99 9.99 0 0 0 3.13 7.6l3.43 2.6C7.33 7.82 9.47 6.1 12 6.1Z"/></svg>
-          Continue with Google Workspace
-          <span class="login-google__puck" aria-hidden="true">→</span>
+      <!-- ===================== LEFT: COMMAND CENTER ===================== -->
+      <aside class="aside">
+        <a class="brand" href="/" aria-label="Back to IMS home">
+          <img class="brand-logo" src="/ims-logo-light.png" alt="IMS" />
+          <span class="tag-hub">Hub</span>
         </a>
-        <p class="login-note">IMS Google accounts only · {atDomains.map((d, i) => (<>{i > 0 && (i === atDomains.length - 1 ? ' or ' : ', ')}<b>{d}</b></>))}</p>
 
-        {previewEnabled && (
-          <form class="login-preview" method="post" action="/hub/login">
-            <div class="login-sso">
-              <span class="login-sso__rule"></span>
-              <span class="login-sso__label">staging preview</span>
-              <span class="login-sso__rule"></span>
-            </div>
-            <input type="hidden" name="returnTo" value={returnTo} />
-            <label class="login-label" for="passcode">Preview passcode</label>
-            <div class="login-preview__row">
-              <input class="login-input" id="passcode" name="passcode" type="password" placeholder="••••••••" autocomplete="off" required />
-              <button class="login-preview__btn" type="submit">Enter</button>
-            </div>
-          </form>
-        )}
+        <div class="hero">
+          <span class="eyebrow">Internal operations</span>
 
-        <p class="login-foot">IMS internal · authorized users only</p>
-      </div>
+          {activeReqs !== null && (
+            <div class="liveblock">
+              <div class="live-figure">
+                <span class="live-dot" aria-hidden="true"><i></i></span>
+                <span class="live-num tabular">{activeReqs}</span>
+              </div>
+              <div class="live-label">
+                <span>open requests</span>
+                <span class="sep">·</span>
+                <span class="live-word">live</span>
+              </div>
+            </div>
+          )}
+
+          <h2 class="headline">The whole desk, <span class="em">one screen.</span></h2>
+          <p class="subline">Live requisition tracking, fill-time analytics, the rate simulator and the team's week — together in one place.</p>
+        </div>
+
+        <ul class="features">
+          <li>
+            <span class="fi" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+            </span>
+            <span class="ft">Live requisition tracking</span>
+            <span class="fd">live</span>
+          </li>
+          <li>
+            <span class="fi" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><rect x="8" y="11" width="3" height="5" rx="0.5"/><rect x="14" y="7" width="3" height="9" rx="0.5"/></svg>
+            </span>
+            <span class="ft">Fill-time analytics</span>
+            <span class="fd">trends</span>
+          </li>
+          <li>
+            <span class="fi" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/><circle cx="9" cy="7" r="2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="8" cy="17" r="2" fill="currentColor" stroke="none"/></svg>
+            </span>
+            <span class="ft">Rate simulator</span>
+            <span class="fd">model</span>
+          </li>
+          <li>
+            <span class="fi" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a5 5 0 0 1 5-5h2"/><path d="M16 11l2 2 4-4"/></svg>
+            </span>
+            <span class="ft">Weekly team sync</span>
+            <span class="fd">cadence</span>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- ===================== RIGHT: SIGN-IN CARD ===================== -->
+      <section class="panel">
+
+        <!-- Mobile-only branded header (collapses the aside intentionally — never hidden) -->
+        <header class="mhead" aria-label="IMS Hub">
+          <div class="mhead-row">
+            <a class="brand" href="/" aria-label="Back to IMS home">
+              <img class="brand-logo" src="/ims-logo-light.png" alt="IMS" />
+              <span class="tag-hub">Hub</span>
+            </a>
+            {activeReqs !== null && (
+              <div class="live-pill" title="Live open requests">
+                <span class="pdot" aria-hidden="true"><i></i></span>
+                <span class="pnum tabular">{activeReqs}</span>
+                <span class="plabel">live reqs</span>
+              </div>
+            )}
+          </div>
+          <p class="mhead-value">The whole desk, <span class="em">one screen.</span></p>
+          <p class="mhead-sub">Live requisitions, fill-time analytics, and the team's week — in one place.</p>
+        </header>
+
+        <div class="panel-top">
+          <a class="back" href="/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            Back to site
+          </a>
+        </div>
+
+        <div class="card">
+          <p class="card-eyebrow">Secure access</p>
+          <h1>Welcome back.</h1>
+          <p class="sub">Sign in to the IMS Hub with your work Google account.</p>
+
+          {errorMessage && <p class="err" role="alert">{errorMessage}</p>}
+
+          <a class="gbtn" href={startHref}>
+            <span class="glyph" aria-hidden="true">
+              <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+            </span>
+            <span class="glabel">Continue with Google Workspace</span>
+            <span class="puck" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg>
+            </span>
+          </a>
+
+          <p class="note">IMS Google accounts only · {atDomains.map((d, i) => (<>{i > 0 && (i === atDomains.length - 1 ? ' or ' : ', ')}<b>{d}</b></>))}</p>
+
+          {previewEnabled && (
+            <form class="preview" method="post" action="/hub/login">
+              <div class="preview-sep">
+                <span class="preview-rule"></span>
+                <span class="preview-slabel">staging preview</span>
+                <span class="preview-rule"></span>
+              </div>
+              <input type="hidden" name="returnTo" value={returnTo} />
+              <label class="preview-flabel" for="passcode">Preview passcode</label>
+              <div class="preview-row">
+                <input class="preview-input" id="passcode" name="passcode" type="password" placeholder="••••••••" autocomplete="off" required />
+                <button class="preview-btn" type="submit">Enter</button>
+              </div>
+            </form>
+          )}
+
+          <div class="card-divider"></div>
+          <p class="foot"><span class="secdot" aria-hidden="true"></span> IMS internal · authorized users only</p>
+        </div>
+      </section>
+
     </main>
   </div>
 </HubLayout>
@@ -142,73 +267,272 @@ const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.ve
 <style>
   /* The hub login is an intentional dark island; paint the body dark so no cream
      edge shows. Scoped via :has so only this page is affected. */
-  :global(body:has(.login-page)) { background: #0A0A0F; }
+  :global(body:has(.login-page)) { background: var(--mn-black, #0A0A0F); }
 
   .login-page {
-    min-height: 100vh;
+    /* Helper tokens mapped onto the real design system (palette-active.css +
+       colors_and_type.css), so the ported design uses the site's real fonts
+       (Battlefin display, Inter body, JetBrains mono) and 8-pt scale — and stays
+       CSP-safe (no external Google Fonts; @fontsource is loaded by HubLayout). */
+    --text-strong: var(--cream-soft, #FBF6EE);
+    --text-body: rgba(251, 246, 238, 0.72);
+    --text-label: rgba(251, 246, 238, 0.5);
+    --hairline: rgba(251, 246, 238, 0.10);
+    --hairline-soft: rgba(251, 246, 238, 0.06);
+    --display: var(--font-display);
+    --body: var(--font-body);
+    --mono: var(--font-mono);
+    --s4: var(--space-1); --s8: var(--space-2); --s12: var(--space-3);
+    --s16: var(--space-4); --s24: var(--space-5); --s32: var(--space-6);
+    --s48: var(--space-7); --s64: var(--space-8); --s96: var(--space-9);
+
+    position: relative;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    font-family: var(--body);
+    color: var(--text-body);
+  }
+
+  /* ====== Ambient drifting glows ====== */
+  .ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(8px); will-change: transform; }
+  .glow--magenta {
+    width: 60vw; height: 60vw; max-width: 760px; max-height: 760px;
+    left: -14vw; top: -10vw;
+    background: radial-gradient(circle at center, rgba(196,69,105,0.30), rgba(196,69,105,0) 62%);
+    animation: lgDriftA 26s ease-in-out infinite alternate;
+  }
+  .glow--rose {
+    width: 52vw; height: 52vw; max-width: 640px; max-height: 640px;
+    left: 30vw; bottom: -22vw;
+    background: radial-gradient(circle at center, rgba(216,139,159,0.22), rgba(216,139,159,0) 64%);
+    animation: lgDriftB 32s ease-in-out infinite alternate;
+  }
+  .glow--ember {
+    width: 40vw; height: 40vw; max-width: 480px; max-height: 480px;
+    right: -10vw; top: 24vh;
+    background: radial-gradient(circle at center, rgba(232,196,101,0.10), rgba(232,196,101,0) 66%);
+    animation: lgDriftC 38s ease-in-out infinite alternate;
+  }
+  @keyframes lgDriftA { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(5vw,4vh,0) scale(1.12); } }
+  @keyframes lgDriftB { from { transform: translate3d(0,0,0) scale(1.05); } to { transform: translate3d(-6vw,-4vh,0) scale(0.92); } }
+  @keyframes lgDriftC { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(-3vw,5vh,0) scale(1.1); } }
+
+  /* faint grid texture for the "console" feel */
+  .grid-tex {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(251,246,238,0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(251,246,238,0.022) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, #000 35%, transparent 90%);
+    mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, #000 35%, transparent 90%);
+  }
+
+  /* ====== Layout ====== */
+  .stage {
+    position: relative; z-index: 1;
+    min-height: 100dvh;
     display: grid;
     grid-template-columns: 1.05fr 0.95fr;
-    background:
-      radial-gradient(900px 600px at 80% -10%, color-mix(in srgb, var(--pop-magenta, #C44569) 36%, transparent), transparent 60%),
-      radial-gradient(720px 540px at -10% 110%, color-mix(in srgb, var(--pop-rose) 28%, transparent), transparent 60%),
-      var(--mn-black, #0A0A0F);
+    align-items: stretch;
   }
-  @media (max-width: 860px) { .login-page { grid-template-columns: 1fr; } .login-aside { display: none; } }
 
-  .login-aside {
-    position: relative; overflow: hidden;
-    padding: var(--space-8) var(--space-8) var(--space-7);
+  /* ----- LEFT: command center ----- */
+  .aside {
+    position: relative;
+    padding: var(--s64) clamp(40px, 5vw, 80px);
     display: flex; flex-direction: column; justify-content: space-between;
-    border-right: 1px solid rgba(251,246,238,0.10);
+    gap: var(--s48);
+    border-right: 1px solid var(--hairline-soft);
   }
-  .login-aside__glow { position: absolute; width: 480px; height: 480px; border-radius: 50%; filter: blur(120px); pointer-events: none; }
-  .login-aside__glow--m { background: var(--pop-magenta, #C44569); opacity: 0.30; top: -160px; left: -100px; animation: lgFloatA 26s ease-in-out infinite; }
-  .login-aside__glow--r { background: var(--pop-rose); opacity: 0.20; bottom: -140px; right: -80px; animation: lgFloatB 30s ease-in-out infinite; }
-  @keyframes lgFloatA { 0%,100%{transform:translate(0,0);} 50%{transform:translate(28px,24px);} }
-  @keyframes lgFloatB { 0%,100%{transform:translate(0,0);} 50%{transform:translate(-24px,-20px);} }
-  @media (prefers-reduced-motion: reduce) { .login-aside__glow { animation: none; } }
 
-  .login-brand { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 12px; text-decoration: none; transition: opacity 160ms; }
-  .login-brand:hover { opacity: 0.82; }
-  .login-brand img { height: 30px; width: auto; }
-  .login-brand__tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--pop-butter); border: 1px solid rgba(232,196,101,0.4); border-radius: 999px; padding: 4px 10px; }
-  .login-aside__body { position: relative; z-index: 1; }
-  .login-aside__eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; color: rgba(251,246,238,0.55); margin-bottom: var(--space-4); display: flex; align-items: center; gap: 10px; }
-  .login-aside__eyebrow::before { content:''; width:9px; height:9px; border-radius:50%; background: var(--pop-butter); }
-  .login-aside__headline { font-family: var(--font-display); font-weight: 900; font-size: clamp(44px, 4.6vw, 76px); line-height: 0.92; letter-spacing: -0.035em; color: var(--cream-soft); margin: 0; }
-  .login-aside__headline .em { color: var(--pop-magenta, #C44569); }
-  .login-aside__sub { font-family: var(--font-body); font-size: 18px; line-height: 1.55; color: rgba(251,246,238,0.72); margin: var(--space-4) 0 0; max-width: 42ch; }
-  .login-aside__stats { position: relative; z-index: 1; display: flex; gap: var(--space-6); }
-  .login-aside__stat-num { font-family: var(--font-display); font-weight: 900; font-size: 34px; letter-spacing: -0.02em; color: var(--cream-soft); }
-  .login-aside__stat-num .u { color: var(--pop-magenta, #C44569); }
-  .login-aside__stat-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: rgba(251,246,238,0.5); margin-top: 4px; }
+  .brand { display: inline-flex; align-items: center; gap: var(--s12); text-decoration: none; transition: opacity 160ms; }
+  .brand:hover { opacity: 0.82; }
+  .brand-logo { height: 30px; width: auto; }
+  .tag-hub {
+    font-family: var(--mono); font-weight: 600; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--mn-black); background: var(--mn-butter);
+    padding: 5px 10px; border-radius: 999px; line-height: 1; transform: translateY(-1px);
+  }
 
-  .login-main { display: flex; align-items: center; justify-content: center; padding: var(--space-8) var(--space-6); position: relative; }
-  .login-card { width: 100%; max-width: 420px; }
-  .login-card__back { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: 13px; font-weight: 600; color: rgba(251,246,238,0.6); text-decoration: none; margin-bottom: var(--space-6); transition: color 160ms, gap 160ms; }
-  .login-card__back:hover { color: var(--cream-soft); gap: 12px; }
-  .login-card__title { font-family: var(--font-display); font-weight: 900; font-size: 40px; line-height: 1.0; letter-spacing: -0.028em; color: var(--cream-soft); margin: 0 0 8px; }
-  .login-card__sub { font-family: var(--font-body); font-size: 15px; color: rgba(251,246,238,0.66); margin: 0 0 var(--space-6); }
+  .hero { display: flex; flex-direction: column; gap: var(--s24); max-width: 520px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-label);
+    display: inline-flex; align-items: center; gap: var(--s8);
+  }
+  .eyebrow::before { content: ""; width: 24px; height: 1px; background: var(--mn-magenta); display: inline-block; }
 
-  .login-error { margin: 0 0 var(--space-5); padding: 12px 14px; border-radius: 12px; background: rgba(196,69,105,0.12); border: 1px solid rgba(196,69,105,0.4); color: #FF9DBB; font-family: var(--font-body); font-size: 14px; line-height: 1.45; }
+  /* the live number — quiet hero */
+  .liveblock { display: flex; flex-direction: column; gap: var(--s8); }
+  .live-figure { display: flex; align-items: flex-start; gap: var(--s16); }
+  .live-num {
+    font-family: var(--display); font-weight: 900;
+    font-size: clamp(96px, 12vw, 168px); line-height: 0.82;
+    letter-spacing: -0.04em; color: var(--text-strong);
+  }
+  .live-dot { position: relative; width: 14px; height: 14px; margin-top: 18px; flex: 0 0 auto; }
+  .live-dot i { position: absolute; inset: 0; border-radius: 50%; background: var(--mn-magenta); }
+  .live-dot i::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    background: var(--mn-magenta); animation: lgPulse 2.4s ease-out infinite;
+  }
+  @keyframes lgPulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    70% { transform: scale(3.4); opacity: 0; }
+    100% { transform: scale(3.4); opacity: 0; }
+  }
+  .live-label {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-body);
+    display: flex; align-items: center; gap: var(--s8);
+  }
+  .live-label .sep { color: var(--text-label); }
+  .live-label .live-word { color: var(--mn-rose); }
 
-  .login-google { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; border: none; border-radius: 999px; background: var(--cream-soft); color: var(--mn-black, #0A0A0F); font-family: var(--font-body); font-weight: 700; font-size: 15px; padding: 16px 22px; cursor: pointer; text-decoration: none; transition: transform 160ms, box-shadow 160ms; }
-  .login-google__puck { width: 26px; height: 26px; border-radius: 50%; background: var(--mn-black, #0A0A0F); color: var(--cream-soft); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; transition: transform 160ms; }
+  .headline {
+    font-family: var(--display); font-weight: 900;
+    font-size: clamp(28px, 3.2vw, 40px); line-height: 1.05;
+    letter-spacing: -0.02em; color: var(--text-strong); margin: 0;
+  }
+  .headline .em { color: var(--mn-magenta); }
+  .subline { font-size: 15px; line-height: 1.55; color: var(--text-body); max-width: 42ch; margin: 0; }
+
+  /* feature column */
+  .features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--hairline); }
+  .features li { display: flex; align-items: center; gap: var(--s16); padding: var(--s16) 0; border-bottom: 1px solid var(--hairline-soft); }
+  .features .fi { width: 30px; height: 30px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid var(--hairline); border-radius: 8px; color: var(--mn-rose); }
+  .features .fi svg { width: 15px; height: 15px; display: block; }
+  .features .ft { font-size: 14px; font-weight: 500; color: var(--text-strong); letter-spacing: -0.01em; }
+  .features .fd { font-size: 13px; color: var(--text-label); margin-left: auto; font-family: var(--mono); letter-spacing: 0.04em; }
+
+  /* ----- RIGHT: sign-in card ----- */
+  .panel { position: relative; padding: var(--s48) clamp(28px, 4vw, 64px); display: flex; flex-direction: column; justify-content: center; }
+  .panel-top { position: absolute; top: var(--s32); left: clamp(28px, 4vw, 64px); }
+  .back {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-label); text-decoration: none;
+    display: inline-flex; align-items: center; gap: var(--s8);
+    transition: color 180ms ease, transform 180ms ease;
+  }
+  .back:hover { color: var(--text-body); transform: translateX(-2px); }
+  .back svg { width: 12px; height: 12px; }
+
+  .card {
+    width: 100%; max-width: 420px; margin: 0 auto;
+    background: linear-gradient(180deg, rgba(251,246,238,0.045), rgba(251,246,238,0.018));
+    border: 1px solid var(--hairline); border-radius: 22px;
+    padding: var(--s48) clamp(24px, 3vw, 40px);
+    box-shadow: 0 30px 80px -40px rgba(0,0,0,0.9), inset 0 1px 0 rgba(251,246,238,0.06);
+  }
+  .card-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-label); margin: 0 0 var(--s16); }
+  .card h1 { font-family: var(--display); font-weight: 900; font-size: 34px; line-height: 1; letter-spacing: -0.02em; color: var(--text-strong); margin: 0 0 var(--s12); }
+  .card .sub { font-size: 14.5px; line-height: 1.55; color: var(--text-body); margin: 0 0 var(--s32); }
+
+  .err {
+    margin: 0 0 var(--s24); padding: 12px 14px; border-radius: 12px;
+    background: rgba(196,69,105,0.12); border: 1px solid rgba(196,69,105,0.4);
+    color: #FF9DBB; font-family: var(--body); font-size: 14px; line-height: 1.45;
+  }
+
+  /* google button */
+  .gbtn {
+    position: relative; width: 100%;
+    display: flex; align-items: center; gap: var(--s16);
+    background: var(--cream-soft); color: #1a1a22; border: none; border-radius: 14px;
+    padding: 16px 18px; font-family: var(--body); font-weight: 600; font-size: 15px;
+    letter-spacing: -0.01em; cursor: pointer; text-decoration: none;
+    box-shadow: 0 10px 30px -14px rgba(196,69,105,0.55), 0 2px 6px rgba(0,0,0,0.3);
+    transition: transform 200ms cubic-bezier(.2,.7,.2,1), box-shadow 200ms ease;
+  }
   @media (hover: hover) and (pointer: fine) {
-    .login-google:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0,0,0,0.4); }
-    .login-google:hover .login-google__puck { transform: translateX(3px); }
+    .gbtn:hover { transform: translateY(-3px); box-shadow: 0 22px 44px -16px rgba(196,69,105,0.75), 0 4px 10px rgba(0,0,0,0.35); }
+    .gbtn:hover .puck { transform: translateX(3px); }
   }
-  .login-note { font-family: var(--font-body); font-size: 13px; color: rgba(251,246,238,0.6); text-align: center; margin: var(--space-4) 0 0; }
-  .login-note b { color: var(--pop-butter); font-weight: 700; }
+  .gbtn:active { transform: translateY(-1px); }
+  .gbtn:focus-visible { outline: 2px solid var(--mn-magenta); outline-offset: 3px; }
+  .gbtn .glyph { flex: 0 0 auto; width: 20px; height: 20px; }
+  .gbtn .glabel { flex: 1 1 auto; text-align: left; }
+  .gbtn .puck { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: var(--mn-magenta); color: var(--cream-soft); display: grid; place-items: center; transition: transform 200ms ease; }
+  .gbtn .puck svg { width: 13px; height: 13px; }
 
-  .login-sso { display: flex; align-items: center; gap: 12px; margin: var(--space-6) 0 var(--space-4); }
-  .login-sso__rule { flex: 1; height: 1px; background: rgba(251,246,238,0.14); }
-  .login-sso__label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(251,246,238,0.45); }
-  .login-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: rgba(251,246,238,0.6); display: block; margin-bottom: 7px; }
-  .login-preview__row { display: flex; gap: 8px; }
-  .login-input { flex: 1; box-sizing: border-box; border: 1px solid rgba(251,246,238,0.18); border-radius: 12px; background: rgba(251,246,238,0.06); color: var(--cream-soft); font-family: var(--font-body); font-size: 15px; padding: 13px 15px; transition: border-color 160ms, box-shadow 160ms, background 160ms; }
-  .login-input::placeholder { color: rgba(251,246,238,0.4); }
-  .login-input:focus { outline: none; border-color: var(--pop-magenta, #C44569); background: rgba(251,246,238,0.10); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pop-magenta, #C44569) 28%, transparent); }
-  .login-preview__btn { border: none; cursor: pointer; background: var(--pop-magenta, #C44569); color: var(--cream-soft); font-family: var(--font-body); font-weight: 700; font-size: 14px; padding: 0 20px; border-radius: 12px; }
-  .login-foot { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: rgba(251,246,238,0.4); text-align: center; margin-top: var(--space-6); }
+  .note { font-size: 12.5px; line-height: 1.5; color: var(--text-label); margin: var(--s16) 0 0; text-align: center; }
+  .note b { color: var(--text-body); font-weight: 600; }
+
+  /* staging-only preview passcode */
+  .preview-sep { display: flex; align-items: center; gap: var(--s12); margin: var(--s32) 0 var(--s16); }
+  .preview-rule { flex: 1; height: 1px; background: var(--hairline); }
+  .preview-slabel { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-label); }
+  .preview-flabel { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--text-body); display: block; margin-bottom: 7px; }
+  .preview-row { display: flex; gap: var(--s8); }
+  .preview-input {
+    flex: 1; box-sizing: border-box; border: 1px solid var(--hairline); border-radius: 12px;
+    background: rgba(251,246,238,0.06); color: var(--text-strong);
+    font-family: var(--body); font-size: 15px; padding: 13px 15px;
+    transition: border-color 160ms, box-shadow 160ms, background 160ms;
+  }
+  .preview-input::placeholder { color: var(--text-label); }
+  .preview-input:focus { outline: none; border-color: var(--mn-magenta); background: rgba(251,246,238,0.10); box-shadow: 0 0 0 3px color-mix(in srgb, var(--mn-magenta) 28%, transparent); }
+  .preview-btn { border: none; cursor: pointer; background: var(--mn-magenta); color: var(--cream-soft); font-family: var(--body); font-weight: 700; font-size: 14px; padding: 0 20px; border-radius: 12px; }
+
+  .card-divider { height: 1px; background: var(--hairline-soft); margin: var(--s32) 0 var(--s16); }
+  .foot {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-label); text-align: center; margin: 0;
+    display: flex; align-items: center; justify-content: center; gap: var(--s8);
+  }
+  .foot .secdot { width: 5px; height: 5px; border-radius: 50%; background: var(--mn-rose); }
+
+  /* ====== Mobile header (hidden on desktop) ====== */
+  .mhead { display: none; }
+
+  /* ===================== RESPONSIVE ===================== */
+  @media (max-width: 860px) {
+    .stage { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    /* full aside replaced by a compact branded header — NEVER display:none-d away */
+    .aside { display: none; }
+
+    .mhead { display: block; position: relative; padding: var(--s32) var(--s24) var(--s24); border-bottom: 1px solid var(--hairline); }
+    .mhead-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s16); }
+    .mhead .brand { gap: 10px; }
+    .mhead .brand-logo { height: 26px; }
+    .mhead .tag-hub { font-size: 10px; padding: 4px 9px; }
+
+    .live-pill { display: inline-flex; align-items: center; gap: var(--s8); border: 1px solid var(--hairline); background: rgba(251,246,238,0.04); border-radius: 999px; padding: 7px 12px 7px 10px; }
+    .live-pill .pdot { position: relative; width: 8px; height: 8px; flex: 0 0 auto; }
+    .live-pill .pdot i { position: absolute; inset: 0; border-radius: 50%; background: var(--mn-magenta); }
+    .live-pill .pdot i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--mn-magenta); animation: lgPulse 2.4s ease-out infinite; }
+    .live-pill .pnum { font-family: var(--display); font-weight: 900; font-size: 18px; color: var(--text-strong); line-height: 1; letter-spacing: -0.02em; }
+    .live-pill .plabel { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); }
+
+    .mhead-value { margin: var(--s16) 0 0; font-family: var(--display); font-weight: 900; font-size: 22px; line-height: 1.08; letter-spacing: -0.02em; color: var(--text-strong); }
+    .mhead-value .em { color: var(--mn-magenta); }
+    .mhead-sub { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--text-body); max-width: 48ch; }
+
+    .panel { padding: var(--s32) var(--s24) var(--s48); justify-content: flex-start; }
+    .panel-top { position: static; margin-bottom: var(--s24); }
+    .card { max-width: 480px; padding: var(--s32) var(--s24); }
+    .card h1 { font-size: 30px; }
+
+    .glow--magenta { left: -30vw; top: -20vw; }
+  }
+
+  @media (max-width: 390px) {
+    .mhead { padding: var(--s24) var(--s16) var(--s16); }
+    .mhead-value { font-size: 20px; }
+    .mhead-row { flex-wrap: wrap; }
+    .panel { padding: var(--s24) var(--s16) var(--s32); }
+    .card { padding: var(--s24) var(--s16); border-radius: 18px; }
+    .card h1 { font-size: 27px; }
+    .gbtn { font-size: 14px; padding: 15px 14px; gap: 12px; }
+    .gbtn .glabel { font-size: 13.5px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glow--magenta, .glow--rose, .glow--ember { animation: none; }
+    .live-dot i::after, .live-pill .pdot i::after { animation: none; }
+    .gbtn, .gbtn .puck, .back { transition: none; }
+  }
 </style>

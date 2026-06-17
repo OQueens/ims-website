@@ -2,21 +2,18 @@
 // Every METRIC in the hub is real (Overview + Analytics read ims_jobs +
 // ls_events; the simulator uses the curated rate engine). What remains here is
 // editable starter text the user replaces, not fabricated metrics:
-//   • PRIORITIES — the Overview "This week's priorities" checklist (starter).
-//   • PDF_CHIPS  — labels shown by the simulator's PDF-dropzone prototype.
+//   • PRIORITIES — ships EMPTY (honest no-fake-data); the Overview renders an
+//     empty state until a real, persisted, user-editable feature replaces it.
 // (The Weekly Sync board no longer has a seed — a brand-new week starts BLANK;
-//  see src/lib/hub/sync-data.ts.) Gated behind hub auth. No fabricated numbers.
+//  see src/lib/hub/sync-data.ts. The simulator's fake PDF "auto-fill" was removed
+//  — it never parsed the file — and returns with REAL parsing when the rate
+//  calculator is ported.) Gated behind hub auth. No fabricated numbers.
 
 export interface BarRow { name: string; val: number; fill: string; max?: number; label?: string; }
 export interface Priority { txt: string; tag: 'high' | 'med' | 'low'; done: boolean; }
 
-export const PRIORITIES: Priority[] = [
-  { txt: 'Close Austin anesthesia, 3 candidates pending', tag: 'high', done: false },
-  { txt: 'Escalate Boise hospitalist (open 26 days)', tag: 'high', done: false },
-  { txt: 'Confirm Sara P. travel + housing', tag: 'med', done: true },
-  { txt: 'Send Charlotte facility the updated MSA', tag: 'med', done: false },
-  { txt: 'Refresh rate cards for Q3', tag: 'low', done: false },
-  { txt: 'Follow up: Durham OB-GYN reference checks', tag: 'med', done: false },
-];
-
-export const PDF_CHIPS = ['Specialty · Anesthesiology', 'Region · Southeast', 'Shift · Nights', 'Length · 13 weeks'];
+// Honest empty state — NO fabricated example priorities presented as real work
+// (CLAUDE.md no-fake-data). The Overview shows "No priorities set this week" and
+// hides the "{n} open" chip while this is empty. A real persisted, user-editable
+// priorities feature (built on the Weekly Sync atomic write engine) is planned.
+export const PRIORITIES: Priority[] = [];

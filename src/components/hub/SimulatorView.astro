@@ -1,12 +1,17 @@
 ---
 /*
- * Rate Simulator view. PDF dropzone + controls + dark result panel are wired by
- * hub-client.ts (a transparent multiplier model). Base rates + multipliers are
- * REAL curated 2025-26 market data from the rate engine (src/lib/hub/rate-engine
- * — ported from the IAS dashboard). The simulator quotes a BILL rate and derives
- * clinician pay at the chosen margin; it's a modeled estimate, labeled as such.
- * "Latest 5 jobs" is REAL: server-rendered from aggregateHub(ims_jobs); clicking
- * one loads its specialty into the simulator. Ported from design_handoff_hub.
+ * Rate Simulator view. Controls + dark result panel are wired by hub-client.ts
+ * (a transparent multiplier model). Base rates + multipliers are REAL curated
+ * 2025-26 market data from the rate engine (src/lib/hub/rate-engine — ported from
+ * the IAS dashboard). The simulator quotes a BILL rate and derives clinician pay
+ * at the chosen margin; it's a modeled estimate, labeled as such. "Latest 5 jobs"
+ * is REAL: server-rendered from aggregateHub(ims_jobs); clicking one loads its
+ * specialty into the simulator. Ported from design_handoff_hub.
+ *
+ * NOTE: the PDF rate-sheet "auto-fill" dropzone was removed — it never actually
+ * parsed the file (it applied the same hardcoded inputs regardless), so claiming
+ * "Parsed" was dishonest. It returns with REAL extraction when the rate
+ * calculator is ported from the old IAS dashboard app.
  */
 import type { LatestJob } from '../../lib/hub/hub-data';
 import { SIM_SPECIALTIES, SIM_REGIONS, SIM_SHIFTS, SIM_URGENCY } from '../../lib/hub/rate-engine';
@@ -14,31 +19,6 @@ interface Props { latestJobs: LatestJob[]; }
 const { latestJobs } = Astro.props;
 ---
 <section class="hub-view" data-view="simulator">
-  <div class="sim-drop card" id="sim-drop">
-    <input type="file" id="sim-file" accept="application/pdf,.pdf" hidden />
-    <div class="sim-drop__idle" id="sim-drop-idle">
-      <div class="sim-drop__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-      </div>
-      <div class="sim-drop__copy">
-        <div class="sim-drop__title">Drop a rate sheet or facility PDF</div>
-        <div class="sim-drop__sub">We'll read the specialty, region and shift to pre-fill the simulator. <button type="button" class="sim-drop__browse" id="sim-browse">browse files</button></div>
-      </div>
-      <span class="chip sim-drop__hint"><span class="chip__dot" style="background:var(--pop-butter);"></span>PDF · up to 10MB</span>
-    </div>
-    <div class="sim-drop__loaded" id="sim-drop-loaded" hidden>
-      <div class="sim-drop__file">
-        <span class="sim-drop__file-ic" aria-hidden="true">PDF</span>
-        <div>
-          <div class="sim-drop__file-name" id="sim-file-name">rate-sheet.pdf</div>
-          <div class="sim-drop__file-meta" id="sim-file-meta">Parsed · applied suggested inputs</div>
-        </div>
-        <button type="button" class="sim-drop__clear" id="sim-file-clear" aria-label="Remove file">×</button>
-      </div>
-      <div class="sim-drop__chips" id="sim-file-chips"></div>
-    </div>
-  </div>
-
   <div class="sim">
     <div class="sim__controls card">
       <div class="field">

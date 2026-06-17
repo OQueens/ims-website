@@ -141,8 +141,9 @@ const specsMax = barMax(pipelineSpecs);
       </div>
     </div>
     <div class="card">
-      <div class="card__head"><h2 class="card__title">This week's priorities</h2><span class="chip"><span class="chip__dot" style="background:var(--pop-magenta,#C44569);"></span>{PRIORITIES.filter((p) => !p.done).length} open</span></div>
+      <div class="card__head"><h2 class="card__title">This week's priorities</h2>{PRIORITIES.length > 0 && <span class="chip"><span class="chip__dot" style="background:var(--pop-magenta,#C44569);"></span>{PRIORITIES.filter((p) => !p.done).length} open</span>}</div>
       <div class="todo" id="priorities">
+        {PRIORITIES.length === 0 && <p class="subtle">No priorities set this week.</p>}
         {PRIORITIES.map((p, i) => (
           <div class="todo__item">
             <span class={`todo__check ${p.done ? 'is-done' : ''}`} data-i={i} role="checkbox" tabindex="0" aria-checked={p.done ? 'true' : 'false'}>{p.done ? '✓' : ''}</span>

@@ -6,8 +6,8 @@
 // their interactions here).
 import {
   type BarRow,
-  PDF_CHIPS,
 } from '../../lib/hub/hub-seed';
+import { haystackMatchesQuery } from '../../lib/job-search';
 import {
   sanitizeHtml,
   escapeText,
@@ -101,6 +101,56 @@ $$('#priorities .todo__check').forEach((c) => {
   update();
 })();
 
+// ── Topbar search — live filter over the Overview's reqs + clinician activity ──
+// Reuses the SAME typo-tolerant matcher /jobs + the homepage use (job-search.ts)
+// so hub search behaves like the public job search. Filters the recent-activity
+// feed (reqs + clinician names) and the active-pipeline rows (states +
+// specialties); clearing (or Escape) restores everything. Searching from another
+// view jumps to Overview so the matches are visible.
+(function hubSearch() {
+  const input = $<HTMLInputElement>('#hub-search');
+  if (!input) return;
+  const groups = ([
+    { host: $('#activity-feed'), rowSel: '.feed__item' },
+    { host: $('#pipeline-states'), rowSel: '.bar__row' },
+    { host: $('#pipeline-specs'), rowSel: '.bar__row' },
+  ].filter((g) => g.host) as { host: HTMLElement; rowSel: string }[]);
+  if (!groups.length) return;
+
+  // One injected "No matches." line per group, shown only when a non-empty query
+  // hides every row in that group.
+  const emptyEls = new Map<HTMLElement, HTMLElement>();
+  groups.forEach((g) => {
+    const p = document.createElement('p');
+    p.className = 'subtle hub-search-empty';
+    p.hidden = true;
+    p.textContent = 'No matches.';
+    g.host.appendChild(p);
+    emptyEls.set(g.host, p);
+  });
+
+  const overview = $$('.hub-view').find((v) => (v as HTMLElement).dataset.view === 'overview') as HTMLElement | undefined;
+  const apply = () => {
+    const q = input.value.trim();
+    if (q && overview && !overview.classList.contains('is-active')) showView('overview');
+    groups.forEach((g) => {
+      const rows = $$<HTMLElement>(g.rowSel, g.host);
+      let shown = 0;
+      rows.forEach((r) => {
+        const hit = !q || haystackMatchesQuery(r.textContent || '', q);
+        r.hidden = !hit;
+        if (hit) shown++;
+      });
+      const empty = emptyEls.get(g.host);
+      if (empty) empty.hidden = !(q !== '' && rows.length > 0 && shown === 0);
+    });
+  };
+  input.addEventListener('input', apply);
+  input.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Escape') { input.value = ''; apply(); }
+  });
+})();
+
 // ── Rate Simulator ─────────────────────────────────────────────────────────────
 (function simulator() {
   const specSel = $<HTMLSelectElement>('#sim-spec');
@@ -164,39 +214,6 @@ $$('#priorities .todo__check').forEach((c) => {
       if (ke.key === 'Enter' || ke.key === ' ') { ke.preventDefault(); load(); }
     });
   });
-
-  // PDF dropzone (prototype: reads the filename, applies suggested inputs).
-  const drop = $('#sim-drop');
-  const input = $<HTMLInputElement>('#sim-file');
-  if (drop && input) {
-    const idle = $('#sim-drop-idle');
-    const loaded = $('#sim-drop-loaded');
-    const nameEl = $('#sim-file-name');
-    const chipsEl = $('#sim-file-chips');
-    const handleFile = (file: File | undefined) => {
-      if (!file || !idle || !loaded || !nameEl || !chipsEl) return;
-      nameEl.textContent = file.name;
-      chipsEl.innerHTML = PDF_CHIPS.map((c) =>
-        `<span class="chip"><span class="chip__dot" style="background:var(--mn-cyan,#59BFE7);"></span>${c}</span>`).join('');
-      (idle as HTMLElement).hidden = true;
-      (loaded as HTMLElement).hidden = false;
-      specSel.selectedIndex = 0;
-      specSel.dispatchEvent(new Event('change'));
-      const seg = (wrap: string, lbl: string) => {
-        const b = $$('#' + wrap + ' .seg__opt').find((o) => (o as HTMLElement).dataset.lbl === lbl);
-        if (b) (b as HTMLElement).click();
-      };
-      seg('sim-region', 'SE');
-      seg('sim-shift', 'Nights');
-    };
-    $('#sim-browse')?.addEventListener('click', (e) => { e.stopPropagation(); input.click(); });
-    idle?.addEventListener('click', () => input.click());
-    input.addEventListener('change', (e) => handleFile((e.target as HTMLInputElement).files?.[0]));
-    $('#sim-file-clear')?.addEventListener('click', () => { input.value = ''; if (loaded) (loaded as HTMLElement).hidden = true; if (idle) (idle as HTMLElement).hidden = false; });
-    ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('is-drag'); }));
-    ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); if (ev === 'drop' || e.target === idle) drop.classList.remove('is-drag'); }));
-    drop.addEventListener('drop', (e) => { const f = (e as DragEvent).dataTransfer?.files?.[0]; if (f) handleFile(f); });
-  }
 })();
 
 // ── Weekly Sync · live, shared standup board (v2: sections + rich-text focuses) ─
