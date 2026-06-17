@@ -217,7 +217,7 @@ if (job) {
     clean(job.estimated_credentialing_time) &&
       `Facility estimate: credentialing ~${clean(job.estimated_credentialing_time)}${/^\d+$/.test(clean(job.estimated_credentialing_time)) ? ' days' : ''}`,
     // Documented, true IMS benefits.
-    isAnesthesia ? 'Malpractice coverage — $1M / $3M with tail' : 'Malpractice covered',
+    isAnesthesia ? 'Malpractice coverage: $1M / $3M with tail' : 'Malpractice covered',
     'One recruiter for the life of your assignment',
     'Friday direct deposit, every week',
   ].filter((x): x is string => Boolean(x));
@@ -674,7 +674,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
       const refId = ((fd.get('jobRef') as string) ?? '').toString();
       const city = ((fd.get('jobCity') as string) ?? '').toString();
       const userMsg = ((fd.get('message') as string) ?? '').trim();
-      const header = `Job inquiry — ${[role, city].filter(Boolean).join(' · ')}${refId ? ` (Ref ${refId})` : ''}.`;
+      const header = `Job inquiry: ${[role, city].filter(Boolean).join(' · ')}${refId ? ` (Ref ${refId})` : ''}.`;
       const composed = [header, userMsg].filter(Boolean).join('\n');
       fd.set('message', composed);
 
