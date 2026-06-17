@@ -264,8 +264,9 @@ h1, .h1, h2, .h2 { letter-spacing: -0.035em; }
    * (kit.css set 9.6s for 4; we override to 12s and add the 5th delay below.) */
   animation-duration: 12s;
 }
-/* Polychrome flourish — 5 Palette-A brights, one per word, blue (identity) first.
- * Verdant joins for "Innovative" (the 6-colour Palette A reinstated green). */
+/* Polychrome flourish: 5 Palette-A brights, one per word, blue (identity) first.
+ * Word order now leads with "Innovative" (sky/identity, the on-load word); the
+ * cycle then runs coral, violet, rose, closing on verdant/mint. */
 .hero__rotator-word:nth-of-type(1) { color: var(--sky); }
 .hero__rotator-word:nth-of-type(2) { color: var(--coral); }
 .hero__rotator-word:nth-of-type(3) { color: var(--violet); }
