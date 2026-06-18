@@ -10,6 +10,24 @@
    follows the theme automatically. */
 .hub-body { margin: 0; background: var(--cream); color: var(--ink); font-family: var(--font-body); overflow-x: clip; min-height: 100vh; }
 
+/* Skip link — offscreen until keyboard focus, then a visible chip at top-left so
+   keyboard users can jump past the sidebar straight to #hub-main. */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -48px;
+  z-index: 1000;
+  background: var(--mn-black, #0A0A0F);
+  color: var(--cream-soft);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  text-decoration: none;
+  transition: top 160ms ease;
+}
+.skip-link:focus { top: 8px; outline: 2px solid var(--pop-butter, #E8C465); outline-offset: 2px; }
+
 .hub { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; --surface: var(--cream-soft); }
 @media (max-width: 920px) { .hub { grid-template-columns: 1fr; } }
 

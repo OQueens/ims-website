@@ -209,6 +209,7 @@ const stateShape = (j: JobRow): string | null => {
     </section>
 
     <section class="jb-section">
+      <p id="jobs-status" class="visually-hidden" role="status" aria-live="polite"></p>
       <div class="jb-b__grid reveal-group" id="jobs-grid">
         {jobs.map((j, i) => {
           const shape = stateShape(j);
@@ -377,6 +378,7 @@ const stateShape = (j: JobRow): string | null => {
   const empty = document.getElementById('jobs-empty');
   const chips = document.getElementById('jobs-chips');
   const count = document.querySelector('[data-count="all"]');
+  const status = document.getElementById('jobs-status');
 
   if (input && grid) {
     const cards = Array.from(grid.querySelectorAll<HTMLElement>('.jb-b__card'));
@@ -398,6 +400,9 @@ const stateShape = (j: JobRow): string | null => {
       }
       if (empty) empty.classList.toggle('is-visible', visible === 0);
       if (count) count.textContent = String(activeSpec === 'all' && !query ? TOTAL : visible);
+      if (status) status.textContent = visible === 0
+        ? 'No roles match your search'
+        : `${visible} role${visible === 1 ? '' : 's'} match`;
     }
 
     input.addEventListener('input', (e) => {

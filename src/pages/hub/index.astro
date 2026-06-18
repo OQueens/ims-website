@@ -132,9 +132,10 @@ const eyebrow = new Intl.DateTimeFormat('en-US', {
 }).format(new Date()).replace(',', ' ·');
 ---
 <HubLayout title="IMS Hub · Dashboard" themeFlash>
+  <a href="#hub-main" class="skip-link">Skip to content</a>
   <div class="hub">
     <HubSidebar />
-    <div class="hub-main">
+    <main class="hub-main" id="hub-main">
       <HubTopbar eyebrow={eyebrow} title="Overview" />
       <OverviewView
         activeReqs={overview.activeReqs}
@@ -147,7 +148,7 @@ const eyebrow = new Intl.DateTimeFormat('en-US', {
       <SimulatorView latestJobs={overview.latestJobs} />
       <AnalyticsView analytics={analytics} lsAnalytics={lsAnalytics} />
       <SyncView weekKey={weekKey} columns={syncColumns} weeks={syncWeeks} me={me} />
-    </div>
+    </main>
   </div>
 </HubLayout>
 

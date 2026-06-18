@@ -49,7 +49,12 @@ const VIEW_TITLES: Record<string, string> = {
 };
 function showView(id: string) {
   $$('.hub-view').forEach((v) => v.classList.toggle('is-active', (v as HTMLElement).dataset.view === id));
-  $$('.hub-nav__item').forEach((b) => b.classList.toggle('is-active', (b as HTMLElement).dataset.view === id));
+  $$('.hub-nav__item').forEach((b) => {
+    const match = (b as HTMLElement).dataset.view === id;
+    b.classList.toggle('is-active', match);
+    if (match) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
   const title = $('#top-title');
   if (title) title.textContent = VIEW_TITLES[id] || 'Overview';
   window.scrollTo({ top: 0, behavior: 'auto' });

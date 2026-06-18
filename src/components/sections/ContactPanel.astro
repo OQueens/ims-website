@@ -70,16 +70,31 @@ const { as: Heading = 'h2' } = Astro.props;
           <span class="contact-b__form-tag">Or send a note</span>
           <span class="contact-b__form-meta">We read every one.</span>
         </div>
-        <input class="input" name="name" placeholder="Your name" required aria-label="Your name" />
-        <input class="input" type="email" name="email" placeholder="Email" required aria-label="Email" />
-        <select class="input full" name="audience" required aria-label="I am a...">
-          <option value="" disabled selected>I am a…</option>
-          <option value="facility">Facility</option>
-          <option value="clinician">Clinician</option>
-          <option value="other">Something else</option>
-        </select>
-        <input class="input full" name="role" placeholder="Role or specialty (optional)" aria-label="Role or specialty" />
-        <textarea class="input full" name="message" rows="4" placeholder="What can we help with?" aria-label="What can we help with?"></textarea>
+        <div class="contact-b__field">
+          <label class="contact-b__label" for="cb-name">Your name</label>
+          <input class="input" id="cb-name" name="name" placeholder="Jane Smith" required />
+        </div>
+        <div class="contact-b__field">
+          <label class="contact-b__label" for="cb-email">Email</label>
+          <input class="input" id="cb-email" type="email" name="email" placeholder="you@hospital.org" required />
+        </div>
+        <div class="contact-b__field full">
+          <label class="contact-b__label" for="cb-audience">I am a…</label>
+          <select class="input" id="cb-audience" name="audience" required>
+            <option value="" disabled selected>Select one</option>
+            <option value="facility">Facility</option>
+            <option value="clinician">Clinician</option>
+            <option value="other">Something else</option>
+          </select>
+        </div>
+        <div class="contact-b__field full">
+          <label class="contact-b__label" for="cb-role">Role or specialty <span class="contact-b__label-hint">(optional)</span></label>
+          <input class="input" id="cb-role" name="role" placeholder="e.g. Hospitalist, CRNA" />
+        </div>
+        <div class="contact-b__field full">
+          <label class="contact-b__label" for="cb-message">What can we help with?</label>
+          <textarea class="input" id="cb-message" name="message" rows="4" placeholder="A sentence or two is plenty."></textarea>
+        </div>
 
         <!-- Honeypot: off-screen, never display:none, no <label>, named website_url
              (not "company") so password managers don't autofill it and drop a real
@@ -108,6 +123,20 @@ const { as: Heading = 'h2' } = Astro.props;
 </section>
 
 <style>
+  /* Visible field labels (a11y: the form was placeholder-only at ~2.6:1, and a
+   * placeholder is not a persistent label). Each field wraps its label + input;
+   * the input keeps the global .input (width:100%) so the 2-col grid is
+   * unchanged — name/email share the top row, the rest span full width. */
+  .contact-b__field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .contact-b__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .contact-b__label-hint { font-weight: 400; color: var(--ink-mute); }
+
   /* Honeypot — off-screen, never display:none (some bots skip those). */
   .contact-b__hp {
     position: absolute;
