@@ -66,6 +66,7 @@ interface JobDetail {
   estimated_credentialing_time: string | null;
   temporary_privileges_available: boolean | null;
   call_ratio: string | null;
+  ls_last_modified: string | null;
 }
 
 const { slug } = Astro.params;
@@ -89,7 +90,7 @@ if (slug && UUID_RE.test(slug) && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_
     const { data, error } = await supabase
       .from('ims_jobs')
       .select(
-        'id, assignment_number, specialty_name, specialty_slug, provider_type, facility_city, facility_state, public_facility_label, num_providers_requested, start_date, duration_display, length_category, coverage_type, call_type, request_type, practice_setting, public_description, emr_system, board_certification_required, board_certification_minimum, fellowship, require_bls, require_acls, require_atls, require_pals, trauma_level, patient_encounters_per_shift, estimated_credentialing_time, temporary_privileges_available, call_ratio',
+        'id, assignment_number, specialty_name, specialty_slug, provider_type, facility_city, facility_state, public_facility_label, num_providers_requested, start_date, duration_display, length_category, coverage_type, call_type, request_type, practice_setting, public_description, emr_system, board_certification_required, board_certification_minimum, fellowship, require_bls, require_acls, require_atls, require_pals, trauma_level, patient_encounters_per_shift, estimated_credentialing_time, temporary_privileges_available, call_ratio, ls_last_modified',
       )
       .eq('id', slug)
       .eq('status', 'active')
@@ -277,6 +278,57 @@ if (job) {
 
 const pageTitle = job ? `${spec || 'Open role'} · ${cityTitle} — Innovative Medical Staffing` : 'Role not found — Innovative Medical Staffing';
 const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`) : 'That role is no longer listed.';
+
+// JobPosting JSON-LD — REAL fields only, nulls omitted, NO fabricated salary
+// (the LS feed carries no rate; inventing one would be false advertising). Restores
+// Google-for-Jobs eligibility. datePosted uses ls_last_modified (the honest "last
+// surfaced/updated" timestamp); jobLocation is emitted only when we have a real
+// city/state, never fabricated.
+let jobPostingLd: Record<string, unknown> | null = null;
+if (job) {
+  const ld: Record<string, unknown> = {
+    '@context': 'https://schema.org/',
+    '@type': 'JobPosting',
+    title: spec || 'Locum tenens assignment',
+    description: aboutText || pageDesc,
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: 'Innovative Medical Staffing',
+      sameAs: 'https://imstaffing.ai',
+    },
+    employmentType: 'CONTRACTOR',
+    industry: 'Healthcare',
+    directApply: true,
+  };
+  if (job.ls_last_modified) {
+    const dp = new Date(job.ls_last_modified);
+    if (!Number.isNaN(dp.getTime())) ld.datePosted = dp.toISOString().slice(0, 10);
+  }
+  if (job.assignment_number) {
+    ld.identifier = { '@type': 'PropertyValue', name: 'Innovative Medical Staffing', value: job.assignment_number };
+  }
+  if (job.facility_city || job.facility_state) {
+    ld.jobLocation = {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        ...(job.facility_city ? { addressLocality: job.facility_city } : {}),
+        ...(job.facility_state ? { addressRegion: job.facility_state } : {}),
+        addressCountry: 'US',
+      },
+    };
+  }
+  // Google requires datePosted for Job-posting eligibility — suppress the whole
+  // block rather than emit an ineligible posting when we have no real date.
+  jobPostingLd = ld.datePosted ? ld : null;
+}
+// Serialize defensively: JSON.stringify does NOT escape "</script>", so a DB-sourced
+// string containing it would break out of the <script type="application/ld+json">
+// block (XSS). Escaping every "<" to < is decoded back to "<" by every JSON
+// reader (incl. Google's parser) while the HTML parser never sees a </script> token.
+const jobPostingLdJson = jobPostingLd
+  ? JSON.stringify(jobPostingLd).replace(/</g, '\\u003c')
+  : '';
 ---
 
 <MarketingLayout title={pageTitle} description={pageDesc} inCard={false}>
@@ -286,6 +338,7 @@ const pageDesc = job ? (sub || `Open locum assignment: ${spec} in ${cityTitle}.`
     <div class="container">
       {job ? (
         <>
+          {jobPostingLdJson && <script type="application/ld+json" is:inline set:html={jobPostingLdJson} />}
           <a class="jd-back" href="/jobs"><span class="jd-back__arrow" aria-hidden="true">←</span> Back to all jobs</a>
 
           <!-- HERO -->
