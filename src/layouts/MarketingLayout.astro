@@ -391,6 +391,11 @@ const ORG_JSON_LD = {
         let timer = null;
         const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
         const paint = () => {
+          // Stop if the pointer is no longer over the host even when no
+          // mouseleave fired — e.g. the contact/apply form rebuilds the button's
+          // puck subtree on a submit error, which can swallow the mouseleave and
+          // leave the 700ms cycle flashing random brights on an unhovered button.
+          if (!host.matches(':hover')) { stop(); return; }
           // Stop if the host left the DOM OR got hidden mid-hover (e.g. the
           // contact form's success path sets display:none with no mouseleave) —
           // else the timer would run forever. Zero client rects = not rendered.

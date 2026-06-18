@@ -61,3 +61,12 @@ iastaffing-snapshot.md
 
 # Chromia benchmark teardown artifacts (2026-06-12 design study)
 chromia-study/
+
+# Stray scratch HTML + downloaded tarballs at repo root — a bare `git add .`
+# would otherwise stage these (Phase-6 hygiene, 2026-06-18).
+/*.tgz
+_sx.html
+
+# Research scratch (Firecrawl scrapes + design-reference images, not source).
+.firecrawl/
+docs/refs/

@@ -44,7 +44,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
   // X-Robots-Tag dropped at LAUNCH HARD GATE (T14 paired with T15+T16+T28).
   // Reintroducing this header would silently de-index the site — see the
   // matching regression guard in scripts/verify-build.mjs.
-  "Strict-Transport-Security": "max-age=15768000; includeSubDomains",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   // Spec §0.5.3 final CSP — Plausible analytics + Cloudflare Turnstile
   // allowlisted; 'unsafe-inline' for scripts/styles accepted per spec §0.5.3
   // Notes (Astro hydration injects inline scripts; component-scoped styles).
@@ -54,6 +54,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
     "script-src 'self' 'unsafe-inline' https://plausible.io https://challenges.cloudflare.com; " +
     "style-src 'self' 'unsafe-inline'; " +
     "img-src 'self' data:; " +
+    "object-src 'none'; " +
     "font-src 'self'; " +
     "connect-src 'self' https://plausible.io https://challenges.cloudflare.com; " +
     "frame-src https://challenges.cloudflare.com; " +

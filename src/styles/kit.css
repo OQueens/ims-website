@@ -2059,7 +2059,7 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   text-decoration: none;
   transition: color 180ms var(--ease-out);
 }
-.contact-b__info-value a:hover { color: var(--pop-magenta, #C44569); }
+.contact-b__info-value a:hover { color: var(--grass, #3FB3E0) !important; }
 .contact-b__info-meta {
   font-family: var(--font-mono);
   font-size: 11px;
