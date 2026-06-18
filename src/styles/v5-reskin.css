@@ -284,11 +284,17 @@ h1, .h1, h2, .h2 { letter-spacing: -0.035em; }
   .hero__rotator-word:nth-of-type(1) { opacity: 1; transform: translateY(0) rotate(0); }
 }
 
-/* Ambient blobs = the Ghibli sky over a meadow: sky + warm cloud + grass.
- * Soft and low-opacity so the cream dot-grid still reads through. */
-.hero__blob--coral  { background: var(--grass);     opacity: 0.14; animation-duration: 16s; }
-.hero__blob--butter { background: var(--tint-sand); opacity: 0.50; animation-duration: 18s; }
-.hero__blob--lilac  { background: var(--sky);       opacity: 0.16; animation-duration: 21s; }
+/* Ambient hero blobs (Zach 2026-06-18): bottom-left = sky blue, top-right =
+ * the clinicians-button coral (--coral #F26A5B — the "For Clinicians" pill
+ * puck, forced coral by the more-specific .hero .pill--swing--mint .pill__puck
+ * rule at v5-reskin.css:643 despite the --mint class name). Soft + low-opacity
+ * so the cream dot-grid still reads through. Saturated blue would overwhelm at
+ * the old sand 0.50, so bottom-left is dialed to 0.18. (The middle --lilac blob
+ * is re-pointed to rose by palette-active.css:113 — left as-is; Zach only asked
+ * about the two corner blobs.) */
+.hero__blob--coral  { background: var(--coral); opacity: 0.16; animation-duration: 16s; } /* top-right — clinicians coral */
+.hero__blob--butter { background: var(--sky);   opacity: 0.18; animation-duration: 18s; } /* bottom-left — blue */
+.hero__blob--lilac  { background: var(--sky);   opacity: 0.16; animation-duration: 21s; }
 
 /* ──────────────────────────── 6 · Marquee ───────────────────────────────── */
 
