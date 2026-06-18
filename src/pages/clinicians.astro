@@ -98,22 +98,22 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
         </div>
         <div class="cc__why-grid reveal-group">
           <article class="cc__why-card cc__why-card--coral reveal" style="--i:0">
-            <div class="cc__why-num">$</div>
+            <span class="cc__why-icon cc__why-icon--rates" aria-hidden="true"></span>
             <h3 class="cc__why-title">Transparent rates</h3>
             <p class="cc__why-body">You see the rate before you accept. No surprises buried in the contract.</p>
           </article>
           <article class="cc__why-card cc__why-card--butter reveal" style="--i:1">
-            <div class="cc__why-num">☎</div>
+            <span class="cc__why-icon cc__why-icon--pay" aria-hidden="true"></span>
             <h3 class="cc__why-title">Weekly pay</h3>
             <p class="cc__why-body">Direct-deposit payroll, every week. A small thing, until you've worked with an agency that can't manage it.</p>
           </article>
           <article class="cc__why-card cc__why-card--rose reveal" style="--i:2">
-            <div class="cc__why-num">♥</div>
+            <span class="cc__why-icon cc__why-icon--recruiter" aria-hidden="true"></span>
             <h3 class="cc__why-title">One recruiter, your career</h3>
             <p class="cc__why-body">No rotating queue. The person who places you the first time is the person who calls you the fifteenth.</p>
           </article>
           <article class="cc__why-card cc__why-card--lilac reveal" style="--i:3">
-            <div class="cc__why-num">🛡</div>
+            <span class="cc__why-icon cc__why-icon--shield" aria-hidden="true"></span>
             <h3 class="cc__why-title">Malpractice covered</h3>
             <p class="cc__why-body">Malpractice covered on every assignment, plus licensing support along the way.</p>
           </article>
@@ -650,16 +650,22 @@ import SiteFooter from '../components/footer/SiteFooter.astro';
   .cc__why-card--butter { background: var(--soft-coral); }  /* idx 1 → coral */
   .cc__why-card--rose   { background: var(--soft-lilac); }  /* idx 2 → violet */
   .cc__why-card--lilac  { background: var(--soft-rose); }   /* idx 3 → rose */
-  .cc__why-num {
-    font-family: var(--font-display); font-weight: 900;
-    font-size: 48px; line-height: 0.85; letter-spacing: -0.04em;
-    color: var(--ink);
+  .cc__why-icon {
+    width: 56px; height: 56px; display: block;
+    background-color: currentColor;
+    -webkit-mask-position: center; mask-position: center;
+    -webkit-mask-size: contain; mask-size: contain;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
   }
-  /* glyph wears the card's matching BRIGHT hue (Palette A: the six brights ARE the accents) */
-  .cc__why-card--coral  .cc__why-num { color: var(--sky); }
-  .cc__why-card--butter .cc__why-num { color: var(--coral); }
-  .cc__why-card--rose   .cc__why-num { color: var(--violet); }
-  .cc__why-card--lilac  .cc__why-num { color: var(--rose); }
+  .cc__why-icon--rates     { -webkit-mask-image: url(/icons/why-rates.svg);     mask-image: url(/icons/why-rates.svg); }
+  .cc__why-icon--pay       { -webkit-mask-image: url(/icons/why-pay.svg);       mask-image: url(/icons/why-pay.svg); }
+  .cc__why-icon--recruiter { -webkit-mask-image: url(/icons/why-recruiter.svg); mask-image: url(/icons/why-recruiter.svg); }
+  .cc__why-icon--shield    { -webkit-mask-image: url(/icons/why-shield.svg);    mask-image: url(/icons/why-shield.svg); }
+  /* icon wears the card's matching BRIGHT hue (Palette A: the six brights ARE the accents) */
+  .cc__why-card--coral  .cc__why-icon { color: var(--sky); }
+  .cc__why-card--butter .cc__why-icon { color: var(--coral); }
+  .cc__why-card--rose   .cc__why-icon { color: var(--violet); }
+  .cc__why-card--lilac  .cc__why-icon { color: var(--rose); }
   .cc__why-title {
     font-family: var(--font-display); font-weight: 900;
     font-size: 20px; line-height: 1.05; letter-spacing: -0.018em;
