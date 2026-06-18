@@ -1,13 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100.8 76.2">
-  <defs>
-    <style>
-      .cls-1 {
-        fill: #172d35;
-      }
-    </style>
-  </defs>
-  <g id="_Ñëîé_1" data-name="Ñëîé 1">
-    <path class="cls-1" d="M41.78,76.2h24.86l19.22-.53,14.93-.33-1.09-32.69-.83-25.64-.58-17.01S18.46,1.45,3.08,0C2.69,7.12.77,49.57.77,49.57c0,0-.13,2.37,0,3.3.13.92-.77,21.75-.77,21.75l41.78,1.58Z"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" data-name="Layer 2" viewBox="0 0 100.8 76.2"><path d="M41.8 76.2h24.8l19.3-.5 14.9-.4-1.1-32.6-.8-25.7-.6-17S18.5 1.5 3 0L.8 49.6s-.2 2.3 0 3.3c.1.9-.8 21.7-.8 21.7z" data-name="Ñëîé 1" style="fill:#172d35"/></svg>

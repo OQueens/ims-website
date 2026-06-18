@@ -236,7 +236,7 @@ const ORG_JSON_LD = {
           function start() {
             if (timer || !iReady) return; // wait until the I art has loaded
             frame(); // draw + swap immediately, then keep going
-            timer = setInterval(frame, 70); // ~14fps — smooth for a slow flow, light on CPU
+            timer = setInterval(frame, 200); // ~5fps — plenty for the slow flow, ~3x less canvas/toDataURL CPU than 70ms
           }
           function stop() {
             if (timer) {
