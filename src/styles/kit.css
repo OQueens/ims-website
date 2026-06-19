@@ -2251,6 +2251,16 @@ textarea.input { resize: vertical; min-height: 120px; font-family: var(--font-bo
   flex-wrap: wrap;
 }
 .footer-b__bottom small { color: rgba(251, 246, 238, 0.55); }
+/* Discreet staff entry to the hub — the reliable cross-device path (the cloak
+ * dot is mouse-only). Muted so it never competes with the public footer nav. */
+.footer-b__staff {
+  color: rgba(251, 246, 238, 0.55);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 200ms var(--ease-out);
+}
+.footer-b__staff:hover,
+.footer-b__staff:focus-visible { color: var(--cream-soft); }
 .footer-b__socials { display: flex; gap: var(--space-2); }
 .footer-b__socials a {
   width: 36px; height: 36px;
@@ -2523,7 +2533,7 @@ html.js .hero-stage.hero-go > * { opacity: 1; transform: none; }
  * in (transform-only → never-invisible safe). Hidden on mobile (staff use a
  * direct link). Links to /hub/login. */
 .cloak-login {
-  position: fixed; top: 0; left: 0; z-index: 300;
+  position: fixed; top: 0; left: 0; z-index: 95; /* below the nav (z-index:100) so a logo tap wins the corner overlap */
   padding: 14px 18px;
   display: inline-flex; align-items: center;
   text-decoration: none;
@@ -2552,4 +2562,10 @@ html.js .hero-stage.hero-go > * { opacity: 1; transform: none; }
 .cloak-login:focus-visible .cloak-login__pill { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
 /* On the dark /contact island the ink dot would vanish — lighten it there. */
 body:has(.gt-page) .cloak-login__dot { background: var(--cream-soft); }
-@media (max-width: 768px) { .cloak-login { display: none; } }
+/* Touch devices can't hover-reveal the pill and would only mis-tap the dot onto
+ * the logo beneath it ("back opens the admin hub"), so hide the cloak on every
+ * non-hover / coarse-pointer device regardless of width. Staff reach the hub via
+ * the footer "Staff log in" link instead. Shown only on true mouse pointers. */
+@media not all and (hover: hover) and (pointer: fine) {
+  .cloak-login { display: none; }
+}
