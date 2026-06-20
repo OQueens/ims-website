@@ -20,6 +20,7 @@ import MarketingLayout from '../../layouts/MarketingLayout.astro';
 import SiteNav from '../../components/nav/SiteNav.astro';
 import SiteFooter from '../../components/footer/SiteFooter.astro';
 import { createClient } from '@supabase/supabase-js';
+import { jobHaystack } from '../../lib/job-search';
 
 export const prerender = false;
 
@@ -32,6 +33,7 @@ interface JobRow {
   id: string;
   specialty_slug: string;
   specialty_name: string | null;
+  provider_type: string | null;
   facility_state: string | null;
   facility_city: string | null;
   public_facility_label: string | null;
@@ -59,7 +61,7 @@ if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
     const { data, error } = await supabase
       .from('ims_jobs')
       .select(
-        'id, specialty_slug, specialty_name, facility_state, facility_city, public_facility_label, length_category, call_type, coverage_type',
+        'id, specialty_slug, specialty_name, provider_type, facility_state, facility_city, public_facility_label, length_category, call_type, coverage_type',
       )
       .eq('status', 'active')
       .order('ls_last_modified', { ascending: false, nullsFirst: false })
@@ -83,6 +85,17 @@ const specialtyLabel = (s: string) =>
 
 // Distinct specialties present, for the filter chips.
 const specialtiesPresent = [...new Set(jobs.map((j) => j.specialty_slug))].sort();
+
+// Distinct provider types present (e.g. CRNA, NP, PA, MD, Physician) for the
+// provider-type chip row. Values come straight from LocumSmart and are already
+// display-ready; rendered as-is, matched case-insensitively via data-provider.
+// Dedup by lowercase so a mixed-case source ("CRNA"/"crna") yields ONE chip.
+const providerByLower = new Map<string, string>();
+for (const j of jobs) {
+  const v = (j.provider_type ?? '').trim();
+  if (v && !providerByLower.has(v.toLowerCase())) providerByLower.set(v.toLowerCase(), v);
+}
+const providersPresent = [...providerByLower.values()].sort();
 
 // Map a specialty slug to one of the kit's soft card tints; cycle for any slug
 // not in the canonical map so every card gets a stable colour.
@@ -113,21 +126,10 @@ const locationTitle = (j: JobRow): string => {
 
 const facilityLabel = (j: JobRow): string => j.public_facility_label ?? 'Healthcare facility';
 
-// Lower-cased haystack for the client search (mirrors the kit's tokenized match).
-const keywords = (j: JobRow): string =>
-  [
-    j.specialty_slug,
-    j.specialty_name,
-    j.facility_city,
-    j.facility_state,
-    j.public_facility_label,
-    j.length_category,
-    j.call_type,
-    j.coverage_type,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+// data-keywords MUST equal jobHaystack(job) — the input to the shared matcher —
+// so the homepage "N open" count and the /jobs client filter agree for every
+// query (now including the full state name, e.g. "Texas"). Single source of truth.
+const keywords = (j: JobRow): string => jobHaystack(j);
 
 // Up to 4 search hints derived from real data (specialty labels first, then
 // states present). Empty when the feed is dormant.
@@ -198,12 +200,30 @@ const stateShape = (j: JobRow): string | null => {
         )}
       </div>
 
-      {specialtiesPresent.length > 0 && (
-        <div class="jb-b__chips" id="jobs-chips" role="group" aria-label="Filter jobs by specialty">
-          <button type="button" class="jb-b__chip jb-b__chip--active" data-spec="all" aria-pressed="true">All · <span data-count="all">{totalCount}</span></button>
-          {specialtiesPresent.map((s) => (
-            <button type="button" class="jb-b__chip" data-spec={s} aria-pressed="false">{specialtyLabel(s)}</button>
-          ))}
+      {(specialtiesPresent.length > 0 || providersPresent.length > 0) && (
+        <div class="jb-b__filters">
+          {specialtiesPresent.length > 0 && (
+            <div class="jb-b__chip-row">
+              <span class="jb-b__chip-label" id="jobs-spec-label">Specialty</span>
+              <div class="jb-b__chips" id="jobs-chips" role="group" aria-labelledby="jobs-spec-label">
+                <button type="button" class="jb-b__chip jb-b__chip--active" data-spec="all" aria-pressed="true">All · <span data-count="all">{totalCount}</span></button>
+                {specialtiesPresent.map((s) => (
+                  <button type="button" class="jb-b__chip" data-spec={s} aria-pressed="false">{specialtyLabel(s)}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {providersPresent.length > 0 && (
+            <div class="jb-b__chip-row">
+              <span class="jb-b__chip-label" id="jobs-prov-label">Provider type</span>
+              <div class="jb-b__chips" id="jobs-provider-chips" role="group" aria-labelledby="jobs-prov-label">
+                <button type="button" class="jb-b__chip jb-b__chip--active" data-provider="all" aria-pressed="true">All</button>
+                {providersPresent.map((p) => (
+                  <button type="button" class="jb-b__chip" data-provider={p.toLowerCase()} aria-pressed="false">{p}</button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>
@@ -220,6 +240,7 @@ const stateShape = (j: JobRow): string | null => {
             class:list={[`jb-b__card jb-b__card--${tintFor(j.specialty_slug, i)}`, 'reveal']}
             style={`--i:${Math.min(i, 5)}`}
             data-spec={j.specialty_slug}
+            data-provider={(j.provider_type ?? '').toLowerCase()}
             data-state={(j.facility_state ?? '').toLowerCase()}
             data-city={(j.facility_city ?? '').toLowerCase()}
             data-keywords={keywords(j)}
@@ -309,7 +330,10 @@ const stateShape = (j: JobRow): string | null => {
   .jb-b__empty-body { font-family: var(--font-body); font-size: 15px; line-height: 1.55; color: var(--ink-soft); margin: 0 auto var(--space-4); max-width: 48ch; }
   .jb-b__empty .pill { display: inline-flex; }
 
-  .jb-b__chips { max-width: 1280px; margin: var(--space-6) auto var(--space-5); padding: 0 var(--container-pad); display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .jb-b__filters { max-width: 1280px; margin: var(--space-6) auto var(--space-5); padding: 0 var(--container-pad); display: flex; flex-direction: column; gap: var(--space-4); }
+  .jb-b__chip-row { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .jb-b__chip-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: var(--ink-mute); }
+  .jb-b__chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   .jb-b__chip { padding: 9px 18px; border-radius: 999px; font-family: var(--font-body); font-weight: 600; font-size: 13px; background: var(--cream-soft); border: 1px solid var(--rule); color: var(--ink); cursor: pointer; transition: all 200ms; }
   .jb-b__chip:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(31,26,35,0.08); }
   .jb-b__chip--active { background: var(--ink); color: var(--cream-soft); border-color: var(--ink); }
@@ -384,24 +408,31 @@ const stateShape = (j: JobRow): string | null => {
     const cards = Array.from(grid.querySelectorAll<HTMLElement>('.jb-b__card'));
     const TOTAL = cards.length;
 
-    let activeSpec = 'all';
+    // Multi-select filter state: an empty Set means "All" for that group. A card
+    // shows when it matches the search AND (no specialty selected OR its specialty
+    // is selected) AND (no provider selected OR its provider is selected) — OR
+    // within a group, AND across groups.
+    const activeSpecs = new Set<string>();
+    const activeProviders = new Set<string>();
     let query = '';
 
     function applyFilter() {
       let visible = 0;
       for (const c of cards) {
-        const specOk = activeSpec === 'all' || (c.dataset.spec || '') === activeSpec;
+        const specOk = activeSpecs.size === 0 || activeSpecs.has(c.dataset.spec || '');
+        const provOk = activeProviders.size === 0 || activeProviders.has(c.dataset.provider || '');
         // data-keywords === jobHaystack(job); haystackMatchesQuery is the shared,
         // typo-tolerant matcher (substring-first + edit-distance fallback).
         const queryOk = haystackMatchesQuery(c.dataset.keywords || '', query);
-        const show = specOk && queryOk;
+        const show = specOk && provOk && queryOk;
         c.classList.toggle('is-hidden', !show);
         if (show) visible++;
       }
       if (empty) empty.classList.toggle('is-visible', visible === 0);
-      if (count) count.textContent = String(activeSpec === 'all' && !query ? TOTAL : visible);
+      const noFilter = activeSpecs.size === 0 && activeProviders.size === 0 && !query;
+      if (count) count.textContent = String(noFilter ? TOTAL : visible);
       if (status) status.textContent = visible === 0
-        ? 'No roles match your search'
+        ? 'No roles match your filters'
         : `${visible} role${visible === 1 ? '' : 's'} match`;
     }
 
@@ -430,18 +461,34 @@ const stateShape = (j: JobRow): string | null => {
         input.focus();
       });
     });
-    chips?.querySelectorAll<HTMLElement>('.jb-b__chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        chips.querySelectorAll('.jb-b__chip').forEach((c) => {
-          c.classList.remove('jb-b__chip--active');
-          c.setAttribute('aria-pressed', 'false');
+    // Wire a chip group for multi-select. The "All" chip clears the group's Set;
+    // any specific chip toggles its value in/out. "All" is active iff the Set is
+    // empty; specific chips are active iff their value is in the Set.
+    function wireChipGroup(container: HTMLElement | null, key: 'spec' | 'provider', selected: Set<string>) {
+      if (!container) return;
+      const setChip = (el: Element, on: boolean) => {
+        el.classList.toggle('jb-b__chip--active', on);
+        el.setAttribute('aria-pressed', String(on));
+      };
+      const sync = () => {
+        container.querySelectorAll<HTMLElement>('.jb-b__chip').forEach((c) => {
+          const v = c.dataset[key] || '';
+          setChip(c, v === 'all' ? selected.size === 0 : selected.has(v));
         });
-        chip.classList.add('jb-b__chip--active');
-        chip.setAttribute('aria-pressed', 'true');
-        activeSpec = chip.dataset.spec || 'all';
-        applyFilter();
+      };
+      container.querySelectorAll<HTMLElement>('.jb-b__chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          const val = chip.dataset[key] || '';
+          if (val === 'all') selected.clear();
+          else if (selected.has(val)) selected.delete(val);
+          else selected.add(val);
+          sync();
+          applyFilter();
+        });
       });
-    });
+    }
+    wireChipGroup(chips, 'spec', activeSpecs);
+    wireChipGroup(document.getElementById('jobs-provider-chips'), 'provider', activeProviders);
 
     // Deep-link support: the homepage specialty cards link here as
     // /jobs?q=<query>. Pre-fill the search and apply the same filter so the

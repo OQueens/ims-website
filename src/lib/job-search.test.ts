@@ -58,6 +58,46 @@ describe('jobHaystack', () => {
     expect(h).not.toContain('undefined');
     expect(h).toContain('anesthesia');
   });
+
+  // Managers asked to search by state NAME ("Texas"), not just the 2-letter code.
+  it('includes the full state name for the 2-letter code, alongside the code', () => {
+    const h = jobHaystack(job({ facility_state: 'TX' }));
+    expect(h).toContain('tx');
+    expect(h).toContain('texas');
+  });
+
+  it('handles a multi-word state name', () => {
+    expect(jobHaystack(job({ facility_state: 'NC' }))).toContain('north carolina');
+  });
+
+  it('omits a name for an unknown/blank state code without emitting "undefined"', () => {
+    const h = jobHaystack(job({ facility_state: 'ZZ' }));
+    expect(h).not.toContain('undefined');
+  });
+});
+
+describe('jobHaystack / matchesQuery — provider type is searchable', () => {
+  it('includes provider_type so a provider search (CRNA) matches', () => {
+    expect(jobHaystack(job({ provider_type: 'CRNA' }))).toContain('crna');
+  });
+  it('matchesQuery finds a job by provider type', () => {
+    expect(matchesQuery(job({ provider_type: 'NP' }), 'np')).toBe(true);
+  });
+});
+
+describe('matchesQuery — state-name search (code -> full name)', () => {
+  it('matches a job by its full state name (texas -> TX)', () => {
+    expect(matchesQuery(job({ facility_state: 'TX' }), 'texas')).toBe(true);
+  });
+
+  it('matches a multi-word state name (north carolina -> NC)', () => {
+    const j = job({ facility_state: 'NC', facility_city: 'Raleigh', public_facility_label: null });
+    expect(matchesQuery(j, 'north carolina')).toBe(true);
+  });
+
+  it('still matches by the 2-letter code', () => {
+    expect(matchesQuery(job({ facility_state: 'TX' }), 'tx')).toBe(true);
+  });
 });
 
 describe('matchesQuery', () => {

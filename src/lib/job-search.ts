@@ -24,6 +24,7 @@
 export interface JobSearchFields {
   specialty_slug: string;
   specialty_name?: string | null;
+  provider_type?: string | null;
   facility_city?: string | null;
   facility_state?: string | null;
   public_facility_label?: string | null;
@@ -41,13 +42,40 @@ export function tokenize(s: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * 2-letter state/territory code → full name. facility_state is stored as the
+ * code (e.g. "TX"); folding the full name into the haystack lets visitors search
+ * by name ("Texas", "north carolina") and not just the code — a manager request.
+ * The code stays in the haystack too, so existing code-based matches still hold.
+ */
+export const STATE_NAMES: Record<string, string> = {
+  al: 'Alabama', ak: 'Alaska', az: 'Arizona', ar: 'Arkansas', ca: 'California',
+  co: 'Colorado', ct: 'Connecticut', de: 'Delaware', dc: 'District of Columbia',
+  fl: 'Florida', ga: 'Georgia', hi: 'Hawaii', id: 'Idaho', il: 'Illinois',
+  in: 'Indiana', ia: 'Iowa', ks: 'Kansas', ky: 'Kentucky', la: 'Louisiana',
+  me: 'Maine', md: 'Maryland', ma: 'Massachusetts', mi: 'Michigan', mn: 'Minnesota',
+  ms: 'Mississippi', mo: 'Missouri', mt: 'Montana', ne: 'Nebraska', nv: 'Nevada',
+  nh: 'New Hampshire', nj: 'New Jersey', nm: 'New Mexico', ny: 'New York',
+  nc: 'North Carolina', nd: 'North Dakota', oh: 'Ohio', ok: 'Oklahoma', or: 'Oregon',
+  pa: 'Pennsylvania', pr: 'Puerto Rico', ri: 'Rhode Island', sc: 'South Carolina',
+  sd: 'South Dakota', tn: 'Tennessee', tx: 'Texas', ut: 'Utah', vt: 'Vermont',
+  va: 'Virginia', wa: 'Washington', wv: 'West Virginia', wi: 'Wisconsin', wy: 'Wyoming',
+};
+
+/** Full state/territory name for a 2-letter code, or null when unknown/blank. */
+export function stateName(code: string | null | undefined): string | null {
+  return STATE_NAMES[(code ?? '').trim().toLowerCase()] ?? null;
+}
+
 /** Lowercased, space-joined searchable text for a single job. */
 export function jobHaystack(job: JobSearchFields): string {
   return [
     job.specialty_slug,
     job.specialty_name,
+    job.provider_type, // so a search for "CRNA"/"NP" matches, mirroring the chip filter
     job.facility_city,
     job.facility_state,
+    stateName(job.facility_state), // full state name so "Texas" matches a TX job
     job.public_facility_label,
     job.length_category,
     job.call_type,
