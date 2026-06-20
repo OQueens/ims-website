@@ -5,22 +5,29 @@
  * (.marquee, .marquee__track); v5-reskin.css restyles the band + the logos
  * (uniform-white treatment on the dark navy ink — see "Marquee" section there).
  *
- * NOTE (content pass): these are REAL IMS client health systems, sourced from
- * LocumSmart confirmation agreements — organizations IMS holds active/past
- * placements with. Zach supplied 7 brand logos to showcase, so this is a clean
- * logo-only wall of exactly those 7. Client names IMS works with but for which
- * no logo was supplied are intentionally dropped here rather than shown as bare
- * text — the wall stays a uniform set of real, supplied marks. All seven PNGs
- * are 720×245 (~2.94:1); width/height attrs preserve that ratio (no CLS).
+ * NOTE (content pass): these are REAL IMS client health systems, organizations
+ * IMS holds active/past placements with. Zach supplied the brand logos (a desktop
+ * "Healthcare Logos" set); this is a clean logo-only wall of exactly those marks.
+ * Client names IMS works with but for which no logo was supplied are intentionally
+ * dropped rather than shown as bare text, so the wall stays a uniform set of real,
+ * supplied marks. All PNGs are 720x245 (~2.94:1); width/height attrs preserve that
+ * ratio (no CLS). 2026-06-19: expanded from 7 to 14 with Zach's added logos.
  */
 const facilities = [
   { name: 'Community Health Systems', logo: '/logos/chs.png' },
-  { name: 'Atrium Health', logo: '/logos/atrium.png' },
+  { name: 'HCA Healthcare', logo: '/logos/hca-healthcare.png' },
   { name: 'Tenet Healthcare', logo: '/logos/tenet.png' },
+  { name: 'Baylor Scott & White', logo: '/logos/baylor-scott-white.png' },
+  { name: 'Atrium Health', logo: '/logos/atrium.png' },
+  { name: 'Banner Health', logo: '/logos/banner-health.png' },
   { name: 'Ochsner Health', logo: '/logos/ochsner.png' },
+  { name: 'Providence', logo: '/logos/providence.png' },
+  { name: 'Covenant Health', logo: '/logos/covenant-health.png' },
+  { name: 'Medical City Healthcare', logo: '/logos/medical-city.png' },
   { name: 'MountainView Regional', logo: '/logos/mountain-view.png' },
   { name: 'MUSC', logo: '/logos/musc.png' },
-  { name: 'Providence', logo: '/logos/providence.png' },
+  { name: 'Flowers Hospital', logo: '/logos/flowers-hospital.png' },
+  { name: 'NMC', logo: '/logos/nmc.png' },
 ];
 // Seamless loop = two identical halves animated translateX(-50%). Each HALF must
 // be wider than the viewport or the loop shows a blank gap before it resets (one
@@ -29,9 +36,11 @@ const facilities = [
 const REPEAT = 3;
 const half = Array.from({ length: REPEAT }, () => facilities).flat();
 const items = [...half, ...half];
-// Keep the scroll PACE constant: the loop now travels REPEAT× the distance, so the
-// duration scales with it (48s was Zach's calm drift for a single copy).
-const marqueeDuration = `${48 * REPEAT}s`;
+// Keep the scroll PACE constant as the wall grows: 48s was Zach's calm drift for
+// a single 7-logo copy, so scale per logo (≈6.86s/logo). Without this, doubling
+// the logos at the same duration would double the speed. Travels REPEAT× the
+// distance, so multiply by REPEAT too.
+const marqueeDuration = `${Math.round((48 / 7) * facilities.length * REPEAT)}s`;
 ---
 <section class="section section--sm marquee-section marquee-section--logos" aria-label="Health systems we've staffed">
   <div class="marquee-eyebrow">
