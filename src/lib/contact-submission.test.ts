@@ -15,12 +15,16 @@ describe('buildJobUrl', () => {
   const UUID = '11111111-2222-3333-4444-555555555555';
   const REQ = 'https://imstaffing.ai/api/contact';
 
-  it('builds a trusted /jobs/<uuid> link from the request origin', () => {
-    expect(buildJobUrl(UUID, REQ)).toBe(`https://imstaffing.ai/jobs/${UUID}`);
+  it('builds a trusted /jobs/<uuid>/ link (trailing slash = the canonical form) from the request origin', () => {
+    expect(buildJobUrl(UUID, REQ)).toBe(`https://imstaffing.ai/jobs/${UUID}/`);
   });
   it('uses the request origin (not a hardcoded domain) so it follows the live host', () => {
     expect(buildJobUrl(UUID, 'https://innovativemedicalstaffing.com/api/contact'))
-      .toBe(`https://innovativemedicalstaffing.com/jobs/${UUID}`);
+      .toBe(`https://innovativemedicalstaffing.com/jobs/${UUID}/`);
+  });
+  it('accepts a mixed-case uuid (regex is case-insensitive) and keeps the trailing slash', () => {
+    const mixed = '11111111-AAAA-3333-bBbB-555555555555';
+    expect(buildJobUrl(mixed, REQ)).toBe(`https://imstaffing.ai/jobs/${mixed}/`);
   });
   it('rejects a non-uuid slug (no link rather than an off-pattern URL)', () => {
     expect(buildJobUrl('../admin', REQ)).toBe('');

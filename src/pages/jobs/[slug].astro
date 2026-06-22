@@ -339,7 +339,7 @@ const jobPostingLdJson = jobPostingLd
       {job ? (
         <>
           {jobPostingLdJson && <script type="application/ld+json" is:inline set:html={jobPostingLdJson} />}
-          <a class="jd-back" href="/jobs"><span class="jd-back__arrow" aria-hidden="true">←</span> Back to all jobs</a>
+          <a class="jd-back" href="/jobs/"><span class="jd-back__arrow" aria-hidden="true">←</span> Back to all jobs</a>
 
           <!-- HERO -->
           <section class={`jd-hero jd-hero--${tone}`}>
@@ -475,7 +475,7 @@ const jobPostingLdJson = jobPostingLd
                 </div>
                 <h3 class="jd-sent__title">Request sent.</h3>
                 <p class="jd-sent__body">Thanks for your interest in <strong>{[spec, cityTitle].filter(Boolean).join(' · ')}</strong>. Your account lead will reach out within one business day with the full details.</p>
-                <a class="jd-sent__pill" href="/jobs">Browse more roles →</a>
+                <a class="jd-sent__pill" href="/jobs/">Browse more roles →</a>
               </div>
             </aside>
           </div>
@@ -485,7 +485,7 @@ const jobPostingLdJson = jobPostingLd
           <span class="jd-404__eyebrow">404</span>
           <h1 class="jd-404__title">We couldn't find that role.</h1>
           <p class="jd-404__body">It may have just been filled, or the link is out of date. Browse what's open now.</p>
-          <a class="pill pill--swing pill--swing--magenta" href="/jobs"><span>Browse open jobs</span><span class="pill__puck" aria-hidden="true">→</span></a>
+          <a class="pill pill--swing pill--swing--magenta" href="/jobs/"><span>Browse open jobs</span><span class="pill__puck" aria-hidden="true">→</span></a>
         </section>
       )}
     </div>

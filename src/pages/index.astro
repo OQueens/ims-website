@@ -162,11 +162,11 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
         A boutique, family-style approach to locum staffing, connecting clinicians and facilities with the care, speed, and country-club-level concierge support they deserve.
       </p>
       <div class="hero__cta-row" role="group" aria-label="Primary actions" style="--i:3">
-        <a class="pill pill--swing" href="/facilities">
+        <a class="pill pill--swing" href="/facilities/">
           For Facilities
           <span class="pill__puck" aria-hidden="true">→</span>
         </a>
-        <a class="pill pill--swing pill--swing--mint" href="/clinicians">
+        <a class="pill pill--swing pill--swing--mint" href="/clinicians/">
           For Clinicians
           <span class="pill__puck" aria-hidden="true">→</span>
         </a>
@@ -239,7 +239,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
               </div>
             </div>
           </div>
-          <a class="pill pill--swing aud-mix__cta" href="/facilities">
+          <a class="pill pill--swing aud-mix__cta" href="/facilities/">
             Hire a clinician
             <span class="pill__puck" aria-hidden="true">→</span>
           </a>
@@ -254,7 +254,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
           <div class="aud-mix__roles">
             <span class="aud-mix__roles-label">Open this week</span>
             {openThisWeek.length > 0 ? openThisWeek.map((j) => (
-              <a class="role-card" href={`/jobs/${j.id}`} aria-label={`${j.title} — view assignment`}>
+              <a class="role-card" href={`/jobs/${j.id}/`} aria-label={`${j.title} — view assignment`}>
                 <div class="role-card__main">
                   <b>{j.title}</b>
                   <small>{j.sub}</small>
@@ -262,7 +262,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
                 <span class="role-card__dot" aria-hidden="true"></span>
               </a>
             )) : (
-              <a class="role-card" href="/jobs" aria-label="Browse the live job board">
+              <a class="role-card" href="/jobs/" aria-label="Browse the live job board">
                 <div class="role-card__main">
                   <b>New roles every week</b>
                   <small>Browse the live board</small>
@@ -271,7 +271,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
               </a>
             )}
           </div>
-          <a class="pill pill--swing pill--swing--magenta aud-mix__cta" href="/clinicians">
+          <a class="pill pill--swing pill--swing--magenta aud-mix__cta" href="/clinicians/">
             Find your assignment
             <span class="pill__puck" aria-hidden="true">→</span>
           </a>
@@ -355,7 +355,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
       <p class:list={['cta-band__sub', 'reveal']} style="--i:2">
         The fastest path is a conversation. We answer messages within one business day, every day of the week, weekends included.
       </p>
-      <a class:list={['pill', 'pill--swing', 'pill--swing--magenta', 'reveal']} href="/contact" style="--i:3">
+      <a class:list={['pill', 'pill--swing', 'pill--swing--magenta', 'reveal']} href="/contact/" style="--i:3">
         Start a conversation
         <span class="pill__puck" aria-hidden="true">→</span>
       </a>
@@ -453,7 +453,7 @@ const specialtyCards = specialties.map((s) => ({ ...s, count: countMatching(acti
           <a
             class:list={['spec-card', `spec-card--${s.tint}`, 'reveal']}
             style={`--i:${Math.min(i,5)}`}
-            href={`/jobs?q=${encodeURIComponent(s.query)}`}
+            href={`/jobs/?q=${encodeURIComponent(s.query)}`}
             aria-label={`${s.title} — ${s.count > 0 ? `${s.count} open this week` : 'roles open soon'}, view on the job board`}
           >
             <div class="spec-card__number">Nº {s.n}</div>

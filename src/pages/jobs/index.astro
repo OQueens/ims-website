@@ -235,7 +235,7 @@ const stateShape = (j: JobRow): string | null => {
           const shape = stateShape(j);
           return (
           <a
-            href={`/jobs/${j.id}`}
+            href={`/jobs/${j.id}/`}
             aria-label={`${j.specialty_name ?? specialtyLabel(j.specialty_slug)} — ${locationTitle(j)}, view details`}
             class:list={[`jb-b__card jb-b__card--${tintFor(j.specialty_slug, i)}`, 'reveal']}
             style={`--i:${Math.min(i, 5)}`}
@@ -272,7 +272,7 @@ const stateShape = (j: JobRow): string | null => {
           send us your CV anyway, and a recruiter will reach out as soon as
           something opens.
         </p>
-        <a class="pill pill--swing" href="/contact">
+        <a class="pill pill--swing" href="/contact/">
           <span>Tell us what you're looking for</span><span class="pill__puck" aria-hidden="true">→</span>
         </a>
       </div>

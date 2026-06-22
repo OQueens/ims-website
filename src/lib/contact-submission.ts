@@ -90,12 +90,16 @@ const JOB_SLUG_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
  * origin — so a client-tampered `jobSlug` can NEVER inject a `javascript:` (or
  * any off-origin) href into the email. Returns '' when the slug isn't a uuid or
  * the base URL is unparseable (→ the email simply omits the job link).
+ *
+ * The link uses the trailing-slash form (/jobs/<uuid>/) — the site's one
+ * canonical URL form — so the recruiter's click lands on a 200 directly instead
+ * of taking the middleware's slash-less → slash 301 hop.
  */
 export function buildJobUrl(slug: string | undefined, requestUrl: string | undefined): string {
   const s = (slug ?? '').trim();
   if (!JOB_SLUG_RE.test(s)) return '';
   try {
-    const u = new URL(`/jobs/${s}`, requestUrl);
+    const u = new URL(`/jobs/${s}/`, requestUrl);
     return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : '';
   } catch {
     return '';

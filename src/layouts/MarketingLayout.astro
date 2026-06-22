@@ -55,11 +55,13 @@ const {
 } = Astro.props;
 
 // Canonical: pathname only — strip query + hash so /?utm_source=x doesn't
-// self-canonicalize. Strip trailing slash for non-root paths to match
-// Astro's static emit form.
+// self-canonicalize. ADD a trailing slash for non-root, non-file paths so the
+// canonical + og:url match the ONE form the site actually serves: Cloudflare
+// Pages serves prerendered pages at /path/, the middleware 301s on-demand pages
+// to /path/, and @astrojs/sitemap already emits /path/. One canonical per page.
 let pathname = Astro.url.pathname;
-if (pathname.length > 1 && pathname.endsWith('/')) {
-  pathname = pathname.slice(0, -1);
+if (pathname !== '/' && !pathname.endsWith('/') && !/\.[^/]+$/.test(pathname)) {
+  pathname += '/';
 }
 const SITE = Astro.site ?? new URL(Astro.url.origin);
 const defaultCanonical = new URL(pathname, SITE).toString();

@@ -38,7 +38,10 @@ export const CAREERS_HOSTNAMES: readonly string[] = [
   "imstaffing.careers",
   "www.imstaffing.careers",
 ];
-export const CAREERS_LANDING_PATH = "/jobs";
+// Trailing slash = the site's one canonical URL form (see
+// buildTrailingSlashRedirect). Landing on /jobs/ keeps the careers-domain entry
+// a single hop instead of careers → /jobs → /jobs/.
+export const CAREERS_LANDING_PATH = "/jobs/";
 
 export const SECURITY_HEADERS: Record<string, string> = {
   // X-Robots-Tag dropped at LAUNCH HARD GATE (T14 paired with T15+T16+T28).
@@ -111,6 +114,39 @@ function redirect301(url: URL): Response {
     status: 301,
     headers: { Location: url.toString(), ...SECURITY_HEADERS },
   });
+}
+
+// ── Trailing-slash canonicalization (SEO: one indexable URL per page) ─────────
+// The site serves ONE canonical URL form: the trailing-slash form. @astrojs/sitemap
+// emits /path/ and MarketingLayout emits the matching canonical/og:url. This 301s
+// the slash-less form of any worker-handled PAGE route onto that form so there is
+// a single indexable 200 per page. It is the redirect of record for the on-demand
+// pages (/jobs, /jobs/<id>, /contact); prerendered pages (/about, /clinicians, …)
+// are also served at /path/ — Cloudflare Pages' asset layer 308s their slash-less
+// form, and if such a request instead reaches the worker this guard 301s it (both
+// resolve to /path/, so the end state is identical and loop-free either way).
+//
+// Why this lives here and NOT in Astro's global `trailingSlash: 'always'`:
+// Astro applies that redirect to EVERY on-demand route — including /api
+// endpoints — inside App.render, BEFORE middleware runs
+// (node_modules/astro/dist/core/app/index.js #redirectTrailingSlash). A 308 on
+// POST /api/locumsmart-events would silently kill the LIVE LocumSmart webhook,
+// which does not follow redirects (same hazard documented on buildCanonicalRedirect).
+// Doing the redirect here lets us exempt /api and the internal /hub surface.
+export function buildTrailingSlashRedirect(requestUrl: string, method: string): Response | null {
+  // Only ever redirect safe, body-less navigations. A method-changing or
+  // body-dropping redirect on a POST/PUT is the exact hazard the /api guard
+  // avoids — never do it to any route.
+  if (method !== "GET" && method !== "HEAD") return null;
+  const url = new URL(requestUrl);
+  const p = url.pathname;
+  if (p === "/") return null; // root: no slash to add
+  if (p.endsWith("/")) return null; // already canonical — no redirect loop
+  if (p === "/api" || p.startsWith("/api/")) return null; // endpoints (webhook + form POST targets) — NEVER redirect
+  if (p === "/hub" || p.startsWith("/hub/")) return null; // internal hub (OAuth, /hub/api, noindex)
+  if (/\.[^/]+$/.test(p)) return null; // file-like asset path (defense-in-depth; worker rarely sees these)
+  url.pathname = p + "/";
+  return redirect301(url);
 }
 
 export function applySecurityHeaders(response: Response): Response {

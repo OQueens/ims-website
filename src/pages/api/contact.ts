@@ -5,7 +5,7 @@
  * Turnstile siteverify → Resend send → respond. Content-negotiated:
  *   - Accept: application/json (the JS fetch path)  → JSON { ok } + status code
  *   - otherwise (native no-JS POST)                 → 303 redirect to
- *     /contact?sent=1 (success) or /contact?error=<code> (failure), which
+ *     /contact/?sent=1 (success) or /contact/?error=<code> (failure), which
  *     contact.astro renders server-side.
  *
  * Scope: Turnstile + Resend + durable capture. Every valid, human-verified
@@ -75,9 +75,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const accept = request.headers.get('accept');
   const asJson = wantsJson(accept);
 
-  const ok = (): Response => (asJson ? json(200, { ok: true }) : redirect('/contact?sent=1'));
+  // No-JS fallback redirects land on the trailing-slash canonical form so the
+  // success/error page is a single 200, not a /contact → /contact/ 301 hop.
+  const ok = (): Response => (asJson ? json(200, { ok: true }) : redirect('/contact/?sent=1'));
   const fail = (status: number, code: string, field?: string): Response =>
-    asJson ? json(status, { ok: false, error: code, field }) : redirect(`/contact?error=${code}`);
+    asJson ? json(status, { ok: false, error: code, field }) : redirect(`/contact/?error=${code}`);
 
   // Reject oversized bodies before buffering them (cheap DoS guard). A legit
   // submission is well under 100KB (the message cap is 4000 chars plus small

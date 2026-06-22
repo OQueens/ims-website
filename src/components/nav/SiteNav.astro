@@ -17,14 +17,21 @@
  * is trapped, ESC + link-click + scrim close it, body scroll locks while open,
  * reduced-motion drops the animation. The footer sitemap still carries nav too.
  */
+// Internal links use the trailing-slash canonical form (matches the served URL,
+// canonical tag, and sitemap — no 301 hop on click). Active-state compares with
+// slashes normalized off BOTH sides so /facilities/ still lights up on
+// /facilities and /jobs/ stays active on a /jobs/<id>/ detail page.
 const path = Astro.url.pathname.replace(/\/+$/, '') || '/';
 const links: { href: string; label: string }[] = [
-  { href: '/facilities', label: 'Facilities' },
-  { href: '/clinicians', label: 'Clinicians' },
-  { href: '/about',      label: 'About Us' },
-  { href: '/jobs',       label: 'Job Board' },
+  { href: '/facilities/', label: 'Facilities' },
+  { href: '/clinicians/', label: 'Clinicians' },
+  { href: '/about/',      label: 'About Us' },
+  { href: '/jobs/',       label: 'Job Board' },
 ];
-const isCurrent = (href: string) => path === href || path.startsWith(href + '/');
+const isCurrent = (href: string) => {
+  const h = href.replace(/\/+$/, '') || '/';
+  return path === h || path.startsWith(h + '/');
+};
 ---
 <a href="#main" class="skip-to-content">Skip to content</a>
 <nav class="topnav" aria-label="Primary">
@@ -45,7 +52,7 @@ const isCurrent = (href: string) => path === href || path.startsWith(href + '/')
       <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
     ))}
   </div>
-  <a class="topnav__cta" href="/contact">
+  <a class="topnav__cta" href="/contact/">
     Get in touch
     <span class="topnav__cta__puck" aria-hidden="true">→</span>
   </a>
@@ -63,7 +70,7 @@ const isCurrent = (href: string) => path === href || path.startsWith(href + '/')
         <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
       ))}
     </nav>
-    <a class="mobile-menu__cta" href="/contact">
+    <a class="mobile-menu__cta" href="/contact/">
       Get in touch
       <span class="mobile-menu__cta-puck" aria-hidden="true">→</span>
     </a>

@@ -141,7 +141,7 @@ const TONE: Record<string, string> = {
       <ul class="grid reveal-group">
         {specialties.map((s, i) => (
           <li class="reveal" style={`--i:${Math.min(i, 5)}`}>
-            <a class="card" data-tone={TONE[s.slug] ?? 'coral'} href={`/jobs?q=${encodeURIComponent(s.query)}`}>
+            <a class="card" data-tone={TONE[s.slug] ?? 'coral'} href={`/jobs/?q=${encodeURIComponent(s.query)}`}>
               <h3 class="name">{s.name}</h3>
               <p class="framing">{s.framing}</p>
               <span class="link-affordance">
@@ -159,7 +159,7 @@ const TONE: Record<string, string> = {
     <div class="sp-closing__inner">
       <h2 id="sp-closing-heading" class="closing-headline">Don&rsquo;t see your specialty?</h2>
       <p class="closing-body">Tell us what you cover and where you&rsquo;re open to working. We&rsquo;ll come back with a real recruiter, not an auto-reply.</p>
-      <a class="cta cta--primary" href="/contact">Talk to a Recruiter</a>
+      <a class="cta cta--primary" href="/contact/">Talk to a Recruiter</a>
     </div>
   </ScrollReveal>
 

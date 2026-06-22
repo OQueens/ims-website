@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   buildCanonicalRedirect,
+  buildTrailingSlashRedirect,
   applySecurityHeaders,
   SECURITY_HEADERS,
   PAGES_DEV_HOSTNAME,
   CANONICAL_HOSTNAME,
+  CAREERS_LANDING_PATH,
 } from "./middleware-logic";
 
 describe("buildCanonicalRedirect", () => {
@@ -59,17 +61,21 @@ describe("buildCanonicalRedirect", () => {
     expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/contact");
   });
 
-  // ── Careers domain → job board ──
-  it("redirects imstaffing.careers/ root → imstaffing.ai/jobs", () => {
+  // ── Careers domain → job board (lands directly on the trailing-slash canonical
+  //    form so the careers entry is a single hop, not careers→/jobs→/jobs/) ──
+  // Bind to CAREERS_LANDING_PATH so reverting that constant (e.g. /jobs/ → /jobs)
+  // FAILS the test — the exact trailing-slash regression D2 locks in.
+  it("redirects imstaffing.careers/ root → imstaffing.ai + CAREERS_LANDING_PATH (trailing slash)", () => {
+    expect(CAREERS_LANDING_PATH).toBe("/jobs/");
     const r = buildCanonicalRedirect("https://imstaffing.careers/");
     expect(r).not.toBeNull();
     expect(r!.status).toBe(301);
-    expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/jobs");
+    expect(r!.headers.get("Location")).toBe(`https://imstaffing.ai${CAREERS_LANDING_PATH}`);
   });
 
-  it("redirects www.imstaffing.careers/ root → imstaffing.ai/jobs", () => {
+  it("redirects www.imstaffing.careers/ root → imstaffing.ai + CAREERS_LANDING_PATH", () => {
     const r = buildCanonicalRedirect("https://www.imstaffing.careers/");
-    expect(r!.headers.get("Location")).toBe("https://imstaffing.ai/jobs");
+    expect(r!.headers.get("Location")).toBe(`https://imstaffing.ai${CAREERS_LANDING_PATH}`);
   });
 
   it("preserves careers deep paths onto canonical (no forced /jobs)", () => {
@@ -151,6 +157,96 @@ describe("buildCanonicalRedirect", () => {
       for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
         expect(r!.headers.get(name)).toBe(value);
       }
+    }
+  });
+});
+
+describe("buildTrailingSlashRedirect", () => {
+  const CANON = `https://${CANONICAL_HOSTNAME}`;
+
+  it("301s a slash-less SSR page to its trailing-slash canonical form (GET)", () => {
+    const r = buildTrailingSlashRedirect(`${CANON}/jobs`, "GET");
+    expect(r).not.toBeNull();
+    expect(r!.status).toBe(301);
+    expect(r!.headers.get("Location")).toBe(`${CANON}/jobs/`);
+  });
+
+  it("301s a slash-less job-detail path (the /jobs/<uuid> email link form)", () => {
+    const uuid = "11111111-2222-3333-4444-555555555555";
+    const r = buildTrailingSlashRedirect(`${CANON}/jobs/${uuid}`, "GET");
+    expect(r!.headers.get("Location")).toBe(`${CANON}/jobs/${uuid}/`);
+  });
+
+  it("301s /contact → /contact/", () => {
+    const r = buildTrailingSlashRedirect(`${CANON}/contact`, "GET");
+    expect(r!.headers.get("Location")).toBe(`${CANON}/contact/`);
+  });
+
+  it("preserves the query string when adding the slash", () => {
+    const r = buildTrailingSlashRedirect(`${CANON}/jobs?q=crna&state=tx`, "GET");
+    expect(r!.headers.get("Location")).toBe(`${CANON}/jobs/?q=crna&state=tx`);
+  });
+
+  it("redirects on the request's own host (preview deploys behave like prod)", () => {
+    const r = buildTrailingSlashRedirect(`https://abc123.${PAGES_DEV_HOSTNAME}/jobs`, "GET");
+    expect(r!.headers.get("Location")).toBe(`https://abc123.${PAGES_DEV_HOSTNAME}/jobs/`);
+  });
+
+  it("does NOT redirect the root path (no slash to add, no loop)", () => {
+    expect(buildTrailingSlashRedirect(`${CANON}/`, "GET")).toBeNull();
+  });
+
+  it("does NOT redirect a path that already ends in a slash (loop guard)", () => {
+    expect(buildTrailingSlashRedirect(`${CANON}/jobs/`, "GET")).toBeNull();
+    expect(buildTrailingSlashRedirect(`${CANON}/contact/`, "GET")).toBeNull();
+  });
+
+  // ── The whole reason this lives in middleware instead of Astro's global
+  //    `trailingSlash: 'always'`: Astro would 308 EVERY on-demand route incl.
+  //    /api inside App.render BEFORE middleware runs, silently killing the live
+  //    LocumSmart webhook (which does not follow redirects). /api stays exempt. ──
+  it("does NOT redirect /api/* (webhook + form endpoints must never be slash-redirected)", () => {
+    expect(buildTrailingSlashRedirect(`${CANON}/api/contact`, "GET")).toBeNull();
+    expect(buildTrailingSlashRedirect(`${CANON}/api/locumsmart-events`, "GET")).toBeNull();
+    expect(buildTrailingSlashRedirect(`${CANON}/api/locumsmart-events`, "POST")).toBeNull();
+  });
+
+  it("does NOT redirect the bare /api segment (no /api index route — avoid a 301→404)", () => {
+    expect(buildTrailingSlashRedirect(`${CANON}/api`, "GET")).toBeNull();
+  });
+
+  it("does NOT redirect the internal /hub surface (OAuth, /hub/api, noindex)", () => {
+    expect(buildTrailingSlashRedirect(`${CANON}/hub`, "GET")).toBeNull();
+    expect(buildTrailingSlashRedirect(`${CANON}/hub/login`, "GET")).toBeNull();
+    expect(buildTrailingSlashRedirect(`${CANON}/hub/auth/callback`, "GET")).toBeNull();
+    expect(buildTrailingSlashRedirect(`${CANON}/hub/api/sync`, "GET")).toBeNull();
+  });
+
+  it("only redirects safe body-less navigations (never POST/PUT/DELETE/PATCH/OPTIONS to a page route)", () => {
+    for (const m of ["POST", "PUT", "DELETE", "PATCH", "OPTIONS"]) {
+      expect(buildTrailingSlashRedirect(`${CANON}/jobs`, m)).toBeNull();
+    }
+    // HEAD mirrors GET (crawlers/health checks).
+    const head = buildTrailingSlashRedirect(`${CANON}/jobs`, "HEAD");
+    expect(head!.status).toBe(301);
+    expect(head!.headers.get("Location")).toBe(`${CANON}/jobs/`);
+  });
+
+  it("does NOT redirect file-like asset paths (defense-in-depth)", () => {
+    expect(buildTrailingSlashRedirect(`${CANON}/favicon.svg`, "GET")).toBeNull();
+    expect(buildTrailingSlashRedirect(`${CANON}/sitemap-index.xml`, "GET")).toBeNull();
+  });
+
+  it("does not match a segment that merely contains 'api'/'hub' (e.g. /apiary, /hubbub)", () => {
+    expect(buildTrailingSlashRedirect(`${CANON}/apiary`, "GET")!.headers.get("Location")).toBe(`${CANON}/apiary/`);
+    expect(buildTrailingSlashRedirect(`${CANON}/hubbub`, "GET")!.headers.get("Location")).toBe(`${CANON}/hubbub/`);
+  });
+
+  it("attaches all SECURITY_HEADERS on the redirect response", () => {
+    const r = buildTrailingSlashRedirect(`${CANON}/jobs`, "GET");
+    expect(r).not.toBeNull();
+    for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+      expect(r!.headers.get(name)).toBe(value);
     }
   });
 });
