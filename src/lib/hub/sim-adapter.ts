@@ -72,19 +72,23 @@ export function buildSimFactors(i: SimInput): RateFactors {
 export function simRate(i: SimInput): SimResult {
   const r = calculateRate(buildSimFactors(i)) as CalculatedRate;
   const margin = Math.min(Math.max(i.marginPct, 0), 95) / 100;
-  const billRate = Math.round(r.payRate / (1 - margin));
+  // Round pay before deriving bill so every displayed figure is integer-consistent
+  // (marginPerHr === billRate - payRate exactly), even if a future engine path
+  // returns a fractional payRate. (Codex review ae69dcec, MEDIUM.)
+  const payRate = Math.round(r.payRate);
+  const billRate = Math.round(payRate / (1 - margin));
   return {
-    payRate: r.payRate,
+    payRate,
     billRate,
-    marginPerHr: billRate - r.payRate,
+    marginPerHr: billRate - payRate,
     base: r.base,
     geoMult: r.geoMult,
     shiftMult: r.shiftMult,
     durationMult: r.durationMult,
     capped: r.capped,
     marketMaxApplied: !!r.marketMaxApplied,
-    payLow: Math.round(r.payRate * 0.95),
-    payHigh: Math.round(r.payRate * 1.06),
+    payLow: Math.round(payRate * 0.95),
+    payHigh: Math.round(payRate * 1.06),
   };
 }
 
