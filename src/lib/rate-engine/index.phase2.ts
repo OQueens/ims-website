@@ -1,0 +1,16 @@
+// ⚠ VENDORED — DO NOT EDIT. Canonical source: ias-dashboard (OQueens/oqueens-ias-dashboard) src/features/rate-simulator/engine/.
+// Re-sync with: node scripts/sync-rate-engine.mjs. Drift is gated by src/lib/hub/rate-engine-parity.test.ts.
+// engine/index.phase2.ts — Phase-2 live-overlay surface.
+// Re-exports the full Phase-1 API PLUS the backend-backed functions that require
+// configureEngine({ db, supabase }) to have been called. Importing THIS barrel
+// pulls marketRates.ts → `firebase/database` (a value import), so any consumer of
+// index.phase2 must have the `firebase` package installed. The IMS hub adopts
+// this only when it wires Phase 2 (Firebase weekly-sync-451e2 + Supabase
+// gbakzhibzotugfyktcrt). Phase-1 consumers import ./index instead.
+export * from './index'
+
+// Firebase RTDB market overlays + calibration (need configureEngine({ db })).
+export { computeDisplayedRate, computeDisplayedBill, loadMarketRates, loadMarketBuckets, loadSpecialtyCalibration } from './marketRates'
+
+// Supabase CRNA cell envelope (needs configureEngine({ supabase })).
+export { getCrnaCellEnvelope, deriveLocumMultCrna } from './crnaCellLookup'
