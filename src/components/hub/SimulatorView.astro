@@ -1,84 +1,181 @@
 ---
 /*
- * Rate Simulator view. Controls + dark result panel are wired by hub-client.ts
- * (a transparent multiplier model). Base rates + multipliers are REAL curated
- * 2025-26 market data from the rate engine (src/lib/hub/rate-engine — ported from
- * the IAS dashboard). The simulator quotes a BILL rate and derives clinician pay
- * at the chosen margin; it's a modeled estimate, labeled as such. "Latest 5 jobs"
- * is REAL: server-rendered from aggregateHub(ims_jobs); clicking one loads its
- * specialty into the simulator. Ported from design_handoff_hub.
+ * Rate Simulator view — a faithful port of the IAS dashboard simulator fitted
+ * into the hub's existing UI/UX. Controls + dark result panel are wired by
+ * hub-client.ts, which lazy-loads the REAL vendored engine (src/lib/rate-engine/)
+ * through the sim-adapter façade. Every quote runs the SAME engine path the
+ * dashboard uses (initFactors / calculateRate / calculateCallRate), so the
+ * numbers match the dashboard for the same factors (golden-master parity-locked).
  *
- * NOTE: the PDF rate-sheet "auto-fill" dropzone was removed — it never actually
- * parsed the file (it applied the same hardcoded inputs regardless), so claiming
- * "Parsed" was dishonest. It returns with REAL extraction when the rate
- * calculator is ported from the old IAS dashboard app.
+ * Inputs (the hub's existing controls, kept): a LocumSmart PDF drop / freetext
+ * (both pre-fill via the engine's real parser), specialty, region buttons, shift,
+ * urgency, assignment length, target margin. Outputs (the dashboard's, ported):
+ * the clinician hourly PAY hero ("recommended provider pay"), the agency bill at
+ * the chosen margin, the rate waterfall, the market-position bar, and confidence.
+ * First paint is SSR-computed by the same engine — never a fake placeholder.
+ *
+ * Live market-overlay + observed-feedback calibration (Firebase/Supabase) is the
+ * Phase-2 wiring; the dashboard falls back to the raw engine rate without it.
+ *
+ * "Latest 5 jobs" is REAL (aggregateHub(ims_jobs)); clicking one loads its
+ * specialty into the simulator.
  */
 import type { LatestJob } from '../../lib/hub/hub-data';
-import { SIM_SPECIALTIES, SIM_REGIONS, SIM_SHIFTS, SIM_URGENCY } from '../../lib/hub/rate-engine';
+import {
+  defaultControls, quoteFromControls,
+  simSpecialtyOptions, simShiftOptions, simUrgencyOptions, simRegionOptions,
+  billLadder, billAtMargin,
+  DEFAULT_SIM_SPECIALTY,
+} from '../../lib/hub/rate-engine';
+// callOnlyHTML is client-only (the call-only surface renders after a parse), so
+// it's imported in hub-client, not here — SSR's first paint is always hourly.
+import { pillsHTML, waterfallHTML, marketHTML, maxNoteHTML, capNoteHTML, billCalcHTML } from '../../lib/hub/sim-render';
+
 interface Props { latestJobs: LatestJob[]; }
 const { latestJobs } = Astro.props;
+
+const init = defaultControls();
+const q0 = quoteFromControls(init);              // SSR-computed by the real engine
+const specialtyLabel0 = 'Anesthesiology';        // DEFAULT_SIM_SPECIALTY's label
+const usd = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+
+const regionOptions = simRegionOptions();
+const shiftOptions = simShiftOptions();
+const urgencyOptions = simUrgencyOptions();
+
+// Group specialty options into <optgroup>s by category (sorted by the adapter).
+const specOptions = simSpecialtyOptions();
+const specGroups: { category: string; options: typeof specOptions }[] = [];
+for (const o of specOptions) {
+  let g = specGroups[specGroups.length - 1];
+  if (!g || g.category !== o.category) { g = { category: o.category, options: [] }; specGroups.push(g); }
+  g.options.push(o);
+}
 ---
 <section class="hub-view" data-view="simulator">
   <div class="sim">
     <div class="sim__controls card">
+      {/* PDF / freetext — pre-fill the controls from a LocumSmart assignment. */}
+      <div class="sim-drop" id="sim-drop">
+        <input type="file" id="sim-file" accept="application/pdf,.pdf" hidden />
+        <div class="sim-drop__idle" id="sim-drop-idle" role="button" tabindex="0" aria-label="Upload a LocumSmart PDF to pre-fill the simulator">
+          <div class="sim-drop__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          </div>
+          <div class="sim-drop__copy">
+            <div class="sim-drop__title">Drop a LocumSmart assignment PDF</div>
+            <div class="sim-drop__sub">We read the specialty, state and shift to pre-fill the inputs. <button type="button" class="sim-drop__browse" id="sim-browse">browse files</button></div>
+          </div>
+          <span class="chip sim-drop__hint"><span class="chip__dot" style="background:var(--pop-butter);"></span>PDF · up to 10MB</span>
+        </div>
+        <div class="sim-drop__loaded" id="sim-drop-loaded" hidden>
+          <div class="sim-drop__file">
+            <span class="sim-drop__file-ic" aria-hidden="true">PDF</span>
+            <div>
+              <div class="sim-drop__file-name" id="sim-file-name"></div>
+              <div class="sim-drop__file-meta" id="sim-file-meta"></div>
+            </div>
+            <button type="button" class="sim-drop__clear" id="sim-file-clear" aria-label="Remove file">×</button>
+          </div>
+          <div class="sim-drop__chips" id="sim-file-chips"></div>
+        </div>
+      </div>
+      <div class="sim-free">
+        <input class="input sim-free__in" id="sim-freetext" type="text" placeholder="…or describe it: CRNA nights in Houston, TX" autocomplete="off" />
+        <button class="sim-free__go" id="sim-freetext-go" type="button">Parse</button>
+      </div>
+
       <div class="field">
         <label class="field__label" for="sim-spec">Specialty</label>
         <select class="select" id="sim-spec">
-          {SIM_SPECIALTIES.map((s) => <option value={s.billBase}>{s.label}</option>)}
+          {specGroups.map((g) => (
+            <optgroup label={g.category}>
+              {g.options.map((s) => (
+                <option value={s.key} data-p70={s.p70} data-max={s.max} selected={s.key === DEFAULT_SIM_SPECIALTY}>{s.label}</option>
+              ))}
+            </optgroup>
+          ))}
         </select>
       </div>
 
       <div class="field">
-        <label class="field__label">Region<b id="sim-region-lbl">{SIM_REGIONS[0].label}</b></label>
+        <label class="field__label">Region<b id="sim-region-lbl">{regionOptions[0].label}</b></label>
         <div class="seg" id="sim-region" role="group" aria-label="Region">
-          {SIM_REGIONS.map((r, i) => (
-            <button class={`seg__opt${i === 0 ? ' is-active' : ''}`} data-mult={r.mult} data-lbl={r.label}>{r.label}</button>
+          {regionOptions.map((r, i) => (
+            <button class={`seg__opt${i === 0 ? ' is-active' : ''}`} data-key={r.key} data-lbl={r.label}>{r.label}</button>
           ))}
         </div>
       </div>
 
       <div class="field">
-        <label class="field__label">Shift type<b id="sim-shift-lbl">{SIM_SHIFTS[0].label}</b></label>
-        <div class="seg" id="sim-shift">
-          {SIM_SHIFTS.map((s, i) => (
-            <button class={`seg__opt${i === 0 ? ' is-active' : ''}`} data-mult={s.mult} data-lbl={s.label}>{s.label}</button>
+        <label class="field__label">Shift type<b id="sim-shift-lbl">{shiftOptions[0].label}</b></label>
+        <div class="seg" id="sim-shift" role="group" aria-label="Shift type">
+          {shiftOptions.map((s, i) => (
+            <button class={`seg__opt${i === 0 ? ' is-active' : ''}`} data-key={s.key} data-lbl={s.label}>{s.label}</button>
           ))}
         </div>
       </div>
 
       <div class="field">
-        <label class="field__label">Urgency<b id="sim-urg-lbl">{SIM_URGENCY[0].label}</b></label>
-        <div class="seg" id="sim-urg">
-          {SIM_URGENCY.map((u, i) => (
-            <button class={`seg__opt${i === 0 ? ' is-active' : ''}`} data-mult={u.mult} data-lbl={u.label}>{u.label}</button>
+        <label class="field__label">Urgency<b id="sim-urg-lbl">{urgencyOptions[0].label}</b></label>
+        <div class="seg" id="sim-urg" role="group" aria-label="Urgency">
+          {urgencyOptions.map((u, i) => (
+            <button class={`seg__opt${i === 0 ? ' is-active' : ''}`} data-key={u.key} data-lbl={u.label}>{u.label}</button>
           ))}
         </div>
       </div>
 
       <div class="field">
-        <label class="field__label" for="sim-weeks">Assignment length<b><span id="sim-weeks-val">12</span> wks</b></label>
-        <input class="range" id="sim-weeks" type="range" min="2" max="52" value="12" step="1" />
+        <label class="field__label" for="sim-weeks">Assignment length<b><span id="sim-weeks-val">{init.weeks}</span> wks</b></label>
+        <input class="range" id="sim-weeks" type="range" min="2" max="52" value={init.weeks} step="1" />
       </div>
 
       <div class="field">
-        <label class="field__label" for="sim-margin">Target margin<b><span id="sim-margin-val">22</span>%</b></label>
-        <input class="range" id="sim-margin" type="range" min="12" max="40" value="22" step="1" />
+        <label class="field__label" for="sim-margin">Target margin<b><span id="sim-margin-val">{init.marginPct}</span>%</b></label>
+        <input class="range" id="sim-margin" type="range" min="15" max="45" value={init.marginPct} step="1" />
       </div>
     </div>
 
     <div class="sim__result">
       <div class="sim__result-glow" aria-hidden="true"></div>
-      <div class="sim__result-label">Recommended bill rate</div>
-      <div class="sim__result-rate">$<span id="sim-bill">463</span><small>/hr</small></div>
-      <div class="sim__result-band">Modeled estimate <b id="sim-band" style="color:var(--cream-soft);">$440–$491</b> · curated market base rates</div>
-      <div class="sim__breakdown">
-        <div class="sim__brk-row"><span class="sim__brk-label">Base (curated bill rate)</span><span class="sim__brk-val" id="brk-base">$463</span></div>
-        <div class="sim__brk-row"><span class="sim__brk-label">Region adjustment</span><span class="sim__brk-val pos" id="brk-region">×1.00</span></div>
-        <div class="sim__brk-row"><span class="sim__brk-label">Shift premium</span><span class="sim__brk-val pos" id="brk-shift">×1.00</span></div>
-        <div class="sim__brk-row"><span class="sim__brk-label">Urgency</span><span class="sim__brk-val pos" id="brk-urg">×1.00</span></div>
-        <div class="sim__brk-row"><span class="sim__brk-label">Pay rate to clinician</span><span class="sim__brk-val" id="brk-pay">$361</span></div>
-        <div class="sim__brk-row"><span class="sim__brk-label">Est. gross margin</span><span class="sim__brk-val pos" id="brk-margin">$102/hr · 22%</span></div>
+      <div class="sim__pills" id="sim-pills" set:html={pillsHTML(q0, specialtyLabel0, null)}></div>
+
+      {/* Hourly surface — the default. Hidden (and #sim-callonly shown) when a
+          parsed assignment is call-only / per-diem. */}
+      <div id="sim-hourly">
+        <div class="sim__result-label">Going hourly pay rate</div>
+        <div class="sim__result-rate">$<span id="sim-pay">{Math.round(q0.payRate).toLocaleString('en-US')}</span><small>/hr</small></div>
+        <div class="sim__result-sub">recommended provider pay</div>
+        <div class="sim__result-caveat">Market estimate. Actual contracted rate may differ with HCO bill-rate caps and contract terms.</div>
+        <div class="sim__result-note" id="sim-maxnote" set:html={maxNoteHTML(q0)} hidden={!maxNoteHTML(q0)}></div>
+        <div class="sim__result-note sim__result-note--cap" id="sim-capnote" set:html={capNoteHTML(q0)} hidden={!capNoteHTML(q0)}></div>
+
+        <div class="sim__stats">
+          <div class="sim__stat"><div class="sim__stat-k">Bill rate · <span id="sim-bill-margin">{init.marginPct}</span>%</div><div class="sim__stat-v" id="sim-bill">{usd(q0.billRate)}</div><div class="sim__stat-u">/hr</div></div>
+          <div class="sim__stat"><div class="sim__stat-k">Confidence</div><div class="sim__stat-v" id="sim-conf">{q0.confidence}</div><div class="sim__stat-u" id="sim-conf-data">{q0.confidenceData} data</div></div>
+          <div class="sim__stat"><div class="sim__stat-k">Researched range</div><div class="sim__stat-v" id="sim-range">{usd(q0.specMin)}–{usd(q0.specMax)}</div><div class="sim__stat-u">/hr</div></div>
+        </div>
+
+        <div class="sim__block">
+          <div class="sim__block-h">Rate waterfall</div>
+          <div class="sim-wf" id="sim-waterfall" set:html={waterfallHTML(q0)}></div>
+        </div>
+
+        <div class="sim__block" id="sim-market-block">
+          <div class="sim__block-h">Market position <span class="sim__block-sub">where the quote sits in the researched range</span></div>
+          <div class="sim-mkt" id="sim-market" set:html={marketHTML(q0)}></div>
+        </div>
+
+        {/* Bill Rate Calculator — collapsed advanced tool (faithful dashboard
+            port: markup ladder / margin slider / custom bill). Client re-renders
+            this container's innerHTML on each quote change. */}
+        <div id="sim-billcalc" set:html={billCalcHTML(q0, billLadder(q0.payRate), billAtMargin(q0.payRate, q0.marginPct))}></div>
       </div>
+
+      {/* Call-only / per-diem surface — client-rendered after a call-only parse.
+          Honest: shows the daily-stipend basis, or "insufficient public data ·
+          quote manually" — never a fabricated $0. */}
+      <div class="sim__co-wrap" id="sim-callonly" hidden></div>
     </div>
   </div>
 
@@ -91,7 +188,7 @@ const { latestJobs } = Astro.props;
     <div class="latest" id="sim-latest">
       {latestJobs.length === 0 && <p class="subtle">No open requisitions in the feed right now.</p>}
       {latestJobs.map((j) => (
-        <div class="latest__item" data-spec={j.specVal} tabindex="0" role="button">
+        <div class="latest__item" data-spec={j.specVal} data-state={j.state ?? ''} data-region={j.region} tabindex="0" role="button">
           <span class="latest__badge" style={`background:${j.color}`}>{j.code}</span>
           <div>
             <div class="latest__title">{j.spec}</div>

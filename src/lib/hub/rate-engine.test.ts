@@ -1,45 +1,44 @@
 import { describe, it, expect } from 'vitest';
-import { p70, billFromPay, SIM_SPECIALTIES, SIM_SHIFTS, SIM_REGIONS, SIM_URGENCY } from './rate-engine';
+import {
+  quoteFromControls, quoteFromFactors, factorsFromControls, defaultControls,
+  simSpecialtyOptions, simShiftOptions, simUrgencyOptions, simRegionOptions,
+  simSpecialtyKeyForSlug, DEFAULT_SIM_SPECIALTY,
+} from './rate-engine';
+import { SPECIALTIES, calculateRate } from '../rate-engine/index';
 
-describe('rate-engine derivations', () => {
-  it('p70 is the 70th percentile of the pay range, rounded', () => {
-    expect(p70(300, 400)).toBe(370);
-    expect(p70(190, 250)).toBe(232); // 190 + 60*0.7 = 232
-    expect(p70(200, 200)).toBe(200);
+// The façade is the hub's single Rate-Simulator import surface. It re-exports the
+// sim-adapter, a faithful PORT of the dashboard simulator onto the real engine —
+// these assertions prove the façade drives the live engine, not the old stub.
+describe('rate-engine façade — wired to the real engine, dashboard-identical', () => {
+  it('quotes the clinician PAY rate as the hero, bill grossed up at the margin', () => {
+    const q = quoteFromControls(defaultControls());
+    expect(q.payRate).toBeGreaterThan(0);
+    expect(q.billRate).toBeGreaterThan(q.payRate);
+    expect(q.marginPerHr).toBe(q.billRate - q.payRate);
   });
 
-  it('billFromPay grosses pay up to a bill at the standard 20% margin', () => {
-    expect(billFromPay(370)).toBe(463); // 370 / 0.80 = 462.5 → 463
-    expect(billFromPay(232)).toBe(290); // 232 / 0.80 = 290
+  it('the hub quote equals the engine calculateRate exactly (no drift from the dashboard)', () => {
+    const f = factorsFromControls(defaultControls());
+    expect(quoteFromFactors(f, 22).payRate).toBe(calculateRate(f).payRate);
   });
 
-  it('every sim specialty derives a real curated bill base above its p70 pay', () => {
-    expect(SIM_SPECIALTIES.length).toBeGreaterThanOrEqual(8);
-    for (const s of SIM_SPECIALTIES) {
-      expect(s.payP70).toBe(p70(s.pay[0], s.pay[1]));
-      expect(s.billBase).toBe(billFromPay(s.payP70));
-      expect(s.billBase).toBeGreaterThan(s.payP70); // a margin always lifts bill above pay
-      expect(s.label.length).toBeGreaterThan(0);
+  it('exposes the full engine specialty table (far more than the old 8), with p70 + max', () => {
+    const opts = simSpecialtyOptions();
+    expect(opts.length).toBeGreaterThan(50);
+    for (const o of opts) {
+      expect(SPECIALTIES[o.key]).toBeDefined();
+      expect(o.p70).toBe(SPECIALTIES[o.key].p70);
     }
   });
 
-  it('anesthesiology resolves to the curated $300–400 pay band', () => {
-    const anes = SIM_SPECIALTIES.find((s) => s.label.startsWith('Anesthesiology'));
-    expect(anes?.pay).toEqual([300, 400]);
-    expect(anes?.payP70).toBe(370);
-    expect(anes?.billBase).toBe(463);
+  it('keeps the region buttons (National + 4) and engine-aligned shift/urgency', () => {
+    expect(simRegionOptions().map((r) => r.key)).toEqual(['National', 'West', 'Midwest', 'Northeast', 'South']);
+    expect(simShiftOptions().map((s) => s.key)).toContain('night');
+    expect(simUrgencyOptions().map((u) => u.key)).toEqual(['Standard', 'Priority', 'Emergent']);
   });
 
-  it('the neutral option of every control set is exactly 1.00', () => {
-    expect(SIM_SHIFTS.find((o) => o.label === 'Day')?.mult).toBe(1.0);
-    expect(SIM_REGIONS.find((o) => o.label === 'National')?.mult).toBe(1.0);
-    expect(SIM_URGENCY.find((o) => o.label === 'Standard')?.mult).toBe(1.0);
-  });
-
-  it('multipliers are sane premiums/discounts within the IAS range', () => {
-    for (const o of [...SIM_SHIFTS, ...SIM_REGIONS, ...SIM_URGENCY]) {
-      expect(o.mult).toBeGreaterThanOrEqual(0.85);
-      expect(o.mult).toBeLessThanOrEqual(1.4);
-    }
+  it('default specialty + slug mapping resolve to real engine keys', () => {
+    expect(SPECIALTIES[DEFAULT_SIM_SPECIALTY]).toBeDefined();
+    expect(SPECIALTIES[simSpecialtyKeyForSlug('emergency-medicine')]).toBeDefined();
   });
 });

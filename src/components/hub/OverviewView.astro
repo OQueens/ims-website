@@ -16,7 +16,7 @@
  */
 import type { BarRow, ActivityItem } from '../../lib/hub/hub-data';
 import { PRIORITIES } from '../../lib/hub/hub-seed';
-import { SIM_SPECIALTIES, SIM_REGIONS } from '../../lib/hub/rate-engine';
+import { simSpecialtyOptions, simRegionOptions, DEFAULT_SIM_SPECIALTY } from '../../lib/hub/rate-engine';
 
 interface Props {
   activeReqs: number;
@@ -46,6 +46,23 @@ const pct = (val: number, max: number) => (max > 0 ? Math.round((val / max) * 10
 const barMax = (rows: BarRow[]) => Math.max(1, ...rows.map((r) => r.val));
 const statesMax = barMax(pipelineStates);
 const specsMax = barMax(pipelineSpecs);
+
+// Quick rate check: a pay-first ballpark (p70 pay × region geo, clamped to the
+// researched max) — the same day/standard/community path the full simulator
+// takes, inlined as one multiply on each option's own numbers so the Overview's
+// client code needs NO engine import. Region buttons (kept) carry the engine's
+// representative-state multiplier. Consistent with the simulator's pay-first hero.
+const qrSpecOptions = simSpecialtyOptions();
+const qrSpecGroups: { category: string; options: typeof qrSpecOptions }[] = [];
+for (const o of qrSpecOptions) {
+  let g = qrSpecGroups[qrSpecGroups.length - 1];
+  if (!g || g.category !== o.category) { g = { category: o.category, options: [] }; qrSpecGroups.push(g); }
+  g.options.push(o);
+}
+const qrRegionOptions = simRegionOptions();
+const qrDefault = qrSpecOptions.find((o) => o.key === DEFAULT_SIM_SPECIALTY) ?? qrSpecOptions[0];
+// National (mult 1.0) initial ballpark = min(p70, max).
+const qrInitial = qrDefault ? Math.min(qrDefault.p70, qrDefault.max) : 0;
 ---
 <section class="hub-view is-active" data-view="overview">
   <div class="grid grid--kpi">
@@ -109,18 +126,26 @@ const specsMax = barMax(pipelineSpecs);
       <div class="card__head" style="position:relative; z-index:1;">
         <h2 class="card__title" style="color:var(--cream-soft);">Quick rate check</h2>
       </div>
-      <p style="position:relative; z-index:1; color:rgba(251,246,238,0.6); font-size:13px; margin:-6px 0 18px;">Ballpark a bill rate without leaving the desk.</p>
+      <p style="position:relative; z-index:1; color:rgba(251,246,238,0.6); font-size:13px; margin:-6px 0 18px;">Ballpark the going pay rate without leaving the desk.</p>
       <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:12px;">
         <select class="select" id="qr-spec" style="background-color:rgba(251,246,238,0.08); color:var(--cream-soft); border-color:rgba(251,246,238,0.2);">
-          {SIM_SPECIALTIES.map((s) => <option value={s.billBase}>{s.label}</option>)}
+          {qrSpecGroups.map((g) => (
+            <optgroup label={g.category}>
+              {g.options.map((s) => (
+                <option value={s.key} data-p70={s.p70} data-max={s.max} selected={s.key === DEFAULT_SIM_SPECIALTY}>{s.label}</option>
+              ))}
+            </optgroup>
+          ))}
         </select>
         <select class="select" id="qr-region" style="background-color:rgba(251,246,238,0.08); color:var(--cream-soft); border-color:rgba(251,246,238,0.2);">
-          {SIM_REGIONS.map((r) => <option value={r.mult}>{r.label}</option>)}
+          {qrRegionOptions.map((r, i) => (
+            <option value={r.key} data-mult={r.mult} selected={i === 0}>{r.key === 'National' ? 'National (no geo adjustment)' : r.label}</option>
+          ))}
         </select>
       </div>
       <div style="position:relative; z-index:1; margin-top:20px; padding-top:18px; border-top:1px solid rgba(251,246,238,0.15);">
-        <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; font-weight:700; color:var(--pop-butter);">Estimated bill rate</div>
-        <div style="font-family:var(--font-display); font-weight:900; font-size:54px; line-height:1; letter-spacing:-0.03em; color:var(--cream-soft); margin-top:8px;"><span id="qr-rate">$463</span><span style="font-size:0.32em; color:rgba(251,246,238,0.6);">/hr</span></div>
+        <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; font-weight:700; color:var(--pop-butter);">Going pay rate · ballpark</div>
+        <div style="font-family:var(--font-display); font-weight:900; font-size:54px; line-height:1; letter-spacing:-0.03em; color:var(--cream-soft); margin-top:8px;"><span id="qr-rate">${qrInitial}</span><span style="font-size:0.32em; color:rgba(251,246,238,0.6);">/hr</span></div>
         <button class="card__link" data-goto="simulator" style="margin-top:14px; display:inline-block; color:var(--pop-magenta,#C44569);">Open full simulator →</button>
       </div>
     </div>
