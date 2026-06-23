@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { aggregateHub, type HubJobRow } from './hub-data';
-import { SIM_SPECIALTIES } from './rate-engine';
+import { SPECIALTIES } from '../rate-engine/index';
 
 const row = (o: Partial<HubJobRow>): HubJobRow => ({
   specialty_slug: 'anesthesia',
@@ -29,15 +29,23 @@ describe('aggregateHub', () => {
     expect(a.pipelineStates[0]).toMatchObject({ name: 'NC', val: 2 });
     expect(a.pipelineStates[1]).toMatchObject({ name: 'TX', val: 1 });
   });
-  it('latest-job specVal always resolves to a real simulator option (rate engine)', () => {
-    const validBases = new Set(SIM_SPECIALTIES.map((s) => String(s.billBase)));
+  it('latest-job specVal always resolves to a real engine specialty key (loadable <option>)', () => {
     const a = aggregateHub(
       [row({ specialty_slug: 'crna' }), row({ specialty_slug: 'general-surgery' }), row({ specialty_slug: 'pediatrics' })],
       1_900_000_000,
     );
-    // Known specialties map to their curated bill base; unknown slugs fall back
-    // to the first option — every value must be loadable into the <select>.
-    expect(a.latestJobs.every((j) => validBases.has(j.specVal))).toBe(true);
+    // specVal is now the engine specialty KEY (not a bill base) so a latest-job
+    // click loads that specialty into the simulator <select>. Known slugs resolve
+    // exactly; unknown slugs fall back to a real default key — never an invalid value.
+    expect(a.latestJobs.map((j) => j.specVal)).toContain('crna');
+    expect(a.latestJobs.map((j) => j.specVal)).toContain('general surgery');
+    expect(a.latestJobs.every((j) => SPECIALTIES[j.specVal] !== undefined)).toBe(true);
+  });
+  it('latest-job carries the job state + its region for a geo pre-fill on click', () => {
+    const a = aggregateHub([row({ facility_state: 'TX' }), row({ facility_state: null }), row({ facility_state: 'zz' })], 1_900_000_000);
+    expect(a.latestJobs[0]).toMatchObject({ state: 'TX', region: 'South' });
+    expect(a.latestJobs[1]).toMatchObject({ state: null, region: 'National' }); // no state → National
+    expect(a.latestJobs[2]).toMatchObject({ state: null, region: 'National' }); // unknown code → not emitted
   });
   it('takes the newest 5 jobs and never fabricates pay', () => {
     const a = aggregateHub(

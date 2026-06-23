@@ -176,7 +176,9 @@
 .field { display: flex; flex-direction: column; gap: 8px; }
 .field__label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--ink-mute); display: flex; justify-content: space-between; }
 .field__label b { color: var(--ink); font-family: var(--font-display); font-size: 14px; }
-.select, .range { width: 100%; }
+.select, .range, .input { width: 100%; }
+.input { border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; font-family: var(--font-body); font-size: 14px; background: var(--surface); color: var(--ink); }
+.input:focus { outline: none; border-color: var(--pop-magenta, #C44569); }
 .select { border: 1px solid var(--rule); border-radius: 12px; padding: 13px 15px; font-family: var(--font-body); font-size: 14px; background: var(--surface); color: var(--ink); appearance: none; cursor: pointer; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%231F1A23' stroke-width='1.5' fill='none'/></svg>"); background-repeat: no-repeat; background-position: right 15px center; padding-right: 40px; }
 .range { -webkit-appearance: none; appearance: none; height: 8px; border-radius: 999px; background: var(--bone); outline: none; }
 .range::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--pop-magenta, #C44569); cursor: pointer; border: 3px solid var(--cream-soft); box-shadow: 0 2px 8px rgba(196,69,105,0.4); }
@@ -188,14 +190,118 @@
 .sim__result { background: var(--mn-black, #0A0A0F); color: var(--cream-soft); border-radius: 24px; padding: var(--space-6); position: relative; overflow: hidden; }
 .sim__result-glow { position: absolute; width: 320px; height: 320px; border-radius: 50%; filter: blur(100px); background: var(--pop-magenta, #C44569); opacity: 0.3; top: -120px; right: -100px; pointer-events: none; }
 .sim__result-label { position: relative; z-index: 1; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--pop-butter); }
-.sim__result-rate { position: relative; z-index: 1; font-family: var(--font-display); font-weight: 900; font-size: 72px; line-height: 0.95; letter-spacing: -0.04em; color: var(--cream-soft); margin: 10px 0 4px; font-variant-numeric: tabular-nums; }
+.sim__result-rate { position: relative; z-index: 1; font-family: var(--font-display); font-weight: 900; font-size: 72px; line-height: 0.95; letter-spacing: -0.04em; color: var(--cream-soft); margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
 .sim__result-rate small { font-size: 0.3em; color: rgba(251,246,238,0.6); }
-.sim__result-band { position: relative; z-index: 1; font-family: var(--font-body); font-size: 14px; color: rgba(251,246,238,0.7); margin-bottom: var(--space-5); }
-.sim__breakdown { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; padding-top: var(--space-5); border-top: 1px solid rgba(251,246,238,0.15); }
-.sim__brk-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-.sim__brk-label { color: rgba(251,246,238,0.7); }
-.sim__brk-val { font-family: var(--font-mono); font-weight: 700; color: var(--cream-soft); }
-.sim__brk-val.pos { color: var(--mn-cyan, #59BFE7); }
+.sim__result-sub { position: relative; z-index: 1; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(251,246,238,0.55); }
+.sim__result-caveat { position: relative; z-index: 1; font-size: 12px; font-style: italic; color: rgba(251,246,238,0.55); margin-top: 12px; line-height: 1.5; }
+.sim__result-note { position: relative; z-index: 1; margin-top: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.02em; color: var(--pop-butter); line-height: 1.5; }
+
+/* Context pills (category · specialty · state · confidence) */
+.sim__pills { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.sim-pill { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 999px; font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(251,246,238,0.1); color: rgba(251,246,238,0.8); }
+.sim-pill--cat { background: color-mix(in srgb, var(--pop-magenta,#C44569) 22%, transparent); color: #f7c6d2; }
+.sim-pill--spec { background: rgba(124,132,232,0.22); color: #c8cdf6; }
+.sim-pill--call { background: color-mix(in srgb, var(--pop-butter) 22%, transparent); color: var(--pop-butter); }
+.sim-pill--conf-high { background: rgba(61,190,133,0.2); color: #7fe0b4; }
+.sim-pill--conf-medium { background: rgba(242,160,61,0.2); color: #f2c186; }
+.sim-pill--conf-low { background: rgba(242,106,91,0.2); color: #f2a99e; }
+
+/* Stats row — bill / confidence / range */
+.sim__stats { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: var(--space-5) 0; background: rgba(251,246,238,0.12); border-radius: 14px; overflow: hidden; }
+.sim__stat { background: #121219; padding: 14px 12px; text-align: center; min-width: 0; }
+[data-hub-theme="dark"] .sim__stat { background: #16161f; }
+.sim__stat-k { font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(251,246,238,0.5); margin-bottom: 5px; }
+.sim__stat-v { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--cream-soft); font-variant-numeric: tabular-nums; line-height: 1; }
+.sim__stat-u { font-size: 10px; color: rgba(251,246,238,0.45); margin-top: 3px; }
+
+/* A titled block (waterfall / market position) */
+.sim__block { position: relative; z-index: 1; padding-top: var(--space-5); border-top: 1px solid rgba(251,246,238,0.13); margin-top: var(--space-5); }
+.sim__block-h { font-family: var(--font-display); font-weight: 800; font-size: 14px; color: var(--cream-soft); margin-bottom: 12px; }
+.sim__block-sub { font-family: var(--font-body); font-weight: 400; font-size: 11px; color: rgba(251,246,238,0.45); margin-left: 6px; }
+
+/* Rate waterfall */
+.sim-wf { display: flex; flex-direction: column; gap: 7px; }
+.sim-wf__row { display: flex; align-items: center; gap: 10px; }
+.sim-wf__label { width: 74px; flex-shrink: 0; font-size: 12px; color: rgba(251,246,238,0.7); }
+.sim-wf__track { flex: 1; height: 24px; background: rgba(251,246,238,0.06); border-radius: 7px; overflow: hidden; }
+.sim-wf__fill { height: 100%; border-radius: 7px; display: flex; align-items: center; padding: 0 9px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #0A0A0F; white-space: nowrap; min-width: fit-content; }
+.sim-wf__fill--base { background: rgba(251,246,238,0.65); }
+.sim-wf__fill--up { background: var(--mn-cyan, #59BFE7); }
+.sim-wf__fill--down { background: var(--pop-magenta, #C44569); color: var(--cream-soft); }
+.sim-wf__fill--flat { background: rgba(251,246,238,0.3); }
+.sim-wf__mult { width: 52px; flex-shrink: 0; text-align: right; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: rgba(251,246,238,0.55); }
+.sim-wf__mult--up { color: var(--mn-cyan, #59BFE7); }
+.sim-wf__mult--down { color: var(--pop-magenta, #C44569); }
+
+/* Market position bar */
+.sim-mkt__bar { position: relative; height: 8px; background: rgba(251,246,238,0.08); border-radius: 999px; margin: 8px 0; }
+.sim-mkt__fill { position: absolute; inset: 0; border-radius: 999px; background: linear-gradient(90deg, rgba(89,191,231,0.2), var(--mn-cyan,#59BFE7)); }
+.sim-mkt__marker { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: var(--cream-soft); transform: translateX(-50%); box-shadow: 0 0 8px rgba(251,246,238,0.6); }
+.sim-mkt__scale { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: rgba(251,246,238,0.5); }
+.sim-mkt__here { color: var(--mn-cyan, #59BFE7); font-weight: 700; }
+.sim-mkt__chips { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 12px; }
+.sim-mkt__chip { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: rgba(251,246,238,0.07); color: rgba(251,246,238,0.55); }
+.sim-mkt__chip.is-p70 { background: color-mix(in srgb, var(--mn-cyan,#59BFE7) 22%, transparent); color: var(--mn-cyan, #59BFE7); }
+
+/* Freetext quick-parse row */
+.sim-free { display: flex; gap: 8px; }
+.sim-free__in { flex: 1; }
+.sim-free__go { flex-shrink: 0; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 12px; padding: 0 16px; font-family: var(--font-body); font-weight: 700; font-size: 13px; cursor: pointer; transition: border-color 140ms, color 140ms; }
+.sim-free__go:hover { border-color: var(--pop-magenta, #C44569); color: var(--pop-magenta, #C44569); }
+
+/* Cap-warning note (1.75x ceiling clamp) — amber, distinct from the magenta max note */
+.sim__result-note--cap { color: var(--pop-butter); }
+
+/* Call-only / per-diem surface (honest no-data state + daily-stipend basis) */
+.sim__co-wrap { position: relative; z-index: 1; }
+.sim__co { position: relative; z-index: 1; }
+.sim__co-h { font-family: var(--font-display); font-weight: 900; font-size: 30px; letter-spacing: -0.02em; color: rgba(251,246,238,0.85); margin: 4px 0 8px; }
+.sim__co-sub { font-size: 14px; color: rgba(251,246,238,0.7); line-height: 1.55; max-width: 42ch; }
+.sim__co-bill { margin-top: 16px; font-size: 14px; color: rgba(251,246,238,0.75); }
+.sim__co-bill b { font-family: var(--font-display); font-weight: 900; font-size: 20px; color: var(--cream-soft); margin: 0 4px; font-variant-numeric: tabular-nums; }
+.sim__co-prov { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(251,246,238,0.13); font-family: var(--font-mono); font-size: 11px; color: rgba(251,246,238,0.5); }
+
+/* Bill Rate Calculator — collapsed advanced tool (markup ladder / margin slider /
+   custom bill). Faithful dashboard port; default-closed so the hero stays simple. */
+.sim-billcalc { position: relative; z-index: 1; margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px solid rgba(251,246,238,0.13); }
+.sim-bc__summary { display: flex; align-items: baseline; gap: 10px; cursor: pointer; list-style: none; font-family: var(--font-display); font-weight: 800; font-size: 14px; color: var(--cream-soft); }
+.sim-bc__summary::-webkit-details-marker { display: none; }
+.sim-bc__summary::before { content: '▸'; color: var(--pop-butter); font-size: 12px; transition: transform 140ms; }
+.sim-billcalc[open] .sim-bc__summary::before { transform: rotate(90deg); }
+.sim-bc__hint { font-family: var(--font-body); font-weight: 400; font-size: 11px; color: rgba(251,246,238,0.45); }
+.sim-bc__body { margin-top: 16px; display: flex; flex-direction: column; gap: 18px; }
+.sim-bc__note { font-size: 12px; color: rgba(251,246,238,0.6); line-height: 1.5; }
+.sim-bc__note b { color: var(--cream-soft); font-variant-numeric: tabular-nums; }
+.sim-bc__table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.sim-bc__table th { text-align: right; font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(251,246,238,0.5); padding: 6px 10px; border-bottom: 1px solid rgba(251,246,238,0.13); }
+.sim-bc__table th:first-child { text-align: left; }
+.sim-bc__table td { padding: 7px 10px; font-family: var(--font-mono); font-size: 13px; color: rgba(251,246,238,0.82); text-align: right; border-bottom: 1px solid rgba(251,246,238,0.06); }
+.sim-bc__mk { text-align: left !important; color: rgba(251,246,238,0.6) !important; }
+.sim-bc__rec { background: color-mix(in srgb, var(--mn-cyan,#59BFE7) 8%, transparent); }
+.sim-bc__rec td { color: var(--mn-cyan, #59BFE7) !important; }
+.sim-bc__badge { margin-left: 8px; font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 999px; background: color-mix(in srgb, var(--mn-cyan,#59BFE7) 22%, transparent); color: var(--mn-cyan,#59BFE7); }
+.sim-bc__slider-wrap { display: flex; flex-direction: column; gap: 12px; }
+.sim-bc__slider-head { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: rgba(251,246,238,0.45); }
+.sim-bc__margin { font-size: 12px; font-weight: 700; color: var(--pop-butter); }
+.sim-bc__slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 999px; background: rgba(251,246,238,0.12); outline: none; }
+.sim-bc__slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--pop-butter); cursor: pointer; border: 3px solid var(--mn-black,#0A0A0F); }
+.sim-bc__slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--pop-butter); cursor: pointer; border: 3px solid var(--mn-black,#0A0A0F); }
+.sim-bc__tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sim-bc__tile { background: #16161f; border-radius: 12px; padding: 12px 10px; text-align: center; display: flex; flex-direction: column; gap: 3px; }
+.sim-bc__tile.is-bill { background: color-mix(in srgb, var(--pop-butter) 14%, #16161f); }
+.sim-bc__tile-l { font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(251,246,238,0.5); }
+.sim-bc__bill, .sim-bc__profit, .sim-bc__annual { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--cream-soft); font-variant-numeric: tabular-nums; }
+.sim-bc__tile.is-bill .sim-bc__bill { color: var(--pop-butter); }
+.sim-bc__profit { color: var(--mn-cyan, #59BFE7); }
+.sim-bc__daily, .sim-bc__unit { font-family: var(--font-mono); font-size: 9.5px; color: rgba(251,246,238,0.4); }
+.sim-bc__foot { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: rgba(251,246,238,0.45); }
+.sim-bc__custom { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; padding-top: 4px; }
+.sim-bc__custom-lbl { flex: 1; min-width: 150px; font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(251,246,238,0.5); display: flex; flex-direction: column; gap: 6px; }
+.sim-bc__custom-in { font-family: var(--font-mono); font-size: 14px; color: var(--cream-soft); background: #16161f; border: 1px solid rgba(251,246,238,0.15); border-radius: 10px; padding: 9px 12px; outline: none; }
+.sim-bc__custom-in:focus { border-color: var(--pop-butter); }
+.sim-bc__custom-res { font-family: var(--font-mono); font-size: 12px; color: rgba(251,246,238,0.6); }
+.sim-bc__custom-out { font-family: var(--font-display); font-weight: 900; font-size: 18px; color: var(--pop-butter); margin-left: 4px; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .sim-bc__tiles { grid-template-columns: 1fr; } }
 
 /* ── Analytics ───────────────────────────────────────────────── */
 .chart-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 20px; padding: var(--space-5); }

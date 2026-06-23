@@ -11,6 +11,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "verify": "node scripts/verify-build.mjs && node scripts/voice-lint.mjs",
+    "typecheck": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
@@ -23,12 +24,15 @@
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@supabase/supabase-js": "^2.105.4",
     "astro": "^5.18.1",
+    "pdfjs-dist": "^4.10.38",
     "resend": "^6.12.4"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "@cloudflare/workers-types": "^4.20260506.1",
     "@vitest/ui": "^4.1.5",
     "miniflare": "^4.20260504.0",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.5",
     "zod": "^4.4.3"
   }

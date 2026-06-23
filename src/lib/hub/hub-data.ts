@@ -1,7 +1,7 @@
 // Pure aggregation of the real ims_jobs feed into the Overview/Simulator
 // shapes the dashboard renders. No fabricated pay (always "Rate on request").
 // `now` is unix seconds (passed in to keep this deterministic + testable).
-import { SIM_SPECIALTIES } from './rate-engine';
+import { simSpecialtyKeyForSlug, regionForState } from './rate-engine';
 
 export interface HubJobRow {
   specialty_slug: string;
@@ -19,7 +19,7 @@ export interface HubJobRow {
   ls_last_modified: string | null;
 }
 export interface BarRow { name: string; val: number; fill: string; }
-export interface LatestJob { code: string; color: string; spec: string; city: string; pay: string; age: string; specVal: string; }
+export interface LatestJob { code: string; color: string; spec: string; city: string; pay: string; age: string; specVal: string; state: string | null; region: string; }
 export interface ActivityItem { who: string; color: string; txt: string; time: string; }
 export interface HubOverview {
   activeReqs: number;
@@ -38,31 +38,6 @@ const COLORS = [
   'var(--ink)',
   'var(--mn-cyan,#59BFE7)',
 ];
-// Maps an ims_jobs specialty slug to the simulator's bill-base <option> value
-// (from the rate engine) so a "latest job" click loads a matching specialty.
-// Derived from SIM_SPECIALTIES so it can never drift from the simulator options;
-// slugs with no curated sim specialty fall back to the first option.
-const SIM_BY_LABEL: Record<string, number> = Object.fromEntries(SIM_SPECIALTIES.map((s) => [s.label, s.billBase]));
-const DEFAULT_SIM_BASE = String(SIM_SPECIALTIES[0]?.billBase ?? 0);
-const SLUG_TO_SIM_LABEL: Record<string, string> = {
-  anesthesiology: 'Anesthesiology · MD',
-  anesthesia: 'Anesthesiology · MD',
-  crna: 'CRNA',
-  'emergency-medicine': 'Emergency Medicine',
-  emergency: 'Emergency Medicine',
-  'ob-gyn': 'OB-GYN',
-  obgyn: 'OB-GYN',
-  hospitalist: 'Hospitalist',
-  'general-surgery': 'General Surgery',
-  surgery: 'General Surgery',
-  radiology: 'Radiology · Teleread',
-};
-const simBaseForSlug = (slug: string): string => {
-  const label = SLUG_TO_SIM_LABEL[slug];
-  const base = label ? SIM_BY_LABEL[label] : undefined;
-  return base !== undefined ? String(base) : DEFAULT_SIM_BASE;
-};
-
 const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 // Escape DB-derived text before it goes into the activity HTML snippet (rendered
@@ -106,6 +81,11 @@ export function aggregateHub(rows: HubJobRow[], now: number): HubOverview {
   const latestJobs: LatestJob[] = sorted.slice(0, 5).map((r, i) => {
     const name = specName(r) ?? 'Locum role';
     const city = [r.facility_city, r.facility_state].filter(Boolean).join(', ') || (r.public_facility_label ?? 'Nationwide');
+    // Normalize the feed's state code, then derive its region via the engine
+    // helper (which returns 'National' for any unknown/blank code). A latest-job
+    // click pre-fills geography (the dashboard does this) instead of National.
+    const stateCode = (r.facility_state || '').trim().toUpperCase() || null;
+    const region = regionForState(stateCode);
     return {
       code: initials(name),
       color: COLORS[i % COLORS.length],
@@ -113,7 +93,12 @@ export function aggregateHub(rows: HubJobRow[], now: number): HubOverview {
       city,
       pay: 'Rate on request',
       age: age(r.ls_last_modified, now),
-      specVal: simBaseForSlug(r.specialty_slug),
+      // Engine specialty KEY (the simulator <option> value) so a latest-job
+      // click loads that specialty; unknown slugs fall back to a real default.
+      specVal: simSpecialtyKeyForSlug(r.specialty_slug),
+      // region === 'National' ⟺ the code isn't an engine-priced state → emit null.
+      state: region === 'National' ? null : stateCode,
+      region,
     };
   });
 

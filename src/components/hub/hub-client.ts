@@ -18,6 +18,11 @@ import {
 import { applyOp, type SyncOp } from '../../lib/hub/sync-ops';
 import { comparableCol, mergeAdopt } from '../../lib/hub/sync-merge';
 import { rosterEntry } from '../../lib/hub/hub-roster';
+// Pure result-panel formatters (no engine dependency → safe to import eagerly).
+// The engine itself is lazy-imported inside simulator() so it stays out of the
+// main hub bundle.
+import { pillsHTML, waterfallHTML, marketHTML, maxNoteHTML, capNoteHTML, callOnlyHTML, billCalcHTML } from '../../lib/hub/sim-render';
+import type { SimControls, SimQuote, SimParseResult } from '../../lib/hub/sim-adapter';
 
 const $ = <T extends Element = HTMLElement>(s: string, c: ParentNode = document): T | null => c.querySelector<T>(s);
 const $$ = <T extends Element = HTMLElement>(s: string, c: ParentNode = document): T[] => Array.from(c.querySelectorAll<T>(s));
@@ -95,12 +100,23 @@ $$('#priorities .todo__check').forEach((c) => {
 });
 
 // ── Quick rate check (overview) ────────────────────────────────────────────────
+// Pay-first ballpark: p70 pay × per-state scarcity, clamped to the researched
+// max — the engine's day/standard/community path inlined on each option's own
+// numbers (data-p70 / data-max / data-mult), so the Overview needs NO engine
+// import. Consistent with the simulator's pay-first hero.
 (function quickRate() {
   const spec = $<HTMLSelectElement>('#qr-spec');
   const region = $<HTMLSelectElement>('#qr-region');
   const out = $('#qr-rate');
   if (!spec || !region || !out) return;
-  const update = () => { out.textContent = '$' + Math.round(+spec.value * +region.value); };
+  const update = () => {
+    const o = spec.selectedOptions[0];
+    const p70 = o ? +(o.dataset.p70 || '0') : 0;
+    const max = o ? +(o.dataset.max || '0') : 0;
+    const mult = +(region.selectedOptions[0]?.dataset.mult || '1');
+    const pay = max > 0 ? Math.min(Math.round(p70 * mult), max) : Math.round(p70 * mult);
+    out.textContent = '$' + pay;
+  };
   spec.addEventListener('change', update);
   region.addEventListener('change', update);
   update();
@@ -157,61 +173,209 @@ $$('#priorities .todo__check').forEach((c) => {
 })();
 
 // ── Rate Simulator ─────────────────────────────────────────────────────────────
+// A faithful port of the IAS dashboard simulator fitted into the hub shell. Every
+// quote runs the SAME engine path the dashboard uses (initFactors / calculateRate
+// via the sim-adapter), so the hub's numbers match the dashboard for the same
+// factors. HERO = clinician hourly PAY ("recommended provider pay"); the agency
+// BILL is derived at the chosen margin. A LocumSmart PDF drop OR freetext
+// pre-fills the controls through the engine's real parser. First paint is
+// SSR-correct (SimulatorView ran the same engine); we recompute on interaction.
+// The engine is LAZY-imported so it stays out of the main hub bundle.
 (function simulator() {
   const specSel = $<HTMLSelectElement>('#sim-spec');
   if (!specSel) return;
-  // Base is the selected specialty's curated bill rate (rate-engine), not a
-  // hardcoded constant — so init matches whatever the first <option> renders.
-  const sim = { base: +specSel.value || 0, region: 1, shift: 1, urg: 1, weeks: 12, margin: 22 };
+  const weeksEl = $<HTMLInputElement>('#sim-weeks');
+  const marginEl = $<HTMLInputElement>('#sim-margin');
 
-  function bindSeg(wrapId: string, key: 'region' | 'shift' | 'urg', lblId: string) {
+  type Adapter = typeof import('../../lib/hub/sim-adapter');
+  let adapterPromise: Promise<Adapter> | null = null;
+  const loadAdapter = (): Promise<Adapter> => (adapterPromise ??= import('../../lib/hub/sim-adapter'));
+
+  const controls: SimControls = {
+    specialtyKey: specSel.value,
+    region: 'National',
+    stateCode: null,
+    shift: 'day',
+    urgency: 'Standard',
+    weeks: weeksEl ? +weeksEl.value : 12,
+    marginPct: marginEl ? +marginEl.value : 22,
+  };
+  let specialtyLabel = specSel.selectedOptions[0]?.textContent || controls.specialtyKey;
+  let stateName: string | null = null;
+  // When a PDF/freetext parse succeeds we keep its FULL engine factors here and
+  // quote from THEM — facility / call / holiday / call-only that the coarse
+  // controls can't carry — so a parsed assignment matches the dashboard exactly.
+  // Cleared the moment the user changes a control (they're then driving the
+  // simple manual model). A margin change keeps it (margin doesn't change factors).
+  let pendingFactors: SimParseResult['factors'] | null = null;
+
+  const usd = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+  const set = (id: string, text: string) => { const el = $('#' + id); if (el) el.textContent = text; };
+  const setHTML = (id: string, html: string) => { const el = $('#' + id); if (el) el.innerHTML = html; };
+  const toggle = (id: string, show: boolean) => { const el = $('#' + id); if (el) (el as HTMLElement).hidden = !show; };
+
+  // Out-of-order-paint guard: if the engine is still lazy-loading when several
+  // interactions fire, only the newest render writes to the DOM.
+  let renderGen = 0;
+  async function update() {
+    const myGen = ++renderGen;
+    const a = await loadAdapter();
+    if (myGen !== renderGen) return;
+    const factors = pendingFactors ?? a.factorsFromControls(controls);
+    render(a, a.quoteFromFactors(factors, controls.marginPct));
+  }
+  function render(a: Adapter, q: SimQuote) {
+    setHTML('sim-pills', pillsHTML(q, specialtyLabel, stateName));
+    // Call-only / per-diem assignments get the honest dedicated surface; the
+    // hourly layout is hidden so we never paint a $0 or context-free hero.
+    if (q.isCallOnly) {
+      toggle('sim-hourly', false);
+      setHTML('sim-callonly', callOnlyHTML(q, specialtyLabel));
+      toggle('sim-callonly', true);
+      return;
+    }
+    toggle('sim-callonly', false);
+    toggle('sim-hourly', true);
+    set('sim-pay', Math.round(q.payRate).toLocaleString('en-US'));
+    set('sim-bill', usd(q.billRate));
+    set('sim-bill-margin', String(controls.marginPct));
+    set('sim-conf', q.confidence);
+    set('sim-conf-data', q.confidenceData + ' data');
+    set('sim-range', usd(q.specMin) + '–' + usd(q.specMax));
+    setHTML('sim-waterfall', waterfallHTML(q));
+    setHTML('sim-market', marketHTML(q));
+    const noteEl = $('#sim-maxnote');
+    if (noteEl) { const note = maxNoteHTML(q); noteEl.innerHTML = note; (noteEl as HTMLElement).hidden = !note; }
+    const capEl = $('#sim-capnote');
+    if (capEl) { const cap = capNoteHTML(q); capEl.innerHTML = cap; (capEl as HTMLElement).hidden = !cap; }
+    const mktBlock = $('#sim-market-block');
+    if (mktBlock) (mktBlock as HTMLElement).hidden = q.marketMax <= q.marketMin;
+    // Bill Rate Calculator (collapsed advanced tool): re-render its container,
+    // preserving the open/closed state. Its slider + custom-bill inputs are
+    // handled by a delegated listener on the stable #sim-billcalc container (set
+    // up once at init), so they work on the SSR-rendered block immediately AND
+    // survive every innerHTML swap here.
+    const bc = $('#sim-billcalc');
+    if (bc) {
+      const open = (bc.querySelector('.sim-billcalc') as HTMLDetailsElement | null)?.open ?? false;
+      bc.innerHTML = billCalcHTML(q, a.billLadder(q.payRate), a.billAtMargin(q.payRate, controls.marginPct));
+      const d = bc.querySelector('.sim-billcalc') as HTMLDetailsElement | null;
+      if (d) d.open = open;
+    }
+  }
+
+  // Set a segmented control to a key, updating active state + visible label.
+  function activateSeg(wrapId: string, key: string, setFn: (v: string) => void, lblId: string) {
+    const opts = $$('#' + wrapId + ' .seg__opt');
+    const target = opts.find((o) => (o as HTMLElement).dataset.key === key) || opts[0];
+    if (!target) return;
+    opts.forEach((o) => o.classList.remove('is-active'));
+    target.classList.add('is-active');
+    setFn((target as HTMLElement).dataset.key || '');
+    const lbl = $('#' + lblId);
+    if (lbl) lbl.textContent = (target as HTMLElement).dataset.lbl || '';
+  }
+  function bindSeg(wrapId: string, setFn: (v: string) => void, lblId: string) {
     $$('#' + wrapId + ' .seg__opt').forEach((opt) => opt.addEventListener('click', () => {
-      $$('#' + wrapId + ' .seg__opt').forEach((o) => o.classList.remove('is-active'));
-      opt.classList.add('is-active');
-      sim[key] = +((opt as HTMLElement).dataset.mult || '1');
-      const lbl = $('#' + lblId);
-      if (lbl) lbl.textContent = (opt as HTMLElement).dataset.lbl || '';
-      updateSim();
+      pendingFactors = null; // manual override → leave the parsed-assignment factor set
+      activateSeg(wrapId, (opt as HTMLElement).dataset.key || '', setFn, lblId);
+      update();
     }));
   }
-  bindSeg('sim-region', 'region', 'sim-region-lbl');
-  bindSeg('sim-shift', 'shift', 'sim-shift-lbl');
-  bindSeg('sim-urg', 'urg', 'sim-urg-lbl');
-  specSel.addEventListener('change', (e) => { sim.base = +(e.target as HTMLSelectElement).value; updateSim(); });
-  const weeks = $<HTMLInputElement>('#sim-weeks');
-  const margin = $<HTMLInputElement>('#sim-margin');
-  weeks?.addEventListener('input', (e) => { sim.weeks = +(e.target as HTMLInputElement).value; const v = $('#sim-weeks-val'); if (v) v.textContent = (e.target as HTMLInputElement).value; updateSim(); });
-  margin?.addEventListener('input', (e) => { sim.margin = +(e.target as HTMLInputElement).value; const v = $('#sim-margin-val'); if (v) v.textContent = (e.target as HTMLInputElement).value; updateSim(); });
+  // Picking a region button is a manual geo choice → drop any exact PDF state.
+  bindSeg('sim-region', (v) => { controls.region = v; controls.stateCode = null; stateName = null; }, 'sim-region-lbl');
+  bindSeg('sim-shift', (v) => { controls.shift = v; }, 'sim-shift-lbl');
+  bindSeg('sim-urg', (v) => { controls.urgency = v; }, 'sim-urg-lbl');
+  specSel.addEventListener('change', () => {
+    pendingFactors = null; // manual specialty pick → simple-model quote
+    controls.specialtyKey = specSel.value;
+    specialtyLabel = specSel.selectedOptions[0]?.textContent || specSel.value;
+    update();
+  });
+  weeksEl?.addEventListener('input', (e) => { pendingFactors = null; controls.weeks = +(e.target as HTMLInputElement).value; set('sim-weeks-val', (e.target as HTMLInputElement).value); update(); });
+  // Margin does NOT change the engine factors — keep pendingFactors so a parsed
+  // assignment stays full-fidelity while the user explores margins.
+  marginEl?.addEventListener('input', (e) => { controls.marginPct = +(e.target as HTMLInputElement).value; set('sim-margin-val', (e.target as HTMLInputElement).value); update(); });
 
-  function set(id: string, text: string) { const el = $('#' + id); if (el) el.textContent = text; }
-  function updateSim() {
-    const lengthAdj = sim.weeks >= 26 ? 0.97 : sim.weeks <= 6 ? 1.04 : 1.0;
-    const bill = sim.base * sim.region * sim.shift * sim.urg * lengthAdj;
-    const pay = bill * (1 - sim.margin / 100);
-    set('sim-bill', String(Math.round(bill)));
-    set('sim-band', '$' + Math.round(bill * 0.95) + '–$' + Math.round(bill * 1.06));
-    set('brk-base', '$' + sim.base);
-    set('brk-region', '×' + sim.region.toFixed(2));
-    set('brk-shift', '×' + sim.shift.toFixed(2));
-    set('brk-urg', '×' + sim.urg.toFixed(2));
-    set('brk-pay', '$' + Math.round(pay));
-    set('brk-margin', '$' + Math.round(bill - pay) + '/hr · ' + sim.margin + '%');
+  // Bill-calculator inputs (collapsed advanced tool) are delegated on the STABLE
+  // #sim-billcalc container so they respond on the SSR-rendered block right away
+  // and keep working after every re-render's innerHTML swap. The slider + custom
+  // bill are pure margin math (lazy adapter); they explore client-billing margins
+  // WITHOUT touching the hero or the main margin (dashboard's independent model).
+  const billcalcRoot = $('#sim-billcalc');
+  billcalcRoot?.addEventListener('input', async (e) => {
+    const t = e.target as HTMLElement;
+    const details = billcalcRoot.querySelector('.sim-billcalc') as HTMLElement | null;
+    if (!details) return;
+    const pay = +(details.dataset.pay || '0');
+    const put = (sel: string, txt: string) => { const el = details.querySelector(sel); if (el) el.textContent = txt; };
+    if (t.classList.contains('sim-bc__slider')) {
+      const m = (await loadAdapter()).billAtMargin(pay, +(t as HTMLInputElement).value);
+      put('.sim-bc__margin', `Margin: ${m.marginPct}%`);
+      put('.sim-bc__bill', usd(m.billRate));
+      put('.sim-bc__profit', usd(m.profitPerHr));
+      put('.sim-bc__daily', `${usd(m.dailyProfit)}/day (10hr)`);
+      put('.sim-bc__annual', usd(m.annualProfit));
+      put('.sim-bc__mult', m.multiplier.toFixed(3) + 'x');
+    } else if (t.classList.contains('sim-bc__custom-in')) {
+      const c = (await loadAdapter()).marginFromCustomBill(pay, parseFloat((t as HTMLInputElement).value));
+      put('.sim-bc__custom-out', c.valid ? `${c.marginPct.toFixed(1)}% · ${usd(c.profit)}/hr` : '—');
+    }
+  });
+
+  // Prefetch the engine when the simulator view opens (fire-and-forget).
+  $$<HTMLElement>('[data-view="simulator"], [data-goto="simulator"]').forEach((b) =>
+    b.addEventListener('click', () => { void loadAdapter(); }));
+
+  // Apply a parsed assignment (PDF or freetext) to the controls + UI, keeping the
+  // EXACT parsed state (full-fidelity geo) under the reflected region button.
+  function applyParse(r: SimParseResult) {
+    controls.specialtyKey = r.controls.specialtyKey;
+    controls.region = r.controls.region;
+    controls.stateCode = r.controls.stateCode;
+    controls.shift = r.controls.shift;
+    controls.urgency = r.controls.urgency;
+    controls.weeks = r.controls.weeks;
+    if ([...specSel!.options].some((o) => o.value === controls.specialtyKey)) specSel!.value = controls.specialtyKey;
+    specialtyLabel = r.specialtyLabel;
+    stateName = r.stateName;
+    // setFn only sets region (does NOT clear stateCode) so the exact PDF state survives.
+    activateSeg('sim-region', controls.region, (v) => { controls.region = v; }, 'sim-region-lbl');
+    activateSeg('sim-shift', controls.shift, (v) => { controls.shift = v; }, 'sim-shift-lbl');
+    activateSeg('sim-urg', controls.urgency, (v) => { controls.urgency = v; }, 'sim-urg-lbl');
+    if (weeksEl) { weeksEl.value = String(controls.weeks); set('sim-weeks-val', String(controls.weeks)); }
+    // Quote from the FULL parsed factors (facility/call/holiday/call-only the
+    // coarse controls can't carry) so a parsed assignment matches the dashboard.
+    pendingFactors = r.factors;
+    void update();
   }
-  updateSim();
 
-  // Latest jobs are server-rendered; wire click/keydown to load the specialty.
+  // Latest jobs are server-rendered; wire click/keydown to load the specialty
+  // (specVal is the engine specialty KEY → a real <option> value) AND the job's
+  // geography (state→region, like the dashboard's recent-job click), so the
+  // quote reflects WHERE the job is instead of defaulting to National.
   $$('#sim-latest .latest__item').forEach((el) => {
     const load = () => {
-      const v = (el as HTMLElement).dataset.spec;
-      if (v && [...specSel.options].some((o) => o.value === v)) {
-        specSel.value = v;
-        specSel.dispatchEvent(new Event('change'));
-        const result = $('.sim__result');
-        result?.animate(
-          [{ boxShadow: '0 0 0 0 rgba(196,69,105,0.5)' }, { boxShadow: '0 0 0 8px rgba(196,69,105,0)' }],
-          { duration: 600 },
-        );
-      }
+      const d = (el as HTMLElement).dataset;
+      const v = d.spec;
+      if (!v || ![...specSel!.options].some((o) => o.value === v)) return;
+      pendingFactors = null; // controls-driven quote (manual model)
+      specSel!.value = v;
+      controls.specialtyKey = v;
+      specialtyLabel = specSel!.selectedOptions[0]?.textContent || v;
+      // Apply the job's geography to the region control + exact state.
+      const st = d.state || '';
+      const region = d.region || 'National';
+      controls.stateCode = st || null;
+      controls.region = region;
+      stateName = null; // the region button reflects geo; no exact-state pill for a manual pick
+      activateSeg('sim-region', region, (rg) => { controls.region = rg; }, 'sim-region-lbl');
+      void update();
+      const result = $('.sim__result');
+      result?.animate(
+        [{ boxShadow: '0 0 0 0 rgba(196,69,105,0.5)' }, { boxShadow: '0 0 0 8px rgba(196,69,105,0)' }],
+        { duration: 600 },
+      );
     };
     el.addEventListener('click', load);
     el.addEventListener('keydown', (e) => {
@@ -219,6 +383,113 @@ $$('#priorities .todo__check').forEach((c) => {
       if (ke.key === 'Enter' || ke.key === ' ') { ke.preventDefault(); load(); }
     });
   });
+
+  // ── PDF drop / freetext parse — pre-fill the controls from a LocumSmart sheet ──
+  // PDF text is extracted in the browser (pdfjs, lazy) exactly as the dashboard
+  // does it, then run through the engine's REAL parser. It NEVER fabricates: an
+  // unreadable / non-LocumSmart input shows an honest message and changes nothing.
+  (function parseInputs() {
+    const drop = $('#sim-drop');
+    const fileInput = $<HTMLInputElement>('#sim-file');
+    const idle = $('#sim-drop-idle');
+    const loaded = $('#sim-drop-loaded');
+    const nameEl = $('#sim-file-name');
+    const metaEl = $('#sim-file-meta');
+    const chipsEl = $('#sim-file-chips');
+    const showLoaded = () => { if (idle) (idle as HTMLElement).hidden = true; if (loaded) (loaded as HTMLElement).hidden = false; };
+    const showIdle = () => { if (loaded) (loaded as HTMLElement).hidden = true; if (idle) (idle as HTMLElement).hidden = false; };
+    const chip = (t: string) => `<span class="chip"><span class="chip__dot" style="background:var(--mn-cyan,#59BFE7);"></span>${esc(t)}</span>`;
+
+    // Shared parse-result surface for BOTH the PDF drop and the freetext box.
+    function report(sourceLabel: string, status: string, r: SimParseResult | null) {
+      if (nameEl) nameEl.textContent = sourceLabel;
+      if (metaEl) metaEl.textContent = status;
+      if (chipsEl) {
+        chipsEl.innerHTML = r
+          ? [r.specialtyLabel, ...(r.stateName ? [r.stateName] : []), shiftHuman(r.controls.shift) + ' shift'].map(chip).join('')
+          : '';
+      }
+      showLoaded();
+    }
+    const shiftHuman = (k: string) => ({ day: 'Day', night: 'Night', weekend_day: 'Weekend day', weekend_night: 'Weekend night', holiday: 'Holiday' } as Record<string, string>)[k] || k;
+    // Sequence guard: if a newer parse (a second PDF drop / freetext submit)
+    // starts while this one is still awaiting, the stale one must not apply.
+    let parseGen = 0;
+
+    async function extractPdfText(file: File): Promise<string> {
+      const pdfjs = await import('pdfjs-dist');
+      // Worker = bundled same-origin asset (the dashboard's exact approach;
+      // CSP script-src 'self'). isEvalSupported:false keeps it clean under the
+      // hub's stricter CSP (no 'unsafe-eval').
+      pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href;
+      const data = await file.arrayBuffer();
+      const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise;
+      try {
+        let out = '';
+        for (let p = 1; p <= doc.numPages; p++) {
+          const page = await doc.getPage(p);
+          const content = await page.getTextContent();
+          out += content.items.map((it) => ('str' in it ? (it as { str: string }).str : '')).join('\n') + '\n';
+          page.cleanup();
+        }
+        return out;
+      } finally {
+        await doc.destroy();
+      }
+    }
+
+    async function handleFile(file: File | undefined) {
+      if (!file || !drop) return;
+      const myGen = ++parseGen;
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      if (!isPdf) { report(file.name, 'That’s not a PDF. Drop a LocumSmart assignment PDF.', null); return; }
+      report(file.name, 'Reading…', null);
+      try {
+        const text = await extractPdfText(file);
+        const { simParseAssignment } = await loadAdapter();
+        if (myGen !== parseGen) return; // superseded by a newer drop / freetext
+        const r = simParseAssignment(text, controls.marginPct);
+        if (!r) { report(file.name, 'Couldn’t read this as a LocumSmart sheet. Set the inputs manually.', null); return; }
+        applyParse(r);
+        report(file.name, r.assignmentNumber ? 'Pre-filled from ' + r.assignmentNumber : 'Pre-filled from PDF', r);
+      } catch (e) {
+        if (myGen !== parseGen) return;
+        report(file.name, 'Couldn’t read this PDF. Set the inputs manually.', null);
+      }
+    }
+
+    // PDF drop wiring
+    if (drop && fileInput) {
+      $('#sim-browse')?.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+      idle?.addEventListener('click', () => fileInput.click());
+      idle?.addEventListener('keydown', (e) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === 'Enter' || ke.key === ' ') { ke.preventDefault(); fileInput.click(); }
+      });
+      fileInput.addEventListener('change', (e) => { void handleFile((e.target as HTMLInputElement).files?.[0]); });
+      $('#sim-file-clear')?.addEventListener('click', () => { fileInput.value = ''; showIdle(); });
+      ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('is-drag'); }));
+      drop.addEventListener('dragleave', (e) => { if (!drop.contains((e as DragEvent).relatedTarget as Node | null)) drop.classList.remove('is-drag'); });
+      drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('is-drag'); const f = (e as DragEvent).dataTransfer?.files?.[0]; if (f) { fileInput.value = ''; void handleFile(f); } });
+    }
+
+    // Freetext wiring ("CRNA nights in Houston, TX") — same parse surface.
+    const ft = $<HTMLInputElement>('#sim-freetext');
+    const ftGo = $('#sim-freetext-go');
+    async function runFreetext() {
+      const text = ft ? ft.value.trim() : '';
+      if (!text) return;
+      const myGen = ++parseGen;
+      const { simParseFreetext } = await loadAdapter();
+      if (myGen !== parseGen) return; // superseded by a newer parse
+      const r = simParseFreetext(text, controls.marginPct);
+      if (!r) { report('“' + text + '”', 'Couldn’t identify a specialty. Try e.g. “CRNA nights in Houston, TX”.', null); return; }
+      applyParse(r);
+      report('“' + text + '”', 'Parsed from your description', r);
+    }
+    ftGo?.addEventListener('click', () => { void runFreetext(); });
+    ft?.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); void runFreetext(); } });
+  })();
 })();
 
 // ── Weekly Sync · live, shared standup board (v2: sections + rich-text focuses) ─
