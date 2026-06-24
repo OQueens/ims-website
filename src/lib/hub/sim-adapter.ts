@@ -127,9 +127,13 @@ export function regionForState(code: string | null): string {
 export function factorsFromControls(c: SimControls): RateFactors {
   const spec = SPECIALTIES[c.specialtyKey];
   if (!spec) throw new Error(`sim-adapter: unknown specialty "${c.specialtyKey}"`);
+  const stateCode = geoStateCode(c);
   return {
     specialty: { key: c.specialtyKey, source: 'manual' },
-    state: { code: geoStateCode(c), source: 'manual' },
+    // Honesty: only claim the geography is "known" when one was actually resolved.
+    // A National quote (no state) must score Medium, not High — scoreConfidence keys
+    // off state.source, and the dashboard never shows High without a state.
+    state: { code: stateCode, source: stateCode ? 'manual' : 'default' },
     rural: { isRural: false, source: 'manual' },
     shift: { key: SHIFT_MULT[c.shift] ? c.shift : 'day', source: 'manual' },
     facility: { key: 'community', source: 'manual' },
@@ -283,12 +287,17 @@ export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQu
     // Honest $/hr conversion of the daily stipend (dashboard: daily ÷ coverageHrs).
     const div = cr.coverageHrs > 0 ? cr.coverageHrs : 1;
     const payRate = cr.insufficientData ? 0 : Math.round(cr.dailyPay / div);
+    // Call-only bill = the dashboard's FIXED 20% margin (RateResults.tsx:236,
+    // roundUp5(heroPay/0.80)) — NOT the hourly Target-margin slider. Per-diem
+    // economics use call markup bands, never the 15-45% hourly slider, so we never
+    // emit a bill the dashboard wouldn't (or one below the 20% call floor).
+    const callBill = payRate > 0 ? roundUp5(payRate / 0.80) : 0;
     return {
       isCallOnly: true,
       payRate,
-      billRate: payRate > 0 ? bill(payRate, marginPct) : 0,
+      billRate: callBill,
       marginPct,
-      marginPerHr: payRate > 0 ? bill(payRate, marginPct) - payRate : 0,
+      marginPerHr: callBill - payRate,
       confidence,
       confidenceData,
       category: spec?.category ?? 'Unknown',

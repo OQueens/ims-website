@@ -214,6 +214,34 @@ $$('#priorities .todo__check').forEach((c) => {
   const setHTML = (id: string, html: string) => { const el = $('#' + id); if (el) el.innerHTML = html; };
   const toggle = (id: string, show: boolean) => { const el = $('#' + id); if (el) (el as HTMLElement).hidden = !show; };
 
+  // Bill-calc local exploration state (slider margin + custom bill), persisted
+  // across re-renders so a main-control change doesn't wipe what the recruiter
+  // was exploring. Empty string = "untouched" → the fresh render's default stands.
+  let bcSliderVal = '';
+  let bcCustomVal = '';
+  // Shared tile updaters used by BOTH the delegated input handler and render()'s
+  // restore path, so the math lives in one place.
+  function bcApplyMargin(details: Element, pay: number, val: number, a: Adapter) {
+    const m = a.billAtMargin(pay, val);
+    const put = (sel: string, txt: string) => { const el = details.querySelector(sel); if (el) el.textContent = txt; };
+    const s = details.querySelector('.sim-bc__slider') as HTMLInputElement | null;
+    if (s && s.value !== String(m.marginPct)) s.value = String(m.marginPct);
+    put('.sim-bc__margin', `Margin: ${m.marginPct}%`);
+    put('.sim-bc__bill', usd(m.billRate));
+    put('.sim-bc__profit', usd(m.profitPerHr));
+    put('.sim-bc__daily', `${usd(m.dailyProfit)}/day (10hr)`);
+    put('.sim-bc__annual', usd(m.annualProfit));
+    put('.sim-bc__mult', m.multiplier.toFixed(3) + 'x');
+  }
+  function bcApplyCustom(details: Element, pay: number, valStr: string, a: Adapter) {
+    const inp = details.querySelector('.sim-bc__custom-in') as HTMLInputElement | null;
+    if (inp && inp.value !== valStr) inp.value = valStr;
+    const out = details.querySelector('.sim-bc__custom-out');
+    if (!out) return;
+    const c = a.marginFromCustomBill(pay, parseFloat(valStr));
+    out.textContent = valStr !== '' && c.valid ? `${c.marginPct.toFixed(1)}% · ${usd(c.profit)}/hr` : '—';
+  }
+
   // Out-of-order-paint guard: if the engine is still lazy-loading when several
   // interactions fire, only the newest render writes to the DOM.
   let renderGen = 0;
@@ -260,7 +288,13 @@ $$('#priorities .todo__check').forEach((c) => {
       const open = (bc.querySelector('.sim-billcalc') as HTMLDetailsElement | null)?.open ?? false;
       bc.innerHTML = billCalcHTML(q, a.billLadder(q.payRate), a.billAtMargin(q.payRate, controls.marginPct));
       const d = bc.querySelector('.sim-billcalc') as HTMLDetailsElement | null;
-      if (d) d.open = open;
+      if (d) {
+        d.open = open;
+        const pay = +(d.dataset.pay || '0');
+        // Restore the user's local exploration that the innerHTML swap just wiped.
+        if (bcSliderVal !== '') bcApplyMargin(d, pay, +bcSliderVal, a);
+        if (bcCustomVal !== '') bcApplyCustom(d, pay, bcCustomVal, a);
+      }
     }
   }
 
@@ -308,18 +342,12 @@ $$('#priorities .todo__check').forEach((c) => {
     const details = billcalcRoot.querySelector('.sim-billcalc') as HTMLElement | null;
     if (!details) return;
     const pay = +(details.dataset.pay || '0');
-    const put = (sel: string, txt: string) => { const el = details.querySelector(sel); if (el) el.textContent = txt; };
     if (t.classList.contains('sim-bc__slider')) {
-      const m = (await loadAdapter()).billAtMargin(pay, +(t as HTMLInputElement).value);
-      put('.sim-bc__margin', `Margin: ${m.marginPct}%`);
-      put('.sim-bc__bill', usd(m.billRate));
-      put('.sim-bc__profit', usd(m.profitPerHr));
-      put('.sim-bc__daily', `${usd(m.dailyProfit)}/day (10hr)`);
-      put('.sim-bc__annual', usd(m.annualProfit));
-      put('.sim-bc__mult', m.multiplier.toFixed(3) + 'x');
+      bcSliderVal = (t as HTMLInputElement).value;
+      bcApplyMargin(details, pay, +bcSliderVal, await loadAdapter());
     } else if (t.classList.contains('sim-bc__custom-in')) {
-      const c = (await loadAdapter()).marginFromCustomBill(pay, parseFloat((t as HTMLInputElement).value));
-      put('.sim-bc__custom-out', c.valid ? `${c.marginPct.toFixed(1)}% · ${usd(c.profit)}/hr` : '—');
+      bcCustomVal = (t as HTMLInputElement).value;
+      bcApplyCustom(details, pay, bcCustomVal, await loadAdapter());
     }
   });
 

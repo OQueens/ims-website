@@ -257,6 +257,7 @@
 .sim__co { position: relative; z-index: 1; }
 .sim__co-h { font-family: var(--font-display); font-weight: 900; font-size: 30px; letter-spacing: -0.02em; color: rgba(251,246,238,0.85); margin: 4px 0 8px; }
 .sim__co-sub { font-size: 14px; color: rgba(251,246,238,0.7); line-height: 1.55; max-width: 42ch; }
+.sim__co-note { margin-top: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--pop-butter); line-height: 1.5; }
 .sim__co-bill { margin-top: 16px; font-size: 14px; color: rgba(251,246,238,0.75); }
 .sim__co-bill b { font-family: var(--font-display); font-weight: 900; font-size: 20px; color: var(--cream-soft); margin: 0 4px; font-variant-numeric: tabular-nums; }
 .sim__co-prov { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(251,246,238,0.13); font-family: var(--font-mono); font-size: 11px; color: rgba(251,246,238,0.5); }
@@ -268,7 +269,7 @@
 .sim-bc__summary::-webkit-details-marker { display: none; }
 .sim-bc__summary::before { content: '▸'; color: var(--pop-butter); font-size: 12px; transition: transform 140ms; }
 .sim-billcalc[open] .sim-bc__summary::before { transform: rotate(90deg); }
-.sim-bc__hint { font-family: var(--font-body); font-weight: 400; font-size: 11px; color: rgba(251,246,238,0.45); }
+.sim-bc__hint { font-family: var(--font-body); font-weight: 400; font-size: 11px; color: rgba(251,246,238,0.58); }
 .sim-bc__body { margin-top: 16px; display: flex; flex-direction: column; gap: 18px; }
 .sim-bc__note { font-size: 12px; color: rgba(251,246,238,0.6); line-height: 1.5; }
 .sim-bc__note b { color: var(--cream-soft); font-variant-numeric: tabular-nums; }
@@ -281,11 +282,16 @@
 .sim-bc__rec td { color: var(--mn-cyan, #59BFE7) !important; }
 .sim-bc__badge { margin-left: 8px; font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 999px; background: color-mix(in srgb, var(--mn-cyan,#59BFE7) 22%, transparent); color: var(--mn-cyan,#59BFE7); }
 .sim-bc__slider-wrap { display: flex; flex-direction: column; gap: 12px; }
-.sim-bc__slider-head { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: rgba(251,246,238,0.45); }
+.sim-bc__slider-head { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: rgba(251,246,238,0.58); }
 .sim-bc__margin { font-size: 12px; font-weight: 700; color: var(--pop-butter); }
 .sim-bc__slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 999px; background: rgba(251,246,238,0.12); outline: none; }
 .sim-bc__slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--pop-butter); cursor: pointer; border: 3px solid var(--mn-black,#0A0A0F); }
 .sim-bc__slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--pop-butter); cursor: pointer; border: 3px solid var(--mn-black,#0A0A0F); }
+.sim-bc__slider:focus-visible { outline: 2px solid var(--pop-butter); outline-offset: 3px; }
+.sim-bc__slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pop-butter) 55%, transparent); }
+.sim-bc__slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pop-butter) 55%, transparent); }
+.sim-bc__summary:focus-visible { outline: 2px solid var(--pop-butter); outline-offset: 2px; border-radius: 6px; }
+.sim-bc__custom-in:focus-visible { outline: 2px solid var(--pop-butter); outline-offset: 1px; }
 .sim-bc__tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .sim-bc__tile { background: #16161f; border-radius: 12px; padding: 12px 10px; text-align: center; display: flex; flex-direction: column; gap: 3px; }
 .sim-bc__tile.is-bill { background: color-mix(in srgb, var(--pop-butter) 14%, #16161f); }
@@ -293,8 +299,8 @@
 .sim-bc__bill, .sim-bc__profit, .sim-bc__annual { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--cream-soft); font-variant-numeric: tabular-nums; }
 .sim-bc__tile.is-bill .sim-bc__bill { color: var(--pop-butter); }
 .sim-bc__profit { color: var(--mn-cyan, #59BFE7); }
-.sim-bc__daily, .sim-bc__unit { font-family: var(--font-mono); font-size: 9.5px; color: rgba(251,246,238,0.4); }
-.sim-bc__foot { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: rgba(251,246,238,0.45); }
+.sim-bc__daily, .sim-bc__unit { font-family: var(--font-mono); font-size: 9.5px; color: rgba(251,246,238,0.58); }
+.sim-bc__foot { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: rgba(251,246,238,0.58); }
 .sim-bc__custom { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; padding-top: 4px; }
 .sim-bc__custom-lbl { flex: 1; min-width: 150px; font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(251,246,238,0.5); display: flex; flex-direction: column; gap: 6px; }
 .sim-bc__custom-in { font-family: var(--font-mono); font-size: 14px; color: var(--cream-soft); background: #16161f; border: 1px solid rgba(251,246,238,0.15); border-radius: 10px; padding: 9px 12px; outline: none; }
