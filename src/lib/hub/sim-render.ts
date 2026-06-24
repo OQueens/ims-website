@@ -11,16 +11,26 @@ export const esc = (s: unknown): string =>
 const usd = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
 const pct = (m: number) => (m === 1 ? '—' : `${m > 1 ? '+' : ''}${Math.round((m - 1) * 100)}%`);
 
+// Why each confidence level — keeps the label honest about what it measures
+// (mirrors the dashboard's scoreConfidence rationale: specialty + geography).
+const CONF_WHY: Record<string, string> = {
+  High: 'Specialty and geography identified.',
+  Medium: 'Specialty identified; geography not specified.',
+  Low: 'Specialty not recognized — quote manually.',
+};
+
 // Context pills: category · specialty · state · confidence (+ Call-Only).
 export function pillsHTML(q: SimQuote, specialtyLabel: string, stateName: string | null): string {
-  const pills: Array<{ t: string; cls: string }> = [
+  const pills: Array<{ t: string; cls: string; title?: string }> = [
     { t: q.category, cls: 'sim-pill--cat' },
     { t: specialtyLabel, cls: 'sim-pill--spec' },
   ];
   if (stateName) pills.push({ t: stateName, cls: 'sim-pill--geo' });
   if (q.isCallOnly) pills.push({ t: 'Call-Only', cls: 'sim-pill--call' });
-  pills.push({ t: q.confidence + ' confidence', cls: 'sim-pill--conf-' + q.confidence.toLowerCase() });
-  return pills.map((p) => `<span class="sim-pill ${p.cls}">${esc(p.t)}</span>`).join('');
+  pills.push({ t: q.confidence + ' confidence', cls: 'sim-pill--conf-' + q.confidence.toLowerCase(), title: CONF_WHY[q.confidence] });
+  return pills.map((p) =>
+    `<span class="sim-pill ${p.cls}"${p.title ? ` title="${esc(p.title)}"` : ''}>${esc(p.t)}</span>`,
+  ).join('');
 }
 
 // Rate waterfall: base → each adjustment factor (dashboard's buildWaterfall).
@@ -89,11 +99,19 @@ export function callOnlyHTML(q: SimQuote, specialtyLabel: string): string {
       <div class="sim__co-prov">${provenance}</div>
     </div>`;
   }
+  // Honest clamp disclosures the dashboard shows (RateResults): the researched-max
+  // bound and the 1.75x ceiling. q carries marketMaxApplied/capped/uncapped (already
+  // converted to $/hr in the adapter for the call-only path).
+  const maxNote = q.marketMaxApplied
+    ? `<div class="sim__co-note">Bounded to the highest publicly-observed daily for this specialty and day-type.</div>` : '';
+  const capNote = q.capped && q.uncapped > q.payRate
+    ? `<div class="sim__co-note">Rate capped — uncapped it would be ${usd(q.uncapped)}/hr.</div>` : '';
   return `<div class="sim__co">
     <div class="sim__result-label">Call-only rate · ${esc(co.dayType)}</div>
     <div class="sim__result-rate">$<span>${Math.round(q.payRate).toLocaleString('en-US')}</span><small>/hr</small></div>
     <div class="sim__result-sub">≈ ${usd(co.dailyPay)}/day stipend ÷ ${co.coverageHrs}-hr coverage · ${esc(COMP_MODEL[co.compModel] || 'call')}</div>
-    <div class="sim__co-bill">Bill to facility at ${q.marginPct}% margin <b>${usd(q.billRate)}</b>/hr</div>
+    ${maxNote}${capNote}
+    <div class="sim__co-bill">Bill to facility (20% margin) <b>${usd(q.billRate)}</b>/hr</div>
     <div class="sim__co-prov">${provenance}</div>
   </div>`;
 }

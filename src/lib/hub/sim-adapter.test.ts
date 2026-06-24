@@ -212,6 +212,28 @@ describe('sim-adapter — UI option metadata', () => {
     expect(q.billRate).toBeGreaterThan(q.payRate);
   });
 
+  it('does NOT overstate confidence as High when no geography is chosen (honesty)', () => {
+    // Default first paint = anesthesiology / National (no state) → the dashboard
+    // scores Medium (specialty known, geography not). High requires a real state.
+    expect(quoteFromControls(defaultControls()).confidence).toBe('Medium');
+    expect(quoteFromControls(base({ region: 'South' })).confidence).toBe('High'); // a region picks a representative state
+    expect(quoteFromControls(base({ stateCode: 'TX' })).confidence).toBe('High');
+  });
+
+  it('call-only bill is the dashboard fixed 20% margin, NOT the hourly slider', () => {
+    // RateResults.tsx:236 — call-only heroBill = roundUp5(heroPay / 0.80), independent
+    // of any hourly margin. Build a call-only quote for a specialty with researched bands.
+    const f = factorsFromControls(base({ specialtyKey: 'ob/gyn' }));
+    f.callOnly = { isCallOnly: true, source: 'manual', reason: null };
+    f.dayType = { key: 'weekday', source: 'manual' };
+    const at15 = quoteFromFactors(f, 15);
+    const at45 = quoteFromFactors(f, 45);
+    expect(at15.isCallOnly).toBe(true);
+    expect(at15.payRate).toBeGreaterThan(0);                 // ob/gyn weekday is researched-sufficient
+    expect(at15.billRate).toBe(roundUp5(at15.payRate / 0.80)); // fixed 20%, not 15%
+    expect(at45.billRate).toBe(at15.billRate);               // hourly slider does NOT move the call-only bill
+  });
+
   it('maps ims_jobs slugs onto real engine keys (never an invalid <option>)', () => {
     expect(simSpecialtyKeyForSlug('emergency-medicine')).toBe('emergency medicine');
     expect(simSpecialtyKeyForSlug('crna')).toBe('crna');

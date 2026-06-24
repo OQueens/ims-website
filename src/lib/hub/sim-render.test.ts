@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { billCalcHTML } from './sim-render';
+import { billCalcHTML, callOnlyHTML } from './sim-render';
 import { quoteFromControls, defaultControls, billLadder, billAtMargin, type SimQuote } from './sim-adapter';
+
+// Minimal call-only SimQuote stub for the call-only surface (sufficient data).
+const callQuote = (over: Partial<SimQuote> = {}): SimQuote => ({
+  isCallOnly: true, payRate: 300, billRate: 375, marginPct: 30, marginPerHr: 75,
+  confidence: 'High', confidenceData: 'high', category: 'Surgery', specMin: 0, specMax: 0,
+  waterfall: [], marketMin: 0, marketMax: 0, marketMarker: 300, percentiles: [],
+  capped: false, marketMaxApplied: false, uncapped: 300,
+  callOnly: { insufficientData: false, dayType: 'weekday', dailyPay: 2400, compModel: '24hr-beeper-call', coverageHrs: 24, sources: 2 },
+  ...over,
+});
 
 const hourly = (margin = 22): SimQuote => quoteFromControls({ ...defaultControls(), marginPct: margin });
 // sim-render is engine-free by design (it ships in the main hub bundle), so the
@@ -55,5 +65,32 @@ describe('sim-render — billCalcHTML (BillRateCalculator port)', () => {
     const html = render(q);
     expect(html).toContain(`data-pay="${Math.round(q.payRate)}"`);
     expect(html).toMatch(/sim-bc__custom/);
+  });
+});
+
+describe('sim-render — callOnlyHTML (call-only honesty)', () => {
+  it('bills call-only at the fixed 20% margin label, NOT the hourly slider %', () => {
+    const html = callOnlyHTML(callQuote({ marginPct: 30 }), 'OB/GYN');
+    expect(html).toContain('20% margin');     // fixed call-only margin
+    expect(html).not.toContain('30% margin'); // never the hourly slider value
+    expect(html).toContain('/day stipend');
+  });
+
+  it('surfaces the researched-max clamp disclosure when marketMaxApplied', () => {
+    expect(callOnlyHTML(callQuote({ marketMaxApplied: true }), 'OB/GYN'))
+      .toContain('highest publicly-observed daily');
+    expect(callOnlyHTML(callQuote({ marketMaxApplied: false }), 'OB/GYN'))
+      .not.toContain('highest publicly-observed daily');
+  });
+
+  it('surfaces the rate-cap disclosure when capped above the shown rate', () => {
+    expect(callOnlyHTML(callQuote({ capped: true, uncapped: 360, payRate: 300 }), 'OB/GYN'))
+      .toMatch(/Rate capped — uncapped it would be \$360\/hr/);
+  });
+
+  it('shows the honest no-data surface (never a fabricated $0) when insufficient', () => {
+    const html = callOnlyHTML(callQuote({ payRate: 0, billRate: 0, callOnly: { insufficientData: true, dayType: 'weekend', dailyPay: 0, compModel: 'unknown', coverageHrs: 24, sources: 0 } }), 'OB/GYN');
+    expect(html).toContain('Insufficient public data');
+    expect(html).not.toContain('$0');
   });
 });
