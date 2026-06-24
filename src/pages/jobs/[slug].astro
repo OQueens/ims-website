@@ -444,6 +444,17 @@ const jobPostingLdJson = jobPostingLd
                     <label for="jdPhone">Phone <span class="jd-hint">(optional)</span></label>
                     <input id="jdPhone" name="phone" type="tel" placeholder="Phone (optional)" />
                   </div>
+                  {/* A2P 10DLC opt-in CTA — explicit, unchecked, NOT required (SMS
+                      consent can never be a condition of applying); carries all
+                      point-of-collection disclosures + a Privacy Policy link to the
+                      slashed canonical (/privacy/, not a #fragment the renderer can't
+                      resolve). Server reads `smsConsent` in /api/contact.ts. */}
+                  <div class="jd-field jd-consent">
+                    <label class="jd-consent__row" for="jdSmsConsent">
+                      <input id="jdSmsConsent" name="smsConsent" type="checkbox" value="yes" />
+                      <span class="jd-consent__text">I agree that <strong>Innovative Medical Staffing (IMS)</strong> may text me about my application, job opportunities, scheduling, and credentialing at the number above. Message frequency varies. Message and data rates may apply. Reply <strong>STOP</strong> to opt out, <strong>HELP</strong> for help. See our <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a>. <span class="jd-hint">(Optional — leave unchecked if you'd rather not be texted; it won't affect your application.)</span></span>
+                    </label>
+                  </div>
                   <div class="jd-field">
                     <label for="jdMessage">Anything you'd like us to know? <span class="jd-hint">(optional)</span></label>
                     <textarea id="jdMessage" name="message" placeholder="Anything you'd like us to know? (optional)"></textarea>
@@ -624,6 +635,16 @@ const jobPostingLdJson = jobPostingLd
   .jd-field textarea { min-height: 96px; resize: vertical; }
   .jd-field input::placeholder, .jd-field textarea::placeholder { color: rgba(251, 246, 238, 0.4); }
   .jd-field input:focus, .jd-field textarea:focus { outline: none; border-color: #3FB3E0; box-shadow: 0 0 0 3px rgba(63, 179, 224, 0.30); }
+  /* SMS-consent checkbox (A2P 10DLC opt-in). .jd-consent is also a .jd-field, so
+     reset the mono/uppercase label styling; the row stays visible (never
+     display:none) for the carrier crawler + accessibility. */
+  .jd-consent { gap: 0; }
+  .jd-consent__row { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; cursor: pointer; text-transform: none; font-family: var(--font-body); }
+  .jd-consent__row input[type="checkbox"] { margin: 2px 0 0; width: 16px; height: 16px; flex: 0 0 auto; accent-color: #3FB3E0; cursor: pointer; }
+  .jd-consent__text { font-family: var(--font-body); font-size: 12px; line-height: 1.5; letter-spacing: 0; text-transform: none; font-weight: 400; color: rgba(251, 246, 238, 0.6); }
+  .jd-consent__text strong { color: rgba(251, 246, 238, 0.85); font-weight: 600; }
+  .jd-consent__text a { color: #3FB3E0; text-decoration: underline; text-underline-offset: 2px; }
+  .jd-consent__text .jd-hint { display: inline; }
 
   .jd-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 

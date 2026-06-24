@@ -47,6 +47,10 @@ const { kind } = Astro.props;
 // author-controlled copy, not user input, so set:html is safe here.
 const SUPPORT_EMAIL = 'recruiting@iastaffing.com';
 const UPDATED = 'June 3, 2026';
+// The privacy notice changed 2026-06-24 (added the SMS / mobile opt-in section
+// for A2P 10DLC carrier compliance). Terms + cookies are unchanged, so they keep
+// UPDATED; only the privacy notice advances to PRIVACY_UPDATED.
+const PRIVACY_UPDATED = 'June 24, 2026';
 // Registered legal address (Texas LLC). This is a commercial registered-agent /
 // mailbox address in Fort Worth (Tarrant County) used for legal notices and
 // service — IMS is fully remote, so it is NOT a staffed office. Used in the
@@ -55,7 +59,7 @@ const LEGAL_ENTITY = 'Innovative Medical Staffing · 12650 N Beach St, Ste 114 #
 
 const LEGAL_CONTENT = {
   privacy: {
-    eyebrow: `Last updated · ${UPDATED}`,
+    eyebrow: `Last updated · ${PRIVACY_UPDATED}`,
     title: { lead: 'Your information,', em: 'handled with care', trail: '.' },
     intro: "This notice describes what Innovative Medical Staffing (IMS) collects through this site and our staffing service, what we do with it, where it lives, and how to ask us to delete it.",
     sections: [
@@ -63,9 +67,10 @@ const LEGAL_CONTENT = {
         { p: 'We collect only what the staffing relationship needs:' },
         { ul: [
           `<strong>Application data</strong> — name, contact details, CV, license states, certifications, references, work history, and availability submitted through the site or by email.`,
-          `<strong>Contact-form data</strong> — your name, email address, who you are (facility, clinician, or general inquiry), an optional role or specialty, and the message you send us.`,
-          `<strong>Usage telemetry</strong> — anonymous, aggregated visit data via Plausible Cloud (no cookies, no cross-site identifiers, no stored IP). See the <a href="/cookies/">Cookies notice</a>.`,
+          `<strong>Contact-form data</strong> — your name, email address, who you are (facility, clinician, or general inquiry), an optional role or specialty, an optional mobile phone number if you provide one on a job application, and the message you send us. A provided phone number is currently kept together with your message rather than in a separate field.`,
+          `<strong>Usage telemetry</strong> — anonymous, aggregated visit data via Plausible Cloud (no cookies, no cross-site identifiers, and no IP address stored by our analytics). See the <a href="/cookies/">Cookies notice</a>.`,
           `<strong>Operational records</strong> — the credentialing paperwork, references, and assignment history we gather and hold for the clinicians and facility partners we work with, in coordination with each facility's medical staff office.`,
+          `<strong>Security and abuse-prevention data</strong> — when you submit a form, we store a one-way hashed version of your IP address (we never keep the raw IP) and your browser's user-agent string, solely to prevent spam and abuse and to keep the site secure.`,
         ]},
       ]},
       { h: 'How we use it', body: [
@@ -80,7 +85,7 @@ const LEGAL_CONTENT = {
         { ul: [
           `Application + contact data — Supabase (US-hosted Postgres, encrypted at rest).`,
           `Outbound transactional email — Resend (US-based email delivery).`,
-          `Anonymous site analytics — Plausible Cloud (cookieless, no stored IP; EU-hosted, data never leaves the EU).`,
+          `Anonymous site analytics — Plausible Cloud (cookieless, no IP address stored by our analytics; EU-hosted, data never leaves the EU).`,
           `Site hosting — Cloudflare (global edge network).`,
         ]},
       ]},
@@ -100,7 +105,12 @@ const LEGAL_CONTENT = {
       ]},
       { h: 'Your rights and how to exercise them', body: [
         { p: `You can ask us at any time to confirm what we hold about you, correct it, or delete it. Email <a href="mailto:${SUPPORT_EMAIL}?subject=Data%20deletion%20request">${SUPPORT_EMAIL}</a> with the subject <em>Data deletion request</em>. We aim to respond within 30 days.` },
-        { p: `We do not sell personal data for monetary consideration, we do not share personal information for cross-context behavioral advertising, and we do not process personal data for targeted advertising. If a clinician asks us to present them for a staffing opportunity, we may disclose the information reasonably necessary to evaluate and facilitate that requested opportunity with a healthcare facility or other business counterparty — we treat those disclosures as part of providing the staffing services you have asked for, not as advertising. We also disclose data to the sub-processors listed above, who act on our behalf. We do not sell sensitive personal data.` },
+        { p: `We do not sell personal data for monetary consideration, we do not sell sensitive personal data, we do not share personal information for cross-context behavioral advertising, and we do not process personal data for targeted advertising. We are not a data broker — we collect information directly from the clinicians and facility partners we work with, and we use it to provide staffing services, not to build advertising profiles. We do not share, sell, rent, or trade your personal information with other companies for their own marketing. The only sharing we do is the following, and only as needed to run our service: when a clinician asks us to present them for a staffing opportunity, we disclose the information reasonably necessary to evaluate and facilitate that requested opportunity to the healthcare facility involved — we treat that as part of providing the staffing services you have asked for, not as advertising — and we disclose data to the sub-processors listed above, who act only on our behalf and under our written instructions. <strong>Your mobile number and your text-messaging opt-in and consent are excluded from all of this: that information is never shared with any third parties or affiliates for marketing or promotional purposes, and is never sold, rented, or traded (see <em>Text messages and your mobile number</em> below).</strong>` },
+      ]},
+      { h: 'Text messages and your mobile number', body: [
+        { p: `If you give us your mobile number — for example on our job-application form, or by replying to a recruiter's message — we and our recruiters may text you about job opportunities, your application, scheduling, credentialing, and assignment logistics. These are conversational messages between you and an Innovative Medical Staffing (IMS) recruiter, not automated marketing campaigns. Message frequency varies with your conversation, and message and data rates may apply. Reply <strong>STOP</strong> to any message to opt out at any time, or <strong>HELP</strong> for help — you can also email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or call (512) 524-6686. Opting out never affects your application or your standing with us — we will simply reach you another way. Giving us your number is always optional, and we never require it as a condition of applying.` },
+        { p: `<strong>No mobile information will be shared with third parties or affiliates for marketing or promotional purposes.</strong> Text-messaging originator opt-in data and consent are excluded from every other kind of data-sharing in this notice; your mobile number and SMS consent are never sold, rented, or traded, and they will not be shared with any third parties, except with the messaging providers and the telecommunications carriers that transmit the messages between you and your recruiter on our behalf. Your mobile number and SMS consent are stored and processed only by us and the service providers that operate our systems under our written instructions (the sub-processors listed above); they are not disclosed to the healthcare facilities we present clinicians to, and they are never used to build any advertising or marketing profile.` },
+        { p: `When you provide your number on the application form, it is kept with the rest of that application — in practice it currently lives inside the message we receive from the form rather than in a separate field — and it is handled under the same retention and security commitments described in this notice. If you ask us to delete your information, that includes your mobile number; email <a href="mailto:${SUPPORT_EMAIL}?subject=Data%20deletion%20request">${SUPPORT_EMAIL}</a> with the subject <em>Data deletion request</em>.` },
       ]},
       { h: 'Privacy laws and where you live', body: [
         { p: `Innovative Medical Staffing is a small Texas-based business. The comprehensive US state consumer-privacy laws now in effect — including California (CCPA/CPRA) and the roughly twenty other states, Texas among them, with similar laws as of 2026 — generally apply only to larger companies that cross specific revenue or data-volume thresholds, or that sell personal data. We do not meet those thresholds, and we do not sell personal data. Most of these laws also do not cover the information you give us as a job applicant or a business contact, and even the newest and broadest of them — such as Connecticut's 2026 amendments, which can reach a business that handles the sensitive data of a single resident — apply only to individuals acting as consumers, not to the job applicants and business contacts whose information we handle.` },
