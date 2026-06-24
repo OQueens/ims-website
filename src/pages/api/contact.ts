@@ -93,6 +93,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // 1. Parse the form body.
   let fields: ContactFields;
   let phone = '';
+  // SMS-consent checkbox from the /jobs apply form (A2P 10DLC opt-in). Read
+  // server-side so a no-JS native POST still records it; folded into the message
+  // next to the phone below as the durable, auditable opt-in record.
+  let smsConsent = false;
   // Job-inquiry context — present only on the /jobs apply form. Read raw + capped
   // here; the trusted link is built from jobSlug below (after env is available).
   const job = { slug: '', role: '', ref: '', city: '' };
@@ -119,6 +123,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Optional phone (only on the /jobs apply form). Read server-side + capped so
     // a no-JS native POST still captures it; folded into the message below.
     phone = clip(get('phone'), 40);
+    smsConsent = get('smsConsent') === 'yes';
     job.slug = get('jobSlug').trim();
     job.role = clip(get('jobRole'), 160);
     job.ref = clip(get('jobRef'), 80);
@@ -143,7 +148,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // column, and reading it server-side (vs the old JS-only compose) means a no-JS
   // POST keeps it. Persists in the durable row AND the recruiter email.
   if (phone) {
-    data.message = data.message ? `Phone: ${phone}\n${data.message}` : `Phone: ${phone}`;
+    // Keep the SMS-consent decision next to the phone as an auditable 10DLC opt-in
+    // record (ims_contact_messages has no dedicated column); only meaningful when a
+    // number was given. Persists in both the durable row AND the recruiter email.
+    const phoneBlock = `Phone: ${phone}\nSMS consent: ${smsConsent ? 'yes' : 'no'}`;
+    data.message = data.message ? `${phoneBlock}\n${data.message}` : phoneBlock;
   }
 
   // Build a TRUSTED link to the exact job posting (validated uuid slug + request
