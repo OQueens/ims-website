@@ -31,6 +31,7 @@
     "@astrojs/check": "^0.9.9",
     "@cloudflare/workers-types": "^4.20260506.1",
     "@vitest/ui": "^4.1.5",
+    "firebase": "^12.15.0",
     "miniflare": "^4.20260504.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.5",
