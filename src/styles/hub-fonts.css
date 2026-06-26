@@ -1,0 +1,69 @@
+/* ════════════════════════════════════════════════════════════════════════════
+ * HUB FONTS — GT America across the internal hub (/hub).
+ * ════════════════════════════════════════════════════════════════════════════
+ * The marketing site runs GT America via v5-reskin.css, but HubLayout never
+ * imports that (marketing-only) layer, so the hub fell back to colors_and_type's
+ * Inter / Battlefin / JetBrains. This file gives the hub the SAME GT America
+ * family and re-points its --font-* tokens. Imported LAST in HubLayout so it wins
+ * over colors_and_type's :root defaults; the override is scoped to .hub-body so
+ * it only affects hub surfaces.
+ *
+ * 🔴 TRIAL fonts — same posture the marketing site already ships. Prod gate =
+ * Grilli Type web license (public/fonts/gt-america/LICENSE-NOTE.md).
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Regular-Trial.otf') format('opentype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Medium-Trial.otf') format('opentype');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Bold-Trial.otf') format('opentype');
+  font-weight: 600 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Black-Trial.otf') format('opentype');
+  font-weight: 800 900; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'GT America';
+  src: url('/fonts/gt-america/GT-America-Standard-Black-Italic-Trial.otf') format('opentype');
+  font-weight: 800 900; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: 'GT America Mono';
+  src: url('/fonts/gt-america/GT-America-Mono-Regular-Trial.otf') format('opentype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'GT America Mono';
+  src: url('/fonts/gt-america/GT-America-Mono-Medium-Trial.otf') format('opentype');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'GT America Mono';
+  src: url('/fonts/gt-america/GT-America-Mono-Bold-Trial.otf') format('opentype');
+  font-weight: 600 700; font-style: normal; font-display: swap;
+}
+/* Metric-tuned local fallback so swap doesn't shift layout (CLS guard). */
+@font-face {
+  font-family: 'GT America Fallback';
+  src: local('Arial');
+  size-adjust: 99.5%; ascent-override: 97%; descent-override: 25%; line-gap-override: 0%;
+}
+
+/* Re-point the hub's type tokens. GT America carries both display + body here
+   (the hub has no separate serif display); mono → GT America Mono. */
+.hub-body {
+  --font-display:        'GT America', 'GT America Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-display-italic: 'GT America', 'GT America Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-body:           'GT America', 'GT America Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:           'GT America Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}

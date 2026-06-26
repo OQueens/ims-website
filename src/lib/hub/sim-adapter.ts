@@ -227,6 +227,7 @@ export interface SimQuote {
   marginPerHr: number;
   confidence: ConfidenceLevel;
   confidenceData: string; // researched data tier label (e.g. "high", "research-derived")
+  confidenceReason: string; // honest one-liner naming the limiting factor
   category: string;
   specMin: number;
   specMax: number;
@@ -251,6 +252,30 @@ export interface SimQuote {
 }
 
 const WF_PERCENTILES = [25, 50, 70, 75, 90];
+
+// ── Confidence honesty ────────────────────────────────────────────────────────
+// The displayed confidence must reflect how trustworthy the DOLLAR figure is, not
+// just whether we identified the inputs. scoreConfidence (engine) is identification
+// confidence (specialty + geography → High). We blend it with the specialty's DATA
+// tier (spec.confidence: how well-researched its rate band is) and show the WEAKER
+// of the two — so a well-identified CRNA quote reads Medium (its band is only
+// 'medium'-researched), never "High" over an uncalibrated static estimate.
+const CONF_RANK: Record<ConfidenceLevel, number> = { Low: 0, Medium: 1, High: 2 };
+const RANK_CONF: ConfidenceLevel[] = ['Low', 'Medium', 'High'];
+function dataTierConfidence(tier: string | undefined): ConfidenceLevel {
+  return tier === 'high' ? 'High' : tier === 'medium' ? 'Medium' : 'Low';
+}
+function weakerConfidence(a: ConfidenceLevel, b: ConfidenceLevel): ConfidenceLevel {
+  return RANK_CONF[Math.min(CONF_RANK[a], CONF_RANK[b])];
+}
+// Names the LIMITING factor honestly (geography missing vs lightly-researched band).
+function confidenceReasonFor(factors: RateFactors, tier: string | undefined): string {
+  if (factors.specialty.source === 'default') return 'Specialty not recognized — quote manually.';
+  if (factors.state.source === 'default') return 'Geography not specified — national estimate.';
+  if (tier === 'medium') return 'Geography identified; the rate band for this specialty is moderately researched — treat as an estimate.';
+  if (tier !== 'high') return 'Geography identified, but the rate band for this specialty is lightly researched — treat as a rough estimate.';
+  return 'Specialty and geography identified; well-researched rate band.';
+}
 
 // Hourly waterfall — the dashboard's buildWaterfall (hourly branch): each row is
 // the running product through one multiplier; rows with mult 1.0 are dropped
@@ -279,8 +304,10 @@ function bill(pay: number, marginPct: number): number {
 // shapes their output for the hub panel. Identical numbers to the dashboard.
 export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQuote {
   const spec = SPECIALTIES[factors.specialty.key];
-  const confidence = scoreConfidence(factors);
+  // HONEST confidence (see helpers above): weaker of identification vs data tier.
+  const confidence = weakerConfidence(scoreConfidence(factors), dataTierConfidence(spec?.confidence));
   const confidenceData = confidenceLabel(spec?.confidence ?? 'modeled');
+  const confidenceReason = confidenceReasonFor(factors, spec?.confidence);
 
   if (factors.callOnly.isCallOnly) {
     const cr = calculateCallRate(factors) as CalculatedCallRate;
@@ -300,6 +327,7 @@ export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQu
       marginPerHr: callBill - payRate,
       confidence,
       confidenceData,
+      confidenceReason,
       category: spec?.category ?? 'Unknown',
       specMin: spec?.min ?? 0,
       specMax: spec?.max ?? 0,
@@ -333,6 +361,7 @@ export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQu
     marginPerHr: bill(r.payRate, marginPct) - r.payRate,
     confidence,
     confidenceData,
+    confidenceReason,
     category: spec?.category ?? 'Unknown',
     specMin: spec?.min ?? 0,
     specMax: spec?.max ?? 0,

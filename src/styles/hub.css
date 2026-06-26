@@ -198,7 +198,7 @@
 
 /* Context pills (category · specialty · state · confidence) */
 .sim__pills { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-.sim-pill { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 999px; font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(251,246,238,0.1); color: rgba(251,246,238,0.8); }
+.sim-pill { display: inline-flex; align-items: center; padding: 6px 13px; border-radius: 999px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; background: rgba(251,246,238,0.1); color: rgba(251,246,238,0.82); }
 .sim-pill--cat { background: color-mix(in srgb, var(--pop-magenta,#C44569) 22%, transparent); color: #f7c6d2; }
 .sim-pill--spec { background: rgba(124,132,232,0.22); color: #c8cdf6; }
 .sim-pill--call { background: color-mix(in srgb, var(--pop-butter) 22%, transparent); color: var(--pop-butter); }
@@ -236,7 +236,14 @@
 /* Market position bar */
 .sim-mkt__bar { position: relative; height: 8px; background: rgba(251,246,238,0.08); border-radius: 999px; margin: 8px 0; }
 .sim-mkt__fill { position: absolute; inset: 0; border-radius: 999px; background: linear-gradient(90deg, rgba(89,191,231,0.2), var(--mn-cyan,#59BFE7)); }
-.sim-mkt__marker { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: var(--cream-soft); transform: translateX(-50%); box-shadow: 0 0 8px rgba(251,246,238,0.6); }
+.sim-mkt__marker { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: var(--cream-soft); transform: translateX(-50%); box-shadow: 0 0 8px rgba(251,246,238,0.6); z-index: 2; }
+.sim-mkt__premium { position: absolute; top: 0; height: 100%; border-radius: 999px; background: color-mix(in srgb, var(--pop-butter, #E8C465) 32%, transparent); z-index: 1; }
+.sim-mkt__marker--premium { background: var(--pop-butter, #E8C465); box-shadow: 0 0 8px color-mix(in srgb, var(--pop-butter, #E8C465) 60%, transparent); }
+.sim-mkt__legend { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: center; margin-top: 10px; font-family: var(--font-mono); font-size: 10px; color: rgba(251,246,238,0.62); }
+.sim-mkt__leg { display: inline-flex; align-items: center; gap: 6px; }
+.sim-mkt__key { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.sim-mkt__key--rec { background: var(--cream-soft); }
+.sim-mkt__key--prem { background: var(--pop-butter, #E8C465); }
 .sim-mkt__scale { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: rgba(251,246,238,0.5); }
 .sim-mkt__here { color: var(--mn-cyan, #59BFE7); font-weight: 700; }
 .sim-mkt__chips { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 12px; }
@@ -415,18 +422,18 @@ html[data-hub-theme="dark"] {
 /* ── Rate simulator · PDF dropzone ───────────────────────────── */
 .sim-drop { margin-bottom: var(--space-5); padding: 0; overflow: hidden; }
 .sim-drop__idle {
-  display: flex; align-items: center; gap: var(--space-4);
-  padding: var(--space-5);
+  display: flex; align-items: center; gap: var(--space-5);
+  padding: var(--space-6); min-height: 132px;
   border: 1.5px dashed var(--rule-strong); border-radius: 20px; margin: 4px;
   transition: border-color 180ms, background 180ms;
   cursor: pointer;
 }
 .sim-drop__idle:hover, .sim-drop.is-drag .sim-drop__idle { border-color: var(--pop-magenta, #C44569); background: color-mix(in srgb, var(--pop-magenta, #C44569) 7%, transparent); }
-.sim-drop__icon { width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--pop-magenta, #C44569) 16%, transparent); color: var(--pop-magenta, #C44569); }
-.sim-drop__icon svg { width: 24px; height: 24px; }
+.sim-drop__icon { width: 56px; height: 56px; border-radius: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--pop-magenta, #C44569) 16%, transparent); color: var(--pop-magenta, #C44569); }
+.sim-drop__icon svg { width: 28px; height: 28px; }
 .sim-drop__copy { flex: 1; min-width: 0; }
-.sim-drop__title { font-family: var(--font-display); font-weight: 900; font-size: 18px; letter-spacing: -0.012em; color: var(--ink); }
-.sim-drop__sub { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+.sim-drop__title { font-family: var(--font-display); font-weight: 900; font-size: 20px; letter-spacing: -0.012em; color: var(--ink); }
+.sim-drop__sub { font-size: 13.5px; color: var(--ink-soft); margin-top: 4px; }
 .sim-drop__browse { border: none; background: none; padding: 0; font: inherit; color: var(--pop-magenta, #C44569); font-weight: 700; cursor: pointer; text-decoration: underline; }
 .sim-drop__hint { flex-shrink: 0; }
 .sim-drop__loaded { padding: var(--space-5); }
