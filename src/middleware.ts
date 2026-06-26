@@ -22,7 +22,8 @@ export const onRequest = defineMiddleware(async ({ request, locals, url }, next)
   // Gate /hub behind the Google-OAuth session cookie before rendering. Only the
   // protected hub paths are SSR; reading request.headers here (not on the
   // prerendered marketing pages) avoids the build-time prerender warning.
-  if (isHubProtectedPath(url.pathname)) {
+  const hubPath = isHubProtectedPath(url.pathname);
+  if (hubPath) {
     const env = readHubEnv(locals);
     const now = Math.floor(Date.now() / 1000);
     const guard = await hubGuardRedirect(url.pathname, request.headers.get("cookie"), env, now);
@@ -30,7 +31,9 @@ export const onRequest = defineMiddleware(async ({ request, locals, url }, next)
   }
 
   const response = await next();
-  const secured = applySecurityHeaders(response);
+  // The Firebase RTDB connect-src widening (Rate Simulator live overlay) is scoped
+  // to the authenticated hub surface only — marketing routes keep the tight CSP.
+  const secured = applySecurityHeaders(response, { hub: hubPath });
   // Authenticated/internal hub HTML must never be cached by the browser,
   // back-button, or a shared forward proxy. (Cloudflare already doesn't cache
   // SSR responses, so this is browser/proxy defense-in-depth.) Scoped to /hub so

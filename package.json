@@ -24,6 +24,7 @@
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@supabase/supabase-js": "^2.105.4",
     "astro": "^5.18.1",
+    "firebase": "^12.15.0",
     "pdfjs-dist": "^4.10.38",
     "resend": "^6.12.4"
   },

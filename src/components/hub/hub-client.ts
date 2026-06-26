@@ -518,6 +518,21 @@ $$('#priorities .todo__check').forEach((c) => {
     ftGo?.addEventListener('click', () => { void runFreetext(); });
     ft?.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); void runFreetext(); } });
   })();
+
+  // ── Phase 2: live market overlay ───────────────────────────────────────────
+  // Lazy-load the live-market module (the only firebase chunk; loaded AFTER the
+  // SSR-correct first paint), apply the fresh multi-source RTDB overlay onto the
+  // shared SPECIALTIES band, then re-quote so the hero reflects live data — the
+  // dashboard's "static first paint → live" behaviour (App.tsx loadMarketRates
+  // effect). Fully degradable: any failure (offline, slow RTDB, suppressed
+  // single-source overlay) leaves the static quote exactly as rendered.
+  void import('../../lib/hub/sim-live')
+    .then(({ initLiveMarket }) => initLiveMarket())
+    // update() is async — catch its rejection too (a missing DOM node on some
+    // sub-route must not surface as an unhandled rejection; the overlay is already
+    // applied to SPECIALTIES, so the next user-driven update() still shows live).
+    .then(() => update().catch(() => {}))
+    .catch(() => {});
 })();
 
 // ── Weekly Sync · live, shared standup board (v2: sections + rich-text focuses) ─
