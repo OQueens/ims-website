@@ -43,32 +43,60 @@ export const CAREERS_HOSTNAMES: readonly string[] = [
 // a single hop instead of careers → /jobs → /jobs/.
 export const CAREERS_LANDING_PATH = "/jobs/";
 
+// connect-src baseline (every route). Spec §0.5.3: Plausible analytics + Cloudflare
+// Turnstile allowlisted.
+const CSP_CONNECT_BASE = "'self' https://plausible.io https://challenges.cloudflare.com";
+
+// Firebase RTDB origins — added to connect-src ONLY on the authenticated hub. The
+// hub Rate Simulator's Phase-2 live market overlay reads weekly-sync-451e2 RTDB in
+// the browser over a WebSocket; the marketing site never loads firebase, so its CSP
+// stays tight (least privilege — max-security directive 2026-06-26). The client
+// forces the WebSocket transport (hub-firebase.ts forceWebSockets) so no long-poll
+// <script> injection is needed (that would require script-src). Wildcard host:
+// firebase redirects the socket from the project host to a regional sharded host
+// (s-gke-*.firebaseio.com), so an exact-host allowlist is insufficient
+// (browser-verified). Public-read path; no credentials flow over it.
+const HUB_RTDB_ORIGINS = "https://*.firebaseio.com wss://*.firebaseio.com";
+
+// Build the final CSP string; connect-src is the only directive that differs
+// between the marketing baseline and the hub. 'unsafe-inline' for scripts/styles is
+// accepted per spec §0.5.3 (Astro hydration injects inline scripts; component-scoped
+// styles). form-action 'self' allows POST to /api/contact + /api/apply (T46+T47).
+function buildCsp(connectSrc: string): string {
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://plausible.io https://challenges.cloudflare.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "object-src 'none'",
+    "font-src 'self'",
+    `connect-src ${connectSrc}`,
+    "frame-src https://challenges.cloudflare.com",
+    "form-action 'self'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+  ].join("; ");
+}
+
 export const SECURITY_HEADERS: Record<string, string> = {
   // X-Robots-Tag dropped at LAUNCH HARD GATE (T14 paired with T15+T16+T28).
   // Reintroducing this header would silently de-index the site — see the
   // matching regression guard in scripts/verify-build.mjs.
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  // Spec §0.5.3 final CSP — Plausible analytics + Cloudflare Turnstile
-  // allowlisted; 'unsafe-inline' for scripts/styles accepted per spec §0.5.3
-  // Notes (Astro hydration injects inline scripts; component-scoped styles).
-  // form-action 'self' allows POST to /api/contact + /api/apply (T46+T47).
-  "Content-Security-Policy":
-    "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' https://plausible.io https://challenges.cloudflare.com; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data:; " +
-    "object-src 'none'; " +
-    "font-src 'self'; " +
-    "connect-src 'self' https://plausible.io https://challenges.cloudflare.com; " +
-    "frame-src https://challenges.cloudflare.com; " +
-    "form-action 'self'; " +
-    "base-uri 'self'; " +
-    "frame-ancestors 'none'",
+  "Content-Security-Policy": buildCsp(CSP_CONNECT_BASE),
   "Permissions-Policy":
     "camera=(), microphone=(), geolocation=(), interest-cohort=()",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
+};
+
+// Hub variant: identical to SECURITY_HEADERS, but connect-src also allows the
+// Firebase RTDB origins. Applied ONLY to authenticated hub responses
+// (isHubProtectedPath) so the firebase allowance never reaches a marketing route.
+export const HUB_SECURITY_HEADERS: Record<string, string> = {
+  ...SECURITY_HEADERS,
+  "Content-Security-Policy": buildCsp(`${CSP_CONNECT_BASE} ${HUB_RTDB_ORIGINS}`),
 };
 
 // Exact-host match only. Preview deploys (<hash>.ims-website.pages.dev,
@@ -149,9 +177,10 @@ export function buildTrailingSlashRedirect(requestUrl: string, method: string): 
   return redirect301(url);
 }
 
-export function applySecurityHeaders(response: Response): Response {
+export function applySecurityHeaders(response: Response, opts?: { hub?: boolean }): Response {
+  const headers = opts?.hub ? HUB_SECURITY_HEADERS : SECURITY_HEADERS;
   const cloned = new Response(response.body, response);
-  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+  for (const [name, value] of Object.entries(headers)) {
     cloned.headers.set(name, value);
   }
   return cloned;

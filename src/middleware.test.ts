@@ -4,6 +4,7 @@ import {
   buildTrailingSlashRedirect,
   applySecurityHeaders,
   SECURITY_HEADERS,
+  HUB_SECURITY_HEADERS,
   PAGES_DEV_HOSTNAME,
   CANONICAL_HOSTNAME,
   CAREERS_LANDING_PATH,
@@ -309,6 +310,29 @@ describe("SECURITY_HEADERS contents", () => {
     expect(csp).toContain("form-action 'self'");
     // frame-ancestors stays at 'none' — clickjacking defense persists.
     expect(csp).toContain("frame-ancestors 'none'");
+  });
+
+  it("allows the Firebase RTDB connect-src ONLY on the hub (least-privilege scope)", () => {
+    // The hub Rate Simulator's client lazy-loads firebase/database and reads the
+    // live market overlay from weekly-sync-451e2's RTDB over a WebSocket. That host
+    // MUST be in connect-src on the hub or the browser blocks the read and the sim
+    // silently falls back to static rates. Wildcard: firebase shards RTDB across
+    // regional hosts (s-gke-*.firebaseio.com) the project host redirects the socket
+    // to (browser-verified 2026-06-26). SCOPED to /hub — the marketing site never
+    // loads firebase, so its CSP stays tight (max-security directive 2026-06-26).
+    const hubCsp = HUB_SECURITY_HEADERS["Content-Security-Policy"];
+    expect(hubCsp).toContain("wss://*.firebaseio.com");
+    expect(hubCsp).toContain("https://*.firebaseio.com");
+    // The default (marketing) CSP must NOT widen connect-src to firebase.
+    const baseCsp = SECURITY_HEADERS["Content-Security-Policy"];
+    expect(baseCsp).not.toContain("firebaseio.com");
+  });
+
+  it("applySecurityHeaders emits the firebase-allowing CSP only when hub:true", () => {
+    const base = applySecurityHeaders(new Response("x"));
+    expect(base.headers.get("Content-Security-Policy")).not.toContain("firebaseio.com");
+    const hub = applySecurityHeaders(new Response("x"), { hub: true });
+    expect(hub.headers.get("Content-Security-Policy")).toContain("wss://*.firebaseio.com");
   });
 
   it("includes HSTS with includeSubDomains", () => {
