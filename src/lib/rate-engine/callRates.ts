@@ -135,14 +135,14 @@ export const CALL_RATE_DATA: Record<string, CallRateEntry> = {
 
   // ===== Anesthesia =====
   'anesthesiology': {
-    weekday: worked(2600, 2750, 2675, 12),
+    weekday: worked(2675, 3900, 3300, 12),
     weekend: null,
     holiday: null,
     callback: { min: 400, max: 500 },
     gratisHrs: null,
-    sources: 2,
+    sources: 3,
     category: 'Anesthesia',
-    note: 'Exact weekday daily from Aya; public holiday $450/hr was an hourly premium, not a daily stipend.',
+    note: 'Worked-day 12-hr band, all cited: Aya $2,675 (floor), Bright Line $3,300/12h (modal), AnesthesiaOnCall $300-325/hr (~$3,900 ceiling) — 2026-06 audit, adversarially verified; conservatively preserves the Aya floor rather than dropping it. locums.one $4,800-5,400 excluded as marketing. Public holiday $450/hr is an hourly premium, not a daily stipend.',
   },
   'crna': {
     weekday: null, weekend: null, holiday: null, callback: null, gratisHrs: null,
