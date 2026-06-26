@@ -2402,7 +2402,7 @@
           "source": null,
           "hasWarning": false
         },
-        "baseRate": 147,
+        "baseRate": 179,
         "callOnly": {
           "isCallOnly": false,
           "source": "default",
@@ -2416,7 +2416,7 @@
         "callbackRate": 0
       },
       "output": {
-        "base": 147,
+        "base": 179,
         "geoMult": 1.13,
         "ruralMult": 1,
         "shiftMult": 1,
@@ -2426,11 +2426,11 @@
         "holidayMult": 1,
         "combinedMult": 1.13,
         "cappedMult": 1.13,
-        "payRate": 160,
-        "billRate": 200,
+        "payRate": 200,
+        "billRate": 250,
         "capped": false,
         "payRateCapped": false,
-        "uncapped": 166,
+        "uncapped": 202,
         "marketMaxApplied": true,
         "isCallOnly": false
       }
@@ -5594,7 +5594,7 @@
           "source": null,
           "hasWarning": false
         },
-        "baseRate": 259,
+        "baseRate": 287,
         "callOnly": {
           "isCallOnly": false,
           "source": "default",
@@ -5608,7 +5608,7 @@
         "callbackRate": 0
       },
       "output": {
-        "base": 259,
+        "base": 287,
         "geoMult": 1.13,
         "ruralMult": 1,
         "shiftMult": 1,
@@ -5618,12 +5618,12 @@
         "holidayMult": 1,
         "combinedMult": 1.13,
         "cappedMult": 1.13,
-        "payRate": 290,
-        "billRate": 365,
+        "payRate": 324,
+        "billRate": 410,
         "capped": false,
         "payRateCapped": false,
-        "uncapped": 293,
-        "marketMaxApplied": true,
+        "uncapped": 324,
+        "marketMaxApplied": false,
         "isCallOnly": false
       }
     },
@@ -6506,7 +6506,7 @@
           "source": null,
           "hasWarning": false
         },
-        "baseRate": 259,
+        "baseRate": 297,
         "callOnly": {
           "isCallOnly": false,
           "source": "default",
@@ -6520,7 +6520,7 @@
         "callbackRate": 0
       },
       "output": {
-        "base": 259,
+        "base": 297,
         "geoMult": 1.13,
         "ruralMult": 1,
         "shiftMult": 1,
@@ -6530,11 +6530,11 @@
         "holidayMult": 1,
         "combinedMult": 1.13,
         "cappedMult": 1.13,
-        "payRate": 275,
-        "billRate": 345,
+        "payRate": 330,
+        "billRate": 415,
         "capped": false,
         "payRateCapped": false,
-        "uncapped": 293,
+        "uncapped": 336,
         "marketMaxApplied": true,
         "isCallOnly": false
       }

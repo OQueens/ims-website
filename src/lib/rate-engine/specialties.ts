@@ -73,7 +73,7 @@ const _SPECIALTIES_RAW: Record<string, SpecialtyRateInput> = {
   // --- Hospital Medicine ---
   'hospitalist': { min: 145, max: 240, confidence: 'high', category: 'Hospital Medicine' },
   'hospitalist nocturnist': { min: 179, max: 260, category: 'Hospital Medicine' },
-  'internal medicine': { min: 115, max: 160, confidence: 'high', category: 'Hospital Medicine' },
+  'internal medicine': { min: 130, max: 200, confidence: 'medium', category: 'Hospital Medicine' },
   'family medicine': { min: 120, max: 175, confidence: 'high', category: 'Hospital Medicine' },
   'critical care': { min: 190, max: 300, confidence: 'medium', category: 'Hospital Medicine' },
 
@@ -127,7 +127,7 @@ const _SPECIALTIES_RAW: Record<string, SpecialtyRateInput> = {
   'correctional psychiatry': { min: 200, max: 270, category: 'Psychiatry' },
 
   // --- Radiology ---
-  'radiology': { min: 185, max: 290, confidence: 'high', category: 'Radiology' },
+  'radiology': { min: 185, max: 330, confidence: 'high', category: 'Radiology' },
   'interventional radiology': { min: 350, max: 460, category: 'Radiology' },
   'neuroradiology': { min: 250, max: 350, category: 'Radiology' },
 
@@ -141,7 +141,7 @@ const _SPECIALTIES_RAW: Record<string, SpecialtyRateInput> = {
   'pediatric orthopedics': { min: 210, max: 300, category: 'Pediatrics' },
 
   // --- Other Specialties ---
-  'urology': { min: 220, max: 275, confidence: 'high', category: 'Other Specialties' },
+  'urology': { min: 220, max: 330, confidence: 'medium', category: 'Other Specialties' },
   'dermatology': { min: 200, max: 300, confidence: 'low', category: 'Other Specialties' },
   'physical medicine & rehab': { min: 150, max: 200, category: 'Other Specialties' },
   'pathology': { min: 120, max: 200, category: 'Other Specialties' },
