@@ -11,14 +11,6 @@ export const esc = (s: unknown): string =>
 const usd = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
 const pct = (m: number) => (m === 1 ? '—' : `${m > 1 ? '+' : ''}${Math.round((m - 1) * 100)}%`);
 
-// Why each confidence level — keeps the label honest about what it measures
-// (mirrors the dashboard's scoreConfidence rationale: specialty + geography).
-const CONF_WHY: Record<string, string> = {
-  High: 'Specialty and geography identified.',
-  Medium: 'Specialty identified; geography not specified.',
-  Low: 'Specialty not recognized — quote manually.',
-};
-
 // Context pills: category · specialty · state · confidence (+ Call-Only).
 export function pillsHTML(q: SimQuote, specialtyLabel: string, stateName: string | null): string {
   const pills: Array<{ t: string; cls: string; title?: string }> = [
@@ -27,7 +19,7 @@ export function pillsHTML(q: SimQuote, specialtyLabel: string, stateName: string
   ];
   if (stateName) pills.push({ t: stateName, cls: 'sim-pill--geo' });
   if (q.isCallOnly) pills.push({ t: 'Call-Only', cls: 'sim-pill--call' });
-  pills.push({ t: q.confidence + ' confidence', cls: 'sim-pill--conf-' + q.confidence.toLowerCase(), title: CONF_WHY[q.confidence] });
+  pills.push({ t: q.confidence + ' confidence', cls: 'sim-pill--conf-' + q.confidence.toLowerCase(), title: q.confidenceReason });
   return pills.map((p) =>
     `<span class="sim-pill ${p.cls}"${p.title ? ` title="${esc(p.title)}"` : ''}>${esc(p.t)}</span>`,
   ).join('');
@@ -49,17 +41,37 @@ export function waterfallHTML(q: SimQuote): string {
 }
 
 // Market-position bar: where the quote sits in the researched range, with the
-// percentile chips (p70 highlighted, as in the dashboard).
+// percentile chips (p70 highlighted, as in the dashboard). On top of the
+// recommended (≈market-median) marker we overlay a PREMIUM TIER: the upper band
+// (p75 → top of the researched range) is shaded and marked at p90 — that's where
+// premium agencies and urgent / subspecialty assignments land. This makes the
+// real upper-market rate visible without inflating the headline recommendation
+// (the IMS "median + premium marker" positioning).
 export function marketHTML(q: SimQuote): string {
   if (q.isCallOnly || q.marketMax <= q.marketMin) return '';
   const span = q.marketMax - q.marketMin;
-  const markerRaw = span > 0 ? ((q.marketMarker - q.marketMin) / span) * 100 : 50;
-  const marker = Math.min(Math.max(markerRaw, 2), 98);
+  const pos = (v: number) => Math.min(Math.max(span > 0 ? ((v - q.marketMin) / span) * 100 : 50, 2), 98);
+  const marker = pos(q.marketMarker);
+  const pctVal = (p: number) => { const f = q.percentiles.find((x) => x.p === p); return f ? f.value : null; };
+  const p75 = pctVal(75), p90 = pctVal(90);
   const chips = q.percentiles.map((p) =>
     `<span class="sim-mkt__chip${p.p === 70 ? ' is-p70' : ''}">p${p.p}: ${usd(p.value)}</span>`,
   ).join('');
-  return `<div class="sim-mkt__bar"><span class="sim-mkt__fill"></span><span class="sim-mkt__marker" style="left:${marker.toFixed(1)}%"></span></div>
+
+  let premiumZone = '', premiumMarker = '', legend = '';
+  if (p75 != null && p90 != null && p90 > q.marketMarker) {
+    const z0 = pos(p75);
+    premiumZone = `<span class="sim-mkt__premium" style="left:${z0.toFixed(1)}%;width:${Math.max(98 - z0, 0).toFixed(1)}%"></span>`;
+    premiumMarker = `<span class="sim-mkt__marker sim-mkt__marker--premium" style="left:${pos(p90).toFixed(1)}%"></span>`;
+    legend = `<div class="sim-mkt__legend">
+      <span class="sim-mkt__leg"><i class="sim-mkt__key sim-mkt__key--rec"></i>Recommended (market median) ${usd(q.marketMarker)}</span>
+      <span class="sim-mkt__leg"><i class="sim-mkt__key sim-mkt__key--prem"></i>Premium tier ${usd(p90)}</span>
+    </div>`;
+  }
+
+  return `<div class="sim-mkt__bar"><span class="sim-mkt__fill"></span>${premiumZone}<span class="sim-mkt__marker" style="left:${marker.toFixed(1)}%"></span>${premiumMarker}</div>
     <div class="sim-mkt__scale"><span>${usd(q.marketMin)}</span><span class="sim-mkt__here">${usd(q.marketMarker)}</span><span>${usd(q.marketMax)}</span></div>
+    ${legend}
     <div class="sim-mkt__chips">${chips}</div>`;
 }
 

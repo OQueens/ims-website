@@ -34,6 +34,18 @@ export const FACILITY_KEYWORDS: Record<string, string> = {
   'rural trauma': 'rural_trauma',
 };
 
+// Whole-word/phrase match against an already-lowercased input. Anchors the
+// (trimmed) keyword with \b at both ends so a key never fires on a substring of
+// an unrelated word — e.g. 'asc' must not match "vascular"/"cardiovascular"/
+// "ascension", 'clinic' not "clinical", 'cah' not "cahokia", 'va' not
+// "Pennsylvania"/"Nevada". Keys may be multi-word; \b anchors the phrase ends.
+export function matchesKeyword(text: string, keyword: string): boolean {
+  const k = keyword.trim();
+  if (!k) return false;
+  const esc = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${esc}\\b`).test(text);
+}
+
 export const SHIFT_KEYWORDS: Record<string, string> = {
   'nights': 'night', 'night': 'night', 'nocturnist': 'night', 'overnight': 'night', 'night shift': 'night',
   'weekend': 'weekend_day', 'weekends': 'weekend_day', 'weekend day': 'weekend_day',
@@ -242,7 +254,10 @@ export function parseFreetextInput(raw: string): FreetextParseResult {
 
   // Facility keywords
   for (const [kw, ftype] of Object.entries(FACILITY_KEYWORDS)) {
-    if (input.includes(kw.trim())) { result.facility = ftype; break; }
+    // Word-boundary match (matchesKeyword) so a key never fires on a substring of
+    // an unrelated word — 'asc'∌"vascular"/"cardiovascular"/"ascension",
+    // 'clinic'∌"clinical", 'cah'∌"cahokia", 'va'∌"Pennsylvania"/"Nevada".
+    if (matchesKeyword(input, kw)) { result.facility = ftype; break; }
   }
 
   // Shift keywords — iterate longest-key-first so compound phrases ("weekend night")

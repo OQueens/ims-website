@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { billCalcHTML, callOnlyHTML } from './sim-render';
+import { billCalcHTML, callOnlyHTML, marketHTML } from './sim-render';
 import { quoteFromControls, defaultControls, billLadder, billAtMargin, type SimQuote } from './sim-adapter';
 
 // Minimal call-only SimQuote stub for the call-only surface (sufficient data).
 const callQuote = (over: Partial<SimQuote> = {}): SimQuote => ({
   isCallOnly: true, payRate: 300, billRate: 375, marginPct: 30, marginPerHr: 75,
-  confidence: 'High', confidenceData: 'high', category: 'Surgery', specMin: 0, specMax: 0,
+  confidence: 'High', confidenceData: 'high', confidenceReason: 'test stub', category: 'Surgery', specMin: 0, specMax: 0,
   waterfall: [], marketMin: 0, marketMax: 0, marketMarker: 300, percentiles: [],
   capped: false, marketMaxApplied: false, uncapped: 300,
   callOnly: { insufficientData: false, dayType: 'weekday', dailyPay: 2400, compModel: '24hr-beeper-call', coverageHrs: 24, sources: 2 },
@@ -13,6 +13,22 @@ const callQuote = (over: Partial<SimQuote> = {}): SimQuote => ({
 });
 
 const hourly = (margin = 22): SimQuote => quoteFromControls({ ...defaultControls(), marginPct: margin });
+
+describe('marketHTML — premium tier overlay (median + premium marker)', () => {
+  const q = quoteFromControls({ ...defaultControls(), specialtyKey: 'crna', region: 'Northeast', stateCode: 'PA' });
+  const html = marketHTML(q);
+  it('renders the recommended (median) marker + a distinct premium marker, zone, and legend', () => {
+    expect(html).toContain('sim-mkt__marker--premium');
+    expect(html).toContain('sim-mkt__premium');
+    expect(html).toContain('Premium tier');
+    expect(html).toContain('Recommended (market median)');
+  });
+  it('places the premium value (p90) above the recommended marker', () => {
+    const p90 = q.percentiles.find((p) => p.p === 90);
+    expect(p90).toBeTruthy();
+    expect(p90!.value).toBeGreaterThan(q.marketMarker); // premium tier sits above the median
+  });
+});
 // sim-render is engine-free by design (it ships in the main hub bundle), so the
 // caller passes the precomputed ladder + slider result from the (lazy) adapter.
 const render = (q: SimQuote) => billCalcHTML(q, billLadder(q.payRate), billAtMargin(q.payRate, q.marginPct));
