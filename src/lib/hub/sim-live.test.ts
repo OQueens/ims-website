@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { SpecialtyRate } from '../rate-engine/specialties';
 
-// Live RTDB `rate-simulator/market-rates` snapshot, swapped per test. Mirrors the
-// gate-2 market test's firebase/database mock (ref/get hoisted) so loadMarketRates
-// reads our fixture instead of the network.
+// Live RTDB snapshot, swapped per test. The hoisted firebase/database mock returns
+// `snap.market` for ANY path, so loadMarketBuckets reads our fixture (a v2
+// `market-rates-v2` tree) instead of the network. The legacy `market-rates` overlay
+// (loadMarketRates) is RETIRED — initLiveMarket reads ONLY the v2 posterior tree.
 const snap = vi.hoisted(() => ({ market: {} as Record<string, unknown> }));
 vi.mock('firebase/database', () => ({
   ref: vi.fn(),
@@ -27,20 +28,27 @@ import { quoteFromControls, type SimControls } from './sim-adapter';
 import { SPECIALTIES } from '../rate-engine/specialties';
 import { __resetEngineRuntime } from '../rate-engine/runtime';
 
-// The 2026-06-26 live RTDB snapshot: anesthesiology has a FRESH 3-family overlay
-// (→ overlaid), crna is the single-source $298 "poison" (→ suppressed, 1 < 2
-// families AND it's the curated-band displacement Fix A guards against).
-const liveMarket = () => ({
-  anesthesiology: {
-    min: 240, max: 450, p70: 387,
-    sources: ['serpapi_google', 'tavily_research', 'exa_semantic'],
-    valueType: 'market', lastUpdated: Date.now(),
+// A v2 `market-rates-v2` tree:
+//   - anesthesiology: a MARKET-TYPED (advertised_clinician_pay) posterior,
+//     corroborated (n=5, 2 families) at $420 → ANCHORS the quote.
+//   - radiology: a well-corroborated but INDIRECT (scraped_article_estimate)
+//     posterior at $260 → must NOT anchor (priors-only); radiology stays curated.
+//   - crna: absent → stays on its curated band.
+const mktBucket = (rateType: string, mean: number) => ({
+  __meta__: { lastUpdated: Date.now(), primaryRateType: rateType, coverageTier: 'primary' },
+  national: {
+    buckets: {
+      [rateType]: {
+        weighted_mean: mean, weighted_variance: 100, median: mean,
+        confidence: 'multi_source', n_distinct: 5, n_raw: 8,
+        source_families: ['serpapi', 'exa'], family_capped: false, lastUpdated: Date.now(),
+      },
+    },
   },
-  crna: {
-    min: 190, max: 345, p70: 298.5,
-    sources: ['tavily_research'],
-    valueType: 'market', lastUpdated: Date.now(),
-  },
+});
+const liveV2 = () => ({
+  anesthesiology: mktBucket('advertised_clinician_pay', 420),
+  radiology: mktBucket('scraped_article_estimate', 260),
 });
 
 const controls = (specialtyKey: string): SimControls => ({
@@ -48,52 +56,71 @@ const controls = (specialtyKey: string): SimControls => ({
   shift: 'day', urgency: 'Standard', weeks: 12, marginPct: 22,
 });
 
-let origAnes: SpecialtyRate;
-let origCrna: SpecialtyRate;
+const RESTORE = ['anesthesiology', 'radiology', 'crna'];
+let origs: Record<string, SpecialtyRate> = {};
 beforeEach(() => {
-  origAnes = { ...SPECIALTIES.anesthesiology };
-  origCrna = { ...SPECIALTIES.crna };
+  origs = {};
+  for (const k of RESTORE) origs[k] = { ...SPECIALTIES[k] };
   snap.market = {};
   __resetSimLive();
   __resetEngineRuntime();
   vi.mocked(get).mockClear();
 });
 afterEach(() => {
-  // loadMarketRates mutates the SPECIALTIES singleton in place — restore it so
-  // tests don't leak overlays into each other (or the rest of the suite).
-  Object.assign(SPECIALTIES.anesthesiology, origAnes);
-  if (!('provenance' in origAnes)) delete (SPECIALTIES.anesthesiology as unknown as Record<string, unknown>).provenance;
-  Object.assign(SPECIALTIES.crna, origCrna);
-  if (!('provenance' in origCrna)) delete (SPECIALTIES.crna as unknown as Record<string, unknown>).provenance;
+  // The overlay mutates the SPECIALTIES singleton in place — restore so tests don't
+  // leak overlays into each other (or the rest of the suite).
+  for (const k of RESTORE) {
+    Object.assign(SPECIALTIES[k], origs[k]);
+    if (!('provenance' in origs[k])) delete (SPECIALTIES[k] as unknown as Record<string, unknown>).provenance;
+  }
 });
 
-describe('initLiveMarket — wires the hub sim to the live RTDB market overlay', () => {
-  it('overlays a fresh multi-source specialty so the hub quote reflects live data', async () => {
-    snap.market = liveMarket();
+describe('initLiveMarket — wires the hub sim to the v2 posterior anchor (trust ladder)', () => {
+  it('anchors the quote on a corroborated MARKET-TYPED posterior', async () => {
+    snap.market = liveV2();
     const before = quoteFromControls(controls('anesthesiology'));
     expect(before.specMax).toBe(400); // static curated band
 
     await initLiveMarket();
 
     const after = quoteFromControls(controls('anesthesiology'));
-    expect(after.specMin).toBe(240); // live overlay applied
-    expect(after.specMax).toBe(450);
-    expect(after.payRate).toBeGreaterThan(before.payRate); // p70 387 > static 370
+    expect(SPECIALTIES.anesthesiology.p70).toBe(420);          // anchored to the posterior
+    expect(after.specMax).toBe(420);                            // band widened to contain it
+    expect(SPECIALTIES.anesthesiology.provenance).toBe('live');
+    expect(after.payRate).toBeGreaterThan(before.payRate);     // 420 > static 370
   });
 
-  it('leaves a single-source specialty on its curated band (CRNA $298 stays suppressed)', async () => {
-    snap.market = liveMarket();
+  it('does NOT anchor on an INDIRECT (scraped article) posterior — stays on the curated band', async () => {
+    snap.market = liveV2();
+    const before = quoteFromControls(controls('radiology'));
+    expect(before.specMax).toBe(330); // static curated band, p70 287
+
+    await initLiveMarket();
+
+    const after = quoteFromControls(controls('radiology'));
+    // The scraped $260 posterior must NOT have anchored radiology — the quote is
+    // unchanged from its curated baseline (priors-only; RESEARCH §6).
+    expect(after.payRate).toBe(before.payRate);
+    expect(SPECIALTIES.radiology.p70).toBe(287);
+    expect(SPECIALTIES.radiology.provenance).not.toBe('live');
+  });
+
+  it('leaves a specialty with no v2 posterior on its curated band (CRNA)', async () => {
+    snap.market = liveV2();
     await initLiveMarket();
 
     const crna = quoteFromControls(controls('crna'));
     expect(crna.specMin).toBe(190);
-    expect(crna.specMax).toBe(250); // curated band, NOT the 345 single-source overlay
+    expect(crna.specMax).toBe(250); // curated band
   });
 
   it('is single-flight — re-quotes do not re-read the RTDB', async () => {
-    snap.market = liveMarket();
+    snap.market = liveV2();
     await initLiveMarket();
     await initLiveMarket();
+    // initLiveMarket now reads ONE RTDB path (market-rates-v2 via loadMarketBuckets);
+    // the legacy market-rates overlay is retired. 1 = single-flight held (a
+    // non-memoised second init would make it 2).
     expect(vi.mocked(get)).toHaveBeenCalledTimes(1);
   });
 });

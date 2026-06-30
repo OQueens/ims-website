@@ -8,7 +8,7 @@
 
 import { ref, get } from 'firebase/database'
 import { getDb } from './runtime'
-import { SPECIALTIES, STATIC_CONFIDENCE } from './specialties'
+import { SPECIALTIES, STATIC_CONFIDENCE, STATIC_SPECIALTY_RANGES } from './specialties'
 import type { Confidence, SpecialtyRate } from './specialties'
 import { roundUp5 } from './rateCalculator'
 import { firebaseUnsafeKey } from './firebaseKeyCodec'
@@ -372,6 +372,169 @@ export async function loadMarketBuckets(): Promise<MarketBucketsResult> {
     // Any fetch/parse failure → safe default; the legacy overlay still serves.
     return { specialties: {}, fellBackToLegacy: true }
   }
+}
+
+// =============================================================================
+// Move #1 (RESEARCH §1+§2 #1) — the TRUST-LADDER quote anchor.
+//
+// loadMarketBuckets() READS the bridge's variance-weighted, MAD/median-robust
+// posterior (aggregateCell → market-rates-v2) but is display-only. This overlay
+// makes a posterior ANCHOR the quote — but ONLY when the signal is trustworthy
+// enough to beat the analyst-researched curated band. The trust ladder for a
+// LOCUM-PAY anchor (RESEARCH §1 verdict + §6 source tiers):
+//   1. actual_paid_locum / advertised_clinician_pay posterior, corroborated  → ANCHOR
+//   2. curated researched band (cross-referenced, audited)                   → the prior
+//   3. crowd_survey / scraped_article_estimate posterior                     → context only
+//   4. crude legacy min/max/p70 overlay (loadMarketRates)                    → RETIRED
+//
+// WHY market-typed ONLY (anchorableRateTypes): RESEARCH §6 classifies scraped
+// articles + crowd surveys as PRIORS, never the live anchor — they are indirect
+// (often permanent- or employed-pay prose), so even a well-corroborated scraped
+// posterior must not override a researched curated band. Only DIRECT locum-pay
+// signals (actual paid / advertised pay) earn the anchor. On a corroboration gate
+// of n_distinct ≥ 4 (integer) AND ≥ 2 independent families — robustness is
+// mathematically unavailable below n=4 (Rousseeuw & Verboven 2002), and ≥2
+// families guards the single-source-sets-the-price failure (Fix A/B, 2026-05-15).
+//
+// WHY the crude legacy overlay is RETIRED (the §1 verdict, "the crude min/max/p70
+// band should lose"): raw extrema have a breakdown point of zero — one outlier
+// sets the floor/ceiling. The init no longer calls loadMarketRates(); a cell with
+// no anchorable posterior simply keeps its CURATED band (the audited prior), which
+// the robust v2 posteriors corroborate better than the crude overlay did. The
+// loadMarketRates function is retained (tested, available) but unwired.
+//
+// WHY the band uses the static curated range: a promoted cell re-levels p70 to the
+// robust central and takes [min,max] from STATIC_SPECIALTY_RANGES (widened only to
+// contain the anchor). We do NOT derive the band from `weighted_variance`: that is
+// the estimator's standard error (1/ΣW), not population spread — it is 0 for
+// zero_spread cells, so a mean±k·SE band would collapse. Honest confidence-encoding
+// intervals + hierarchical shrinkage for thin cells are Moves #2/#3.
+// =============================================================================
+
+/** Rate types whose posterior may ANCHOR the quote — ONLY market-typed locum
+ *  signals (directly-observed paid rates + advertised clinician pay). Indirect
+ *  signals (crowd_survey, scraped_article_estimate) are priors-only (RESEARCH §6):
+ *  they inform display context but never drive the quote, so a scraped-article
+ *  estimate can never override the analyst-researched curated band. */
+export const DEFAULT_ANCHORABLE_RATE_TYPES: ReadonlySet<string> = new Set([
+  'actual_paid_locum',
+  'advertised_clinician_pay',
+])
+
+export interface BucketOverlayOptions {
+  /** Minimum distinct post-dedup observations for a primary bucket to anchor the
+   *  quote. Default 4 — the robust-spread floor (Rousseeuw & Verboven 2002); below
+   *  it, prefer the prior (Move #3 shrinkage will let thin cells contribute). */
+  minDistinct?: number
+  /** Minimum independent source families. Default 2 — corroboration; mirrors the
+   *  legacy single-source-market suppression (Fix A/B). Four scrapes of ONE brand
+   *  are not four independent votes. */
+  minFamilies?: number
+  /** Rate types allowed to anchor the quote. Default = market-typed only
+   *  (DEFAULT_ANCHORABLE_RATE_TYPES). Indirect rate types are excluded so the
+   *  curated prior wins over article/survey prose. */
+  anchorableRateTypes?: ReadonlySet<string>
+}
+
+/** Confidence tier a promoted bucket may display, by D-39 rate type. The displayed
+ *  number is now the LIVE posterior, so its confidence must reflect the bucket's
+ *  data type — NOT the curator's tier for a different (curated) number. Market-typed
+ *  pay signals (directly-observed paid locum / advertised clinician pay) may read
+ *  'high' once the corroboration gate is met (matches the existing 'high' =
+ *  "market-typed, 2+ independent families" definition); indirect signals (crowd
+ *  survey, scraped-article prose) cap at 'medium' even when corroborated — labeling
+ *  article-derived estimates 'high' would overstate confidence (no-fake-confidence
+ *  Core Value). Full confidence-chip semantics are Move #6; this is the honest floor. */
+function bucketConfidenceCeiling(rateType: string): Confidence {
+  switch (rateType) {
+    case 'actual_paid_locum':
+    case 'advertised_clinician_pay':
+      return 'high'
+    default: // crowd_survey, scraped_article_estimate, or anything unexpected
+      return 'medium'
+  }
+}
+
+/** Mutate SPECIALTIES in place: for every cell in `result` whose D-39 primary
+ *  bucket is a MARKET-TYPED rate (anchorableRateTypes) AND clears the corroboration
+ *  gate, set p70 to the posterior's robust central estimate (round(weighted_mean))
+ *  and take the displayed band from the static curated range (widened only to
+ *  contain the anchor). Returns the count promoted.
+ *
+ *  Pure w.r.t. Firebase (no I/O) → unit-testable without a db mock;
+ *  loadMarketBucketRates() is the async wrapper that fetches then applies. It is the
+ *  SOLE live overlay (loadMarketRates is retired/unwired): a cell with no anchorable
+ *  posterior is simply left on its CURATED band — the audited researched prior, which
+ *  the robust posteriors corroborate better than the crude legacy overlay did. */
+export function applyMarketBucketsOverlay(
+  result: MarketBucketsResult,
+  opts: BucketOverlayOptions = {},
+): number {
+  const minDistinct = opts.minDistinct ?? 4
+  const minFamilies = opts.minFamilies ?? 2
+  const anchorable = opts.anchorableRateTypes ?? DEFAULT_ANCHORABLE_RATE_TYPES
+  let promoted = 0
+
+  for (const [key, specBuckets] of Object.entries(result.specialties)) {
+    const spec = SPECIALTIES[key]
+    if (!spec) continue // result may carry a specialty the static table doesn't have
+    if (specBuckets.coverageTier !== 'primary' || specBuckets.primary === null) continue
+
+    // Trust-ladder gate: only MARKET-TYPED locum signals may anchor the quote.
+    // Indirect rate types (crowd_survey, scraped_article_estimate) are priors-only
+    // (RESEARCH §6) — they never override the curated band, even when corroborated.
+    if (!anchorable.has(specBuckets.primary.rateType)) continue
+
+    const b = specBuckets.primary.data
+    // A null weighted_mean is the manual_review_bimodal sentinel — NEVER anchor a
+    // bimodal cell on a collapsed mean (nor its median). Skip to the prior.
+    if (typeof b.weighted_mean !== 'number' || !Number.isFinite(b.weighted_mean) || b.weighted_mean <= 0) {
+      continue
+    }
+    // Corroboration gate: robust spread needs n≥4; ≥2 independent families guards
+    // the single-source-sets-the-price failure. n_distinct must be a positive
+    // INTEGER (a fractional value is a corrupted RTDB node — the bridge always
+    // writes integers; Number.isInteger also rejects NaN/Infinity/non-number).
+    if (!Number.isInteger(b.n_distinct) || b.n_distinct < minDistinct) continue
+    // Count DISTINCT, NON-BLANK families (not array length) so a duplicated or empty
+    // entry can't fake corroboration — same posture as loadMarketRates's
+    // `sources.filter(s => s.trim().length > 0).map(sourceFamily)` then Set.size.
+    const families = Array.isArray(b.source_families)
+      ? new Set(b.source_families.filter((s) => typeof s === 'string' && s.trim().length > 0)).size
+      : 0
+    if (families < minFamilies) continue
+
+    const anchor = Math.round(b.weighted_mean)
+    // Band base = frozen static curated range (never the legacy-overlaid band).
+    // Widen only to contain the anchor; never fabricate a spread from the
+    // (degenerate) estimator variance. STATIC_SPECIALTY_RANGES is built from every
+    // SPECIALTIES key, so this is non-null for any cell that passed the `!spec`
+    // guard; skip rather than fall back to the (already-mutated) live spec, which
+    // would defeat the whole point of the frozen snapshot.
+    const range = STATIC_SPECIALTY_RANGES[key]
+    if (!range) continue
+    spec.p70 = anchor
+    spec.min = Math.min(range.min, anchor)
+    spec.max = Math.max(range.max, anchor)
+    // The displayed range now reflects a live posterior, not the curated baseline.
+    spec.provenance = 'live'
+    // Confidence reflects the LIVE bucket's rate type, not the curator's tier for a
+    // now-superseded curated number — article/survey signals cap at 'medium' even
+    // when corroborated, so we never display article-derived data as 'high'.
+    spec.confidence = bucketConfidenceCeiling(specBuckets.primary.rateType)
+    promoted++
+  }
+
+  return promoted
+}
+
+/** Async wrapper: read the v2 posterior tree (loadMarketBuckets) then apply the
+ *  overlay. Mirrors loadMarketRates's return (count of cells changed). Safe by
+ *  construction — loadMarketBuckets already swallows fetch errors and gates
+ *  freshness, so this never throws and a stale/absent tree promotes nothing. */
+export async function loadMarketBucketRates(opts?: BucketOverlayOptions): Promise<number> {
+  const result = await loadMarketBuckets()
+  return applyMarketBucketsOverlay(result, opts)
 }
 
 export type RateMode = 'hourly' | 'call_daily'
