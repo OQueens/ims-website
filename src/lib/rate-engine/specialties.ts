@@ -55,7 +55,7 @@ interface SpecialtyRateInput {
 
 const _SPECIALTIES_RAW: Record<string, SpecialtyRateInput> = {
   // --- Anesthesia ---
-  'anesthesiology': { min: 300, max: 400, confidence: 'high', category: 'Anesthesia' },
+  'anesthesiology': { min: 300, max: 400, confidence: 'medium', category: 'Anesthesia' },
   'crna': { min: 190, max: 250, confidence: 'medium', category: 'Anesthesia' },
   'anesthesiologist assistant': { min: 180, max: 240, category: 'Anesthesia' },
   'cardiac anesthesiology': { min: 350, max: 450, category: 'Anesthesia' },
@@ -64,21 +64,21 @@ const _SPECIALTIES_RAW: Record<string, SpecialtyRateInput> = {
   'pain management': { min: 250, max: 341, category: 'Anesthesia' },
 
   // --- Emergency ---
-  'emergency medicine': { min: 200, max: 300, confidence: 'high', category: 'Emergency' },
+  'emergency medicine': { min: 200, max: 300, confidence: 'medium', category: 'Emergency' },
   'em nocturnist': { min: 240, max: 340, category: 'Emergency' },
   'rural emergency medicine': { min: 250, max: 350, category: 'Emergency' },
   'pediatric emergency medicine': { min: 210, max: 300, category: 'Emergency' },
   'urgent care': { min: 115, max: 155, confidence: 'medium', category: 'Emergency' },
 
   // --- Hospital Medicine ---
-  'hospitalist': { min: 145, max: 240, confidence: 'high', category: 'Hospital Medicine' },
+  'hospitalist': { min: 145, max: 240, confidence: 'medium', category: 'Hospital Medicine' },
   'hospitalist nocturnist': { min: 179, max: 260, category: 'Hospital Medicine' },
   'internal medicine': { min: 130, max: 200, confidence: 'medium', category: 'Hospital Medicine' },
-  'family medicine': { min: 120, max: 175, confidence: 'high', category: 'Hospital Medicine' },
+  'family medicine': { min: 120, max: 175, confidence: 'medium', category: 'Hospital Medicine' },
   'critical care': { min: 190, max: 300, confidence: 'medium', category: 'Hospital Medicine' },
 
   // --- Surgery ---
-  'general surgery': { min: 200, max: 310, confidence: 'high', category: 'Surgery' },
+  'general surgery': { min: 200, max: 310, confidence: 'low', category: 'Surgery' },
   'orthopedic surgery': { min: 210, max: 340, confidence: 'medium', category: 'Surgery' },
   'neurosurgery': { min: 330, max: 480, category: 'Surgery' },
   'thoracic surgery': { min: 280, max: 400, category: 'Surgery' },
@@ -118,7 +118,7 @@ const _SPECIALTIES_RAW: Record<string, SpecialtyRateInput> = {
   'urogynecology': { min: 200, max: 290, category: 'OB/GYN' },
 
   // --- Psychiatry ---
-  'psychiatry': { min: 180, max: 255, confidence: 'high', category: 'Psychiatry' },
+  'psychiatry': { min: 180, max: 255, confidence: 'medium', category: 'Psychiatry' },
   'child psychiatry': { min: 200, max: 280, category: 'Psychiatry' },
   'addiction psychiatry': { min: 185, max: 250, category: 'Psychiatry' },
   'geriatric psychiatry': { min: 185, max: 240, category: 'Psychiatry' },
@@ -127,7 +127,7 @@ const _SPECIALTIES_RAW: Record<string, SpecialtyRateInput> = {
   'correctional psychiatry': { min: 200, max: 270, category: 'Psychiatry' },
 
   // --- Radiology ---
-  'radiology': { min: 185, max: 330, confidence: 'high', category: 'Radiology' },
+  'radiology': { min: 185, max: 330, confidence: 'medium', category: 'Radiology' },
   'interventional radiology': { min: 350, max: 460, category: 'Radiology' },
   'neuroradiology': { min: 250, max: 350, category: 'Radiology' },
 
