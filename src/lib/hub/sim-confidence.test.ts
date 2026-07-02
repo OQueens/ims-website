@@ -17,8 +17,13 @@ describe('confidence honesty — weaker of identification vs data-tier', () => {
     expect(conf('crna', 'Northeast', 'PA')).toBe('Medium');
   });
 
-  it('anesthesiology + a state → High (data tier high, geo identified)', () => {
-    expect(conf('anesthesiology', 'South', 'TX')).toBe('High');
+  it('anesthesiology + a state → Medium (curated bands are no longer high; data tier caps it)', () => {
+    // After the honesty downgrade (5d6ce34) NO curated band is 'high' — the public
+    // locum market exposes only ~1-2 posted-requisition families per band, short of
+    // the >=3 the 'high' tier requires. So even a well-identified anesthesiology quote
+    // caps at Medium; static 'High' is retired — only a corroborated LIVE market
+    // posterior (the Move #1 overlay) earns 'high' now.
+    expect(conf('anesthesiology', 'South', 'TX')).toBe('Medium');
   });
 
   it('CRNA National (no geo) → Medium', () => {
