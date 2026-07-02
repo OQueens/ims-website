@@ -212,12 +212,14 @@ describe('sim-adapter — UI option metadata', () => {
     expect(q.billRate).toBeGreaterThan(q.payRate);
   });
 
-  it('does NOT overstate confidence as High when no geography is chosen (honesty)', () => {
-    // Default first paint = anesthesiology / National (no state) → the dashboard
-    // scores Medium (specialty known, geography not). High requires a real state.
+  it('does NOT overstate confidence as High — curated bands cap at Medium post honesty-downgrade', () => {
+    // Default first paint = anesthesiology / National (no state) → Medium (specialty
+    // known, geography not). After the honesty downgrade (5d6ce34) no curated band is
+    // 'high', so even WITH an identified state anesthesiology caps at Medium — static
+    // 'High' is retired; only a corroborated live market posterior (the overlay) earns it.
     expect(quoteFromControls(defaultControls()).confidence).toBe('Medium');
-    expect(quoteFromControls(base({ region: 'South' })).confidence).toBe('High'); // a region picks a representative state
-    expect(quoteFromControls(base({ stateCode: 'TX' })).confidence).toBe('High');
+    expect(quoteFromControls(base({ region: 'South' })).confidence).toBe('Medium'); // geo identified, data tier caps it
+    expect(quoteFromControls(base({ stateCode: 'TX' })).confidence).toBe('Medium');
   });
 
   it('call-only bill is the dashboard fixed 20% margin, NOT the hourly slider', () => {
