@@ -10,7 +10,8 @@
 export * from './index'
 
 // Firebase RTDB market overlays + calibration (need configureEngine({ db })).
-export { computeDisplayedRate, computeDisplayedBill, loadMarketRates, loadMarketBuckets, loadSpecialtyCalibration } from './marketRates'
+export { computeDisplayedRate, computeDisplayedBill, loadMarketRates, loadMarketBuckets, loadMarketBucketRates, applyMarketBucketsOverlay, DEFAULT_ANCHORABLE_RATE_TYPES, loadSpecialtyCalibration } from './marketRates'
+export type { BucketOverlayOptions } from './marketRates'
 
 // Supabase CRNA cell envelope (needs configureEngine({ supabase })).
 export { getCrnaCellEnvelope, deriveLocumMultCrna } from './crnaCellLookup'

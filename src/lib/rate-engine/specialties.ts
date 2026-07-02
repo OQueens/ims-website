@@ -197,6 +197,34 @@ export const STATIC_CONFIDENCE: Record<string, Confidence> = Object.fromEntries(
     .map(([key, val]): [string, Confidence] => [key, val.confidence ?? 'modeled']),
 );
 
+/** A specialty's curated [min, max, p70] band, with no confidence/category/
+ *  provenance. The shape STATIC_SPECIALTY_RANGES freezes. */
+export interface SpecialtyRange {
+  min: number;
+  max: number;
+  p70: number;
+}
+
+// Static curator-set RANGE baseline. Captured from the freshly-built SPECIALTIES
+// at module load — BEFORE any runtime overlay mutates it — and deep-frozen so it
+// can NEVER be mutated. Mirrors STATIC_CONFIDENCE.
+//
+// Consumed by the v2-posterior overlay (marketRates.ts applyMarketBucketsOverlay,
+// RESEARCH §2 #1): when a posterior bucket is promoted to the quote anchor, the
+// displayed RANGE reverts to THIS researched curated band rather than inheriting
+// whatever loadMarketRates() last wrote. The posterior REPLACES the legacy scrape
+// signal for that cell, so pairing the robust anchor with the legacy
+// outlier-driven ceiling (e.g. a $450 max set by a single source) would be
+// incoherent. loadMarketRates is unaffected — it never reads this snapshot.
+export const STATIC_SPECIALTY_RANGES: Record<string, SpecialtyRange> = Object.freeze(
+  Object.fromEntries(
+    Object.entries(SPECIALTIES).map(([key, s]): [string, SpecialtyRange] => [
+      key,
+      Object.freeze({ min: s.min, max: s.max, p70: s.p70 }),
+    ]),
+  ),
+) as Record<string, SpecialtyRange>;
+
 // Display label for the confidence tier. The 'modeled' literal is internally
 // honest (research-derived static fallback) but opaque to a clinician end-user;
 // the UI surfaces 'research-derived' instead. Other tiers display verbatim.
