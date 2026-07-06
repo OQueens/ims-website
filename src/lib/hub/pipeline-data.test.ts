@@ -46,4 +46,27 @@ describe('pipeline-data', () => {
     expect(cleanDate('nope')).toBeNull();
     expect(cleanDate('')).toBeNull();
   });
+
+  it('readPerson never throws on non-object input', () => {
+    for (const bad of [null, undefined, 42, 'str', [] as unknown]) {
+      const p = readPerson(bad);
+      expect(p.id).toBe('');
+      expect(p.stage).toBe('warm_lead');
+      expect(p.version).toBe(0);
+      expect(p.checklist_audit).toEqual({});
+    }
+  });
+
+  it('caps long text, rejects bad email, floors negative version', () => {
+    const p = readPerson({ id: 'x', full_name: 'a'.repeat(500), email: 'not-an-email', version: -5 });
+    expect(p.full_name.length).toBe(120);
+    expect(p.email).toBeNull();
+    expect(p.version).toBe(0);
+  });
+
+  it('reads a populated checklist_audit entry', () => {
+    const p = readPerson({ id: 'x', full_name: 'A', checklist_audit: { chk_needs_contract: { by: 'z@iastaffing.com', at: 1700 }, chk_bogus: { by: 'z@iastaffing.com', at: 1 } } });
+    expect(p.checklist_audit.chk_needs_contract).toEqual({ by: 'z@iastaffing.com', at: 1700 });
+    expect(p.checklist_audit.chk_bogus).toBeUndefined();
+  });
 });

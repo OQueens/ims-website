@@ -75,6 +75,7 @@ export function cleanEmail(raw: unknown): string {
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+// Accepts YYYY-MM-DD; an ISO datetime is truncated to its date part (date-only field).
 export function cleanDate(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
   const s = raw.trim().slice(0, 10);
@@ -121,7 +122,7 @@ export function readPerson(row: unknown): PipelinePerson {
     email: cleanEmail(r.email) || null,
     owner_email: cleanEmail(r.owner_email) || null,
     target_start_date: cleanDate(r.target_start_date),
-    assignment_id: typeof r.assignment_id === 'string' ? r.assignment_id : null,
+    assignment_id: (typeof r.assignment_id === 'string' && r.assignment_id.length > 0 && r.assignment_id.length <= 64) ? r.assignment_id : null,
     assignment_number: cleanText(r.assignment_number, MAX_LABEL_LEN),
     assignment_label: cleanText(r.assignment_label, MAX_LABEL_LEN),
     chk_collecting_docs: isBool(r.chk_collecting_docs),
@@ -132,7 +133,7 @@ export function readPerson(row: unknown): PipelinePerson {
     chk_provider_working: isBool(r.chk_provider_working),
     checklist_audit: cleanAudit(r.checklist_audit),
     notes: cleanText(r.notes, MAX_NOTES_LEN),
-    version: typeof r.version === 'number' && Number.isFinite(r.version) ? Math.floor(r.version) : 0,
+    version: typeof r.version === 'number' && Number.isFinite(r.version) ? Math.max(0, Math.floor(r.version)) : 0,
     updated_by: cleanEmail(r.updated_by) || null,
     updated_at: typeof r.updated_at === 'string' ? r.updated_at : null,
   };
