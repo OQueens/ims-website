@@ -7,13 +7,21 @@
 -- Mirrors src/lib/hub/pipeline-ops.ts applyOp. Text fields are stored raw here and
 -- escaped on READ by readPerson (pipeline-data.ts), matching the hub's
 -- sanitize-on-read posture — the RPC contains no sanitizer.
--- GRACEFUL DEGRADATION (mirrors the oracle's coerceField/cleanDate): the typed
+-- GRACEFUL DEGRADATION (approximates the oracle's coerceField/cleanDate): the typed
 -- columns target_start_date (date), assignment_id (uuid) and the row id (uuid) are
 -- coerced inside BEGIN/EXCEPTION blocks so a malformed/hostile value degrades to
--- NULL (or a no-op for a bad id) instead of throwing a hard cast error that would
--- abort the whole op. A non-board/unknown stage falls back to 'warm_lead'. Residual:
--- assignment_id can only store a well-formed uuid (the oracle keeps any <=64-char
--- string) — unreachable via the real client, which always sends a uuid.
+-- NULL (or a no-op for a bad/absent id) instead of throwing a hard cast error that
+-- would abort the whole op. A non-board/unknown stage falls back to 'warm_lead'.
+-- Two DOCUMENTED residual divergences from the TS oracle, both graceful (never a
+-- throw) and both unreachable via the legitimate UI but reachable via an arbitrary
+-- hostile POST (validateOp does not format-check these values):
+--   1. assignment_id stores only a well-formed uuid; the oracle keeps any <=64-char
+--      string (the column is uuid). The real client always sends a uuid.
+--   2. target_start_date is STRICTER than cleanDate for impossible/extreme calendar
+--      dates (e.g. 2026-02-30: JS Date.parse rolls it over and the oracle keeps the
+--      string, but Postgres ::date rejects it -> NULL). Exact JS-Date/PG-date parity
+--      is unachievable (rollover, year 0, BC differ); the <input type=date> UI can
+--      only emit real dates, so both sides agree on every value the UI produces.
 -- NOTE: coalesce/case/nullif/in are SQL keyword constructs — write them BARE; real
 -- functions stay pg_catalog-qualified for search_path='' safety.
 
@@ -83,13 +91,17 @@ BEGIN
     EXCEPTION WHEN others THEN
       RETURN;
     END;
+    -- A NULL/absent id casts to NULL WITHOUT raising, so the block above won't catch
+    -- it; guard explicitly or the NOT NULL PK insert below would 502 (validateOp's
+    -- isId rejects this upstream, but the RPC defends itself like every other field).
+    IF v_cid IS NULL THEN RETURN; END IF;
     -- Mirror applyOp: an out-of-set stage falls back to 'warm_lead' (never aborts on
     -- the CHECK constraint). The same coerced stage drives the working⟺placed invariant.
     v_stage := CASE WHEN (p_op->'input'->>'stage') IN
                  ('warm_lead','active_bid','accepted_bid','needs_onboarding','placed','archived')
                THEN p_op->'input'->>'stage' ELSE 'warm_lead' END;
-    -- Degrade a malformed target_start_date to NULL (mirror cleanDate: first 10 chars,
-    -- YYYY-MM-DD) instead of throwing on the ::date cast.
+    -- Degrade a malformed target_start_date to NULL (approximate cleanDate: first 10
+    -- chars, YYYY-MM-DD; stricter on impossible dates — see header) not a ::date throw.
     BEGIN
       v_date := CASE WHEN pg_catalog.substr(pg_catalog.btrim(coalesce(p_op->'input'->>'target_start_date','')),1,10) ~ '^\d{4}-\d{2}-\d{2}$'
                      THEN pg_catalog.substr(pg_catalog.btrim(p_op->'input'->>'target_start_date'),1,10)::date ELSE NULL END;
@@ -152,9 +164,9 @@ BEGIN
   ELSIF v_type = 'updateField' THEN
     v_field := p_op->>'field';
     v_value := p_op->>'value';  -- null when JSON value is null
-    -- Coerce the two typed columns the SAME way the TS oracle does — degrade a
-    -- malformed value to NULL, NEVER throw (a bare ::date/::uuid cast would abort the
-    -- whole op). Only the branch matching v_field actually consumes these.
+    -- Coerce the two typed columns toward the TS oracle — degrade a malformed value
+    -- to NULL, NEVER throw (a bare ::date/::uuid cast would abort the whole op). Only
+    -- the branch matching v_field consumes these. Residuals documented in the header.
     BEGIN
       v_date := CASE WHEN pg_catalog.substr(pg_catalog.btrim(coalesce(v_value,'')),1,10) ~ '^\d{4}-\d{2}-\d{2}$'
                      THEN pg_catalog.substr(pg_catalog.btrim(v_value),1,10)::date ELSE NULL END;

@@ -24,6 +24,11 @@ run('hub_pipeline_apply parity', () => {
   // evaluated by vitest during collection, and createClient(undefined) throws
   // (same guard as sync-rpc.integration.test.ts).
   const db: SupabaseClient = RUN ? createClient(URL!, KEY!, { auth: { persistSession: false } }) : (null as unknown as SupabaseClient);
+  // compare() runs readPerson on BOTH sides. The oracle side (b) is already canonical
+  // (applyOp escaped text on write), so a text field containing HTML-sensitive chars
+  // would be double-escaped here vs. single-escaped on the RPC (a) side. All fixtures
+  // below use plain ASCII to stay clear of that; to add hostile-string coverage,
+  // compare readPerson(DB) against the oracle DIRECTLY (readPerson on the DB side only).
   const compare = (a: unknown, b: unknown) => {
     const strip = (r: Record<string, unknown>) => { const { version, updated_at, updated_by, created_at, ...rest } = r; return rest; };
     expect(strip(readPerson(a) as unknown as Record<string, unknown>)).toEqual(strip(readPerson(b) as unknown as Record<string, unknown>));
@@ -90,6 +95,12 @@ run('hub_pipeline_apply parity', () => {
     const { data: noop, error: noopErr } = await db.rpc('hub_pipeline_apply', { p_op: { type: 'archivePerson', id: 'definitely-not-a-uuid' }, p_email: EMAIL });
     expect(noopErr).toBeNull();
     expect(Array.isArray(noop) ? noop.length : noop).toBeFalsy();
+
+    // createPerson with a NULL/absent id is a graceful no-op too — a NULL casts to uuid
+    // WITHOUT raising, so the RPC guards it explicitly rather than 502 on the NOT NULL PK.
+    const { data: nullId, error: nullIdErr } = await db.rpc('hub_pipeline_apply', { p_op: { type: 'createPerson', input: { full_name: 'No Id' } }, p_email: EMAIL });
+    expect(nullIdErr).toBeNull();
+    expect(Array.isArray(nullId) ? nullId.length : nullId).toBeFalsy();
 
     // A well-formed value still round-trips.
     expect(readPerson(await rpc({ type: 'updateField', id, field: 'target_start_date', value: '2026-08-01' })).target_start_date).toBe('2026-08-01');
