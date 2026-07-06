@@ -1,5 +1,5 @@
-// ⚠ VENDORED — DO NOT EDIT. Canonical source: ias-dashboard (OQueens/oqueens-ias-dashboard) src/features/rate-simulator/engine/.
-// Re-sync with: node scripts/sync-rate-engine.mjs. Drift is gated by src/lib/hub/rate-engine-parity.test.ts.
+// ⚠ CANONICAL LIVE COPY. This is the rate engine imstaffing.ai/hub serves; edit it here. The ias-dashboard twin is DEAD.
+// Do NOT re-sync (scripts/sync-rate-engine.mjs is retired). Behavioral parity vs the frozen golden master: src/lib/hub/rate-engine-parity.test.ts.
 // === Phase B.7.1 — MAD outlier rejection + IVW aggregation ===
 // Pure function per ALGORITHMS.md §1 (lines 100-162 verbatim).
 // No framework imports. Consumed by crnaCellLookup.ts (Task 7).
