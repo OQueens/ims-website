@@ -51,7 +51,7 @@
 - Test: `src/lib/hub/pipeline-data.test.ts`
 
 **Interfaces:**
-- Produces: `Stage`, `BOARD_STAGES`, `STAGES`, `ChecklistKey`, `CHECKLIST_KEYS`, `CHECKLIST_LABELS`, `STAGE_LABELS`, `PipelinePerson`, `PipelinePersonInput`, caps (`MAX_*`), `escapeText` (re-exported from sync-data), `cleanEmail`, `cleanDate`, `readPerson(row): PipelinePerson`, `checklistCount(p): number`, `groupByStage(people): Record<BoardStage, PipelinePerson[]>`.
+- Produces: `Stage`, `BOARD_STAGES`, `STAGES`, `ChecklistKey`, `CHECKLIST_KEYS`, `CHECKLIST_LABELS`, `STAGE_LABELS`, `PipelinePerson`, caps (`MAX_*`), `escapeText` (re-exported from sync-data), `cleanEmail`, `cleanDate`, `readPerson(row): PipelinePerson`, `checklistCount(p): number`, `groupByStage(people): Record<BoardStage, PipelinePerson[]>`. (The create-input type is `CreatePersonInput`, defined in Task 2 — Task 1 needs no separate input type.)
 
 - [ ] **Step 1: Write the failing test**
 
