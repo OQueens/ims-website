@@ -7,9 +7,8 @@ import {
   BOARD_STAGES, STAGE_LABELS, CHECKLIST_KEYS, CHECKLIST_LABELS, chkCol,
   type PipelinePerson, type BoardStage,
 } from '../../lib/hub/pipeline-data';
-import { rosterEntry } from '../../lib/hub/hub-roster';
+import { rosterEntry, rosterPickerList } from '../../lib/hub/hub-roster';
 import { applyOp, type PipelineOp } from '../../lib/hub/pipeline-ops';
-import { rosterPickerList } from '../../lib/hub/hub-roster';
 
 (function pipeline() {
   const board = document.getElementById('pipe-board');
@@ -89,6 +88,7 @@ import { rosterPickerList } from '../../lib/hub/hub-roster';
 
   // Per-row version guard: drop any echo/poll older than what we've adopted.
   const version = new Map<string, number>();
+  const pending = new Set<string>();  // createPerson ids awaiting first server confirmation
 
   const statusEl = document.getElementById('pipe-status');
   let statusClear: ReturnType<typeof setTimeout> | undefined;
@@ -107,6 +107,7 @@ import { rosterPickerList } from '../../lib/hub/hub-roster';
     if (!row || !row.id) return;
     if ((version.get(row.id) ?? -1) > row.version) return;
     version.set(row.id, row.version);
+    pending.delete(row.id);  // server-confirmed → clear the optimistic-create guard
     if (row.stage === 'archived' && !archiveMode) people.delete(row.id);
     else people.set(row.id, row);
     render();
@@ -114,7 +115,8 @@ import { rosterPickerList } from '../../lib/hub/hub-roster';
 
   // Optimistic single-op persistence. applyOp already updated `people` at the call
   // site; sendOp POSTs the op and adopts the server's authoritative echo.
-  function sendOp(op: PipelineOp) {
+  const MAX_RETRIES = 5;
+  function sendOp(op: PipelineOp, attempt = 0) {
     setStatus('saving');
     (async () => {
       try {
@@ -127,8 +129,15 @@ import { rosterPickerList } from '../../lib/hub/hub-roster';
           const b = await res.json();
           setStatus('saved');
           if (b?.ok && b.person) adopt(readPerson(b.person));
-        } else { setStatus('error'); setTimeout(() => sendOp(op), 3000); }
-      } catch { setStatus('error'); setTimeout(() => sendOp(op), 3000); }
+        } else if (res.status >= 500 && attempt < MAX_RETRIES) {
+          setStatus('error'); setTimeout(() => sendOp(op, attempt + 1), 3000);  // transient server error — bounded retry
+        } else {
+          setStatus('error');  // 4xx (rejected op) or retries exhausted — do not loop forever
+        }
+      } catch {
+        setStatus('error');  // network error — transient
+        if (attempt < MAX_RETRIES) setTimeout(() => sendOp(op, attempt + 1), 3000);
+      }
     })();
   }
 
@@ -137,7 +146,7 @@ import { rosterPickerList } from '../../lib/hub/hub-roster';
   function commit(op: PipelineOp) {
     if (op.type === 'createPerson') {
       const created = applyOp(null, op, ctx());
-      if (created) people.set(created.id, created);
+      if (created) { people.set(created.id, created); pending.add(created.id); }
     } else {
       const cur = people.get(op.id);
       const next = applyOp(cur ?? null, op, ctx());
@@ -205,7 +214,7 @@ import { rosterPickerList } from '../../lib/hub/hub-roster';
       const seen = new Set<string>();
       for (const raw of b.people) { const p = readPerson(raw); if (!p.id) continue; seen.add(p.id); adopt(p); }
       // Drop rows that left this view (archived elsewhere) — only in active mode.
-      if (!archiveMode) { let changed = false; for (const id of [...people.keys()]) if (!seen.has(id)) { people.delete(id); version.delete(id); changed = true; } if (changed) render(); }
+      if (!archiveMode) { let changed = false; for (const id of [...people.keys()]) if (!seen.has(id) && !pending.has(id)) { people.delete(id); version.delete(id); changed = true; } if (changed) render(); }
     } catch { /* ignore; next tick retries */ }
   }
   window.setInterval(poll, 4000);
