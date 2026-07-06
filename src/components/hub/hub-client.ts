@@ -701,7 +701,13 @@ interface SyncIsland { weekKey: string; columns: Columns; weeks: string[]; me: s
     return pre.toString().length;
   }
   function restoreCaret(el: HTMLElement, offset: number) {
-    el.focus();
+    // preventScroll: this runs ONLY from adopt() after a background poll re-render
+    // (never a user action — user-initiated focus lives in focusEnd/add handlers).
+    // A bare focus() would scroll the freshly-rebuilt editable into view and jerk
+    // the viewport whenever a teammate commits mid-standup — the residual "bounce"
+    // left after the editedAt fix killed the every-tick self-bounce. Restoring the
+    // caret must not move the page; the user hasn't navigated anywhere.
+    el.focus({ preventScroll: true });
     const sel = window.getSelection();
     if (!sel) return;
     const r = document.createRange();
