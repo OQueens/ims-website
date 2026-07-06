@@ -9,6 +9,7 @@ import {
 } from '../../lib/hub/pipeline-data';
 import { rosterEntry, rosterPickerList } from '../../lib/hub/hub-roster';
 import { applyOp, type PipelineOp } from '../../lib/hub/pipeline-ops';
+import Sortable from 'sortablejs';
 
 (function pipeline() {
   const board = document.getElementById('pipe-board');
@@ -66,6 +67,13 @@ import { applyOp, type PipelineOp } from '../../lib/hub/pipeline-ops';
   }
 
   function render() {
+    // A drag gesture is in progress (between onStart/onEnd): rebuilding board.innerHTML
+    // now would run mountSortables() and destroy() the actively-dragging Sortable
+    // instance mid-gesture, which SortableJS forbids (codex-flagged: the poll/adopt
+    // path can call render() at any time, independent of the onEnd rAF deferral this
+    // file already uses for its own commit). Skip; onEnd clears `dragging` and its
+    // own render()/commit() call afterward will pick up whatever changed meanwhile.
+    if (dragging) return;
     const lanes = groupByStage([...people.values()]);
     board!.innerHTML = BOARD_STAGES.map((stage) => {
       const list = lanes[stage];
@@ -80,6 +88,7 @@ import { applyOp, type PipelineOp } from '../../lib/hub/pipeline-ops';
           </div>
         </div>`;
     }).join('');
+    mountSortables();
   }
 
   const genId = () => (globalThis.crypto?.randomUUID?.() ?? String(Math.random()).slice(2));
@@ -218,6 +227,45 @@ import { applyOp, type PipelineOp } from '../../lib/hub/pipeline-ops';
     } catch { /* ignore; next tick retries */ }
   }
   window.setInterval(poll, 4000);
+
+  // ── Drag-and-drop between lanes (moveStage) ───────────────────────────────────
+  let sortables: Sortable[] = [];
+  // True for the span between a drag starting and SortableJS finishing its own
+  // internal cleanup for that drag (see render()'s guard above, codex-flagged).
+  let dragging = false;
+  function mountSortables() {
+    sortables.forEach((s) => s.destroy());
+    sortables = BOARD_STAGES.map((stage) => {
+      const el = board!.querySelector<HTMLElement>(`.pipe-lane__body[data-stage="${stage}"]`)!;
+      return Sortable.create(el, {
+        group: 'pipe', animation: 170, easing: 'cubic-bezier(0.2,0.7,0.2,1)',
+        draggable: '.pipe-card', ghostClass: 'is-dragging', filter: '.pipe-lane__add, .pipe-empty',
+        onStart: () => { dragging = true; board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.add('is-dropzone')); },
+        onEnd: (evt) => {
+          dragging = false; // SortableJS's own drag-end handling for this gesture is done; safe to render() again
+          board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.remove('is-dropzone', 'is-dragover'));
+          const id = evt.item.getAttribute('data-id');
+          const toStage = (evt.to as HTMLElement).dataset.stage as BoardStage | undefined;
+          const fromStage = (evt.from as HTMLElement).dataset.stage as BoardStage | undefined;
+          // Defer out of SortableJS's drag-end stack: render() rebuilds board.innerHTML and
+          // mountSortables() destroys every Sortable (incl. this firing one). Doing that
+          // synchronously inside onEnd tears the instance down mid-drop. rAF lets SortableJS finish.
+          requestAnimationFrame(() => {
+            if (!id || !toStage || toStage === fromStage) { render(); return; } // same lane → re-render (no in-lane order persistence in v1)
+            commit({ type: 'moveStage', id, stage: toStage });
+          });
+        },
+        // Clear every lane's dragover highlight before marking the current target so only
+        // one lane glows at a time (codex-flagged: previously only ever added, never cleared
+        // mid-drag, so a card dragged across several lanes left them all highlighted).
+        onMove: (evt) => {
+          board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.remove('is-dragover'));
+          (evt.to as HTMLElement).classList.add('is-dragover');
+          return true;
+        },
+      });
+    });
+  }
 
   // Initial paint. All interaction handlers (Tasks 7-10) are inserted inside this
   // same IIFE, immediately ABOVE this bootstrap line, so their `let` bindings are
