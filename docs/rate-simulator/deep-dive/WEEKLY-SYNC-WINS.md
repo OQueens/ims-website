@@ -10,6 +10,17 @@
 
 ---
 
+## 2026-07-06 - Honest market-position labels
+
+We made the market-position readout honest. The figures a recruiter sees are now labeled as
+positions in our researched rate range, not as real market percentiles, because that is what they
+are today. The recommended number is now labeled simply "Recommended" instead of implying it is an
+observed market median, since it is our best anchor estimate, not a measured midpoint. Nothing about
+the actual dollar figures changed, only the words describing them. True market percentiles, drawn
+from real observed data, are the next build.
+
+---
+
 ## 2026-07-03 — Deep-dive complete: a full map of the tool and the roadmap to "unbelievably accurate"
 
 We ran a large multi-agent research pass on the rate simulator: it mapped exactly how the tool
