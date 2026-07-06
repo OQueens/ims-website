@@ -559,3 +559,51 @@ html[data-hub-theme="dark"] {
 .sync2-rt__btn:hover { background: rgba(251,246,238,0.14); }
 .sync2-rt__btn b { font-weight: 800; }
 .sync2-rt__hl { background: color-mix(in srgb, var(--pop-butter, #E8C465) 70%, transparent); color: var(--mn-black, #0A0A0F); border-radius: 3px; padding: 0 3px; font-weight: 800; }
+
+/* ── Recruitment & Credentialing pipeline ─────────────────────────────────────── */
+.pipe-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-5); }
+.pipe-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--ink-mute); }
+.pipe-title { font-family: var(--font-display); font-weight: 900; font-size: 22px; letter-spacing: -0.02em; color: var(--ink); margin: 3px 0 0; }
+.pipe-head__actions { display: flex; align-items: center; gap: 10px; }
+.pipe-status { font-family: var(--font-mono); font-size: 11px; color: var(--ink-mute); min-width: 60px; }
+.pipe-status.is-saving { color: var(--pop-butter); } .pipe-status.is-saved { color: var(--mn-cyan, #59BFE7); } .pipe-status.is-error { color: var(--pop-magenta, #C44569); }
+.pipe-add, .pipe-archive-toggle { border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink); border-radius: 12px; padding: 9px 15px; font-family: var(--font-body); font-weight: 700; font-size: 13px; cursor: pointer; transition: border-color 140ms, color 140ms; }
+.pipe-add:hover, .pipe-archive-toggle:hover { border-color: var(--pop-magenta, #C44569); color: var(--pop-magenta, #C44569); }
+.pipe-archive-toggle[aria-pressed="true"] { background: var(--pop-magenta, #C44569); color: var(--cream-soft); border-color: var(--pop-magenta, #C44569); }
+
+.pipe-board { display: flex; gap: 13px; overflow-x: auto; padding-bottom: var(--space-4); align-items: flex-start; }
+.pipe-lane { min-width: 236px; width: 236px; flex-shrink: 0; }
+.pipe-lane__head { padding: 2px 4px 12px; }
+.pipe-lane__pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 5px 11px 5px 9px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+.pipe-lane__n { background: rgba(0,0,0,0.28); border-radius: 999px; padding: 0 6px; font-size: 9.5px; }
+.pipe-lane--warm .pipe-lane__pill { background: color-mix(in srgb, var(--pop-butter) 16%, transparent); color: var(--pop-butter); }
+.pipe-lane--bid .pipe-lane__pill { background: color-mix(in srgb, var(--pop-magenta,#C44569) 18%, transparent); color: var(--pop-magenta, #C44569); }
+.pipe-lane--acc .pipe-lane__pill { background: color-mix(in srgb, #7C84E8 20%, transparent); color: #a9adf2; }
+.pipe-lane--onb .pipe-lane__pill { background: color-mix(in srgb, var(--mn-cyan,#59BFE7) 16%, transparent); color: var(--mn-cyan, #59BFE7); }
+.pipe-lane--placed .pipe-lane__pill { background: color-mix(in srgb, var(--mn-cyan,#59BFE7) 24%, transparent); color: var(--mn-cyan, #59BFE7); }
+.pipe-lane__body { display: flex; flex-direction: column; gap: 10px; min-height: 60px; border-radius: 14px; padding: 4px; transition: background 160ms, box-shadow 160ms; }
+.pipe-lane__body.is-dragover { background: color-mix(in srgb, var(--mn-cyan,#59BFE7) 8%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--mn-cyan,#59BFE7) 45%, transparent); }
+.pipe-lane--placed .pipe-lane__body.is-dragover { box-shadow: inset 0 0 0 1.5px var(--mn-cyan, #59BFE7); }
+
+.pipe-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 15px; padding: 13px; cursor: grab; transition: transform 150ms, box-shadow 150ms, border-color 150ms; }
+.pipe-card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(0,0,0,0.35); }
+.pipe-card:focus-visible { outline: 2px solid var(--pop-magenta, #C44569); outline-offset: 2px; }
+.pipe-card.is-dragging { opacity: 0.5; }
+.pipe-card__top { display: flex; gap: 10px; align-items: flex-start; }
+.pipe-av { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 13px; color: var(--cream-soft); background: linear-gradient(140deg, var(--pop-magenta,#C44569), #7a2e45); }
+.pipe-card__name { font-family: var(--font-display); font-weight: 900; font-size: 15px; letter-spacing: -0.01em; line-height: 1.1; color: var(--ink); }
+.pipe-spec { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 600; color: var(--pop-magenta, #C44569); background: color-mix(in srgb, var(--pop-magenta,#C44569) 13%, transparent); border: 1px solid color-mix(in srgb, var(--pop-magenta,#C44569) 22%, transparent); border-radius: 999px; padding: 2px 8px; }
+.pipe-card__meta { font-size: 11px; color: var(--ink-mute); margin-top: 10px; }
+.pipe-cred { margin-top: 11px; padding-top: 10px; border-top: 1px dashed var(--rule-strong); }
+.pipe-cred__lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 7px; }
+.pipe-cred__ct { color: var(--mn-cyan, #59BFE7); font-weight: 700; float: right; }
+.pipe-meter { display: flex; gap: 3px; }
+.pipe-meter i { flex: 1; height: 5px; border-radius: 999px; background: var(--bone); transition: background 200ms; }
+.pipe-meter i.on { background: var(--mn-cyan, #59BFE7); }
+.pipe-card__foot { display: flex; justify-content: flex-end; margin-top: 12px; }
+.pipe-owner { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--cream-soft); background: var(--av, #8A8A8A); }
+.pipe-empty { font-size: 12px; color: var(--ink-mute); text-align: center; padding: 14px 6px; }
+.pipe-lane__add { border: 1px dashed var(--rule-strong); background: none; color: var(--ink-mute); border-radius: 12px; padding: 9px; font-family: var(--font-body); font-weight: 600; font-size: 12px; cursor: pointer; transition: color 140ms, border-color 140ms; }
+.pipe-lane__add:hover { color: var(--pop-magenta, #C44569); border-color: var(--pop-magenta, #C44569); }
+
+@media (prefers-reduced-motion: reduce) { .pipe-card, .pipe-meter i, .pipe-lane__body { transition: none; } }
