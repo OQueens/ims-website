@@ -57,6 +57,14 @@
   untracked WIP files from other workstreams (brand-guidelines, linkedin PNGs, welcome-post,
   pipeline-ops, etc.). A blanket add would commit unrelated work. Stage only the files your task
   created or modified.
+- **You are on a SHARED, actively-committed branch.** Two other sessions commit to
+  `redesign/v5-reskin` in parallel (the hub-pipeline execution and the Weekly Sync work), so HEAD
+  advances under you. Pin any review/diff range to an explicit SHA (this handoff's baseline was
+  `29a793f`); never assume `HEAD~1` is yours. Re-run `git status` before every commit. Your Plan 1
+  surfaces (`sim-render.ts`, `sim-adapter.ts`, `marketRates.ts`, `sourceFamily.ts`,
+  `.github/workflows/ci.yml`, `ias-dashboard/database.rules.json`) do NOT overlap the pipeline
+  session's files (it owns `src/components/hub/hub-client.ts` `VIEW_TITLES` + `pipeline-*`), but read
+  any hub file LIVE right before editing it in case it moved.
 - **Codex peer-review loop is mandatory** for every non-trivial code change: write it, hand to Codex
   (`/codex:rescue` or the codex bash runtime), fix what it flags, loop until it has nothing to add,
   THEN claim done. If you skip it, say so with `[codex-skip:reason]`.
