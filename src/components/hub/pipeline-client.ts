@@ -36,6 +36,12 @@ import Sortable from 'sortablejs';
     } catch { /* empty board */ }
   }
 
+  const spot = document.getElementById('pipe-spot')!;
+  // Backdrop click closes. Bound ONCE here (closeSpot hoists) — openSpot only
+  // (re)binds the freshly-rendered inner controls, never this persistent element,
+  // so re-opening the dossier never stacks duplicate backdrop listeners.
+  spot.addEventListener('click', (e) => { if (e.target === spot) closeSpot(); });
+
   const initials = (p: PipelinePerson) => (p.full_name.replace(/^dr\.?\s*/i, '').trim()[0] || '?').toUpperCase();
   function ownerAvatar(p: PipelinePerson): string {
     const e = rosterEntry(p.owner_email || '');
@@ -204,12 +210,90 @@ import Sortable from 'sortablejs';
     });
   }
 
+  // ── Focus-spotlight dossier ───────────────────────────────────────────────────
+  const svgPhone = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>';
+  const svgMail = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
+  const svgText = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+
+  function closeSpot() { spot.hidden = true; spot.innerHTML = ''; }
+
+  function openSpot(id: string) {
+    const p = people.get(id);
+    if (!p) return;
+    const done = checklistCount(p);
+    const chips = CHECKLIST_KEYS.map((k) => `<button class="pipe-chip ${p[chkCol(k)] ? 'on' : ''}" data-chk="${k}"><span class="pipe-chip__bx"></span>${esc(CHECKLIST_LABELS[k])}</button>`).join('');
+    const owner = rosterEntry(p.owner_email || '');
+    const qa = (href: string, label: string, icon: string, on: boolean) => on ? `<a class="pipe-qa" href="${href}">${icon}${label}</a>` : `<span class="pipe-qa is-off">${icon}${label}</span>`;
+    spot.innerHTML = `
+      <div class="pipe-spot__card" role="document">
+        <button class="pipe-spot__x" aria-label="Close">✕</button>
+        <div class="pipe-spot__head">
+          <span class="pipe-av">${esc(initials(p))}</span>
+          <div><div class="pipe-spot__name">${esc(p.full_name)}</div>
+            <div class="pipe-spot__sub">${esc(p.specialty_name || p.specialty_slug || '')}${p.state ? ' · ' + esc(p.state) : ''} · ${esc(STAGE_LABELS[p.stage])} · owner ${esc(owner.name)}</div></div>
+        </div>
+        <div class="pipe-qa-row">
+          ${qa('tel:' + esc(p.phone || ''), 'Call', svgPhone, !!p.phone)}
+          ${qa('mailto:' + esc(p.email || ''), 'Email', svgMail, !!p.email)}
+          ${qa('sms:' + esc(p.phone || ''), 'Text', svgText, !!p.phone)}
+        </div>
+        <div class="pipe-spot__grid">
+          <div>
+            <div class="pipe-spot__lbl">Contact</div>
+            <div class="pipe-kv">${svgPhone}<b>${esc(p.phone || '—')}</b></div>
+            <div class="pipe-kv">${svgMail}<b>${esc(p.email || '—')}</b></div>
+            <div class="pipe-spot__lbl">Notes</div>
+            <textarea class="pipe-notes" data-field="notes" rows="4" maxlength="2000" placeholder="Add notes…">${esc(p.notes || '')}</textarea>
+          </div>
+          <div>
+            <div class="pipe-spot__lbl">Credentialing · ${done} of 6</div>
+            <div class="pipe-chips">${chips}</div>
+            <button class="pipe-btn pipe-archive" style="margin-top:16px">${p.stage === 'archived' ? 'Restore to Needs Onboarding' : 'Archive provider'}</button>
+          </div>
+        </div>
+      </div>`;
+    spot.hidden = false;
+
+    spot.querySelector('.pipe-spot__x')!.addEventListener('click', closeSpot);
+    spot.querySelectorAll<HTMLElement>('.pipe-chip').forEach((chip) => chip.addEventListener('click', () => {
+      // Guard mirrors the notes-blur guard below: the live poll can delete this row out
+      // from under an open dossier (e.g. another user archived it) between render and
+      // click — re-check presence rather than trusting the non-null `!` the id was opened
+      // with (codex-flagged: an unguarded `people.get(id)!` here would throw on a stale dossier).
+      const cur = people.get(id); if (!cur) { closeSpot(); return; }
+      const item = chip.dataset.chk as (typeof CHECKLIST_KEYS)[number];
+      const value = !cur[chkCol(item)];
+      commit({ type: 'toggleChecklist', id, item, value });
+      openSpot(id); // re-render dossier with the coupling reflected
+    }));
+    const notes = spot.querySelector<HTMLTextAreaElement>('.pipe-notes')!;
+    notes.addEventListener('blur', () => {
+      const cur = people.get(id); if (!cur) return;
+      const val = notes.value.trim();
+      if ((cur.notes || '') !== val) commit({ type: 'updateField', id, field: 'notes', value: val || null });
+    });
+    spot.querySelector('.pipe-archive')!.addEventListener('click', () => {
+      const cur = people.get(id); if (!cur) { closeSpot(); return; }  // same stale-dossier guard as the chip handler above
+      if (cur.stage === 'archived') commit({ type: 'restorePerson', id, stage: 'needs_onboarding' });
+      else commit({ type: 'archivePerson', id });
+      closeSpot();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !spot.hidden) closeSpot(); });
+
   let archiveMode = false;
 
   // ── Delegated board actions ───────────────────────────────────────────────────
   board.addEventListener('click', (e) => {
     const add = (e.target as HTMLElement).closest<HTMLElement>('.pipe-lane__add');
     if (add) { openAddForm(add.dataset.stage as BoardStage); return; }
+    const card = (e.target as HTMLElement).closest<HTMLElement>('.pipe-card');
+    if (card) { openSpot(card.dataset.id!); return; }
+  });
+  board.addEventListener('keydown', (e) => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>('.pipe-card');
+    if (card && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openSpot(card.dataset.id!); }
   });
   document.getElementById('pipe-add')?.addEventListener('click', () => openAddForm('warm_lead'));
 
