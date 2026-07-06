@@ -46,8 +46,13 @@ function recompute(c: Case): unknown {
 describe('hub vendored engine is byte-identical to the canonical golden master', () => {
   const corpus = (gm as { cases: Case[] }).cases;
 
-  it('corpus loaded and non-trivial', () => {
-    expect(corpus.length).toBeGreaterThanOrEqual(150);
+  it('corpus loaded and pinned to the exact golden-master count (drift tripwire)', () => {
+    // Exact pin, not a floor: a legit corpus regen moves count + cases.length
+    // together, so this catches a truncated/duplicated/silently-shrunk corpus.
+    // Bump BOTH the number here and the JSON when the golden master is regenerated.
+    expect((gm as { count: number }).count).toBe(207);
+    expect(corpus.length).toBe(207);
+    expect(corpus.length).toBe((gm as { count: number }).count);
   });
 
   for (const c of corpus) {
