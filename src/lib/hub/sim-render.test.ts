@@ -23,7 +23,7 @@ describe('marketHTML — premium tier overlay (median + premium marker)', () => 
     expect(html).toContain('Premium tier');
     expect(html).toContain('Recommended');
     expect(html).not.toContain('market median'); // honesty: it is an anchor, not an observed median
-    expect(html).not.toMatch(/\bp(25|50|70|75|90):/); // honesty: no fabricated-percentile chip notation
+    expect(html).not.toMatch(/\bp\d+:/); // honesty: no fabricated-percentile chip notation (any pXX:, not just today's set)
     expect(html).toContain('% of range'); // chips honestly describe band position, not observed percentiles
   });
   it('places the premium value (p90) above the recommended marker', () => {
