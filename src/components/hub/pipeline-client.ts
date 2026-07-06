@@ -104,6 +104,7 @@ import Sortable from 'sortablejs';
   // Per-row version guard: drop any echo/poll older than what we've adopted.
   const version = new Map<string, number>();
   const pending = new Set<string>();  // createPerson ids awaiting first server confirmation
+  const suppressed = new Set<string>();  // ids the active-view poll dropped; block stale echoes from resurrecting them until a poll re-includes them
 
   const statusEl = document.getElementById('pipe-status');
   let statusClear: ReturnType<typeof setTimeout> | undefined;
@@ -120,6 +121,7 @@ import Sortable from 'sortablejs';
   // per-row version monotonicity. A removed-from-board (archived) row is dropped.
   function adopt(row: PipelinePerson | null) {
     if (!row || !row.id) return;
+    if (suppressed.has(row.id)) return;  // poll says this row left the active view; ignore stale in-flight echoes until a poll re-includes it (restore)
     if ((version.get(row.id) ?? -1) > row.version) return;
     version.set(row.id, row.version);
     pending.delete(row.id);  // server-confirmed → clear the optimistic-create guard
@@ -163,6 +165,7 @@ import Sortable from 'sortablejs';
       const created = applyOp(null, op, ctx());
       if (created) { people.set(created.id, created); pending.add(created.id); }
     } else {
+      suppressed.delete(op.id);  // local user is authoritatively acting on this row — don't let a stale suppression block their own echo (e.g. restorePerson)
       const cur = people.get(op.id);
       const next = applyOp(cur ?? null, op, ctx());
       if (next) { if (next.stage === 'archived' && !archiveMode) people.delete(next.id); else people.set(next.id, next); }
@@ -305,9 +308,9 @@ import Sortable from 'sortablejs';
       const b = await res.json();
       if (!b?.ok || !Array.isArray(b.people)) return;
       const seen = new Set<string>();
-      for (const raw of b.people) { const p = readPerson(raw); if (!p.id) continue; seen.add(p.id); adopt(p); }
+      for (const raw of b.people) { const p = readPerson(raw); if (!p.id) continue; seen.add(p.id); suppressed.delete(p.id); adopt(p); }
       // Drop rows that left this view (archived elsewhere) — only in active mode.
-      if (!archiveMode) { let changed = false; for (const id of [...people.keys()]) if (!seen.has(id) && !pending.has(id)) { people.delete(id); version.delete(id); changed = true; } if (changed) render(); }
+      if (!archiveMode) { let changed = false; for (const id of [...people.keys()]) if (!seen.has(id) && !pending.has(id)) { people.delete(id); version.delete(id); suppressed.add(id); changed = true; } if (changed) render(); }
     } catch { /* ignore; next tick retries */ }
   }
   window.setInterval(poll, 4000);
