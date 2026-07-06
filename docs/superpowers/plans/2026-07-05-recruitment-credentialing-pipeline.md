@@ -446,49 +446,57 @@ function coerceField(field: UpdatableField, value: string | null): string | null
   if (value == null) return null;
   if (field === 'email' || field === 'owner_email') return cleanEmail(value) || null;
   if (field === 'target_start_date') return cleanDate(value);
-  if (field === 'assignment_id') return typeof value === 'string' && value ? value : null;
+  if (field === 'assignment_id') return typeof value === 'string' && value.length > 0 && value.length <= 64 ? value : null;
   const s = escapeText(value.trim()).slice(0, FIELD_CAP[field]);
   return s.length ? s : null;
 }
 
 export function applyOp(person: PipelinePerson | null, op: PipelineOp, ctx: ApplyCtx): PipelinePerson | null {
+  // INVARIANT enforced by every stage-changing op below: chk_provider_working
+  // === (stage === 'placed'). This keeps the "Placed lane" and the "Provider
+  // Working" checkbox in perfect lockstep no matter which op path is taken.
   if (op.type === 'createPerson') {
     const i = op.input;
+    const stage = i.stage && (STAGES as readonly string[]).includes(i.stage) ? i.stage : 'warm_lead';
     return readPerson({
-      id: i.id,
-      stage: i.stage && (STAGES as readonly string[]).includes(i.stage) ? i.stage : 'warm_lead',
-      full_name: i.full_name,
+      id: i.id, stage, full_name: i.full_name,
       specialty_slug: i.specialty_slug, specialty_name: i.specialty_name, state: i.state,
       phone: i.phone, email: i.email, owner_email: i.owner_email,
       target_start_date: i.target_start_date, notes: i.notes,
+      chk_provider_working: stage === 'placed', // invariant
       version: 0, updated_by: ctx.email, updated_at: null,
     });
   }
   if (!person) return null;
   const p = clone(person);
   switch (op.type) {
-    case 'updateField':
-      (p as Record<string, unknown>)[op.field] = coerceField(op.field, op.value);
+    case 'updateField': {
+      const v = coerceField(op.field, op.value);
+      // full_name is non-nullable — ignore an empty/whitespace update rather than nulling it.
+      if (op.field === 'full_name' && (v === null || v === '')) return p;
+      (p as Record<string, unknown>)[op.field] = v;
       return p;
+    }
     case 'moveStage':
       p.stage = op.stage;
-      if (op.stage === 'placed') p.chk_provider_working = true;
-      else if (p.chk_provider_working) p.chk_provider_working = false;
+      p.chk_provider_working = op.stage === 'placed'; // invariant
       return p;
     case 'toggleChecklist': {
       p[chkCol(op.item)] = op.value;
       p.checklist_audit = { ...p.checklist_audit, [chkCol(op.item)]: { by: ctx.email, at: ctx.now } };
       if (op.item === 'provider_working') {
-        if (op.value && p.stage !== 'placed' && p.stage !== 'archived') p.stage = 'placed';
-        else if (!op.value && p.stage === 'placed') p.stage = 'needs_onboarding';
+        if (op.value) p.stage = 'placed';              // working ⟹ placed (even from archived)
+        else if (p.stage === 'placed') p.stage = 'needs_onboarding';
       }
       return p;
     }
     case 'archivePerson':
       p.stage = 'archived';
+      p.chk_provider_working = false; // archived is not placed → invariant
       return p;
     case 'restorePerson':
       p.stage = (BOARD_STAGES as readonly string[]).includes(op.stage) ? op.stage : 'needs_onboarding';
+      p.chk_provider_working = p.stage === 'placed'; // invariant
       return p;
     default:
       return p;
@@ -630,7 +638,7 @@ BEGIN
   IF v_type = 'createPerson' THEN
     INSERT INTO public.hub_pipeline_people (
       id, stage, full_name, specialty_slug, specialty_name, state, phone, email,
-      owner_email, target_start_date, notes, created_by, updated_by)
+      owner_email, target_start_date, notes, chk_provider_working, created_by, updated_by)
     VALUES (
       (p_op->'input'->>'id')::uuid,
       coalesce(p_op->'input'->>'stage','warm_lead'),
@@ -638,7 +646,9 @@ BEGIN
       p_op->'input'->>'specialty_slug', p_op->'input'->>'specialty_name', p_op->'input'->>'state',
       p_op->'input'->>'phone', p_op->'input'->>'email', p_op->'input'->>'owner_email',
       nullif(p_op->'input'->>'target_start_date','')::date,
-      p_op->'input'->>'notes', p_email, p_email)
+      p_op->'input'->>'notes',
+      (coalesce(p_op->'input'->>'stage','warm_lead') = 'placed'),  -- invariant: working ⟺ placed
+      p_email, p_email)
     ON CONFLICT (id) DO NOTHING;
     RETURN QUERY SELECT * FROM public.hub_pipeline_people WHERE id = (p_op->'input'->>'id')::uuid;
     RETURN;
@@ -667,7 +677,7 @@ BEGIN
       chk_credentialing_started  = CASE WHEN v_item='credentialing_started'  THEN v_val ELSE chk_credentialing_started END,
       chk_credentialing_complete = CASE WHEN v_item='credentialing_complete' THEN v_val ELSE chk_credentialing_complete END,
       chk_provider_working       = CASE WHEN v_item='provider_working'       THEN v_val ELSE chk_provider_working END,
-      stage = CASE WHEN v_item='provider_working' AND v_val AND stage NOT IN ('placed','archived') THEN 'placed'
+      stage = CASE WHEN v_item='provider_working' AND v_val THEN 'placed'
                    WHEN v_item='provider_working' AND NOT v_val AND stage='placed' THEN 'needs_onboarding'
                    ELSE stage END,
       checklist_audit = checklist_audit || pg_catalog.jsonb_build_object('chk_'||v_item, pg_catalog.jsonb_build_object('by', p_email, 'at', v_at)),
@@ -678,7 +688,7 @@ BEGIN
     v_field := p_op->>'field';
     v_value := p_op->>'value';  -- null when JSON value is null
     UPDATE public.hub_pipeline_people SET
-      full_name         = CASE WHEN v_field='full_name'         THEN coalesce(v_value, full_name) ELSE full_name END,
+      full_name         = CASE WHEN v_field='full_name'         THEN coalesce(nullif(pg_catalog.btrim(v_value),''), full_name) ELSE full_name END,
       specialty_slug    = CASE WHEN v_field='specialty_slug'    THEN v_value ELSE specialty_slug END,
       specialty_name    = CASE WHEN v_field='specialty_name'    THEN v_value ELSE specialty_name END,
       state             = CASE WHEN v_field='state'             THEN v_value ELSE state END,
@@ -694,11 +704,12 @@ BEGIN
     WHERE id = v_id;
 
   ELSIF v_type = 'archivePerson' THEN
-    UPDATE public.hub_pipeline_people SET stage='archived', version=version+1, updated_by=p_email, updated_at=v_now WHERE id = v_id;
+    UPDATE public.hub_pipeline_people SET stage='archived', chk_provider_working=false, version=version+1, updated_by=p_email, updated_at=v_now WHERE id = v_id;
 
   ELSIF v_type = 'restorePerson' THEN
     UPDATE public.hub_pipeline_people SET
       stage = CASE WHEN p_op->>'stage' IN ('warm_lead','active_bid','accepted_bid','needs_onboarding','placed') THEN p_op->>'stage' ELSE 'needs_onboarding' END,
+      chk_provider_working = (CASE WHEN p_op->>'stage' IN ('warm_lead','active_bid','accepted_bid','needs_onboarding','placed') THEN p_op->>'stage' ELSE 'needs_onboarding' END = 'placed'),  -- invariant
       version=version+1, updated_by=p_email, updated_at=v_now
     WHERE id = v_id;
 
