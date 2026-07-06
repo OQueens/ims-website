@@ -3,16 +3,24 @@
 // preserving merge can be unit-tested independently of the DOM IIFE.
 import type { ColumnData } from './sync-data';
 
-// A stable string of a column's MEANINGFUL content — includes attribution
-// (by/editedBy/editedAt) so an attribution-only change still triggers adoption.
-// Empty untitled sections are dropped so cosmetic churn is ignored.
+// A stable string of a column's MEANINGFUL, VISIBLE content — includes the
+// attribution that is actually rendered (by/editedBy drive the author avatar) so a
+// real attribution change still triggers adoption. `editedAt` is deliberately
+// EXCLUDED: it is never rendered, and it is stamped by the client clock
+// optimistically but the Postgres clock authoritatively, so the two copies ALWAYS
+// differ by clock skew. Because mergeAdopt keeps the caret focus as the local copy,
+// including editedAt made every 4s poll see a phantom delta on the focus you're
+// editing → a full board re-render on each tick (the board "bounced" while typing).
+// editedAt only ever changes together with html (applyOp stamps it solely on a real
+// html change), so html already captures every genuine edit — dropping editedAt
+// loses no change-detection signal. Empty untitled sections are dropped (cosmetic).
 export function comparableCol(cd: ColumnData): string {
   return JSON.stringify(
     cd.sections
       .filter((s) => s.focuses.length > 0 || s.title.trim() !== '')
       .map((s) => ({
         t: s.title,
-        f: s.focuses.map((x) => x.id + ':' + x.html + ':' + (x.by || '') + ':' + (x.editedBy || '') + ':' + (x.editedAt || 0)),
+        f: s.focuses.map((x) => x.id + ':' + x.html + ':' + (x.by || '') + ':' + (x.editedBy || '')),
       })),
   );
 }
