@@ -7,8 +7,15 @@
 -- Mirrors src/lib/hub/pipeline-ops.ts applyOp. Text fields are stored raw here and
 -- escaped on READ by readPerson (pipeline-data.ts), matching the hub's
 -- sanitize-on-read posture — the RPC contains no sanitizer.
--- NOTE: coalesce/case are SQL keyword constructs — write them BARE; real functions
--- stay pg_catalog-qualified for search_path='' safety.
+-- GRACEFUL DEGRADATION (mirrors the oracle's coerceField/cleanDate): the typed
+-- columns target_start_date (date), assignment_id (uuid) and the row id (uuid) are
+-- coerced inside BEGIN/EXCEPTION blocks so a malformed/hostile value degrades to
+-- NULL (or a no-op for a bad id) instead of throwing a hard cast error that would
+-- abort the whole op. A non-board/unknown stage falls back to 'warm_lead'. Residual:
+-- assignment_id can only store a well-formed uuid (the oracle keeps any <=64-char
+-- string) — unreachable via the real client, which always sends a uuid.
+-- NOTE: coalesce/case/nullif/in are SQL keyword constructs — write them BARE; real
+-- functions stay pg_catalog-qualified for search_path='' safety.
 
 CREATE TABLE IF NOT EXISTS public.hub_pipeline_people (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -61,29 +68,58 @@ DECLARE
   v_val  boolean;
   v_field text;
   v_value text;
+  v_stage text;
+  v_cid   uuid;
+  v_date  date;
+  v_uuid  uuid;
 BEGIN
   IF p_email IS NULL THEN RAISE EXCEPTION 'missing-email'; END IF;
 
   IF v_type = 'createPerson' THEN
+    -- A non-uuid client id is a no-op (never a hard error). The real client always
+    -- sends crypto.randomUUID(); this only guards malformed/hostile input.
+    BEGIN
+      v_cid := (p_op->'input'->>'id')::uuid;
+    EXCEPTION WHEN others THEN
+      RETURN;
+    END;
+    -- Mirror applyOp: an out-of-set stage falls back to 'warm_lead' (never aborts on
+    -- the CHECK constraint). The same coerced stage drives the working⟺placed invariant.
+    v_stage := CASE WHEN (p_op->'input'->>'stage') IN
+                 ('warm_lead','active_bid','accepted_bid','needs_onboarding','placed','archived')
+               THEN p_op->'input'->>'stage' ELSE 'warm_lead' END;
+    -- Degrade a malformed target_start_date to NULL (mirror cleanDate: first 10 chars,
+    -- YYYY-MM-DD) instead of throwing on the ::date cast.
+    BEGIN
+      v_date := CASE WHEN pg_catalog.substr(pg_catalog.btrim(coalesce(p_op->'input'->>'target_start_date','')),1,10) ~ '^\d{4}-\d{2}-\d{2}$'
+                     THEN pg_catalog.substr(pg_catalog.btrim(p_op->'input'->>'target_start_date'),1,10)::date ELSE NULL END;
+    EXCEPTION WHEN others THEN
+      v_date := NULL;
+    END;
     INSERT INTO public.hub_pipeline_people (
       id, stage, full_name, specialty_slug, specialty_name, state, phone, email,
       owner_email, target_start_date, notes, chk_provider_working, created_by, updated_by)
     VALUES (
-      (p_op->'input'->>'id')::uuid,
-      coalesce(p_op->'input'->>'stage','warm_lead'),
+      v_cid,
+      v_stage,
       p_op->'input'->>'full_name',
       p_op->'input'->>'specialty_slug', p_op->'input'->>'specialty_name', p_op->'input'->>'state',
       p_op->'input'->>'phone', p_op->'input'->>'email', p_op->'input'->>'owner_email',
-      nullif(p_op->'input'->>'target_start_date','')::date,
+      v_date,
       p_op->'input'->>'notes',
-      (coalesce(p_op->'input'->>'stage','warm_lead') = 'placed'),  -- invariant: working ⟺ placed
+      (v_stage = 'placed'),  -- invariant: working ⟺ placed
       p_email, p_email)
     ON CONFLICT (id) DO NOTHING;
-    RETURN QUERY SELECT * FROM public.hub_pipeline_people WHERE id = (p_op->'input'->>'id')::uuid;
+    RETURN QUERY SELECT * FROM public.hub_pipeline_people WHERE id = v_cid;
     RETURN;
   END IF;
 
-  v_id := (p_op->>'id')::uuid;
+  -- A non-uuid id matches no row: graceful no-op, never a hard cast error.
+  BEGIN
+    v_id := (p_op->>'id')::uuid;
+  EXCEPTION WHEN others THEN
+    RETURN;
+  END;
   v_lock := pg_catalog.hashtextextended(v_id::text, 0);
   PERFORM pg_catalog.pg_advisory_xact_lock(v_lock);
 
@@ -116,6 +152,20 @@ BEGIN
   ELSIF v_type = 'updateField' THEN
     v_field := p_op->>'field';
     v_value := p_op->>'value';  -- null when JSON value is null
+    -- Coerce the two typed columns the SAME way the TS oracle does — degrade a
+    -- malformed value to NULL, NEVER throw (a bare ::date/::uuid cast would abort the
+    -- whole op). Only the branch matching v_field actually consumes these.
+    BEGIN
+      v_date := CASE WHEN pg_catalog.substr(pg_catalog.btrim(coalesce(v_value,'')),1,10) ~ '^\d{4}-\d{2}-\d{2}$'
+                     THEN pg_catalog.substr(pg_catalog.btrim(v_value),1,10)::date ELSE NULL END;
+    EXCEPTION WHEN others THEN
+      v_date := NULL;
+    END;
+    BEGIN
+      v_uuid := nullif(pg_catalog.btrim(coalesce(v_value,'')),'')::uuid;
+    EXCEPTION WHEN others THEN
+      v_uuid := NULL;
+    END;
     UPDATE public.hub_pipeline_people SET
       full_name         = CASE WHEN v_field='full_name'         THEN coalesce(nullif(pg_catalog.btrim(v_value),''), full_name) ELSE full_name END,
       specialty_slug    = CASE WHEN v_field='specialty_slug'    THEN v_value ELSE specialty_slug END,
@@ -124,9 +174,9 @@ BEGIN
       phone             = CASE WHEN v_field='phone'             THEN v_value ELSE phone END,
       email             = CASE WHEN v_field='email'             THEN v_value ELSE email END,
       owner_email       = CASE WHEN v_field='owner_email'       THEN v_value ELSE owner_email END,
-      target_start_date = CASE WHEN v_field='target_start_date' THEN nullif(v_value,'')::date ELSE target_start_date END,
+      target_start_date = CASE WHEN v_field='target_start_date' THEN v_date ELSE target_start_date END,
       notes             = CASE WHEN v_field='notes'             THEN v_value ELSE notes END,
-      assignment_id     = CASE WHEN v_field='assignment_id'     THEN nullif(v_value,'')::uuid ELSE assignment_id END,
+      assignment_id     = CASE WHEN v_field='assignment_id'     THEN v_uuid ELSE assignment_id END,
       assignment_number = CASE WHEN v_field='assignment_number' THEN v_value ELSE assignment_number END,
       assignment_label  = CASE WHEN v_field='assignment_label'  THEN v_value ELSE assignment_label END,
       version = version + 1, updated_by = p_email, updated_at = v_now
