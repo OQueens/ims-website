@@ -1,6 +1,6 @@
-// src/pages/hub/api/pipeline.test.ts
+// src/lib/hub/pipeline-endpoint.test.ts
 import { describe, it, expect } from 'vitest';
-import { POST, GET } from './pipeline';
+import { POST, GET } from '../../pages/hub/api/pipeline';
 
 // No cookie / no session secret → unauthorized on both verbs (no DB needed).
 const locals = {} as App.Locals;
