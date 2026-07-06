@@ -47,49 +47,57 @@ function coerceField(field: UpdatableField, value: string | null): string | null
   if (value == null) return null;
   if (field === 'email' || field === 'owner_email') return cleanEmail(value) || null;
   if (field === 'target_start_date') return cleanDate(value);
-  if (field === 'assignment_id') return typeof value === 'string' && value ? value : null;
+  if (field === 'assignment_id') return typeof value === 'string' && value.length > 0 && value.length <= 64 ? value : null;
   const s = escapeText(value.trim()).slice(0, FIELD_CAP[field]);
   return s.length ? s : null;
 }
 
 export function applyOp(person: PipelinePerson | null, op: PipelineOp, ctx: ApplyCtx): PipelinePerson | null {
+  // INVARIANT enforced by every stage-changing op below: chk_provider_working
+  // === (stage === 'placed'). Keeps the Placed lane and the "Provider Working"
+  // checkbox in lockstep no matter which op path is taken.
   if (op.type === 'createPerson') {
     const i = op.input;
+    const stage = i.stage && (STAGES as readonly string[]).includes(i.stage) ? i.stage : 'warm_lead';
     return readPerson({
-      id: i.id,
-      stage: i.stage && (STAGES as readonly string[]).includes(i.stage) ? i.stage : 'warm_lead',
-      full_name: i.full_name,
+      id: i.id, stage, full_name: i.full_name,
       specialty_slug: i.specialty_slug, specialty_name: i.specialty_name, state: i.state,
       phone: i.phone, email: i.email, owner_email: i.owner_email,
       target_start_date: i.target_start_date, notes: i.notes,
+      chk_provider_working: stage === 'placed', // invariant
       version: 0, updated_by: ctx.email, updated_at: null,
     });
   }
   if (!person) return null;
   const p = clone(person);
   switch (op.type) {
-    case 'updateField':
-      (p as Record<string, unknown>)[op.field] = coerceField(op.field, op.value);
+    case 'updateField': {
+      const v = coerceField(op.field, op.value);
+      // full_name is non-nullable — ignore an empty/whitespace update rather than nulling it.
+      if (op.field === 'full_name' && (v === null || v === '')) return p;
+      (p as Record<string, unknown>)[op.field] = v;
       return p;
+    }
     case 'moveStage':
       p.stage = op.stage;
-      if (op.stage === 'placed') p.chk_provider_working = true;
-      else if (p.chk_provider_working) p.chk_provider_working = false;
+      p.chk_provider_working = op.stage === 'placed'; // invariant
       return p;
     case 'toggleChecklist': {
       p[chkCol(op.item)] = op.value;
       p.checklist_audit = { ...p.checklist_audit, [chkCol(op.item)]: { by: ctx.email, at: ctx.now } };
       if (op.item === 'provider_working') {
-        if (op.value && p.stage !== 'placed' && p.stage !== 'archived') p.stage = 'placed';
-        else if (!op.value && p.stage === 'placed') p.stage = 'needs_onboarding';
+        if (op.value) p.stage = 'placed';              // working ⟹ placed (even from archived)
+        else if (p.stage === 'placed') p.stage = 'needs_onboarding';
       }
       return p;
     }
     case 'archivePerson':
       p.stage = 'archived';
+      p.chk_provider_working = false; // archived is not placed → invariant
       return p;
     case 'restorePerson':
       p.stage = (BOARD_STAGES as readonly string[]).includes(op.stage) ? op.stage : 'needs_onboarding';
+      p.chk_provider_working = p.stage === 'placed'; // invariant
       return p;
     default:
       return p;

@@ -62,6 +62,32 @@ describe('applyOp', () => {
     expect(p.stage).toBe('needs_onboarding');
     expect(p.chk_provider_working).toBe(false);
   });
+
+  it('createPerson into placed sets provider_working (invariant)', () => {
+    const c = applyOp(null, { type: 'createPerson', input: { id: 'p8', full_name: 'Dr. X', stage: 'placed' } }, ctx)!;
+    expect(c.stage).toBe('placed');
+    expect(c.chk_provider_working).toBe(true);
+  });
+
+  it('restorePerson to placed sets provider_working; to a normal lane clears it', () => {
+    const archived = applyOp(P({ stage: 'placed', chk_provider_working: true }), { type: 'archivePerson', id: 'p1' }, ctx)!;
+    expect(archived.chk_provider_working).toBe(false); // archive clears working (invariant)
+    const toPlaced = applyOp(archived, { type: 'restorePerson', id: 'p1', stage: 'placed' }, ctx)!;
+    expect(toPlaced.chk_provider_working).toBe(true);
+    const toLane = applyOp(archived, { type: 'restorePerson', id: 'p1', stage: 'warm_lead' }, ctx)!;
+    expect(toLane.chk_provider_working).toBe(false);
+  });
+
+  it('updateField full_name ignores an empty/whitespace value (never nulls the name)', () => {
+    const p = applyOp(P({ full_name: 'Dr. Real Name' }), { type: 'updateField', id: 'p1', field: 'full_name', value: '   ' }, ctx)!;
+    expect(p.full_name).toBe('Dr. Real Name');
+  });
+
+  it('toggleChecklist provider_working true from archived un-archives to placed (invariant)', () => {
+    const p = applyOp(P({ stage: 'archived', chk_provider_working: false }), { type: 'toggleChecklist', id: 'p1', item: 'provider_working', value: true }, ctx)!;
+    expect(p.stage).toBe('placed');
+    expect(p.chk_provider_working).toBe(true);
+  });
 });
 
 describe('validateOp', () => {
