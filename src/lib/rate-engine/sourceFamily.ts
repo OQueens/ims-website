@@ -93,6 +93,28 @@ export const KNOWN_FAMILY_OVERRIDES: Record<string, string> = {
   // forward-looking.
   aya_locums: 'aya',
   aya_healthcare: 'aya',
+  // WS1 (2026-07-01) — FORWARD-LOOKING for the Scrapling posting scrape
+  // (agent-sdk/agents/rate_scraper/posting_sources.py). These sources are STAGED
+  // (verified:false) or their recovered-agency family is written by the fleet-
+  // phase org-recovery, so — like medefis / jackson_physician_search above —
+  // they do NOT fire on today's live universe. Keys cover BOTH the board id the
+  // scraper writes today AND the underscore agency-org form a future org-recovery
+  // will write, so independence counting stays correct once the aggregators go live.
+  //   - trackfive : TrackFive operates LocumJobsOnline (aggregator_estimate; it
+  //                 NEVER anchors regardless, but the family pins independence).
+  trackfive: 'trackfive',
+  locumjobsonline: 'trackfive',
+  //   - tandym    : Tandym Health — a distinct agency recovered THROUGH JSON-LD
+  //                 aggregators (runtime-seen on live Physemp 2026-06-30).
+  tandym: 'tandym',
+  tandym_health: 'tandym',
+  //   - communitybrands : JAMA Career Center + ACR share the Community Brands
+  //                 careers platform, so two board postings of ONE agency's req
+  //                 must not fake two independent families. Only JAMA + ACR emit
+  //                 pay on that platform today.
+  communitybrands: 'communitybrands',
+  jama: 'communitybrands',
+  acr: 'communitybrands',
   // ziprecruiter / adzuna (NEW — Phase 4, OBS-05 NEVER-ANCHOR). Mapped to their own
   // single-brand families so a same-source second pull cannot fake two independent
   // votes BEFORE the never-anchor exclusion drops them entirely. The authoritative

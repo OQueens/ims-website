@@ -121,6 +121,11 @@ const BUCKET_PRECEDENCE: Record<string, number> = {
   advertised_clinician_pay: 3,
   crowd_survey: 2,
   scraped_article_estimate: 1,
+  // WS1 (2026-07-01): aggregator_estimate is the LOWEST rung (0) — an aggregator's
+  // self-"estimated" range (LJO/TrackFive) for a hidden-pay posting. Renderable as
+  // labeled context when it's the only signal, but NEVER anchorable (absent from
+  // DEFAULT_ANCHORABLE_RATE_TYPES), so it can never drive the quote off the curated band.
+  aggregator_estimate: 0,
 }
 
 /** RTDB-safe literal for a NULL rate_type bucket (the bottom rung of the ladder). */
