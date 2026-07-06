@@ -55,7 +55,7 @@ export function marketHTML(q: SimQuote): string {
   const pctVal = (p: number) => { const f = q.percentiles.find((x) => x.p === p); return f ? f.value : null; };
   const p75 = pctVal(75), p90 = pctVal(90);
   const chips = q.percentiles.map((p) =>
-    `<span class="sim-mkt__chip${p.p === 70 ? ' is-p70' : ''}">p${p.p}: ${usd(p.value)}</span>`,
+    `<span class="sim-mkt__chip${p.p === 70 ? ' is-p70' : ''}">${p.p}% of range: ${usd(p.value)}</span>`,
   ).join('');
 
   let premiumZone = '', premiumMarker = '', legend = '';
@@ -64,7 +64,7 @@ export function marketHTML(q: SimQuote): string {
     premiumZone = `<span class="sim-mkt__premium" style="left:${z0.toFixed(1)}%;width:${Math.max(98 - z0, 0).toFixed(1)}%"></span>`;
     premiumMarker = `<span class="sim-mkt__marker sim-mkt__marker--premium" style="left:${pos(p90).toFixed(1)}%"></span>`;
     legend = `<div class="sim-mkt__legend">
-      <span class="sim-mkt__leg"><i class="sim-mkt__key sim-mkt__key--rec"></i>Recommended (market median) ${usd(q.marketMarker)}</span>
+      <span class="sim-mkt__leg"><i class="sim-mkt__key sim-mkt__key--rec"></i>Recommended ${usd(q.marketMarker)}</span>
       <span class="sim-mkt__leg"><i class="sim-mkt__key sim-mkt__key--prem"></i>Premium tier ${usd(p90)}</span>
     </div>`;
   }
