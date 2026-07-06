@@ -1,0 +1,31 @@
+---
+/* Recruitment & Credentialing — a live, drag-and-drop provider board. Each person
+   is one row in hub_pipeline_people: recruitment = a single stage lane; credentialing
+   = 6 parallel multi-select statuses baked onto the card. Clicking a card opens the
+   focus-spotlight dossier. pipeline-client.ts hydrates from #hub-pipeline, renders,
+   and persists each op (optimistic POST) + polls the guarded GET for live updates. */
+import type { PipelinePerson } from '../../lib/hub/pipeline-data';
+interface Props { people: PipelinePerson[]; me: string; }
+const { people, me } = Astro.props;
+// '<' escaped so a field can never break out of the data script island.
+const islandJson = JSON.stringify({ people, me }).replace(/</g, '\\u003c');
+---
+<section class="hub-view" data-view="pipeline">
+  <script id="hub-pipeline" type="application/json" is:inline set:html={islandJson}></script>
+  <div class="pipe-head">
+    <div>
+      <div class="pipe-eyebrow">Recruitment &amp; Credentialing</div>
+      <h2 class="pipe-title">Provider pipeline</h2>
+    </div>
+    <div class="pipe-head__actions">
+      <span class="pipe-status" id="pipe-status" role="status" aria-live="polite"></span>
+      <button class="pipe-archive-toggle" id="pipe-archive-toggle" aria-pressed="false">Archive</button>
+      <button class="pipe-add" id="pipe-add"><span>+</span> Add provider</button>
+    </div>
+  </div>
+
+  <div class="pipe-board" id="pipe-board"><!-- lanes rendered by pipeline-client.ts --></div>
+
+  <!-- Focus-spotlight dossier overlay (filled + toggled by pipeline-client.ts). -->
+  <div class="pipe-spot" id="pipe-spot" hidden aria-modal="true" role="dialog"></div>
+</section>
