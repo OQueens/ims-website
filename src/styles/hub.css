@@ -372,7 +372,7 @@ html[data-hub-theme="dark"] {
   --rule: rgba(244, 236, 223, 0.10) !important;
   --rule-strong: rgba(244, 236, 223, 0.20) !important;
 }
-[data-hub-theme="dark"] .hub { --surface: #17171F; }
+[data-hub-theme="dark"] .hub { --surface: #17171F; --pop-magenta-deep: #7a2e45; }
 
 /* Sidebar: lift it just off the canvas so it reads as a panel */
 [data-hub-theme="dark"] .hub-side { background: #08080C; border-right-color: rgba(244,236,223,0.07); }
@@ -590,7 +590,7 @@ html[data-hub-theme="dark"] {
 .pipe-card:focus-visible { outline: 2px solid var(--pop-magenta, #C44569); outline-offset: 2px; }
 .pipe-card.is-dragging { opacity: 0.5; }
 .pipe-card__top { display: flex; gap: 10px; align-items: flex-start; }
-.pipe-av { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 13px; color: var(--cream-soft); background: linear-gradient(140deg, var(--pop-magenta,#C44569), #7a2e45); }
+.pipe-av { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 13px; color: var(--cream-soft); background: linear-gradient(140deg, var(--pop-magenta,#C44569), var(--pop-magenta-deep, #7a2e45)); }
 .pipe-card__name { font-family: var(--font-display); font-weight: 900; font-size: 15px; letter-spacing: -0.01em; line-height: 1.1; color: var(--ink); }
 .pipe-spec { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 600; color: var(--pop-magenta, #C44569); background: color-mix(in srgb, var(--pop-magenta,#C44569) 13%, transparent); border: 1px solid color-mix(in srgb, var(--pop-magenta,#C44569) 22%, transparent); border-radius: 999px; padding: 2px 8px; }
 .pipe-card__meta { font-size: 11px; color: var(--ink-mute); margin-top: 10px; }
@@ -606,4 +606,4 @@ html[data-hub-theme="dark"] {
 .pipe-lane__add { border: 1px dashed var(--rule-strong); background: none; color: var(--ink-mute); border-radius: 12px; padding: 9px; font-family: var(--font-body); font-weight: 600; font-size: 12px; cursor: pointer; transition: color 140ms, border-color 140ms; }
 .pipe-lane__add:hover { color: var(--pop-magenta, #C44569); border-color: var(--pop-magenta, #C44569); }
 
-@media (prefers-reduced-motion: reduce) { .pipe-card, .pipe-meter i, .pipe-lane__body { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .pipe-card, .pipe-meter i, .pipe-lane__body, .pipe-lane__add, .pipe-add, .pipe-archive-toggle { transition: none; } }

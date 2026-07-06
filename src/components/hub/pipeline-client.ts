@@ -45,6 +45,7 @@ import { rosterEntry } from '../../lib/hub/hub-roster';
     const done = checklistCount(p);
     const meter = CHECKLIST_KEYS.map((k) => `<i class="${p[chkCol(k)] ? 'on' : ''}"></i>`).join('');
     const spec = p.specialty_name || p.specialty_slug;
+    const metaBits = [p.state, p.target_start_date].filter(Boolean).map((x) => esc(x as string)).join(' · ');
     return `
       <article class="pipe-card" draggable="true" data-id="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(p.full_name)}">
         <div class="pipe-card__top">
@@ -54,7 +55,7 @@ import { rosterEntry } from '../../lib/hub/hub-roster';
             ${spec ? `<span class="pipe-spec">${esc(spec)}</span>` : ''}
           </div>
         </div>
-        ${p.state ? `<div class="pipe-card__meta">${esc(p.state)}${p.target_start_date ? ' · ' + esc(p.target_start_date) : ''}</div>` : ''}
+        ${metaBits ? `<div class="pipe-card__meta">${metaBits}</div>` : ''}
         <div class="pipe-cred" aria-label="Credentialing ${done} of 6">
           <div class="pipe-cred__lbl">Credentialing <span class="pipe-cred__ct">${done}/6</span></div>
           <div class="pipe-meter">${meter}</div>
