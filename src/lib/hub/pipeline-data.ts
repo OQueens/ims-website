@@ -232,3 +232,50 @@ export function groupByStage(people: PipelinePerson[]): Record<BoardStage, Pipel
   for (const s of BOARD_STAGES) out[s].sort((a, b) => ts(b) - ts(a));
   return out;
 }
+
+// ── Drag-physics spring ───────────────────────────────────────────────────────
+// The card you drag hangs from the grab point and swings with weight. Feel was
+// tuned + validated by Zach in a visual-companion Motion Lab; these are the locked
+// "Balanced" values. The client low-passes pointer velocity and feeds it here each
+// animation frame; this pure step keeps the math testable + framerate-consistent (~60fps).
+export interface TiltParams { swing: number; sens: number; stiff: number; damp: number; dz: number; }
+export const TILT_BALANCED: TiltParams = { swing: 15, sens: 0.85, stiff: 0.11, damp: 0.80, dz: 0.15 };
+
+/** One damped-spring step for the drag tilt. `vx` = smoothed horizontal pointer
+ *  velocity (px/frame); `held` = card still grabbed. Returns the next {angle, angleVel}.
+ *  A soft dead-zone drops barely-moving jitter to zero; the lean trails the motion and
+ *  is clamped to the swing cap; on release (`held=false`) the target is 0 so it settles. */
+export function tiltStep(
+  angle: number, angleVel: number, vx: number, held: boolean, p: TiltParams = TILT_BALANCED,
+): { angle: number; angleVel: number } {
+  let target = 0;
+  if (held) {
+    const v = Math.sign(vx) * Math.max(0, Math.abs(vx) - p.dz);   // soft dead-zone
+    target = Math.max(-p.swing, Math.min(p.swing, -v * p.sens));  // trailing lean, clamped
+  }
+  let av = angleVel + (target - angle) * p.stiff;                 // spring toward target
+  av *= p.damp;                                                    // damping → overshoot + settle
+  return { angle: angle + av, angleVel: av };
+}
+
+// ── Placed celebration + the Matthew Draughon Easter egg ──────────────────────
+/** True when an op moves a person INTO the terminal Placed lane from somewhere else
+ *  (the "yay" moment worth celebrating). Already-placed → not a transition. */
+export function isPlacingTransition(prev: Stage | undefined, next: Stage | undefined): boolean {
+  return next === 'placed' && prev !== 'placed';
+}
+
+export interface CelsiusEgg { specialty_name: string; state: string; notes: string; }
+/** Founder in-joke: Matthew Draughon runs entirely on Celsius. When the add-provider
+ *  name matches (case/space-insensitive; full or short form), the form auto-fills these
+ *  joke fields — the user still reviews + clicks Add, so no phantom row is ever created.
+ *  Returns null for everyone else. */
+export function celsiusEasterEgg(name: string | null | undefined): CelsiusEgg | null {
+  const n = (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  if (n !== 'matthew draughon' && n !== 'matt draughon') return null;
+  return {
+    specialty_name: 'Doctor of Celsius · MD',
+    state: 'A crisp 3°C',
+    notes: 'Runs entirely on Celsius. Never seen without a can. Keep the fridge stocked or productivity drops to 0. ⚡🥤',
+  };
+}
