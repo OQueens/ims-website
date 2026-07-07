@@ -7,7 +7,7 @@ import {
   BOARD_STAGES, STAGE_LABELS, CHECKLIST_KEYS, CHECKLIST_LABELS, chkCol,
   type PipelinePerson, type BoardStage,
 } from '../../lib/hub/pipeline-data';
-import { rosterEntry, rosterPickerList } from '../../lib/hub/hub-roster';
+import { rosterEntry } from '../../lib/hub/hub-roster';
 import { applyOp, type PipelineOp } from '../../lib/hub/pipeline-ops';
 import Sortable from 'sortablejs';
 
@@ -214,7 +214,14 @@ import Sortable from 'sortablejs';
 
   // ── Add-provider form ─────────────────────────────────────────────────────────
   function openAddForm(stage: BoardStage) {
-    const owners = rosterPickerList();
+    // Owner options come from REAL sources — the signed-in user (default) and the
+    // distinct owners already on the board — never a hardcoded roster. The field is
+    // free-text (a <datalist> just suggests); server-side readPerson/cleanEmail
+    // normalizes whatever is typed. No fake @confirm addresses can be stored.
+    const ownerEmails = new Set<string>();
+    if (me) ownerEmails.add(me);
+    for (const p of people.values()) if (p.owner_email) ownerEmails.add(p.owner_email);
+    const ownerSuggestions = [...ownerEmails].map((email) => ({ email, name: rosterEntry(email).name }));
     const wrap = document.createElement('div');
     wrap.className = 'pipe-modal';
     wrap.innerHTML = `
@@ -230,7 +237,8 @@ import Sortable from 'sortablejs';
           <label class="pipe-f"><span>Phone</span><input name="phone" maxlength="40" /></label>
           <label class="pipe-f"><span>Email</span><input name="email" type="email" maxlength="120" /></label>
         </div>
-        <label class="pipe-f"><span>Owner</span><select name="owner_email"><option value="">— none —</option>${owners.map((o) => `<option value="${esc(o.email)}"${o.email === me ? ' selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
+        <label class="pipe-f"><span>Owner</span><input name="owner_email" type="email" list="pipe-owner-list" maxlength="120" value="${esc(me)}" placeholder="owner@…" autocomplete="off" /></label>
+        <datalist id="pipe-owner-list">${ownerSuggestions.map((o) => `<option value="${esc(o.email)}">${esc(o.name)}</option>`).join('')}</datalist>
         <label class="pipe-f"><span>Notes</span><textarea name="notes" rows="2" maxlength="2000"></textarea></label>
         <div class="pipe-form__actions"><button type="button" class="pipe-btn" data-cancel>Cancel</button><button type="submit" class="pipe-btn pipe-btn--primary">Add</button></div>
       </form>`;
