@@ -154,8 +154,9 @@ import Sortable from 'sortablejs';
         if (res.type === 'opaqueredirect' || res.status === 401) { setStatus('signedout'); return; }
         if (res.ok) {
           const b = await res.json();
-          setStatus('saved');
-          if (b?.ok && b.person) adopt(readPerson(b.person));
+          if (b?.ok && b.person) { setStatus('saved'); adopt(readPerson(b.person)); }
+          else if (op.type === 'createPerson') { setStatus('error'); failCreate(op); }  // 200 without a person → the row was NOT created; reap it rather than strand it in `pending` behind a false "Saved ✓"
+          else setStatus('saved');  // non-create no-op (missing/archived id) — legitimate; nothing to adopt
         } else if (res.status >= 500 && attempt < MAX_RETRIES) {
           setStatus('error'); setTimeout(() => sendOp(op, attempt + 1), 3000);  // transient server error — bounded retry
         } else {
@@ -183,7 +184,7 @@ import Sortable from 'sortablejs';
     suppressed.delete(op.id);  // local user is authoritatively acting on this row — don't let a stale suppression block their own echo (e.g. restorePerson)
     const cur = people.get(op.id);
     const next = applyOp(cur ?? null, op, ctx());
-    if (next) { if (next.stage === 'archived' && !archiveMode) people.delete(next.id); else people.set(next.id, next); }
+    if (next) { if (next.stage === 'archived' && !archiveMode) { people.delete(next.id); version.delete(next.id); } else people.set(next.id, next); }
     render();
     if (pending.has(op.id)) {
       const q = queued.get(op.id) ?? []; q.push(op); queued.set(op.id, q);
@@ -199,7 +200,7 @@ import Sortable from 'sortablejs';
     for (const op of q) {
       const cur = people.get(id);
       const next = applyOp(cur ?? null, op, ctx());
-      if (next) { if (next.stage === 'archived' && !archiveMode) people.delete(next.id); else people.set(next.id, next); }
+      if (next) { if (next.stage === 'archived' && !archiveMode) { people.delete(next.id); version.delete(next.id); } else people.set(next.id, next); }
       sendOp(op);
     }
     render();
