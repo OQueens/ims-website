@@ -116,4 +116,18 @@ describe('validateOp', () => {
     const r = validateOp({ type: 'createPerson', input: { id: 'p9', full_name: 'Dr. X', notes: 'short note', specialty_name: 'EM' } });
     expect(r.ok).toBe(true);
   });
+  it('accepts a valid deletePerson (hard delete)', () => {
+    const r = validateOp({ type: 'deletePerson', id: 'p1' });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.op.type).toBe('deletePerson');
+  });
+  it('rejects deletePerson without an id', () => {
+    expect(validateOp({ type: 'deletePerson' }).ok).toBe(false);
+  });
+});
+
+describe('applyOp deletePerson', () => {
+  it('returns null (the row is removed)', () => {
+    expect(applyOp(P(), { type: 'deletePerson', id: 'p1' }, ctx)).toBeNull();
+  });
 });

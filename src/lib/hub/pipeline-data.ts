@@ -31,6 +31,25 @@ export const CHECKLIST_LABELS: Record<ChecklistKey, string> = {
 };
 export const chkCol = (k: ChecklistKey) => ('chk_' + k) as `chk_${ChecklistKey}`;
 
+// Curated, correctly-cased locum specialty display names for the add-provider
+// typeahead (a <datalist> — suggestions only; the field stays free-text so an
+// unlisted specialty can still be typed). Deduplicated from the canonical rate
+// lookup set; owned here so casing (CRNA, OB/GYN, ENT) is display-correct.
+export const SPECIALTY_SUGGESTIONS: readonly string[] = [
+  'Addiction Psychiatry', 'Allergy/Immunology', 'Anesthesiologist Assistant', 'Anesthesiology',
+  'Cardiac Anesthesiology', 'Cardiology', 'Cardiothoracic Surgery', 'Child & Adolescent Psychiatry',
+  'Colorectal Surgery', 'Correctional Medicine', 'CRNA', 'Critical Care / Intensivist',
+  'Dermatology', 'Electrophysiology', 'Emergency Medicine', 'Endocrinology', 'ENT / Otolaryngology',
+  'Family Medicine', 'Forensic Psychiatry', 'Gastroenterology', 'General Surgery', 'Geriatric Medicine',
+  'Geriatric Psychiatry', 'Gynecologic Oncology', 'Hand Surgery', 'Hematology/Oncology', 'Hospice / Palliative Care',
+  'Hospitalist', 'Infectious Disease', 'Internal Medicine', 'Interventional Cardiology', 'Interventional Radiology',
+  'Maternal-Fetal Medicine', 'Medical Oncology', 'Neonatology', 'Nephrology', 'Neurology', 'Neuroradiology',
+  'Neurosurgery', 'Nurse Practitioner', 'OB/GYN', 'Occupational Medicine', 'Ophthalmology', 'Orthopedic Surgery',
+  'Pain Management', 'Pathology', 'Pediatric Hospitalist', 'Pediatrics', 'Physical Medicine & Rehabilitation',
+  'Physician Assistant', 'Plastic Surgery', 'Podiatry', 'Psychiatry', 'Pulmonology', 'Radiology (Diagnostic)',
+  'Rheumatology', 'Trauma Surgery', 'Urology', 'Vascular Surgery', 'Wound Care',
+];
+
 // Field caps so a malformed/hostile POST can't bloat a row.
 export const MAX_NAME_LEN = 120;
 export const MAX_SPECIALTY_LEN = 80;

@@ -29,7 +29,8 @@ export type PipelineOp =
   | { type: 'moveStage'; id: string; stage: Stage }
   | { type: 'toggleChecklist'; id: string; item: ChecklistKey; value: boolean }
   | { type: 'archivePerson'; id: string }
-  | { type: 'restorePerson'; id: string; stage: Stage };
+  | { type: 'restorePerson'; id: string; stage: Stage }
+  | { type: 'deletePerson'; id: string };  // HARD delete (row removed) — for test/mistyped entries; distinct from archive. Applied endpoint-side, not via the RPC.
 
 export interface ApplyCtx { email: string; now: number; }
 
@@ -96,6 +97,9 @@ export function applyOp(person: PipelinePerson | null, op: PipelineOp, ctx: Appl
       p.stage = 'archived';
       p.chk_provider_working = false; // archived is not placed → invariant
       return p;
+    case 'deletePerson':
+      return null; // row is gone — optimistic removal is handled in the client; endpoint hard-deletes
+
     case 'restorePerson':
       p.stage = (BOARD_STAGES as readonly string[]).includes(op.stage) ? op.stage : 'needs_onboarding';
       p.chk_provider_working = p.stage === 'placed'; // invariant
@@ -142,6 +146,9 @@ export function validateOp(raw: unknown): { ok: true; op: PipelineOp } | { ok: f
     case 'restorePerson':
       if (!isId(o.id) || !isBoardStage(o.stage)) return { ok: false, reason: 'bad-restorePerson' };
       return { ok: true, op: { type: 'restorePerson', id: o.id, stage: o.stage } };
+    case 'deletePerson':
+      if (!isId(o.id)) return { ok: false, reason: 'bad-deletePerson' };
+      return { ok: true, op: { type: 'deletePerson', id: o.id } };
     default:
       return { ok: false, reason: 'unknown-op-type' };
   }
