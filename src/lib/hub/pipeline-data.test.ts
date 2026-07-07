@@ -3,7 +3,6 @@ import {
   STAGES, BOARD_STAGES, CHECKLIST_KEYS, checklistCount, groupByStage,
   readPerson, cleanDate, personInitials, SPECIALTY_SUGGESTIONS,
   DISCIPLINE_COLORS, disciplineForSpecialty, disciplineColorFor, type PipelinePerson,
-  tiltStep, TILT_BALANCED, isPlacingTransition, celsiusEasterEgg,
 } from './pipeline-data';
 
 const base = (over: Partial<PipelinePerson> = {}): PipelinePerson => readPerson({
@@ -118,68 +117,5 @@ describe('discipline colors', () => {
     for (const s of SPECIALTY_SUGGESTIONS) {
       expect(disciplineForSpecialty(s), s).not.toBe('Other');
     }
-  });
-});
-
-describe('tiltStep (drag-physics spring)', () => {
-  const run = (vx: number, held: boolean, steps: number, start = { angle: 0, angleVel: 0 }) => {
-    let s = start;
-    for (let i = 0; i < steps; i++) s = tiltStep(s.angle, s.angleVel, vx, held);
-    return s;
-  };
-  it('stays at rest when not held and already centered', () => {
-    const s = tiltStep(0, 0, 0, false);
-    expect(s.angle).toBeCloseTo(0);
-    expect(s.angleVel).toBeCloseTo(0);
-  });
-  it('leans opposite to motion when held (positive velocity → negative tilt)', () => {
-    const s = run(20, true, 30);
-    expect(s.angle).toBeLessThan(0);
-    expect(s.angle).toBeGreaterThan(-TILT_BALANCED.swing - 1); // never past the cap by more than a hair
-  });
-  it('ignores sub-dead-zone jitter velocity (barely-moving mouse does not tilt)', () => {
-    const s = run(0.1, true, 40); // 0.1 < dz (0.15)
-    expect(Math.abs(s.angle)).toBeLessThan(0.01);
-  });
-  it('settles back toward center after release', () => {
-    const s = run(0, false, 100, { angle: 12, angleVel: 0 });
-    expect(Math.abs(s.angle)).toBeLessThan(0.1);
-  });
-  it('clamps the lean to the swing cap under extreme velocity', () => {
-    const s = run(9999, true, 80);
-    expect(s.angle).toBeGreaterThan(-TILT_BALANCED.swing - 0.5);
-    expect(s.angle).toBeLessThan(-TILT_BALANCED.swing + 0.5);
-  });
-});
-
-describe('isPlacingTransition (celebration trigger)', () => {
-  it('true when a person enters Placed from any other lane', () => {
-    expect(isPlacingTransition('active_bid', 'placed')).toBe(true);
-    expect(isPlacingTransition('needs_onboarding', 'placed')).toBe(true);
-    expect(isPlacingTransition(undefined, 'placed')).toBe(true);
-  });
-  it('false when already placed or not entering placed', () => {
-    expect(isPlacingTransition('placed', 'placed')).toBe(false);
-    expect(isPlacingTransition('active_bid', 'needs_onboarding')).toBe(false);
-    expect(isPlacingTransition('placed', 'archived')).toBe(false);
-  });
-});
-
-describe('celsiusEasterEgg (Matthew Draughon)', () => {
-  it('returns the Celsius joke payload for his name (case- and space-insensitive)', () => {
-    const egg = celsiusEasterEgg('  matthew   DRAUGHON ');
-    expect(egg).not.toBeNull();
-    expect(egg!.specialty_name).toContain('Celsius');
-    expect(egg!.state).toContain('3'); // the 3°C temperature pun
-    expect(egg!.notes).toContain('Celsius');
-  });
-  it('also matches the short form "Matt Draughon"', () => {
-    expect(celsiusEasterEgg('Matt Draughon')).not.toBeNull();
-  });
-  it('returns null for anyone else, a partial name, empty, or null', () => {
-    expect(celsiusEasterEgg('Dr. Marcus Bell')).toBeNull();
-    expect(celsiusEasterEgg('Matthew')).toBeNull();
-    expect(celsiusEasterEgg('')).toBeNull();
-    expect(celsiusEasterEgg(null)).toBeNull();
   });
 });

@@ -626,36 +626,7 @@ html[data-hub-theme="dark"] {
 .pipe-lane__add { border: 1px dashed var(--rule-strong); background: none; color: var(--ink-mute); border-radius: 12px; padding: 9px; font-family: var(--font-body); font-weight: 600; font-size: 12px; cursor: pointer; transition: color 140ms, border-color 140ms; }
 .pipe-lane__add:hover { color: var(--pop-magenta, #C44569); border-color: var(--pop-magenta, #C44569); }
 
-/* forceFallback drag clone: the real card we lift + tilt while dragging. SortableJS owns
-   `transform: translate3d()` (positioning); pipeline-client sets the independent `rotate`
-   property (composes with transform) each frame so the card swings from its grab point. */
-.pipe-fallback { cursor: grabbing; opacity: 1; z-index: 9999; scale: 1.04;
-  box-shadow: 0 26px 60px rgba(0,0,0,0.55), 0 6px 18px rgba(0,0,0,0.4); border-color: var(--rule-strong); }
-
-/* Placed celebration — emoji firework, mounted on <body>, positioned per-card in JS.
-   Varied radius (--dx/--dy) fills the center; slight overshoot then settle-in-place + fade. */
-.pipe-celebrate { position: fixed; inset: 0; z-index: 2000; pointer-events: none; }
-.pipe-celebrate span { position: fixed; font-size: 26px; will-change: transform, opacity;
-  transform: translate(-50%,-50%); animation: pipe-firework 1.45s cubic-bezier(.12,.8,.25,1) forwards; }
-@keyframes pipe-firework {
-  0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.35) rotate(0deg); }
-  14%  { opacity: 1; }
-  50%  { transform: translate(-50%,-50%) translate(calc(var(--dx)*1.08), calc(var(--dy)*1.08)) scale(1.12) rotate(calc(var(--rot)*0.7)); }
-  100% { opacity: 0; transform: translate(-50%,-50%) translate(var(--dx), var(--dy)) scale(0.9) rotate(var(--rot)); }
-}
-
-/* Matthew Draughon / Celsius Easter-egg card flair (auto-filled from the add form). */
-.pipe-card--celsius { position: relative; border-color: #FF8A2A;
-  box-shadow: 0 0 0 1px rgba(255,138,42,0.4), 0 12px 34px rgba(255,138,42,0.20); }
-.pipe-card--celsius .pipe-av { background: linear-gradient(140deg, #FF8A2A, #C4410A); }
-.pipe-card--celsius::after { content: '🥤'; position: absolute; top: 10px; right: 12px; font-size: 15px;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)); }
-
-@media (prefers-reduced-motion: reduce) {
-  .pipe-card, .pipe-meter i, .pipe-lane__body, .pipe-lane__add, .pipe-add, .pipe-archive-toggle { transition: none; }
-  .pipe-celebrate { display: none; }                       /* JS already skips it; belt-and-suspenders */
-  .pipe-fallback { rotate: none !important; scale: 1 !important; }
-}
+@media (prefers-reduced-motion: reduce) { .pipe-card, .pipe-meter i, .pipe-lane__body, .pipe-lane__add, .pipe-add, .pipe-archive-toggle { transition: none; } }
 
 .pipe-modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(6,6,10,0.6); backdrop-filter: blur(3px); padding: 20px; }
 .pipe-modal--top { z-index: 80; }  /* the delete confirm launches from an open dossier (.pipe-spot, z-index 70) — it must sit above it */

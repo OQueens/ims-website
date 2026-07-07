@@ -5,7 +5,6 @@
 import {
   readPerson, groupByStage, checklistCount, personInitials, disciplineColorFor,
   BOARD_STAGES, STAGE_LABELS, CHECKLIST_KEYS, CHECKLIST_LABELS, chkCol, SPECIALTY_SUGGESTIONS,
-  tiltStep, TILT_BALANCED, isPlacingTransition, celsiusEasterEgg,
   type PipelinePerson, type BoardStage,
 } from '../../lib/hub/pipeline-data';
 import { rosterEntry } from '../../lib/hub/hub-roster';
@@ -24,7 +23,6 @@ import Sortable from 'sortablejs';
   };
 
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
-  const prefersReduced = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
 
   // ── State (hydrate from the #hub-pipeline island) ─────────────────────────────
   let me = '';
@@ -55,9 +53,8 @@ import Sortable from 'sortablejs';
     const meter = CHECKLIST_KEYS.map((k) => `<i class="${p[chkCol(k)] ? 'on' : ''}"></i>`).join('');
     const spec = p.specialty_name || p.specialty_slug;
     const metaBits = [p.state, p.target_start_date].filter(Boolean).map((x) => esc(x as string)).join(' · ');
-    const celsius = celsiusEasterEgg(p.full_name) ? ' pipe-card--celsius' : '';  // founder Easter egg flair
     return `
-      <article class="pipe-card${celsius}" draggable="true" data-id="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(p.full_name)}">
+      <article class="pipe-card" draggable="true" data-id="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(p.full_name)}">
         <div class="pipe-card__top">
           <span class="pipe-av">${esc(personInitials(p.full_name))}</span>
           <div class="pipe-card__id">
@@ -105,40 +102,6 @@ import Sortable from 'sortablejs';
         </div>`;
     }).join('');
     mountSortables();
-  }
-
-  // ── Placed celebration (emoji firework) ───────────────────────────────────────
-  const CELEBRATE_EMOJI = ['👏', '🎉', '🥂', '🍾', '🙌', '🎊', '✨', '⭐', '💫'];
-  // A short emoji firework over a just-placed card. Mounted on <body> (NOT the card) so a
-  // poll/echo re-render can't wipe it mid-animation. Filled + staggered burst; feel locked
-  // in the Motion Lab. Skipped entirely under reduced-motion.
-  function fireworkOver(el: Element) {
-    if (prefersReduced()) return;
-    const r = el.getBoundingClientRect();
-    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    const ringR = Math.max(r.width, r.height) * 0.5;
-    const layer = document.createElement('div');
-    layer.className = 'pipe-celebrate';
-    for (let i = 0; i < 20; i++) {
-      const s = document.createElement('span');
-      s.textContent = CELEBRATE_EMOJI[i % CELEBRATE_EMOJI.length];
-      const ang = (i / 20) * Math.PI * 2 + (Math.random() - 0.5);
-      const rad = ringR * (0.18 + Math.random() * 0.92);  // varied radius fills the center (no hollow ring)
-      s.style.left = cx + 'px'; s.style.top = cy + 'px';
-      s.style.setProperty('--dx', (Math.cos(ang) * rad).toFixed(0) + 'px');
-      s.style.setProperty('--dy', (Math.sin(ang) * rad * 0.9).toFixed(0) + 'px');
-      s.style.setProperty('--rot', (Math.random() * 46 - 23).toFixed(0) + 'deg');
-      s.style.animationDelay = ((i / 20) * 0.28 + Math.random() * 0.05).toFixed(2) + 's';  // spaced emission
-      layer.appendChild(s);
-    }
-    document.body.appendChild(layer);
-    setTimeout(() => layer.remove(), 1900);
-  }
-  // Celebrate a person who just entered Placed. Targets the open dossier card when it's
-  // showing (what's visible after toggling Provider Working), otherwise the board card.
-  function celebratePlaced(id: string) {
-    const el = (!spot.hidden && spot.querySelector('.pipe-spot__card')) || board!.querySelector(`.pipe-card[data-id="${id}"]`);
-    if (el) fireworkOver(el);
   }
 
   const genId = () => (globalThis.crypto?.randomUUID?.() ?? String(Math.random()).slice(2));
@@ -250,7 +213,6 @@ import Sortable from 'sortablejs';
     }
     suppressed.delete(op.id);  // local user is authoritatively acting on this row — don't let a stale suppression block their own echo (e.g. restorePerson)
     const cur = people.get(op.id);
-    const prevStage = cur?.stage;
     const next = applyOp(cur ?? null, op, ctx());
     if (next) { if (next.stage === 'archived' && !archiveMode) { people.delete(next.id); version.delete(next.id); } else people.set(next.id, next); }
     render();
@@ -260,10 +222,6 @@ import Sortable from 'sortablejs';
     } else {
       enqueueSend(op);
     }
-    // Celebrate a LOCAL placing action (drag-to-Placed or toggling Provider Working) — never
-    // a poll/adopt echo, never an already-placed row. Runs AFTER persistence is dispatched,
-    // and is wrapped so a purely-cosmetic effect can never break the commit/persist path.
-    if (next && isPlacingTransition(prevStage, next.stage)) { try { celebratePlaced(op.id); } catch { /* cosmetic only */ } }
   }
 
   function flushQueued(id: string) {
@@ -358,29 +316,6 @@ import Sortable from 'sortablejs';
     (form.querySelector('input[name="full_name"]') as HTMLInputElement)?.focus();
     wireInlineAutocomplete(form.querySelector('input[data-autocomplete]'), SPECIALTY_SUGGESTIONS);
     wireInlineAutocomplete(form.querySelector('input[data-owner-autocomplete]'), [...ownerEmails]);
-    // Easter egg: typing our Celsius-addicted founder's name auto-fills the joke fields
-    // (reviewable — the user still clicks Add). If the name later stops matching, revert ONLY
-    // the fields still holding the injected values, so the joke data never rides along onto a
-    // different provider (codex-caught) — while preserving anything the user manually edited.
-    const nameEl = form.querySelector('input[name="full_name"]') as HTMLInputElement | null;
-    const eggField = (sel: string) => form.querySelector(sel) as HTMLInputElement | HTMLTextAreaElement | null;
-    let eggApplied: { specialty_name: string; state: string; notes: string } | null = null;
-    nameEl?.addEventListener('input', () => {
-      const egg = celsiusEasterEgg(nameEl.value);
-      if (egg) {
-        const set = (sel: string, val: string) => { const el = eggField(sel); if (el) el.value = val; };
-        set('input[name="specialty_name"]', egg.specialty_name);
-        set('input[name="state"]', egg.state);
-        set('textarea[name="notes"]', egg.notes);
-        eggApplied = egg;
-      } else if (eggApplied) {
-        const revert = (sel: string, was: string) => { const el = eggField(sel); if (el && el.value === was) el.value = ''; };
-        revert('input[name="specialty_name"]', eggApplied.specialty_name);
-        revert('input[name="state"]', eggApplied.state);
-        revert('textarea[name="notes"]', eggApplied.notes);
-        eggApplied = null;
-      }
-    });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const fd = new FormData(form);
@@ -578,52 +513,6 @@ import Sortable from 'sortablejs';
     loadView();
   });
 
-  // ── Drag tilt: the forceFallback clone gets weight via the spring (Motion Lab feel) ──
-  // SortableJS moves the clone with `transform: translate3d(...)`; we drive the independent
-  // CSS `rotate` property (composes with transform) from a low-passed pointer velocity, so
-  // the card hangs from the grab point and swings. Skipped entirely under reduced-motion.
-  let tiltRAF = 0;
-  let tiltState = { angle: 0, angleVel: 0 };
-  let tiltGhost: HTMLElement | null = null;
-  let grabOrigin = '50% 0';                        // transform-origin = where the card was grabbed
-  let grabX = 0;                                    // pointer X at grab (seeds the velocity smoother)
-  let tiltPtrX = 0, tiltSmoothX = 0, tiltPrevX = 0, tiltVx = 0;
-  const onTiltPointerMove = (e: PointerEvent) => { tiltPtrX = e.clientX; };
-  function tiltLoop() {
-    if (!tiltGhost) tiltGhost = document.querySelector<HTMLElement>('.pipe-fallback');
-    tiltSmoothX += (tiltPtrX - tiltSmoothX) * 0.6;               // low-pass the pointer (raw deltas are spiky at low speed)
-    const inst = tiltSmoothX - tiltPrevX; tiltPrevX = tiltSmoothX;
-    tiltVx = tiltVx * 0.55 + inst * 0.45;                         // gentle velocity EMA
-    tiltState = tiltStep(tiltState.angle, tiltState.angleVel, tiltVx, true, TILT_BALANCED);
-    if (tiltGhost) {
-      tiltGhost.style.setProperty('transform-origin', grabOrigin);
-      tiltGhost.style.setProperty('rotate', tiltState.angle.toFixed(2) + 'deg');
-    }
-    tiltRAF = requestAnimationFrame(tiltLoop);
-  }
-  function startTilt(startX: number) {
-    if (prefersReduced()) return;                                // no swing under reduced-motion
-    tiltState = { angle: 0, angleVel: 0 };
-    tiltGhost = null;
-    tiltPtrX = tiltSmoothX = tiltPrevX = startX; tiltVx = 0;
-    document.addEventListener('pointermove', onTiltPointerMove);
-    tiltRAF = requestAnimationFrame(tiltLoop);
-  }
-  function stopTilt() {
-    if (tiltRAF) cancelAnimationFrame(tiltRAF);
-    tiltRAF = 0;
-    document.removeEventListener('pointermove', onTiltPointerMove);
-    tiltGhost = null;
-  }
-  // Record the grab point within a card (for the tilt's transform-origin + velocity seed).
-  board.addEventListener('pointerdown', (e) => {
-    const card = (e.target as HTMLElement).closest('.pipe-card');
-    if (!card) return;
-    const r = card.getBoundingClientRect();
-    grabOrigin = `${e.clientX - r.left}px ${e.clientY - r.top}px`;
-    grabX = e.clientX;
-  });
-
   // ── Drag-and-drop between lanes (moveStage) ───────────────────────────────────
   let sortables: Sortable[] = [];
   // True for the span between a drag starting and SortableJS finishing its own
@@ -636,10 +525,8 @@ import Sortable from 'sortablejs';
       return Sortable.create(el, {
         group: 'pipe', animation: 170, easing: 'cubic-bezier(0.2,0.7,0.2,1)',
         draggable: '.pipe-card', ghostClass: 'is-dragging', filter: '.pipe-lane__add, .pipe-empty',
-        forceFallback: true, fallbackClass: 'pipe-fallback', fallbackOnBody: true,  // real DOM clone → we can give it weight
-        onStart: () => { dragging = true; board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.add('is-dropzone')); startTilt(grabX); },
+        onStart: () => { dragging = true; board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.add('is-dropzone')); },
         onEnd: (evt) => {
-          stopTilt();
           dragging = false; // SortableJS's own drag-end handling for this gesture is done; safe to render() again
           board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.remove('is-dropzone', 'is-dragover'));
           const id = evt.item.getAttribute('data-id');
