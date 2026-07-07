@@ -340,4 +340,16 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
     $('#pipe-archive-toggle')!.click(); await flush();
     expect(cardById('p-bravo')).toBeNull();
   });
+
+  it('a delete that fails terminally rolls back — the row reappears instead of hiding (codex)', async () => {
+    const { control, server } = await boot();
+    (window as unknown as { confirm: () => boolean }).confirm = () => true;
+    control.failNextStatus = 400;  // the deletePerson POST is rejected terminally (no retry)
+    cardById('p-bravo')!.click();
+    await flush(1);
+    ($('#pipe-spot .pipe-delete') as HTMLElement).click();
+    await flush(6);
+    expect(server.has('p-bravo')).toBe(true);   // delete never happened server-side
+    expect(cardById('p-bravo')).toBeTruthy();   // tombstone lifted + re-fetched → back on the board, not silently hidden
+  });
 });

@@ -166,11 +166,11 @@ import Sortable from 'sortablejs';
           return;
         }
         if (res.status >= 500 && attempt < MAX_RETRIES) { setStatus('error'); await delay(3000); continue; }  // transient server error — bounded retry
-        setStatus('error'); failCreate(op); return;  // 4xx (rejected op) or retries exhausted — do not loop forever
+        setStatus('error'); failCreate(op); failDelete(op); return;  // 4xx (rejected op) or retries exhausted — do not loop forever
       } catch {
         setStatus('error');  // network error — transient
         if (attempt < MAX_RETRIES) { await delay(3000); continue; }
-        failCreate(op); return;
+        failCreate(op); failDelete(op); return;
       }
     }
   }
@@ -246,6 +246,15 @@ import Sortable from 'sortablejs';
     const id = op.input.id;
     people.delete(id); pending.delete(id); queued.delete(id);
     render(); setStatus('error');
+  }
+
+  function failDelete(op: PipelineOp) {
+    if (op.type !== 'deletePerson') return;
+    // The hard delete failed terminally but the row still exists server-side. Roll
+    // back the optimistic removal: lift the tombstone and re-fetch the current view
+    // so the row reappears instead of staying invisibly hidden in this tab.
+    deleted.delete(op.id);
+    poll();
   }
 
   // ── Add-provider form ─────────────────────────────────────────────────────────
