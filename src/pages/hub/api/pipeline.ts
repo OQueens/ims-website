@@ -18,6 +18,14 @@ const SELECT = 'id, stage, full_name, specialty_slug, specialty_name, state, pho
 const json = (status: number, body: Record<string, unknown>) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
+// A read error whose code marks the TABLE itself as absent (pre-migration): raw
+// Postgres undefined_table (42P01) or PostgREST's schema-cache miss (PGRST205).
+// ONLY these degrade the GET to an empty board; every other error is transient
+// and must surface as 5xx (see GET below).
+const MISSING_TABLE_CODES = new Set(['42P01', 'PGRST205']);
+const isMissingTable = (error: { code?: string | null } | null): boolean =>
+  !!error && MISSING_TABLE_CODES.has(error.code ?? '');
+
 async function authedEmail(request: Request, env: ReturnType<typeof readHubEnv>): Promise<string | null> {
   const token = getCookie(request.headers.get('cookie'), SESSION_COOKIE);
   const now = Math.floor(Date.now() / 1000);
@@ -58,15 +66,23 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const url = new URL(request.url);
   const archived = url.searchParams.get('view') === 'archived';
   const supabase = getHubSupabase(env);
-  if (!supabase) return json(200, { ok: true, people: [] }); // graceful: no storage → empty board
+  // Unconfigured storage is a 503, NOT a 200-empty — a 200-empty looks like a
+  // real (empty) board to the client poll, which would then run active-cleanup
+  // and BLANK the board. Mirrors POST + the sync.ts GET; the poll skips on 503.
+  if (!supabase) return json(503, { ok: false, error: 'storage-unconfigured' });
 
   let q = supabase.from('hub_pipeline_people').select(SELECT).order('updated_at', { ascending: false, nullsFirst: false });
   q = archived ? q.eq('stage', 'archived') : q.in('stage', BOARD_STAGES as unknown as string[]);
   const { data, error } = await q;
   if (error) {
-    // A missing table (pre-migration) degrades to an empty board, never a 5xx.
+    // A genuinely-missing table (pre-migration) degrades to an empty board. ANY
+    // other error is transient and MUST surface as 5xx — otherwise a blip looks
+    // identical to an empty board and the client's ~4s poll runs active-cleanup,
+    // BLANKING the whole board for ~4s. The poll skips on !res.ok / !body.ok, so a
+    // 502 leaves the last-good board intact until the next healthy read (#6).
+    if (isMissingTable(error)) return json(200, { ok: true, people: [] });
     console.error('[/hub/api/pipeline GET] read failed:', error.message);
-    return json(200, { ok: true, people: [] });
+    return json(502, { ok: false, error: 'storage-failed' });
   }
   return json(200, { ok: true, people: (data ?? []).map(readPerson) });
 };
