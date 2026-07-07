@@ -10,6 +10,19 @@
 
 ---
 
+## 2026-07-07 - Premium-protection safeguard now live in production
+
+The fix we caught earlier (a quote quietly flattening the extra pay for night shifts, weekends,
+holidays, and hard-to-staff rural sites when the live market runs hotter than our researched range)
+is now live in the production pricing tool. It changes nothing a recruiter sees today: we checked
+the fix against the current live market data and it moves zero quotes right now, because no specialty
+is currently priced above our researched ceiling. It is a safeguard that switches on automatically
+the first time real market data pushes a specialty past that ceiling, so those premiums keep pricing
+correctly instead of collapsing onto the base rate. We shipped it now, before the upcoming accuracy
+work starts producing exactly those hotter-market cases.
+
+---
+
 ## 2026-07-06 - Honest market-position labels
 
 We made the market-position readout honest. The figures a recruiter sees are now labeled as
