@@ -50,7 +50,7 @@ function applyTheme(t: string) {
 // ── View switching ────────────────────────────────────────────────────────────
 const VIEW_TITLES: Record<string, string> = {
   overview: 'Overview', simulator: 'Rate Simulator', analytics: 'Analytics',
-  sync: 'Weekly Sync',
+  sync: 'Weekly Sync', pipeline: 'Recruitment & Credentialing',
 };
 function showView(id: string) {
   $$('.hub-view').forEach((v) => v.classList.toggle('is-active', (v as HTMLElement).dataset.view === id));
