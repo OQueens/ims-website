@@ -112,6 +112,7 @@ import Sortable from 'sortablejs';
   // Per-row version guard: drop any echo/poll older than what we've adopted.
   const version = new Map<string, number>();
   const pending = new Set<string>();  // createPerson ids awaiting first server confirmation
+  const queued = new Map<string, PipelineOp[]>();
   const suppressed = new Set<string>();  // ids the active-view poll dropped; block stale echoes from resurrecting them until a poll re-includes them
 
   const statusEl = document.getElementById('pipe-status');
@@ -132,10 +133,11 @@ import Sortable from 'sortablejs';
     if (suppressed.has(row.id)) return;  // poll says this row left the active view; ignore stale in-flight echoes until a poll re-includes it (restore)
     if ((version.get(row.id) ?? -1) > row.version) return;
     version.set(row.id, row.version);
-    pending.delete(row.id);  // server-confirmed → clear the optimistic-create guard
-    if (row.stage === 'archived' && !archiveMode) people.delete(row.id);
+    const wasPending = pending.delete(row.id);  // server-confirmed → clear the optimistic-create guard
+    if (row.stage === 'archived' && !archiveMode) { people.delete(row.id); version.delete(row.id); }
     else people.set(row.id, row);
     render();
+    if (wasPending) flushQueued(row.id);
   }
 
   // Optimistic single-op persistence. applyOp already updated `people` at the call
@@ -158,10 +160,12 @@ import Sortable from 'sortablejs';
           setStatus('error'); setTimeout(() => sendOp(op, attempt + 1), 3000);  // transient server error — bounded retry
         } else {
           setStatus('error');  // 4xx (rejected op) or retries exhausted — do not loop forever
+          failCreate(op);
         }
       } catch {
         setStatus('error');  // network error — transient
         if (attempt < MAX_RETRIES) setTimeout(() => sendOp(op, attempt + 1), 3000);
+        else failCreate(op);
       }
     })();
   }
@@ -172,14 +176,40 @@ import Sortable from 'sortablejs';
     if (op.type === 'createPerson') {
       const created = applyOp(null, op, ctx());
       if (created) { people.set(created.id, created); pending.add(created.id); }
+      render();
+      sendOp(op);
+      return;
+    }
+    suppressed.delete(op.id);  // local user is authoritatively acting on this row — don't let a stale suppression block their own echo (e.g. restorePerson)
+    const cur = people.get(op.id);
+    const next = applyOp(cur ?? null, op, ctx());
+    if (next) { if (next.stage === 'archived' && !archiveMode) people.delete(next.id); else people.set(next.id, next); }
+    render();
+    if (pending.has(op.id)) {
+      const q = queued.get(op.id) ?? []; q.push(op); queued.set(op.id, q);
+      setStatus('saving'); // will POST once the create confirms
     } else {
-      suppressed.delete(op.id);  // local user is authoritatively acting on this row — don't let a stale suppression block their own echo (e.g. restorePerson)
-      const cur = people.get(op.id);
+      sendOp(op);
+    }
+  }
+
+  function flushQueued(id: string) {
+    const q = queued.get(id); if (!q || !q.length) return;
+    queued.delete(id);
+    for (const op of q) {
+      const cur = people.get(id);
       const next = applyOp(cur ?? null, op, ctx());
       if (next) { if (next.stage === 'archived' && !archiveMode) people.delete(next.id); else people.set(next.id, next); }
+      sendOp(op);
     }
     render();
-    sendOp(op);
+  }
+
+  function failCreate(op: PipelineOp) {
+    if (op.type !== 'createPerson') return;
+    const id = op.input.id;
+    people.delete(id); pending.delete(id); queued.delete(id);
+    render(); setStatus('error');
   }
 
   // ── Add-provider form ─────────────────────────────────────────────────────────
@@ -299,6 +329,7 @@ import Sortable from 'sortablejs';
   });
 
   let archiveMode = false;
+  let viewGen = 0;
 
   // ── Delegated board actions ───────────────────────────────────────────────────
   board.addEventListener('click', (e) => {
@@ -315,11 +346,13 @@ import Sortable from 'sortablejs';
 
   // ── Live poll (~4s), guarded + version-monotonic ──────────────────────────────
   async function poll() {
+    const myGen = viewGen;
     try {
       const res = await fetch('/hub/api/pipeline?view=' + (archiveMode ? 'archived' : 'active'), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
       if (!res.ok || res.type === 'opaqueredirect') return;
       const b = await res.json();
       if (!b?.ok || !Array.isArray(b.people)) return;
+      if (viewGen !== myGen) return;
       const seen = new Set<string>();
       for (const raw of b.people) { const p = readPerson(raw); if (!p.id) continue; seen.add(p.id); suppressed.delete(p.id); adopt(p); }
       // Drop rows that left this view (archived elsewhere) — only in active mode.
@@ -336,14 +369,15 @@ import Sortable from 'sortablejs';
   // view — and since the row never reappears in the other view's poll, it would
   // never get cleared on its own.
   async function loadView() {
+    const myGen = viewGen;
     const wantArchived = archiveMode;  // capture intended mode: a newer toggle must supersede this fetch
     try {
       const res = await fetch('/hub/api/pipeline?view=' + (wantArchived ? 'archived' : 'active'), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
       if (!res.ok || res.type === 'opaqueredirect') return;
       const b = await res.json();
       if (!b?.ok || !Array.isArray(b.people)) return;
-      if (archiveMode !== wantArchived) return;  // user toggled again before this resolved — drop the stale response
-      people.clear(); version.clear(); suppressed.clear(); pending.clear();
+      if (viewGen !== myGen) return;  // user toggled again before this resolved — drop the stale response
+      people.clear(); version.clear(); suppressed.clear(); pending.clear(); queued.clear();
       for (const raw of b.people) { const p = readPerson(raw); if (p.id) { people.set(p.id, p); version.set(p.id, p.version); } }
       render();
     } catch { /* ignore */ }
@@ -352,6 +386,7 @@ import Sortable from 'sortablejs';
   const archiveToggle = document.getElementById('pipe-archive-toggle');
   archiveToggle?.addEventListener('click', () => {
     archiveMode = !archiveMode;
+    viewGen++;
     archiveToggle.setAttribute('aria-pressed', String(archiveMode));
     archiveToggle.textContent = archiveMode ? 'Back to board' : 'Archive';
     board!.classList.toggle('is-archive', archiveMode);
