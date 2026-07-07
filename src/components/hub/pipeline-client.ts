@@ -283,7 +283,12 @@ import Sortable from 'sortablejs';
     });
   }
 
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !spot.hidden) closeSpot(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !spot.hidden) {
+      spot.querySelector<HTMLTextAreaElement>('.pipe-notes')?.blur(); // flush unsaved notes (blur handler commits) before removing the DOM
+      closeSpot();
+    }
+  });
 
   let archiveMode = false;
 
