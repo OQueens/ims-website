@@ -649,3 +649,6 @@ html[data-hub-theme="dark"] {
 .pipe-chip.on .pipe-chip__bx { background: var(--mn-cyan, #59BFE7); border-color: var(--mn-cyan, #59BFE7); }
 @media (max-width: 560px) { .pipe-spot__grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .pipe-spot, .pipe-spot__card { animation: none; } }
+
+.pipe-archive-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 12px; }
+.pipe-board.is-archive { display: block; }

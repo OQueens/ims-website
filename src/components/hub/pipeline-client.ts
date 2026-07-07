@@ -73,6 +73,14 @@ import Sortable from 'sortablejs';
   }
 
   function render() {
+    // Archive mode is a separate, sortable-free render path: a flat grid of
+    // archived people (read + restore via the dossier). Short-circuit before the
+    // `dragging` guard below, which only matters for the lane board.
+    if (archiveMode) {
+      const list = [...people.values()].filter((p) => p.stage === 'archived');
+      board!.innerHTML = `<div class="pipe-archive-list">${list.map(cardHtml).join('') || '<div class="pipe-empty">Archive is empty</div>'}</div>`;
+      return; // no sortables in archive mode
+    }
     // A drag gesture is in progress (between onStart/onEnd): rebuilding board.innerHTML
     // now would run mountSortables() and destroy() the actively-dragging Sortable
     // instance mid-gesture, which SortableJS forbids (codex-flagged: the poll/adopt
@@ -319,6 +327,35 @@ import Sortable from 'sortablejs';
     } catch { /* ignore; next tick retries */ }
   }
   window.setInterval(poll, 4000);
+
+  // ── Archive view toggle ───────────────────────────────────────────────────────
+  // Full authoritative reload for a view switch: every client-side reconciliation
+  // artifact (people/version/suppressed/pending) must reset, or a stale entry from
+  // the old view (e.g. a `suppressed` archived id, or an in-flight `pending` create)
+  // leaks across the toggle and can wrongly block a legitimate adopt() in the new
+  // view — and since the row never reappears in the other view's poll, it would
+  // never get cleared on its own.
+  async function loadView() {
+    try {
+      const res = await fetch('/hub/api/pipeline?view=' + (archiveMode ? 'archived' : 'active'), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
+      if (!res.ok || res.type === 'opaqueredirect') return;
+      const b = await res.json();
+      if (!b?.ok || !Array.isArray(b.people)) return;
+      people.clear(); version.clear(); suppressed.clear(); pending.clear();
+      for (const raw of b.people) { const p = readPerson(raw); if (p.id) { people.set(p.id, p); version.set(p.id, p.version); } }
+      render();
+    } catch { /* ignore */ }
+  }
+
+  const archiveToggle = document.getElementById('pipe-archive-toggle');
+  archiveToggle?.addEventListener('click', () => {
+    archiveMode = !archiveMode;
+    archiveToggle.setAttribute('aria-pressed', String(archiveMode));
+    archiveToggle.textContent = archiveMode ? 'Back to board' : 'Archive';
+    board!.classList.toggle('is-archive', archiveMode);
+    document.getElementById('pipe-add')!.style.display = archiveMode ? 'none' : '';
+    loadView();
+  });
 
   // ── Drag-and-drop between lanes (moveStage) ───────────────────────────────────
   let sortables: Sortable[] = [];
