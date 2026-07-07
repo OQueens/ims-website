@@ -125,6 +125,12 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
     expect(cardById('p-cleo')!.querySelector('.pipe-owner')!.textContent).toBe('DH'); // donovan.hale
   });
 
+  it('card avatar shows first+last initials of the person name', async () => {
+    await boot();
+    expect(cardById('p-alpha')!.querySelector('.pipe-av')!.textContent).toBe('AR'); // "Dr. Alpha Reyes"
+    expect(cardById('p-bravo')!.querySelector('.pipe-av')!.textContent).toBe('BO'); // "Dr. Bravo Okafor"
+  });
+
   it('FIX R owner picker: datalist = signed-in user + distinct board owners, defaults to me, NEVER an @confirm placeholder', async () => {
     await boot();
     $('#pipe-add')!.click();

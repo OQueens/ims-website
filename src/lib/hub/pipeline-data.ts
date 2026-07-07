@@ -164,6 +164,15 @@ export function checklistCount(p: PipelinePerson): number {
   return CHECKLIST_KEYS.reduce((n, k) => n + (p[chkCol(k)] ? 1 : 0), 0);
 }
 
+/** First+last initials from a person's name (strips a leading "Dr."). One letter for a
+ *  single-word name; "?" when empty. NOT HTML-escaped — the caller escapes at render. */
+export function personInitials(fullName: string): string {
+  const parts = (fullName || '').replace(/^dr\.?\s*/i, '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (parts[0][0] + last).toUpperCase();
+}
+
 /** Bucket people by board lane (archived excluded), each lane newest-updated first. */
 export function groupByStage(people: PipelinePerson[]): Record<BoardStage, PipelinePerson[]> {
   const out = Object.fromEntries(BOARD_STAGES.map((s) => [s, [] as PipelinePerson[]])) as Record<BoardStage, PipelinePerson[]>;

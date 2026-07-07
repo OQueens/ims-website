@@ -3,7 +3,7 @@
 // the SSR island, keeps an id-keyed people map, and (Tasks 7-10) persists ops
 // optimistically + polls for live updates. Mirrors the Weekly Sync client spine.
 import {
-  readPerson, groupByStage, checklistCount,
+  readPerson, groupByStage, checklistCount, personInitials,
   BOARD_STAGES, STAGE_LABELS, CHECKLIST_KEYS, CHECKLIST_LABELS, chkCol, SPECIALTY_SUGGESTIONS,
   type PipelinePerson, type BoardStage,
 } from '../../lib/hub/pipeline-data';
@@ -42,7 +42,6 @@ import Sortable from 'sortablejs';
   // so re-opening the dossier never stacks duplicate backdrop listeners.
   spot.addEventListener('click', (e) => { if (e.target === spot) closeSpot(); });
 
-  const initials = (p: PipelinePerson) => (p.full_name.replace(/^dr\.?\s*/i, '').trim()[0] || '?').toUpperCase();
   function ownerAvatar(p: PipelinePerson): string {
     const e = rosterEntry(p.owner_email || '');
     const title = p.owner_email ? `Owner · ${esc(e.name)}` : 'No owner';
@@ -57,7 +56,7 @@ import Sortable from 'sortablejs';
     return `
       <article class="pipe-card" draggable="true" data-id="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(p.full_name)}">
         <div class="pipe-card__top">
-          <span class="pipe-av">${esc(initials(p))}</span>
+          <span class="pipe-av">${esc(personInitials(p.full_name))}</span>
           <div class="pipe-card__id">
             <div class="pipe-card__name">${esc(p.full_name)}</div>
             ${spec ? `<span class="pipe-spec">${esc(spec)}</span>` : ''}
@@ -377,7 +376,7 @@ import Sortable from 'sortablejs';
       <div class="pipe-spot__card" role="document">
         <button class="pipe-spot__x" aria-label="Close">✕</button>
         <div class="pipe-spot__head">
-          <span class="pipe-av">${esc(initials(p))}</span>
+          <span class="pipe-av">${esc(personInitials(p.full_name))}</span>
           <div><div class="pipe-spot__name">${esc(p.full_name)}</div>
             <div class="pipe-spot__sub">${esc(p.specialty_name || p.specialty_slug || '')}${p.state ? ' · ' + esc(p.state) : ''} · ${esc(STAGE_LABELS[p.stage])} · owner ${esc(owner.name)}</div></div>
         </div>
