@@ -300,4 +300,44 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
     await flush(6);
     expect(sent.filter((t) => t === 'toggleChecklist').length).toBe(2); // op B POSTed only after op A settled
   });
+
+  // ── Hard delete (test/mistyped rows) ─────────────────────────────────────────
+
+  it('delete (confirmed) removes the card and POSTs deletePerson', async () => {
+    const { sent } = await boot();
+    (window as unknown as { confirm: () => boolean }).confirm = () => true;
+    cardById('p-bravo')!.click();
+    await flush(1);
+    ($('#pipe-spot .pipe-delete') as HTMLElement).click();
+    await flush();
+    expect(cardById('p-bravo')).toBeNull();
+    expect(sent).toContain('deletePerson');
+  });
+
+  it('delete is cancellable — declining the confirm leaves the card and POSTs nothing', async () => {
+    const { sent } = await boot();
+    (window as unknown as { confirm: () => boolean }).confirm = () => false;
+    cardById('p-bravo')!.click();
+    await flush(1);
+    ($('#pipe-spot .pipe-delete') as HTMLElement).click();
+    await flush();
+    expect(cardById('p-bravo')).toBeTruthy();
+    expect(sent).not.toContain('deletePerson');
+  });
+
+  it('a hard-deleted card is NOT resurrected by a view reload that raced the server delete (tombstone)', async () => {
+    const { server } = await boot();
+    (window as unknown as { confirm: () => boolean }).confirm = () => true;
+    cardById('p-bravo')!.click();
+    await flush(1);
+    ($('#pipe-spot .pipe-delete') as HTMLElement).click();
+    await flush();
+    expect(cardById('p-bravo')).toBeNull();
+    expect(server.has('p-bravo')).toBe(true); // mock backend still holds it — delete not yet propagated
+    // Toggle to archive and back — the active reload still returns the row, but the
+    // tombstone must keep it off the board.
+    $('#pipe-archive-toggle')!.click(); await flush();
+    $('#pipe-archive-toggle')!.click(); await flush();
+    expect(cardById('p-bravo')).toBeNull();
+  });
 });

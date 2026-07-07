@@ -12,7 +12,7 @@ vi.mock('./hub-supabase', () => {
   const q: Record<string, unknown> = {};
   const chain = () => q;
   Object.assign(q, {
-    select: chain, order: chain, eq: chain, in: chain,
+    select: chain, order: chain, eq: chain, in: chain, delete: chain,
     then: (resolve: (v: unknown) => unknown) => resolve(state.result),
   });
   return { getHubSupabase: () => (state.clientNull ? null : { from: () => q, rpc: async () => state.result }) };
@@ -32,6 +32,12 @@ async function getWithCookie(view: 'active' | 'archived' = 'active') {
   headers.set('cookie', await signedCookie());
   const request = new Request('https://x/hub/api/pipeline?view=' + view, { method: 'GET', headers });
   return GET({ request, locals: authedLocals } as never);
+}
+async function postWithCookie(op: unknown) {
+  const headers = new Headers({ 'Content-Type': 'application/json' });
+  headers.set('cookie', await signedCookie());
+  const request = new Request('https://x/hub/api/pipeline', { method: 'POST', headers, body: JSON.stringify({ op }) });
+  return POST({ request, locals: authedLocals } as never);
 }
 
 // ── Auth (no DB needed) — unchanged baseline coverage ─────────────────────────
@@ -105,5 +111,31 @@ describe('/hub/api/pipeline GET error classification (#6 board-wipe fix)', () =>
     const b = await res.json();
     expect(b.ok).toBe(true);
     expect(Array.isArray(b.people)).toBe(true);
+  });
+});
+
+// ── deletePerson: a HARD delete (bypasses the RPC — direct row delete) ─────────
+describe('/hub/api/pipeline POST deletePerson', () => {
+  beforeEach(() => { state.result = { data: null, error: null }; state.clientNull = false; });
+
+  it('a valid deletePerson → 200 { ok:true, deleted:true }', async () => {
+    state.result = { data: null, error: null };  // successful delete
+    const res = await postWithCookie({ type: 'deletePerson', id: 'p-test' });
+    expect(res.status).toBe(200);
+    const b = await res.json();
+    expect(b.ok).toBe(true);
+    expect(b.deleted).toBe(true);
+  });
+
+  it('a storage error on delete → 502', async () => {
+    state.result = { data: null, error: { code: '57014', message: 'timeout' } };
+    const res = await postWithCookie({ type: 'deletePerson', id: 'p-test' });
+    expect(res.status).toBe(502);
+    expect((await res.json()).ok).toBe(false);
+  });
+
+  it('deletePerson without a session → 401 (no row touched)', async () => {
+    const res = await POST({ request: req({ op: { type: 'deletePerson', id: 'p1' } }), locals } as any);
+    expect(res.status).toBe(401);
   });
 });

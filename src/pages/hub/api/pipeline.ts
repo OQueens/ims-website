@@ -47,6 +47,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const supabase = getHubSupabase(env);
   if (!supabase) return json(503, { ok: false, error: 'storage-unconfigured' });
+
+  // deletePerson is a HARD delete (row removed) — for test/mistyped entries. It
+  // does not go through hub_pipeline_apply (no version/merge needed for a terminal
+  // removal); a direct delete by id on the service-role client is sufficient.
+  if (parsed.op.type === 'deletePerson') {
+    const { error } = await supabase.from('hub_pipeline_people').delete().eq('id', parsed.op.id);
+    if (error) {
+      console.error('[/hub/api/pipeline POST delete] failed:', error.message);
+      return json(502, { ok: false, error: 'storage-failed' });
+    }
+    return json(200, { ok: true, person: null, deleted: true });
+  }
+
   const { data, error } = await supabase.rpc('hub_pipeline_apply', { p_op: parsed.op, p_email: email });
   if (error) {
     console.error('[/hub/api/pipeline POST] rpc failed:', error.message);

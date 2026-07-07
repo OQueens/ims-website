@@ -4,7 +4,7 @@
 // optimistically + polls for live updates. Mirrors the Weekly Sync client spine.
 import {
   readPerson, groupByStage, checklistCount,
-  BOARD_STAGES, STAGE_LABELS, CHECKLIST_KEYS, CHECKLIST_LABELS, chkCol,
+  BOARD_STAGES, STAGE_LABELS, CHECKLIST_KEYS, CHECKLIST_LABELS, chkCol, SPECIALTY_SUGGESTIONS,
   type PipelinePerson, type BoardStage,
 } from '../../lib/hub/pipeline-data';
 import { rosterEntry } from '../../lib/hub/hub-roster';
@@ -114,6 +114,7 @@ import Sortable from 'sortablejs';
   const pending = new Set<string>();  // createPerson ids awaiting first server confirmation
   const queued = new Map<string, PipelineOp[]>();
   const suppressed = new Set<string>();  // ids the active-view poll dropped; block stale echoes from resurrecting them until a poll re-includes them
+  const deleted = new Set<string>();  // HARD-deleted ids (tombstone); adopt() never resurrects them, even if a poll GET still returns the row before the server delete lands
 
   const statusEl = document.getElementById('pipe-status');
   let statusClear: ReturnType<typeof setTimeout> | undefined;
@@ -130,6 +131,7 @@ import Sortable from 'sortablejs';
   // per-row version monotonicity. A removed-from-board (archived) row is dropped.
   function adopt(row: PipelinePerson | null) {
     if (!row || !row.id) return;
+    if (deleted.has(row.id)) return;  // hard-deleted — never resurrect, even from a poll GET that raced the server delete
     if (suppressed.has(row.id)) return;  // poll says this row left the active view; ignore stale in-flight echoes until a poll re-includes it (restore)
     if ((version.get(row.id) ?? -1) > row.version) return;
     version.set(row.id, row.version);
@@ -200,6 +202,16 @@ import Sortable from 'sortablejs';
       enqueueSend(op);
       return;
     }
+    if (op.type === 'deletePerson') {
+      // HARD delete: tombstone the id (adopt() won't resurrect it), drop it from
+      // every reconciliation collection, then persist (endpoint removes it server-side).
+      deleted.add(op.id);
+      people.delete(op.id); version.delete(op.id); pending.delete(op.id);
+      queued.delete(op.id); suppressed.delete(op.id);
+      render();
+      enqueueSend(op);
+      return;
+    }
     suppressed.delete(op.id);  // local user is authoritatively acting on this row — don't let a stale suppression block their own echo (e.g. restorePerson)
     const cur = people.get(op.id);
     const next = applyOp(cur ?? null, op, ctx());
@@ -252,7 +264,8 @@ import Sortable from 'sortablejs';
       <form class="pipe-form" autocomplete="off">
         <h3 class="pipe-form__h">Add provider · ${esc(STAGE_LABELS[stage])}</h3>
         <label class="pipe-f"><span>Name *</span><input name="full_name" required maxlength="120" /></label>
-        <label class="pipe-f"><span>Specialty</span><input name="specialty_name" maxlength="80" /></label>
+        <label class="pipe-f"><span>Specialty</span><input name="specialty_name" list="pipe-specialty-list" maxlength="80" placeholder="Start typing…" autocomplete="off" /></label>
+        <datalist id="pipe-specialty-list">${SPECIALTY_SUGGESTIONS.map((s) => `<option value="${esc(s)}"></option>`).join('')}</datalist>
         <div class="pipe-f2">
           <label class="pipe-f"><span>State</span><input name="state" maxlength="40" /></label>
           <label class="pipe-f"><span>Target start</span><input name="target_start_date" type="date" /></label>
@@ -322,6 +335,7 @@ import Sortable from 'sortablejs';
             <div class="pipe-spot__lbl">Credentialing · ${done} of 6</div>
             <div class="pipe-chips">${chips}</div>
             <button class="pipe-btn pipe-archive" style="margin-top:16px">${p.stage === 'archived' ? 'Restore to Needs Onboarding' : 'Archive provider'}</button>
+            <button class="pipe-btn pipe-delete" style="margin-top:8px">Delete permanently</button>
           </div>
         </div>
       </div>`;
@@ -349,6 +363,14 @@ import Sortable from 'sortablejs';
       const cur = people.get(id); if (!cur) { closeSpot(); return; }  // same stale-dossier guard as the chip handler above
       if (cur.stage === 'archived') commit({ type: 'restorePerson', id, stage: 'needs_onboarding' });
       else commit({ type: 'archivePerson', id });
+      closeSpot();
+    });
+    spot.querySelector('.pipe-delete')!.addEventListener('click', () => {
+      const cur = people.get(id); if (!cur) { closeSpot(); return; }
+      // Destructive + irreversible → confirm. Archive is the reversible option;
+      // delete is for test/mistyped rows the user genuinely wants gone.
+      if (!window.confirm(`Delete ${cur.full_name || 'this provider'} permanently? This can't be undone — use Archive if you might want them back.`)) return;
+      commit({ type: 'deletePerson', id });
       closeSpot();
     });
   }
@@ -410,7 +432,9 @@ import Sortable from 'sortablejs';
       if (!b?.ok || !Array.isArray(b.people)) return;
       if (viewGen !== myGen) return;  // user toggled again before this resolved — drop the stale response
       people.clear(); version.clear(); suppressed.clear(); pending.clear(); queued.clear();
-      for (const raw of b.people) { const p = readPerson(raw); if (p.id) { people.set(p.id, p); version.set(p.id, p.version); } }
+      // Keep `deleted` — a hard-deleted id must not resurrect via a reload that
+      // raced the server delete (this repopulation bypasses adopt's tombstone guard).
+      for (const raw of b.people) { const p = readPerson(raw); if (p.id && !deleted.has(p.id)) { people.set(p.id, p); version.set(p.id, p.version); } }
       render();
     } catch { /* ignore */ }
   }
