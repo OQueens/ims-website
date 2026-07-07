@@ -617,6 +617,7 @@ html[data-hub-theme="dark"] {
 @media (prefers-reduced-motion: reduce) { .pipe-card, .pipe-meter i, .pipe-lane__body, .pipe-lane__add, .pipe-add, .pipe-archive-toggle { transition: none; } }
 
 .pipe-modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(6,6,10,0.6); backdrop-filter: blur(3px); padding: 20px; }
+.pipe-modal--top { z-index: 80; }  /* the delete confirm launches from an open dossier (.pipe-spot, z-index 70) — it must sit above it */
 .pipe-form { width: 420px; max-width: 100%; background: var(--surface); border: 1px solid var(--rule-strong); border-radius: 18px; padding: 20px; box-shadow: 0 30px 70px rgba(0,0,0,0.5); }
 .pipe-form__h { font-family: var(--font-display); font-weight: 900; font-size: 17px; color: var(--ink); margin: 0 0 14px; }
 .pipe-f { display: flex; flex-direction: column; gap: 4px; margin-bottom: 11px; }
