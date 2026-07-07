@@ -147,17 +147,20 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
     expect(lbl!.textContent).toBe('Warm Leads');
   });
 
-  it('FIX R owner picker: datalist = signed-in user + distinct board owners, defaults to me, NEVER an @confirm placeholder', async () => {
+  it('owner picker: inline autocomplete (no datalist), defaults to me, completes a board owner, NEVER an @confirm placeholder', async () => {
     await boot();
     $('#pipe-add')!.click();
     await flush(1);
     const input = $('.pipe-modal input[name="owner_email"]') as HTMLInputElement;
     expect(input).toBeTruthy();
-    expect(input.value).toBe(ME);
-    const opts = $$('#pipe-owner-list option').map((o) => (o as HTMLOptionElement).value);
-    expect(opts).toContain('zach.young@iastaffing.com');
-    expect(opts).toContain('donovan.hale@iastaffing.com');
-    expect(opts).toContain('matthew.stone@iastaffing.com');
+    expect(input.value).toBe(ME);                                  // still defaults to the signed-in user
+    expect(input.getAttribute('list')).toBeNull();                // no datalist binding
+    expect(document.querySelector('#pipe-owner-list')).toBeNull(); // datalist removed
+    expect(input.hasAttribute('data-owner-autocomplete')).toBe(true);
+    // Inline autocomplete completes a distinct board owner's email from its prefix.
+    input.value = 'matthew';
+    input.dispatchEvent(new window.Event('input', { bubbles: true }));
+    expect(input.value).toBe('matthew.stone@iastaffing.com');
     expect(document.body.innerHTML).not.toContain('@confirm');
   });
 
