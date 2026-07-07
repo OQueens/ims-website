@@ -139,6 +139,14 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
     expect(psych.style.getPropertyValue('--sc').trim()).toBe('#A06CD8');
   });
 
+  it('lane header wraps its label in .pipe-lane__lbl (centering hook)', async () => {
+    await boot();
+    const pill = $('#pipe-board .pipe-lane[data-stage="warm_lead"] .pipe-lane__pill')!;
+    const lbl = pill.querySelector('.pipe-lane__lbl');
+    expect(lbl).toBeTruthy();
+    expect(lbl!.textContent).toBe('Warm Leads');
+  });
+
   it('FIX R owner picker: datalist = signed-in user + distinct board owners, defaults to me, NEVER an @confirm placeholder', async () => {
     await boot();
     $('#pipe-add')!.click();

@@ -572,9 +572,15 @@ html[data-hub-theme="dark"] {
 .pipe-archive-toggle[aria-pressed="true"] { background: var(--pop-magenta, #C44569); color: var(--cream-soft); border-color: var(--pop-magenta, #C44569); }
 
 .pipe-board { display: flex; gap: 13px; overflow-x: auto; padding-bottom: var(--space-4); align-items: flex-start; }
-.pipe-lane { min-width: 236px; width: 236px; flex-shrink: 0; }
-.pipe-lane__head { padding: 2px 4px 12px; }
-.pipe-lane__pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 5px 11px 5px 9px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+/* Lanes flex-grow to fill the desktop width; fall back to horizontal scroll only when
+   the viewport can't hold 5 lanes (the board is overflow-x:auto). */
+.pipe-lane { flex: 1 1 240px; min-width: 240px; }
+/* Stage pill centered over its lane; label vertically corrected (see .pipe-lane__lbl). */
+.pipe-lane__head { display: flex; justify-content: center; padding: 2px 4px 12px; }
+.pipe-lane__pill { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 14px; border-radius: 999px; font-family: var(--font-mono); font-size: 10px; line-height: 1; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+/* Uppercase mono glyphs sit optically high in their line box; nudge the label down 1px so
+   it reads vertically centered against the count badge (Zach-verified on the mockup). */
+.pipe-lane__lbl { display: inline-block; position: relative; top: 1px; }
 .pipe-lane__n { background: rgba(0,0,0,0.28); border-radius: 999px; padding: 0 6px; font-size: 9.5px; }
 .pipe-lane--warm .pipe-lane__pill { background: color-mix(in srgb, var(--pop-butter) 16%, transparent); color: var(--pop-butter); }
 .pipe-lane--bid .pipe-lane__pill { background: color-mix(in srgb, var(--pop-magenta,#C44569) 18%, transparent); color: var(--pop-magenta, #C44569); }
