@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   STAGES, BOARD_STAGES, CHECKLIST_KEYS, checklistCount, groupByStage,
-  readPerson, cleanDate, type PipelinePerson,
+  readPerson, cleanDate, personInitials, type PipelinePerson,
 } from './pipeline-data';
 
 const base = (over: Partial<PipelinePerson> = {}): PipelinePerson => readPerson({
@@ -68,5 +68,23 @@ describe('pipeline-data', () => {
     const p = readPerson({ id: 'x', full_name: 'A', checklist_audit: { chk_needs_contract: { by: 'z@iastaffing.com', at: 1700 }, chk_bogus: { by: 'z@iastaffing.com', at: 1 } } });
     expect(p.checklist_audit.chk_needs_contract).toEqual({ by: 'z@iastaffing.com', at: 1700 });
     expect(p.checklist_audit.chk_bogus).toBeUndefined();
+  });
+});
+
+describe('personInitials', () => {
+  it('returns first+last initials, stripping a leading Dr.', () => {
+    expect(personInitials('Dr. Marcus Bell')).toBe('MB');
+    expect(personInitials('Priya Nair')).toBe('PN');
+  });
+  it('uses first+last for 3+ word names', () => {
+    expect(personInitials('Mary Jane Watson')).toBe('MW');
+  });
+  it('returns one letter for a single-word name', () => {
+    expect(personInitials('Cher')).toBe('C');
+    expect(personInitials('Dr. House')).toBe('H');
+  });
+  it('returns ? for an empty/blank name', () => {
+    expect(personInitials('')).toBe('?');
+    expect(personInitials('   ')).toBe('?');
   });
 });
