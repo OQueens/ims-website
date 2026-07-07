@@ -146,8 +146,7 @@ import Sortable from 'sortablejs';
   const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
   // Persist one op, retrying transient 5xx / network failures with backoff.
   // Resolves only AFTER the op finally settles (success, sign-out, rejection, or
-  // retries exhausted) so a caller can `await` it to serialize dependent ops —
-  // see flushQueued, which must not fire same-row ops concurrently.
+  // retries exhausted) so enqueueSend can chain same-row ops on it. NEVER rejects.
   async function sendOp(op: PipelineOp) {
     setStatus('saving');
     for (let attempt = 0; ; attempt++) {
@@ -174,6 +173,23 @@ import Sortable from 'sortablejs';
     }
   }
 
+  // Per-row send serialization. Every op for a row id is chained behind that row's
+  // previous still-in-flight op, so the RPC receives a row's ops in the user's
+  // action order. This closes the same-row races a bare fire-and-forget sendOp
+  // leaves open: two quick same-row edits, a queued-flush batch, and (the subtle
+  // one) a commit() issued AFTER a create confirms while an earlier flush op is
+  // still mid-retry. Different rows stay fully parallel; sendOp never rejects so
+  // the chain never rejects and needs no error link.
+  const sendChain = new Map<string, Promise<void>>();
+  function enqueueSend(op: PipelineOp): Promise<void> {
+    const id = op.type === 'createPerson' ? op.input.id : op.id;
+    const prev = sendChain.get(id) ?? Promise.resolve();
+    const next = prev.then(() => sendOp(op));
+    sendChain.set(id, next);
+    void next.finally(() => { if (sendChain.get(id) === next) sendChain.delete(id); });
+    return next;
+  }
+
   // Apply an op locally (optimistic) then persist. For createPerson the id is
   // client-generated so the card appears instantly and the server agrees.
   function commit(op: PipelineOp) {
@@ -181,7 +197,7 @@ import Sortable from 'sortablejs';
       const created = applyOp(null, op, ctx());
       if (created) { people.set(created.id, created); pending.add(created.id); }
       render();
-      sendOp(op);
+      enqueueSend(op);
       return;
     }
     suppressed.delete(op.id);  // local user is authoritatively acting on this row — don't let a stale suppression block their own echo (e.g. restorePerson)
@@ -193,11 +209,11 @@ import Sortable from 'sortablejs';
       const q = queued.get(op.id) ?? []; q.push(op); queued.set(op.id, q);
       setStatus('saving'); // will POST once the create confirms
     } else {
-      sendOp(op);
+      enqueueSend(op);
     }
   }
 
-  async function flushQueued(id: string) {
+  function flushQueued(id: string) {
     const q = queued.get(id); if (!q || !q.length) return;
     queued.delete(id);
     // Apply every queued op optimistically and paint once, immediately.
@@ -207,11 +223,10 @@ import Sortable from 'sortablejs';
       if (next) { if (next.stage === 'archived' && !archiveMode) { people.delete(next.id); version.delete(next.id); } else people.set(next.id, next); }
     }
     render();
-    // Then persist them one at a time, in the user's original order. Firing them
-    // concurrently (fire-and-forget) would let the RPC commit same-row ops — e.g.
-    // two moveStage drags on a just-created card — out of order and drop the
-    // user's last intent. Awaiting each sendOp serializes them (codex-flagged).
-    for (const op of q) await sendOp(op);
+    // Persist in the user's original order. enqueueSend chains them onto this row's
+    // send queue (behind the create's own send), so they go out one at a time and
+    // never race a later commit() on the same row (codex-flagged #1/#1b).
+    for (const op of q) enqueueSend(op);
   }
 
   function failCreate(op: PipelineOp) {

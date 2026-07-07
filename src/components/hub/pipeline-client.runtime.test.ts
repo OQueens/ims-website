@@ -280,4 +280,24 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
     expect(sent.filter((t) => t === 'toggleChecklist').length).toBe(2); // op B POSTed only after op A settled
     expect(sent.filter((t) => t === 'createPerson').length).toBe(1);    // still exactly one create
   });
+
+  it('per-row send lock (codex #1b): two same-row commits serialize — op B is not POSTed until op A settles', async () => {
+    // The general property that closes #1b: ANY two same-row sends (not just a
+    // queued-flush batch) go out one at a time, so a commit() issued while an
+    // earlier same-row op is still in flight (incl. mid-retry) cannot overtake it.
+    const { control, sent } = await boot();
+    const holdA = deferred();
+    control.holdOp = holdA;  // hold the FIRST non-create POST's response (one-shot)
+    // Two rapid toggles on an EXISTING (non-pending) card — both go via commit()->send.
+    cardById('p-bravo')!.click();
+    await flush(1);
+    $$('#pipe-spot .pipe-chip').find((c) => c.getAttribute('data-chk') === 'collecting_docs')!.click();
+    $$('#pipe-spot .pipe-chip').find((c) => c.getAttribute('data-chk') === 'needs_contract')!.click();
+    await flush(4);
+    expect(sent.filter((t) => t === 'toggleChecklist').length).toBe(1); // op B chained behind op A — NOT sent yet
+
+    holdA.resolve();
+    await flush(6);
+    expect(sent.filter((t) => t === 'toggleChecklist').length).toBe(2); // op B POSTed only after op A settled
+  });
 });
