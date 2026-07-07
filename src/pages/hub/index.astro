@@ -13,8 +13,6 @@ import OverviewView from '../../components/hub/OverviewView.astro';
 import SimulatorView from '../../components/hub/SimulatorView.astro';
 import AnalyticsView from '../../components/hub/AnalyticsView.astro';
 import SyncView from '../../components/hub/SyncView.astro';
-import PipelineView from '../../components/hub/PipelineView.astro';
-import { readPerson, BOARD_STAGES, type PipelinePerson } from '../../lib/hub/pipeline-data';
 import { readHubEnv } from '../../lib/hub/hub-env';
 import { getCookie } from '../../lib/hub/cookies';
 import { verifySession, SESSION_COOKIE } from '../../lib/hub/session';
@@ -49,7 +47,6 @@ let events: HubEventRow[] = [];
 let syncRows: Array<{ column_key: string; items: unknown }> = [];
 let syncWeekRows: Array<{ week_key: string }> = [];
 let lsAnalytics: LsKpis | null = null;
-let pipelinePeople: PipelinePerson[] = [];
 if (supabase) {
   const jobsQ = supabase
     .from('ims_jobs')
@@ -79,17 +76,8 @@ if (supabase) {
     .select('kpis')
     .order('snapshot_at', { ascending: false })
     .limit(1);
-  // Recruitment & Credentialing board rows, excluding the archived lane.
-  // Tolerant of a missing table — degrades to an empty board.
-  const pipelineQ = supabase
-    .from('hub_pipeline_people')
-    .select('id, stage, full_name, specialty_slug, specialty_name, state, phone, email, owner_email, target_start_date, assignment_id, assignment_number, assignment_label, chk_collecting_docs, chk_needs_contract, chk_start_dates_booked, chk_credentialing_started, chk_credentialing_complete, chk_provider_working, checklist_audit, notes, version, updated_by, updated_at')
-    .neq('stage', 'archived')
-    .order('updated_at', { ascending: false, nullsFirst: false })
-    .limit(1000);
   try {
-    const [jobsRes, eventsRes, syncRes, syncWeeksRes, lsRes, pipeRes] =
-      await Promise.all([jobsQ, eventsQ, syncQ, syncWeeksQ, lsQ, pipelineQ]);
+    const [jobsRes, eventsRes, syncRes, syncWeeksRes, lsRes] = await Promise.all([jobsQ, eventsQ, syncQ, syncWeeksQ, lsQ]);
     if (jobsRes.error) console.error('[/hub] ims_jobs read failed:', jobsRes.error.message);
     else if (jobsRes.data) rows = jobsRes.data as HubJobRow[];
     if (eventsRes.error) console.error('[/hub] ls_events read failed:', eventsRes.error.message);
@@ -102,8 +90,6 @@ if (supabase) {
     else if (syncWeeksRes.data) syncWeekRows = syncWeeksRes.data as Array<{ week_key: string }>;
     if (lsRes.error) console.error('[/hub] ims_ls_analytics read failed:', lsRes.error.message);
     else if (lsRes.data && lsRes.data.length) lsAnalytics = normalizeLsKpis((lsRes.data[0] as { kpis: unknown }).kpis);
-    if (pipeRes.error) console.error('[/hub] hub_pipeline_people read failed:', pipeRes.error.message);
-    else if (pipeRes.data) pipelinePeople = (pipeRes.data as unknown[]).map(readPerson);
   } catch (e) {
     console.error('[/hub] supabase client crash:', e);
   }
@@ -162,12 +148,10 @@ const eyebrow = new Intl.DateTimeFormat('en-US', {
       <SimulatorView latestJobs={overview.latestJobs} />
       <AnalyticsView analytics={analytics} lsAnalytics={lsAnalytics} />
       <SyncView weekKey={weekKey} columns={syncColumns} weeks={syncWeeks} me={me} />
-      <PipelineView people={pipelinePeople} me={me} />
     </main>
   </div>
 </HubLayout>
 
 <script>
   import '../../components/hub/hub-client';
-  import '../../components/hub/pipeline-client';
 </script>

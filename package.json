@@ -26,15 +26,12 @@
     "astro": "^5.18.1",
     "firebase": "^12.15.0",
     "pdfjs-dist": "^4.10.38",
-    "resend": "^6.12.4",
-    "sortablejs": "^1.15.7"
+    "resend": "^6.12.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@cloudflare/workers-types": "^4.20260506.1",
-    "@types/sortablejs": "^1.15.9",
     "@vitest/ui": "^4.1.5",
-    "happy-dom": "^20.10.6",
     "miniflare": "^4.20260504.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.5",
