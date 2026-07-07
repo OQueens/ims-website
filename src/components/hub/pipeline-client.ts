@@ -284,8 +284,8 @@ import Sortable from 'sortablejs';
     // Owner options come from REAL sources — the signed-in user (default) and the
     // distinct owners already on the board — never a hardcoded roster. Inline ghost-text
     // autocomplete (same as specialty) suggests from these; the field stays free-text
-    // (type="email"), and server-side readPerson/cleanEmail normalizes whatever is typed.
-    // No fake @confirm addresses can be stored.
+    // (type=text, inputmode=email), and server-side readPerson/cleanEmail normalizes what
+    // is typed. No fake @confirm addresses can be stored.
     const ownerEmails = new Set<string>();
     if (me) ownerEmails.add(me);
     for (const p of people.values()) if (p.owner_email) ownerEmails.add(p.owner_email);
