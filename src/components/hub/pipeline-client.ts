@@ -93,7 +93,7 @@ import Sortable from 'sortablejs';
       return `
         <div class="pipe-lane pipe-lane--${LANE_META[stage].cls}" data-stage="${stage}">
           <div class="pipe-lane__head">
-            <span class="pipe-lane__pill">${esc(STAGE_LABELS[stage])}<span class="pipe-lane__n">${list.length}</span></span>
+            <span class="pipe-lane__pill"><span class="pipe-lane__lbl">${esc(STAGE_LABELS[stage])}</span><span class="pipe-lane__n">${list.length}</span></span>
           </div>
           <div class="pipe-lane__body" data-stage="${stage}">
             ${list.map(cardHtml).join('') || `<div class="pipe-empty">No providers yet</div>`}
