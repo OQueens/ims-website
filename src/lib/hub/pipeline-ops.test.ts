@@ -108,4 +108,12 @@ describe('validateOp', () => {
   it('rejects createPerson without a full_name', () => {
     expect(validateOp({ type: 'createPerson', input: { id: 'p9' } }).ok).toBe(false);
   });
+  it('rejects createPerson with an oversized free-text field', () => {
+    const r = validateOp({ type: 'createPerson', input: { id: 'p9', full_name: 'Dr. X', notes: 'x'.repeat(5000) } });
+    expect(r.ok).toBe(false);
+  });
+  it('accepts createPerson with normal free-text fields', () => {
+    const r = validateOp({ type: 'createPerson', input: { id: 'p9', full_name: 'Dr. X', notes: 'short note', specialty_name: 'EM' } });
+    expect(r.ok).toBe(true);
+  });
 });

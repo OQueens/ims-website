@@ -121,6 +121,10 @@ export function validateOp(raw: unknown): { ok: true; op: PipelineOp } | { ok: f
       const i = o.input as Record<string, unknown> | undefined;
       if (!i || !isId(i.id) || typeof i.full_name !== 'string' || i.full_name.trim().length === 0) return { ok: false, reason: 'bad-createPerson' };
       if (i.stage !== undefined && !isStage(i.stage)) return { ok: false, reason: 'bad-stage' };
+      for (const f of ['full_name','specialty_slug','specialty_name','state','phone','email','owner_email','target_start_date','notes'] as const) {
+        const v = (i as Record<string, unknown>)[f];
+        if (v !== undefined && v !== null && !isStr(v)) return { ok: false, reason: 'bad-createPerson-field' };
+      }
       return { ok: true, op: { type: 'createPerson', input: i as unknown as CreatePersonInput } };
     }
     case 'updateField':
