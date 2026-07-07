@@ -407,4 +407,89 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
     expect(input.selectionStart).toBe('internal med'.length);
     expect(input.selectionEnd).toBe('Internal Medicine'.length);
   });
+
+  // ── Placed celebration ───────────────────────────────────────────────────────
+
+  it('celebration: toggling Provider Working (→ placed) fires an emoji firework; not on initial render', async () => {
+    await boot();
+    expect(document.querySelector('.pipe-celebrate')).toBeNull(); // already-placed p-farah does NOT auto-celebrate
+    cardById('p-cleo')!.click();
+    await flush(1);
+    $$('#pipe-spot .pipe-chip').find((c) => c.getAttribute('data-chk') === 'provider_working')!.click();
+    await flush();
+    const burst = document.querySelector('.pipe-celebrate');
+    expect(burst).toBeTruthy();                              // a firework layer was mounted
+    expect(burst!.querySelectorAll('span').length).toBeGreaterThan(0);
+  });
+
+  it('celebration: a non-placing checklist toggle does NOT fire the firework', async () => {
+    await boot();
+    cardById('p-cleo')!.click(); // active_bid — collecting_docs keeps it in active_bid
+    await flush(1);
+    $$('#pipe-spot .pipe-chip').find((c) => c.getAttribute('data-chk') === 'collecting_docs')!.click();
+    await flush();
+    expect(document.querySelector('.pipe-celebrate')).toBeNull();
+  });
+
+  // ── Matthew Draughon / Celsius Easter egg ────────────────────────────────────
+
+  it('easter egg: typing "Matthew Draughon" into the add form auto-fills the Celsius joke fields', async () => {
+    await boot();
+    $('#pipe-add')!.click();
+    await flush(1);
+    const nameInput = $('.pipe-modal input[name="full_name"]') as HTMLInputElement;
+    nameInput.value = 'Matthew Draughon';
+    nameInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+    await flush(1);
+    expect(($('.pipe-modal input[name="specialty_name"]') as HTMLInputElement).value).toContain('Celsius');
+    expect(($('.pipe-modal input[name="state"]') as HTMLInputElement).value).toContain('3');
+    expect(($('.pipe-modal textarea[name="notes"]') as HTMLTextAreaElement).value).toContain('Celsius');
+  });
+
+  it('easter egg: a normal name auto-fills nothing', async () => {
+    await boot();
+    $('#pipe-add')!.click();
+    await flush(1);
+    const nameInput = $('.pipe-modal input[name="full_name"]') as HTMLInputElement;
+    nameInput.value = 'Dr. Jane Ortiz';
+    nameInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+    await flush(1);
+    expect(($('.pipe-modal input[name="specialty_name"]') as HTMLInputElement).value).toBe('');
+    expect(($('.pipe-modal input[name="state"]') as HTMLInputElement).value).toBe('');
+  });
+
+  it('easter egg: changing the name after the autofill reverts the injected joke fields (never saved for a different person)', async () => {
+    await boot();
+    $('#pipe-add')!.click();
+    await flush(1);
+    const nameInput = $('.pipe-modal input[name="full_name"]') as HTMLInputElement;
+    nameInput.value = 'Matthew Draughon';
+    nameInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+    await flush(1);
+    expect(($('.pipe-modal input[name="specialty_name"]') as HTMLInputElement).value).toContain('Celsius');
+    // User triggers the egg, then renames to a real different provider before submitting.
+    nameInput.value = 'Dr. Sarah Chen';
+    nameInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+    await flush(1);
+    expect(($('.pipe-modal input[name="specialty_name"]') as HTMLInputElement).value).toBe('');
+    expect(($('.pipe-modal input[name="state"]') as HTMLInputElement).value).toBe('');
+    expect(($('.pipe-modal textarea[name="notes"]') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('easter egg: a field the user manually edited after the autofill is NOT reverted', async () => {
+    await boot();
+    $('#pipe-add')!.click();
+    await flush(1);
+    const nameInput = $('.pipe-modal input[name="full_name"]') as HTMLInputElement;
+    nameInput.value = 'Matthew Draughon';
+    nameInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+    await flush(1);
+    const stateInput = $('.pipe-modal input[name="state"]') as HTMLInputElement;
+    stateInput.value = 'Texas';  // user overrides one injected field
+    nameInput.value = 'Dr. Sarah Chen';
+    nameInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+    await flush(1);
+    expect(stateInput.value).toBe('Texas');  // manual edit preserved
+    expect(($('.pipe-modal input[name="specialty_name"]') as HTMLInputElement).value).toBe(''); // untouched-injected field reverted
+  });
 });
