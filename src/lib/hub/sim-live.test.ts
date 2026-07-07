@@ -85,9 +85,31 @@ describe('initLiveMarket — wires the hub sim to the v2 posterior anchor (trust
 
     const after = quoteFromControls(controls('anesthesiology'));
     expect(SPECIALTIES.anesthesiology.p70).toBe(420);          // anchored to the posterior
-    expect(after.specMax).toBe(420);                            // band widened to contain it
+    // Anchor 420 >= curated max 400, so the ceiling re-scales the researched max/p70
+    // geometry onto it: round(420 * 400/370) = 454. It must sit ABOVE p70 (never
+    // collapse onto it — that flattened every premium; see the premium test below).
+    expect(after.specMax).toBe(454);
+    expect(after.specMax).toBeGreaterThan(SPECIALTIES.anesthesiology.p70); // coherent band
     expect(SPECIALTIES.anesthesiology.provenance).toBe('live');
+    expect(SPECIALTIES.anesthesiology.confidence).toBe('high'); // market-typed + corroborated
     expect(after.payRate).toBeGreaterThan(before.payRate);     // 420 > static 370
+  });
+
+  it('preserves premium headroom when a hot anchor lands at/above the curated max (no flattening)', async () => {
+    // Regression guard for the premium-erasure bug: when the promoted anchor (420) is
+    // at/above the curated max (400), the ceiling must NOT collapse onto p70 — else
+    // rateCalculator clamps every shift/geo/premium quote straight back to the anchor.
+    snap.market = liveV2();
+    await initLiveMarket();
+    const day = quoteFromControls({ ...controls('anesthesiology'), shift: 'day' });
+    const night = quoteFromControls({ ...controls('anesthesiology'), shift: 'night' });
+    const holiday = quoteFromControls({ ...controls('anesthesiology'), shift: 'holiday' });
+    // Day sits at the anchor; the night (1.20x) and holiday (1.35x) differentials
+    // must still lift the quote above it (they clamp to the re-scaled 454 ceiling,
+    // not onto the 420 anchor).
+    expect(day.payRate).toBe(420);
+    expect(night.payRate).toBeGreaterThan(day.payRate);
+    expect(holiday.payRate).toBeGreaterThanOrEqual(night.payRate);
   });
 
   it('does NOT anchor on an INDIRECT (scraped article) posterior — stays on the curated band', async () => {

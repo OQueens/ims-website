@@ -502,25 +502,47 @@ export function applyMarketBucketsOverlay(
     // writes integers; Number.isInteger also rejects NaN/Infinity/non-number).
     if (!Number.isInteger(b.n_distinct) || b.n_distinct < minDistinct) continue
     // Count DISTINCT, NON-BLANK families (not array length) so a duplicated or empty
-    // entry can't fake corroboration — same posture as loadMarketRates's
-    // `sources.filter(s => s.trim().length > 0).map(sourceFamily)` then Set.size.
+    // entry can't fake corroboration. NORMALIZE (trim + lowercase) BEFORE the Set —
+    // mirroring sourceFamily's own `toLowerCase().trim()` — so a whitespace/case
+    // variant of ONE family ('exa' vs ' exa ' vs 'EXA', e.g. an RTDB round-trip or
+    // hand-edit) can't masquerade as two independent votes and clear the >=2-family
+    // gate (a single-source-sets-the-price faking the corroboration bar).
     const families = Array.isArray(b.source_families)
-      ? new Set(b.source_families.filter((s) => typeof s === 'string' && s.trim().length > 0)).size
+      ? new Set(
+          b.source_families
+            .filter((s) => typeof s === 'string' && s.trim().length > 0)
+            .map((s) => s.trim().toLowerCase()),
+        ).size
       : 0
     if (families < minFamilies) continue
 
     const anchor = Math.round(b.weighted_mean)
     // Band base = frozen static curated range (never the legacy-overlaid band).
-    // Widen only to contain the anchor; never fabricate a spread from the
-    // (degenerate) estimator variance. STATIC_SPECIALTY_RANGES is built from every
-    // SPECIALTIES key, so this is non-null for any cell that passed the `!spec`
-    // guard; skip rather than fall back to the (already-mutated) live spec, which
-    // would defeat the whole point of the frozen snapshot.
+    // STATIC_SPECIALTY_RANGES is built from every SPECIALTIES key, so this is
+    // non-null for any cell that passed the `!spec` guard; skip rather than fall
+    // back to the (already-mutated) live spec, which would defeat the whole point
+    // of the frozen snapshot.
     const range = STATIC_SPECIALTY_RANGES[key]
     if (!range) continue
     spec.p70 = anchor
     spec.min = Math.min(range.min, anchor)
-    spec.max = Math.max(range.max, anchor)
+    // Clamp CEILING for the promoted cell. rateCalculator clamps the final quote to
+    // spec.max (the "researched-range ceiling"), so shift/geo/facility/duration
+    // premiums price BELOW it. If we widened max only to CONTAIN the anchor, a
+    // hot-market anchor (>= the curated max) would collapse max onto p70 (=== anchor)
+    // and EVERY premium would clamp straight back to the anchor — flattening night/
+    // weekend/holiday/CAH quotes onto the base (the incoherent p70 === max case).
+    //   - anchor INSIDE the researched band → keep the audited max as the ceiling
+    //     (premiums price up to the researched max; invariant unchanged).
+    //   - anchor AT/ABOVE the researched max (the corroborated market runs hotter
+    //     than our researched band) → re-scale the researched max/p70 GEOMETRY onto
+    //     the anchor so the premium headroom is preserved. This rescales the
+    //     researched band SHAPE; it fabricates no observed rate — the anchor is the
+    //     only observed value, and range.p70 < range.max by construction so the
+    //     scaled ceiling always sits strictly above p70 (a coherent band).
+    spec.max = anchor >= range.max && range.p70 > 0
+      ? Math.round(anchor * (range.max / range.p70))
+      : range.max
     // The displayed range now reflects a live posterior, not the curated baseline.
     spec.provenance = 'live'
     // Confidence reflects the LIVE bucket's rate type, not the curator's tier for a
