@@ -336,11 +336,13 @@ import Sortable from 'sortablejs';
   // view — and since the row never reappears in the other view's poll, it would
   // never get cleared on its own.
   async function loadView() {
+    const wantArchived = archiveMode;  // capture intended mode: a newer toggle must supersede this fetch
     try {
-      const res = await fetch('/hub/api/pipeline?view=' + (archiveMode ? 'archived' : 'active'), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
+      const res = await fetch('/hub/api/pipeline?view=' + (wantArchived ? 'archived' : 'active'), { credentials: 'same-origin', redirect: 'manual', headers: { Accept: 'application/json' } });
       if (!res.ok || res.type === 'opaqueredirect') return;
       const b = await res.json();
       if (!b?.ok || !Array.isArray(b.people)) return;
+      if (archiveMode !== wantArchived) return;  // user toggled again before this resolved — drop the stale response
       people.clear(); version.clear(); suppressed.clear(); pending.clear();
       for (const raw of b.people) { const p = readPerson(raw); if (p.id) { people.set(p.id, p); version.set(p.id, p.version); } }
       render();
@@ -353,7 +355,8 @@ import Sortable from 'sortablejs';
     archiveToggle.setAttribute('aria-pressed', String(archiveMode));
     archiveToggle.textContent = archiveMode ? 'Back to board' : 'Archive';
     board!.classList.toggle('is-archive', archiveMode);
-    document.getElementById('pipe-add')!.style.display = archiveMode ? 'none' : '';
+    const addBtn = document.getElementById('pipe-add');
+    if (addBtn) addBtn.style.display = archiveMode ? 'none' : '';
     loadView();
   });
 
