@@ -50,6 +50,55 @@ export const SPECIALTY_SUGGESTIONS: readonly string[] = [
   'Rheumatology', 'Trauma Surgery', 'Urology', 'Vascular Surgery', 'Wound Care',
 ];
 
+// Specialty → clinical DISCIPLINE → fixed color. Color encodes the broad field so ~11
+// legible hues cover all 60 specialties + free text; unknown → neutral 'Other' (honest,
+// no forced grouping). The same discipline is one color everywhere on the board.
+export type Discipline =
+  | 'Surgery' | 'Emergency & Critical Care' | 'Cardiology' | 'Medicine' | 'Neurology'
+  | 'Anesthesia' | 'Psychiatry & Behavioral' | 'Radiology & Pathology' | "Women's Health"
+  | 'Pediatrics' | 'Advanced Practice' | 'Other';
+
+export const DISCIPLINE_COLORS: Record<Discipline, string> = {
+  'Surgery': '#F26A5B', 'Emergency & Critical Care': '#F2A03D', 'Cardiology': '#E85D7A',
+  'Medicine': '#3FB3E0', 'Neurology': '#7C84E8', 'Anesthesia': '#2FB9AE',
+  'Psychiatry & Behavioral': '#A06CD8', 'Radiology & Pathology': '#5B8DD6',
+  "Women's Health": '#D4569E', 'Pediatrics': '#3DBE85', 'Advanced Practice': '#B5C24B',
+  'Other': '#8A93A0',
+};
+
+const DISCIPLINE_SPECIALTIES: Record<Exclude<Discipline, 'Other'>, readonly string[]> = {
+  'Surgery': ['Cardiothoracic Surgery', 'Colorectal Surgery', 'ENT / Otolaryngology', 'General Surgery', 'Hand Surgery', 'Neurosurgery', 'Ophthalmology', 'Orthopedic Surgery', 'Plastic Surgery', 'Podiatry', 'Trauma Surgery', 'Urology', 'Vascular Surgery'],
+  'Emergency & Critical Care': ['Emergency Medicine', 'Critical Care / Intensivist'],
+  'Cardiology': ['Cardiology', 'Electrophysiology', 'Interventional Cardiology'],
+  'Medicine': ['Internal Medicine', 'Family Medicine', 'Hospitalist', 'Geriatric Medicine', 'Correctional Medicine', 'Occupational Medicine', 'Hospice / Palliative Care', 'Wound Care', 'Allergy/Immunology', 'Dermatology', 'Endocrinology', 'Gastroenterology', 'Infectious Disease', 'Nephrology', 'Pulmonology', 'Rheumatology', 'Physical Medicine & Rehabilitation', 'Hematology/Oncology', 'Medical Oncology'],
+  'Neurology': ['Neurology'],
+  'Anesthesia': ['Anesthesiology', 'Cardiac Anesthesiology', 'Anesthesiologist Assistant', 'CRNA', 'Pain Management'],
+  'Psychiatry & Behavioral': ['Psychiatry', 'Addiction Psychiatry', 'Child & Adolescent Psychiatry', 'Forensic Psychiatry', 'Geriatric Psychiatry'],
+  'Radiology & Pathology': ['Radiology (Diagnostic)', 'Interventional Radiology', 'Neuroradiology', 'Pathology'],
+  "Women's Health": ['OB/GYN', 'Maternal-Fetal Medicine', 'Gynecologic Oncology'],
+  'Pediatrics': ['Pediatrics', 'Pediatric Hospitalist', 'Neonatology'],
+  'Advanced Practice': ['Nurse Practitioner', 'Physician Assistant'],
+};
+
+const DISCIPLINE_OF: Record<string, Discipline> = (() => {
+  const map: Record<string, Discipline> = {};
+  for (const disc of Object.keys(DISCIPLINE_SPECIALTIES) as Array<Exclude<Discipline, 'Other'>>)
+    for (const name of DISCIPLINE_SPECIALTIES[disc]) map[name.toLowerCase()] = disc;
+  return map;
+})();
+
+/** The clinical discipline for a specialty display name (case-insensitive, trimmed).
+ *  Unknown / null / free-text → 'Other'. Never throws. */
+export function disciplineForSpecialty(name: string | null | undefined): Discipline {
+  if (!name) return 'Other';
+  return DISCIPLINE_OF[name.trim().toLowerCase()] ?? 'Other';
+}
+
+/** The fixed board color (#rrggbb) for a specialty's discipline. */
+export function disciplineColorFor(name: string | null | undefined): string {
+  return DISCIPLINE_COLORS[disciplineForSpecialty(name)];
+}
+
 // Field caps so a malformed/hostile POST can't bloat a row.
 export const MAX_NAME_LEN = 120;
 export const MAX_SPECIALTY_LEN = 80;

@@ -592,7 +592,9 @@ html[data-hub-theme="dark"] {
 .pipe-card__top { display: flex; gap: 10px; align-items: flex-start; }
 .pipe-av { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 13px; color: var(--cream-soft); background: linear-gradient(140deg, var(--pop-magenta,#C44569), var(--pop-magenta-deep, #7a2e45)); }
 .pipe-card__name { font-family: var(--font-display); font-weight: 900; font-size: 15px; letter-spacing: -0.01em; line-height: 1.1; color: var(--ink); }
-.pipe-spec { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 600; color: var(--pop-magenta, #C44569); background: color-mix(in srgb, var(--pop-magenta,#C44569) 13%, transparent); border: 1px solid color-mix(in srgb, var(--pop-magenta,#C44569) 22%, transparent); border-radius: 999px; padding: 2px 8px; }
+/* Specialty pill tints to its clinical discipline color, injected per-card as --sc
+   (see disciplineColorFor in pipeline-data.ts); magenta fallback if --sc is unset. */
+.pipe-spec { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 600; color: var(--sc, var(--pop-magenta, #C44569)); background: color-mix(in srgb, var(--sc, var(--pop-magenta,#C44569)) 14%, transparent); border: 1px solid color-mix(in srgb, var(--sc, var(--pop-magenta,#C44569)) 24%, transparent); border-radius: 999px; padding: 2px 8px; }
 .pipe-card__meta { font-size: 11px; color: var(--ink-mute); margin-top: 10px; }
 .pipe-cred { margin-top: 11px; padding-top: 10px; border-top: 1px dashed var(--rule-strong); }
 .pipe-cred__lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 7px; }

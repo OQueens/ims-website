@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   STAGES, BOARD_STAGES, CHECKLIST_KEYS, checklistCount, groupByStage,
-  readPerson, cleanDate, personInitials, type PipelinePerson,
+  readPerson, cleanDate, personInitials, SPECIALTY_SUGGESTIONS,
+  DISCIPLINE_COLORS, disciplineForSpecialty, disciplineColorFor, type PipelinePerson,
 } from './pipeline-data';
 
 const base = (over: Partial<PipelinePerson> = {}): PipelinePerson => readPerson({
@@ -86,5 +87,35 @@ describe('personInitials', () => {
   it('returns ? for an empty/blank name', () => {
     expect(personInitials('')).toBe('?');
     expect(personInitials('   ')).toBe('?');
+  });
+});
+
+describe('discipline colors', () => {
+  it('maps a representative specialty in each discipline', () => {
+    expect(disciplineForSpecialty('Emergency Medicine')).toBe('Emergency & Critical Care');
+    expect(disciplineForSpecialty('General Surgery')).toBe('Surgery');
+    expect(disciplineForSpecialty('Psychiatry')).toBe('Psychiatry & Behavioral');
+    expect(disciplineForSpecialty('CRNA')).toBe('Anesthesia');
+    expect(disciplineForSpecialty('OB/GYN')).toBe("Women's Health");
+    expect(disciplineForSpecialty('Nurse Practitioner')).toBe('Advanced Practice');
+    expect(disciplineForSpecialty('Radiology (Diagnostic)')).toBe('Radiology & Pathology');
+  });
+  it('is case-insensitive and trims', () => {
+    expect(disciplineForSpecialty('  emergency medicine ')).toBe('Emergency & Critical Care');
+  });
+  it('falls back to Other for null / empty / unknown free-text', () => {
+    expect(disciplineForSpecialty(null)).toBe('Other');
+    expect(disciplineForSpecialty('')).toBe('Other');
+    expect(disciplineForSpecialty('Underwater Basket Weaving')).toBe('Other');
+    expect(disciplineColorFor('Underwater Basket Weaving')).toBe('#8A93A0');
+  });
+  it('returns the discipline hex color', () => {
+    expect(disciplineColorFor('Emergency Medicine')).toBe('#F2A03D');
+    expect(DISCIPLINE_COLORS.Surgery).toBe('#F26A5B');
+  });
+  it('every curated specialty resolves to a real discipline (no Other drift)', () => {
+    for (const s of SPECIALTY_SUGGESTIONS) {
+      expect(disciplineForSpecialty(s), s).not.toBe('Other');
+    }
   });
 });

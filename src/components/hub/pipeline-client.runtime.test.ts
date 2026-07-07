@@ -131,6 +131,14 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
     expect(cardById('p-bravo')!.querySelector('.pipe-av')!.textContent).toBe('BO'); // "Dr. Bravo Okafor"
   });
 
+  it('specialty pill carries its discipline color via --sc', async () => {
+    await boot();
+    const em = cardById('p-alpha')!.querySelector('.pipe-spec') as HTMLElement; // Emergency Medicine
+    expect(em.style.getPropertyValue('--sc').trim()).toBe('#F2A03D');
+    const psych = cardById('p-cleo')!.querySelector('.pipe-spec') as HTMLElement; // Psychiatry
+    expect(psych.style.getPropertyValue('--sc').trim()).toBe('#A06CD8');
+  });
+
   it('FIX R owner picker: datalist = signed-in user + distinct board owners, defaults to me, NEVER an @confirm placeholder', async () => {
     await boot();
     $('#pipe-add')!.click();

@@ -3,7 +3,7 @@
 // the SSR island, keeps an id-keyed people map, and (Tasks 7-10) persists ops
 // optimistically + polls for live updates. Mirrors the Weekly Sync client spine.
 import {
-  readPerson, groupByStage, checklistCount, personInitials,
+  readPerson, groupByStage, checklistCount, personInitials, disciplineColorFor,
   BOARD_STAGES, STAGE_LABELS, CHECKLIST_KEYS, CHECKLIST_LABELS, chkCol, SPECIALTY_SUGGESTIONS,
   type PipelinePerson, type BoardStage,
 } from '../../lib/hub/pipeline-data';
@@ -59,7 +59,7 @@ import Sortable from 'sortablejs';
           <span class="pipe-av">${esc(personInitials(p.full_name))}</span>
           <div class="pipe-card__id">
             <div class="pipe-card__name">${esc(p.full_name)}</div>
-            ${spec ? `<span class="pipe-spec">${esc(spec)}</span>` : ''}
+            ${spec ? `<span class="pipe-spec" style="--sc:${disciplineColorFor(spec)}">${esc(spec)}</span>` : ''}
           </div>
         </div>
         ${metaBits ? `<div class="pipe-card__meta">${metaBits}</div>` : ''}
