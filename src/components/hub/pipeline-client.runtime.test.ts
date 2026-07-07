@@ -32,7 +32,7 @@ const flush = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise((
 const deferred = () => { let resolve: (v?: unknown) => void; const promise = new Promise((r) => { resolve = r; }); return { promise, resolve: resolve! }; };
 const resp = (status: number, obj: unknown) => ({ ok: status >= 200 && status < 300, status, type: 'default', json: async () => obj });
 
-interface Control { failCreateStatus: number; failNextStatus: number; createReturnsNoPerson: boolean; holdCreate: ReturnType<typeof deferred> | null; holdArchivedGet: ReturnType<typeof deferred> | null; }
+interface Control { failCreateStatus: number; failNextStatus: number; createReturnsNoPerson: boolean; holdCreate: ReturnType<typeof deferred> | null; holdArchivedGet: ReturnType<typeof deferred> | null; holdOp: ReturnType<typeof deferred> | null; }
 
 function installMock(server: Map<string, any>, control: Control) {
   const sent: string[] = [];  // op types the client actually POSTed (recorded at request entry)
@@ -48,6 +48,9 @@ function installMock(server: Map<string, any>, control: Control) {
     }
     const op = JSON.parse(init.body).op;
     sent.push(op.type);
+    // Hold the FIRST non-create POST's response (one-shot) so a test can prove
+    // flushQueued sends queued same-row ops sequentially, not concurrently.
+    if (op.type !== 'createPerson' && control.holdOp) { const h = control.holdOp; control.holdOp = null; await h.promise; }
     if (op.type === 'createPerson' && control.failCreateStatus) { const s = control.failCreateStatus; control.failCreateStatus = 0; return resp(s, { ok: false, reason: 'injected' }); }
     if (op.type === 'createPerson' && control.createReturnsNoPerson) { control.createReturnsNoPerson = false; return resp(200, { ok: true, person: null }); } // 200 but row NOT created
     if (control.failNextStatus) { const s = control.failNextStatus; control.failNextStatus = 0; return resp(s, { ok: false, reason: 'injected' }); }
@@ -84,7 +87,7 @@ async function boot(people = FIXTURE(), me = ME) {
   (window as any).setInterval = () => 0; // neuter the 4s live poll; these flows use direct interactions + loadView
   const server = new Map<string, any>();
   people.forEach((raw) => { const p = readPerson(raw); if (p.id) server.set(p.id, p); });
-  const control: Control = { failCreateStatus: 0, failNextStatus: 0, createReturnsNoPerson: false, holdCreate: null, holdArchivedGet: null };
+  const control: Control = { failCreateStatus: 0, failNextStatus: 0, createReturnsNoPerson: false, holdCreate: null, holdArchivedGet: null, holdOp: null };
   const { sent } = installMock(server, control);
   await import('./pipeline-client');
   await flush();
@@ -248,5 +251,33 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
     expect($('#pipe-board .pipe-lane')).toBeTruthy();       // viewGen dropped it — still active board
     expect(cardById('p-alpha')).toBeTruthy();               // active cards NOT wiped
     expect($('#pipe-board .pipe-archive-list')).toBeNull(); // did not flip to archive render
+  });
+
+  it('flushQueued sends queued same-row ops SEQUENTIALLY, not concurrently (codex #1): op B is not POSTed until op A settles', async () => {
+    const { control, sent } = await boot();
+    control.holdCreate = deferred();  // keep the create in flight so follow-up edits queue
+    const holdOp = deferred();        // captured: the mock nulls control.holdOp after the first use
+    control.holdOp = holdOp;          // block the FIRST flushed (non-create) op's response
+    $('#pipe-add')!.click();
+    await flush(1);
+    (($('.pipe-modal input[name="full_name"]') as HTMLInputElement)).value = 'Dr. Two Edits';
+    ($('.pipe-modal form') as HTMLFormElement).dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+    await flush();
+    const card = $$('#pipe-board .pipe-card').find((c) => c.querySelector('.pipe-card__name')!.textContent === 'Dr. Two Edits')!;
+    // Queue TWO checklist toggles on the not-yet-confirmed card (each re-renders the dossier).
+    card.click(); await flush(1);
+    $$('#pipe-spot .pipe-chip').find((c) => c.getAttribute('data-chk') === 'collecting_docs')!.click();
+    $$('#pipe-spot .pipe-chip').find((c) => c.getAttribute('data-chk') === 'needs_contract')!.click();
+    await flush();
+    expect(sent).toEqual(['createPerson']); // both toggles queued behind the pending create, none POSTed
+
+    control.holdCreate.resolve();          // create confirms → flushQueued starts, POSTs op A, blocks on holdOp
+    await flush(6);
+    expect(sent.filter((t) => t === 'toggleChecklist').length).toBe(1); // op B is WAITING on op A — sequential, not concurrent
+
+    holdOp.resolve();                      // op A's response lands → flushQueued advances to op B
+    await flush(6);
+    expect(sent.filter((t) => t === 'toggleChecklist').length).toBe(2); // op B POSTed only after op A settled
+    expect(sent.filter((t) => t === 'createPerson').length).toBe(1);    // still exactly one create
   });
 });

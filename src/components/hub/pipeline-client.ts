@@ -143,9 +143,14 @@ import Sortable from 'sortablejs';
   // Optimistic single-op persistence. applyOp already updated `people` at the call
   // site; sendOp POSTs the op and adopts the server's authoritative echo.
   const MAX_RETRIES = 5;
-  function sendOp(op: PipelineOp, attempt = 0) {
+  const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+  // Persist one op, retrying transient 5xx / network failures with backoff.
+  // Resolves only AFTER the op finally settles (success, sign-out, rejection, or
+  // retries exhausted) so a caller can `await` it to serialize dependent ops —
+  // see flushQueued, which must not fire same-row ops concurrently.
+  async function sendOp(op: PipelineOp) {
     setStatus('saving');
-    (async () => {
+    for (let attempt = 0; ; attempt++) {
       try {
         const res = await fetch('/hub/api/pipeline', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -157,18 +162,16 @@ import Sortable from 'sortablejs';
           if (b?.ok && b.person) { setStatus('saved'); adopt(readPerson(b.person)); }
           else if (op.type === 'createPerson') { setStatus('error'); failCreate(op); }  // 200 without a person → the row was NOT created; reap it rather than strand it in `pending` behind a false "Saved ✓"
           else setStatus('saved');  // non-create no-op (missing/archived id) — legitimate; nothing to adopt
-        } else if (res.status >= 500 && attempt < MAX_RETRIES) {
-          setStatus('error'); setTimeout(() => sendOp(op, attempt + 1), 3000);  // transient server error — bounded retry
-        } else {
-          setStatus('error');  // 4xx (rejected op) or retries exhausted — do not loop forever
-          failCreate(op);
+          return;
         }
+        if (res.status >= 500 && attempt < MAX_RETRIES) { setStatus('error'); await delay(3000); continue; }  // transient server error — bounded retry
+        setStatus('error'); failCreate(op); return;  // 4xx (rejected op) or retries exhausted — do not loop forever
       } catch {
         setStatus('error');  // network error — transient
-        if (attempt < MAX_RETRIES) setTimeout(() => sendOp(op, attempt + 1), 3000);
-        else failCreate(op);
+        if (attempt < MAX_RETRIES) { await delay(3000); continue; }
+        failCreate(op); return;
       }
-    })();
+    }
   }
 
   // Apply an op locally (optimistic) then persist. For createPerson the id is
@@ -194,16 +197,21 @@ import Sortable from 'sortablejs';
     }
   }
 
-  function flushQueued(id: string) {
+  async function flushQueued(id: string) {
     const q = queued.get(id); if (!q || !q.length) return;
     queued.delete(id);
+    // Apply every queued op optimistically and paint once, immediately.
     for (const op of q) {
       const cur = people.get(id);
       const next = applyOp(cur ?? null, op, ctx());
       if (next) { if (next.stage === 'archived' && !archiveMode) { people.delete(next.id); version.delete(next.id); } else people.set(next.id, next); }
-      sendOp(op);
     }
     render();
+    // Then persist them one at a time, in the user's original order. Firing them
+    // concurrently (fire-and-forget) would let the RPC commit same-row ops — e.g.
+    // two moveStage drags on a just-created card — out of order and drop the
+    // user's last intent. Awaiting each sendOp serializes them (codex-flagged).
+    for (const op of q) await sendOp(op);
   }
 
   function failCreate(op: PipelineOp) {
