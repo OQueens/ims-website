@@ -600,6 +600,14 @@ html[data-hub-theme="dark"] {
 .pipe-meter { display: flex; gap: 3px; }
 .pipe-meter i { flex: 1; height: 5px; border-radius: 999px; background: var(--bone); transition: background 200ms; }
 .pipe-meter i.on { background: var(--mn-cyan, #59BFE7); }
+/* Each completed credentialing segment lights up in one of the 6 brand signature
+   colors (the same set the homepage rotates through), left→right. */
+.pipe-meter i.on:nth-child(1) { background: #F26A5B; } /* coral */
+.pipe-meter i.on:nth-child(2) { background: #F2A03D; } /* amber */
+.pipe-meter i.on:nth-child(3) { background: #3DBE85; } /* verdant */
+.pipe-meter i.on:nth-child(4) { background: #3FB3E0; } /* sky */
+.pipe-meter i.on:nth-child(5) { background: #7C84E8; } /* periwinkle */
+.pipe-meter i.on:nth-child(6) { background: #D4569E; } /* orchid */
 .pipe-card__foot { display: flex; justify-content: flex-end; margin-top: 12px; }
 .pipe-owner { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--cream-soft); background: var(--av, #8A8A8A); }
 .pipe-empty { font-size: 12px; color: var(--ink-mute); text-align: center; padding: 14px 6px; }
@@ -619,10 +627,20 @@ html[data-hub-theme="dark"] {
 .pipe-form__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 .pipe-btn { border: 1px solid var(--rule-strong); background: none; color: var(--ink-soft); border-radius: 10px; padding: 9px 16px; font-family: var(--font-body); font-weight: 700; font-size: 13px; cursor: pointer; }
 .pipe-btn--primary { background: var(--pop-magenta, #C44569); border-color: var(--pop-magenta, #C44569); color: var(--cream-soft); }
+/* Dossier footer: Delete (bottom-left, understated) kept well away from Archive
+   (bottom-right) so the irreversible action is not a mis-click from the common one. */
+.pipe-spot__foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule); }
 /* Destructive (hard delete): understated by default, danger on hover. Reuses the
    hub's established negative/error color rather than introducing a new palette entry. */
-.pipe-delete { display: block; border-color: var(--rule); color: var(--ink-soft); }
+.pipe-delete { border-color: var(--rule); color: var(--ink-mute); font-size: 12px; padding: 8px 13px; }
 .pipe-delete:hover { color: var(--pop-magenta, #C44569); border-color: var(--pop-magenta, #C44569); background: color-mix(in srgb, var(--pop-magenta, #C44569) 8%, transparent); }
+/* Delete-confirm modal (custom, so it can carry the "don't ask again" opt-out). */
+.pipe-confirm { width: 440px; }
+.pipe-confirm__msg { font-size: 14px; line-height: 1.55; color: var(--ink-soft); margin: 0 0 15px; }
+.pipe-confirm__skip { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); cursor: pointer; user-select: none; margin-bottom: 16px; }
+.pipe-confirm__skip input { width: 15px; height: 15px; accent-color: var(--pop-magenta, #C44569); cursor: pointer; flex-shrink: 0; }
+.pipe-confirm__go { background: var(--pop-magenta, #C44569); border-color: var(--pop-magenta, #C44569); color: var(--cream-soft); }
+.pipe-confirm__go:hover { filter: brightness(1.06); }
 
 .pipe-spot { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; background: rgba(6,6,10,0.6); backdrop-filter: blur(4px); padding: 24px; animation: pipeSpotIn 260ms ease; }
 .pipe-spot[hidden] { display: none; }
