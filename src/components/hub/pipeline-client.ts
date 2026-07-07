@@ -341,7 +341,7 @@ import Sortable from 'sortablejs';
   function requestDelete(id: string, name: string) {
     if (skipDeleteConfirm()) { doDelete(id); return; }  // user opted out of the prompt
     const wrap = document.createElement('div');
-    wrap.className = 'pipe-modal';
+    wrap.className = 'pipe-modal pipe-modal--top';  // above the open dossier (.pipe-spot), which it launches from
     wrap.innerHTML = `
       <div class="pipe-form pipe-confirm">
         <h3 class="pipe-form__h">Delete provider?</h3>
