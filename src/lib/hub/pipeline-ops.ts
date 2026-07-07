@@ -6,7 +6,7 @@
 import {
   type PipelinePerson, type Stage, type ChecklistKey,
   STAGES, BOARD_STAGES, CHECKLIST_KEYS, chkCol, readPerson,
-  escapeText, cleanEmail, cleanDate,
+  cleanEmail, cleanDate,
   MAX_NAME_LEN, MAX_SPECIALTY_LEN, MAX_STATE_LEN, MAX_PHONE_LEN, MAX_NOTES_LEN, MAX_LABEL_LEN,
 } from './pipeline-data';
 
@@ -35,7 +35,8 @@ export interface ApplyCtx { email: string; now: number; }
 
 const clone = (p: PipelinePerson): PipelinePerson => ({ ...p, checklist_audit: { ...p.checklist_audit } });
 
-// Cap a text field the same way readPerson would (escape → trim → slice).
+// Cap a text field the same way readPerson would (trim → slice; no HTML-escaping
+// here — single-escape-at-render, see pipeline-data.ts's cleanText comment).
 const FIELD_CAP: Record<UpdatableField, number> = {
   full_name: MAX_NAME_LEN, specialty_slug: MAX_SPECIALTY_LEN, specialty_name: MAX_SPECIALTY_LEN,
   state: MAX_STATE_LEN, phone: MAX_PHONE_LEN, email: 0, owner_email: 0,
@@ -48,7 +49,7 @@ function coerceField(field: UpdatableField, value: string | null): string | null
   if (field === 'email' || field === 'owner_email') return cleanEmail(value) || null;
   if (field === 'target_start_date') return cleanDate(value);
   if (field === 'assignment_id') return typeof value === 'string' && value.length > 0 && value.length <= 64 ? value : null;
-  const s = escapeText(value.trim()).slice(0, FIELD_CAP[field]);
+  const s = value.trim().slice(0, FIELD_CAP[field]);
   return s.length ? s : null;
 }
 
@@ -75,7 +76,7 @@ export function applyOp(person: PipelinePerson | null, op: PipelineOp, ctx: Appl
       const v = coerceField(op.field, op.value);
       // full_name is non-nullable — ignore an empty/whitespace update rather than nulling it.
       if (op.field === 'full_name' && (v === null || v === '')) return p;
-      (p as Record<string, unknown>)[op.field] = v;
+      (p as unknown as Record<string, unknown>)[op.field] = v;
       return p;
     }
     case 'moveStage':

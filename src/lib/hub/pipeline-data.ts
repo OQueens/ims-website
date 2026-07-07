@@ -83,10 +83,12 @@ export function cleanDate(raw: unknown): string | null {
   return s;
 }
 
-// Escape a free-text field to inert text, trim, cap. null when empty.
+// Trim + cap a free-text field. null when empty. NOT HTML-escaped here — escaping
+// happens once, at render (esc() in pipeline-client.ts), so values round-trip
+// through the DB and this sanitizer without ever double-escaping.
 function cleanText(raw: unknown, cap: number): string | null {
   if (typeof raw !== 'string') return null;
-  const s = escapeText(raw.trim()).slice(0, cap);
+  const s = raw.trim().slice(0, cap);
   return s.length ? s : null;
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyOp, validateOp, type PipelineOp } from './pipeline-ops';
+import { applyOp, validateOp } from './pipeline-ops';
 import { readPerson, type PipelinePerson } from './pipeline-data';
 
 const ctx = { email: 'zach@iastaffing.com', now: 1_700_000_000 };
@@ -15,9 +15,9 @@ describe('applyOp', () => {
     expect(created.owner_email).toBe(null); // not supplied → null (owner optional)
   });
 
-  it('updateField sanitizes text and sets the field', () => {
+  it('updateField sanitizes (trim/cap) text and sets the field, raw — HTML-escaping happens once, at render (esc() in pipeline-client.ts), not here', () => {
     const p = applyOp(P(), { type: 'updateField', id: 'p1', field: 'notes', value: '<script>x</script>ok' }, ctx)!;
-    expect(p.notes).toBe('&lt;script&gt;x&lt;/script&gt;ok');
+    expect(p.notes).toBe('<script>x</script>ok');
   });
 
   it('moveStage to placed checks provider_working; moving out unchecks it', () => {

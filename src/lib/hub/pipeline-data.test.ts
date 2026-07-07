@@ -22,7 +22,7 @@ describe('pipeline-data', () => {
     expect(p.stage).toBe('warm_lead');
     expect(p.chk_provider_working).toBe(false);
     expect(p.checklist_audit).toEqual({});
-    expect(p.full_name).toBe('&lt;b&gt;Ana&lt;/b&gt;'); // escaped, not interpreted
+    expect(p.full_name).toBe('<b>Ana</b>'); // stored raw; XSS is prevented by esc() at render, not here (single-escape-at-render model)
     expect(p.version).toBe(0);
   });
 
