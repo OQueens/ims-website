@@ -257,6 +257,27 @@ import Sortable from 'sortablejs';
     poll();
   }
 
+  // Inline autocomplete: as the user types, complete the input with the first
+  // matching suggestion and SELECT the added tail so it reads as ghost text —
+  // Tab / → / End accept it, typing replaces it. No dropdown menu. Skips while
+  // deleting so backspace works normally.
+  function wireInlineAutocomplete(input: HTMLInputElement | null, suggestions: readonly string[]) {
+    if (!input) return;
+    let deleting = false;
+    input.addEventListener('keydown', (e) => { deleting = e.key === 'Backspace' || e.key === 'Delete'; });
+    input.addEventListener('input', () => {
+      if (deleting) return;
+      const val = input.value;
+      if (!val) return;
+      const low = val.toLowerCase();
+      const match = suggestions.find((s) => s.toLowerCase().startsWith(low));
+      if (match && match.length > val.length) {
+        input.value = match;  // adopt the suggestion's proper casing ("internal med" → "Internal Medicine")
+        input.setSelectionRange(val.length, match.length);  // highlight the completion tail
+      }
+    });
+  }
+
   // ── Add-provider form ─────────────────────────────────────────────────────────
   function openAddForm(stage: BoardStage) {
     // Owner options come from REAL sources — the signed-in user (default) and the
@@ -273,8 +294,7 @@ import Sortable from 'sortablejs';
       <form class="pipe-form" autocomplete="off">
         <h3 class="pipe-form__h">Add provider · ${esc(STAGE_LABELS[stage])}</h3>
         <label class="pipe-f"><span>Name *</span><input name="full_name" required maxlength="120" /></label>
-        <label class="pipe-f"><span>Specialty</span><input name="specialty_name" list="pipe-specialty-list" maxlength="80" placeholder="Start typing…" autocomplete="off" /></label>
-        <datalist id="pipe-specialty-list">${SPECIALTY_SUGGESTIONS.map((s) => `<option value="${esc(s)}"></option>`).join('')}</datalist>
+        <label class="pipe-f"><span>Specialty</span><input name="specialty_name" data-autocomplete maxlength="80" placeholder="Start typing…" autocomplete="off" /></label>
         <div class="pipe-f2">
           <label class="pipe-f"><span>State</span><input name="state" maxlength="40" /></label>
           <label class="pipe-f"><span>Target start</span><input name="target_start_date" type="date" /></label>
@@ -294,6 +314,7 @@ import Sortable from 'sortablejs';
     wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); });
     wrap.querySelector('[data-cancel]')!.addEventListener('click', close);
     (form.querySelector('input[name="full_name"]') as HTMLInputElement)?.focus();
+    wireInlineAutocomplete(form.querySelector('input[data-autocomplete]'), SPECIALTY_SUGGESTIONS);
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const fd = new FormData(form);
@@ -311,6 +332,39 @@ import Sortable from 'sortablejs';
   const svgText = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 
   function closeSpot() { spot.hidden = true; spot.innerHTML = ''; }
+
+  // Delete confirmation. A custom modal (not window.confirm) so it can carry a
+  // "Don't ask me this again" opt-out, remembered per-browser in localStorage.
+  const SKIP_DELETE_KEY = 'hub-pipe-skip-delete-confirm';
+  const skipDeleteConfirm = () => { try { return localStorage.getItem(SKIP_DELETE_KEY) === '1'; } catch { return false; } };
+  function doDelete(id: string) { commit({ type: 'deletePerson', id }); closeSpot(); }
+  function requestDelete(id: string, name: string) {
+    if (skipDeleteConfirm()) { doDelete(id); return; }  // user opted out of the prompt
+    const wrap = document.createElement('div');
+    wrap.className = 'pipe-modal';
+    wrap.innerHTML = `
+      <div class="pipe-form pipe-confirm">
+        <h3 class="pipe-form__h">Delete provider?</h3>
+        <p class="pipe-confirm__msg">Delete <b>${esc(name)}</b> permanently? This cannot be reversed — use Archive if you might want them back.</p>
+        <label class="pipe-confirm__skip"><input type="checkbox" data-skip /><span>Don't ask me this again</span></label>
+        <div class="pipe-form__actions">
+          <button type="button" class="pipe-btn" data-cancel>Cancel</button>
+          <button type="button" class="pipe-btn pipe-confirm__go" data-confirm>Delete permanently</button>
+        </div>
+      </div>`;
+    const close = () => wrap.remove();
+    wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); });
+    wrap.querySelector('[data-cancel]')!.addEventListener('click', close);
+    wrap.querySelector('[data-confirm]')!.addEventListener('click', () => {
+      if ((wrap.querySelector('[data-skip]') as HTMLInputElement | null)?.checked) {
+        try { localStorage.setItem(SKIP_DELETE_KEY, '1'); } catch { /* storage unavailable — just skip persisting */ }
+      }
+      close();
+      doDelete(id);
+    });
+    document.body.appendChild(wrap);
+    (wrap.querySelector('[data-cancel]') as HTMLElement | null)?.focus();
+  }
 
   function openSpot(id: string) {
     const p = people.get(id);
@@ -343,9 +397,11 @@ import Sortable from 'sortablejs';
           <div>
             <div class="pipe-spot__lbl">Credentialing · ${done} of 6</div>
             <div class="pipe-chips">${chips}</div>
-            <button class="pipe-btn pipe-archive" style="margin-top:16px">${p.stage === 'archived' ? 'Restore to Needs Onboarding' : 'Archive provider'}</button>
-            <button class="pipe-btn pipe-delete" style="margin-top:8px">Delete permanently</button>
           </div>
+        </div>
+        <div class="pipe-spot__foot">
+          <button class="pipe-btn pipe-delete">Delete permanently</button>
+          <button class="pipe-btn pipe-archive">${p.stage === 'archived' ? 'Restore to Needs Onboarding' : 'Archive provider'}</button>
         </div>
       </div>`;
     spot.hidden = false;
@@ -376,11 +432,7 @@ import Sortable from 'sortablejs';
     });
     spot.querySelector('.pipe-delete')!.addEventListener('click', () => {
       const cur = people.get(id); if (!cur) { closeSpot(); return; }
-      // Destructive + irreversible → confirm. Archive is the reversible option;
-      // delete is for test/mistyped rows the user genuinely wants gone.
-      if (!window.confirm(`Delete ${cur.full_name || 'this provider'} permanently? This can't be undone — use Archive if you might want them back.`)) return;
-      commit({ type: 'deletePerson', id });
-      closeSpot();
+      requestDelete(id, cur.full_name || 'this provider');  // custom confirm (with a "don't ask again" opt-out)
     });
   }
 

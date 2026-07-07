@@ -99,7 +99,7 @@ const $$ = (s: string) => [...document.querySelectorAll(s)] as HTMLElement[];
 const laneCards = (stage: string) => $$(`#pipe-board .pipe-lane[data-stage="${stage}"] .pipe-card`);
 const cardById = (id: string) => $(`#pipe-board .pipe-card[data-id="${id}"]`);
 
-afterEach(() => { document.body.innerHTML = ''; });
+afterEach(() => { document.body.innerHTML = ''; try { localStorage.clear(); } catch { /* no storage */ } });
 
 describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backend)', () => {
   it('renders the 5 board lanes with correct labels, cards, and a 6-segment credentialing meter', async () => {
@@ -303,39 +303,57 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
 
   // ── Hard delete (test/mistyped rows) ─────────────────────────────────────────
 
-  it('delete (confirmed) removes the card and POSTs deletePerson', async () => {
-    const { sent } = await boot();
-    (window as unknown as { confirm: () => boolean }).confirm = () => true;
-    cardById('p-bravo')!.click();
+  const openDossierDelete = async (id: string) => {
+    cardById(id)!.click();
     await flush(1);
     ($('#pipe-spot .pipe-delete') as HTMLElement).click();
+    await flush(1);
+  };
+
+  it('delete → custom confirm modal → confirm removes the card and POSTs deletePerson', async () => {
+    const { sent } = await boot();
+    await openDossierDelete('p-bravo');
+    expect($('.pipe-confirm')).toBeTruthy();  // a custom modal, not window.confirm
+    ($('.pipe-confirm [data-confirm]') as HTMLElement).click();
     await flush();
     expect(cardById('p-bravo')).toBeNull();
     expect(sent).toContain('deletePerson');
   });
 
-  it('delete is cancellable — declining the confirm leaves the card and POSTs nothing', async () => {
+  it('delete is cancellable — Cancel leaves the card and POSTs nothing', async () => {
     const { sent } = await boot();
-    (window as unknown as { confirm: () => boolean }).confirm = () => false;
-    cardById('p-bravo')!.click();
-    await flush(1);
-    ($('#pipe-spot .pipe-delete') as HTMLElement).click();
+    await openDossierDelete('p-bravo');
+    ($('.pipe-confirm [data-cancel]') as HTMLElement).click();
     await flush();
+    expect($('.pipe-confirm')).toBeNull();
     expect(cardById('p-bravo')).toBeTruthy();
     expect(sent).not.toContain('deletePerson');
   });
 
-  it('a hard-deleted card is NOT resurrected by a view reload that raced the server delete (tombstone)', async () => {
-    const { server } = await boot();
-    (window as unknown as { confirm: () => boolean }).confirm = () => true;
-    cardById('p-bravo')!.click();
+  it('"Don\'t ask me this again" skips the confirm on the next delete', async () => {
+    const { sent } = await boot();
+    await openDossierDelete('p-bravo');
+    ($('.pipe-confirm [data-skip]') as HTMLInputElement).checked = true;  // opt out
+    ($('.pipe-confirm [data-confirm]') as HTMLElement).click();
+    await flush();
+    expect(cardById('p-bravo')).toBeNull();
+    // Second delete: no modal appears — it deletes immediately.
+    cardById('p-cleo')!.click();
     await flush(1);
     ($('#pipe-spot .pipe-delete') as HTMLElement).click();
     await flush();
+    expect($('.pipe-confirm')).toBeNull();          // prompt skipped
+    expect(cardById('p-cleo')).toBeNull();           // deleted straight away
+    expect(sent.filter((t) => t === 'deletePerson').length).toBe(2);
+  });
+
+  it('a hard-deleted card is NOT resurrected by a view reload that raced the server delete (tombstone)', async () => {
+    const { server } = await boot();
+    await openDossierDelete('p-bravo');
+    ($('.pipe-confirm [data-confirm]') as HTMLElement).click();
+    await flush();
     expect(cardById('p-bravo')).toBeNull();
     expect(server.has('p-bravo')).toBe(true); // mock backend still holds it — delete not yet propagated
-    // Toggle to archive and back — the active reload still returns the row, but the
-    // tombstone must keep it off the board.
     $('#pipe-archive-toggle')!.click(); await flush();
     $('#pipe-archive-toggle')!.click(); await flush();
     expect(cardById('p-bravo')).toBeNull();
@@ -343,13 +361,25 @@ describe('pipeline-client runtime (real IIFE in happy-dom + faithful mock backen
 
   it('a delete that fails terminally rolls back — the row reappears instead of hiding (codex)', async () => {
     const { control, server } = await boot();
-    (window as unknown as { confirm: () => boolean }).confirm = () => true;
     control.failNextStatus = 400;  // the deletePerson POST is rejected terminally (no retry)
-    cardById('p-bravo')!.click();
-    await flush(1);
-    ($('#pipe-spot .pipe-delete') as HTMLElement).click();
+    await openDossierDelete('p-bravo');
+    ($('.pipe-confirm [data-confirm]') as HTMLElement).click();
     await flush(6);
     expect(server.has('p-bravo')).toBe(true);   // delete never happened server-side
-    expect(cardById('p-bravo')).toBeTruthy();   // tombstone lifted + re-fetched → back on the board, not silently hidden
+    expect(cardById('p-bravo')).toBeTruthy();   // tombstone lifted + re-fetched → back on the board
+  });
+
+  it('specialty inline-autocompletes (no dropdown): "internal med" → "Internal Medicine" with the tail selected', async () => {
+    await boot();
+    $('#pipe-add')!.click();
+    await flush(1);
+    const input = $('.pipe-modal input[name="specialty_name"]') as HTMLInputElement;
+    expect(input).toBeTruthy();
+    expect(document.querySelector('#pipe-specialty-list')).toBeNull(); // no <datalist> menu
+    input.value = 'internal med';
+    input.dispatchEvent(new window.Event('input', { bubbles: true }));
+    expect(input.value).toBe('Internal Medicine');
+    expect(input.selectionStart).toBe('internal med'.length);
+    expect(input.selectionEnd).toBe('Internal Medicine'.length);
   });
 });
