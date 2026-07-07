@@ -571,7 +571,11 @@ html[data-hub-theme="dark"] {
 .pipe-add:hover, .pipe-archive-toggle:hover { border-color: var(--pop-magenta, #C44569); color: var(--pop-magenta, #C44569); }
 .pipe-archive-toggle[aria-pressed="true"] { background: var(--pop-magenta, #C44569); color: var(--cream-soft); border-color: var(--pop-magenta, #C44569); }
 
-.pipe-board { display: flex; gap: 13px; overflow-x: auto; padding-bottom: var(--space-4); align-items: flex-start; }
+/* Board-only side inset: the lanes sit centered with breathing room while .pipe-head
+   (heading + Archive/Add) stays full-width at the edges. Scales down on narrow windows
+   so the board is never crushed. (~116px on wide desktop = the approved "Balanced" inset,
+   on top of the .hub-view 32px, to match the mockup Zach picked.) */
+.pipe-board { display: flex; gap: 13px; overflow-x: auto; padding-bottom: var(--space-4); padding-inline: clamp(16px, 6vw, 116px); align-items: flex-start; }
 /* Lanes flex-grow to fill the desktop width; fall back to horizontal scroll only when
    the viewport can't hold 5 lanes (the board is overflow-x:auto). */
 .pipe-lane { flex: 1 1 240px; min-width: 240px; }
