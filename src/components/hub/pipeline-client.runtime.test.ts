@@ -4,8 +4,8 @@
 // Boots the REAL pipeline-client.ts IIFE in a simulated DOM against a FAITHFUL
 // mock of /hub/api/pipeline (using the REAL applyOp/readPerson, so echoes are
 // op-faithful + shape-correct — the prod hub_pipeline_apply RPC mirrors applyOp
-// by design). SortableJS is stubbed: drag is a browser-only concern and the
-// reconciliation logic is independent of it. This is the executable guard for
+// by design). The drag GESTURE is browser-only (no layout/elementFromPoint in happy-dom)
+// and independent of the reconciliation logic, so it isn't exercised here. Executable guard for
 // the optimistic-UI + poll reconciliation state machine (F1 viewGen, F2 pending
 // queue+flush, F3 create reap) that per-task/static review cannot fully cover.
 //
@@ -13,8 +13,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { applyOp } from '../../lib/hub/pipeline-ops';
 import { readPerson } from '../../lib/hub/pipeline-data';
-
-vi.mock('sortablejs', () => ({ default: { create: () => ({ destroy() {}, option() {} }) } }));
 
 const ME = 'zach.young@iastaffing.com';
 

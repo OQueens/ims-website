@@ -595,10 +595,9 @@ html[data-hub-theme="dark"] {
 .pipe-lane__body.is-dragover { background: color-mix(in srgb, var(--mn-cyan,#59BFE7) 8%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--mn-cyan,#59BFE7) 45%, transparent); }
 .pipe-lane--placed .pipe-lane__body.is-dragover { box-shadow: inset 0 0 0 1.5px var(--mn-cyan, #59BFE7); }
 
-.pipe-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 15px; padding: 13px; cursor: grab; transition: transform 150ms, box-shadow 150ms, border-color 150ms; }
+.pipe-card { background: var(--surface, #17171F); border: 1px solid var(--rule); border-radius: 15px; padding: 13px; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 150ms, box-shadow 150ms, border-color 150ms; }
 .pipe-card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(0,0,0,0.35); }
 .pipe-card:focus-visible { outline: 2px solid var(--pop-magenta, #C44569); outline-offset: 2px; }
-.pipe-card.is-dragging { opacity: 0.5; }
 .pipe-card__top { display: flex; gap: 10px; align-items: flex-start; }
 .pipe-av { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 13px; color: var(--cream-soft); background: linear-gradient(140deg, var(--pop-magenta,#C44569), var(--pop-magenta-deep, #7a2e45)); }
 .pipe-card__name { font-family: var(--font-display); font-weight: 900; font-size: 15px; letter-spacing: -0.01em; line-height: 1.1; color: var(--ink); }
@@ -626,11 +625,13 @@ html[data-hub-theme="dark"] {
 .pipe-lane__add { border: 1px dashed var(--rule-strong); background: none; color: var(--ink-mute); border-radius: 12px; padding: 9px; font-family: var(--font-body); font-weight: 600; font-size: 12px; cursor: pointer; transition: color 140ms, border-color 140ms; }
 .pipe-lane__add:hover { color: var(--pop-magenta, #C44569); border-color: var(--pop-magenta, #C44569); }
 
-/* forceFallback drag clone: the real card we lift + tilt while dragging. SortableJS owns
-   `transform: translate3d()` (positioning); pipeline-client sets the independent `rotate`
-   property (composes with transform) each frame so the card swings from its grab point. */
-.pipe-fallback { cursor: grabbing; opacity: 1; z-index: 9999; scale: 1.04;
+/* Drag: the grabbed card is lifted onto <body> (pipeline-client.ts) and driven by a transform
+   every frame, so it must NOT carry the resting transition. .pipe-ph is the gap it leaves in
+   the lane; .pipe-noselect blocks page-wide text-selection for the duration of a drag. */
+.pipe-card.is-lifted { cursor: grabbing; will-change: transform; transition: none;
   box-shadow: 0 26px 60px rgba(0,0,0,0.55), 0 6px 18px rgba(0,0,0,0.4); border-color: var(--rule-strong); }
+.pipe-ph { border-radius: 15px; border: 1px dashed var(--rule-strong); background: rgba(255,255,255,0.02); }
+.pipe-noselect, .pipe-noselect * { user-select: none !important; -webkit-user-select: none !important; }
 
 /* Placed celebration — emoji firework, mounted on <body>, positioned per-card in JS.
    Varied radius (--dx/--dy) fills the center; slight overshoot then settle-in-place + fade. */
@@ -654,7 +655,6 @@ html[data-hub-theme="dark"] {
 @media (prefers-reduced-motion: reduce) {
   .pipe-card, .pipe-meter i, .pipe-lane__body, .pipe-lane__add, .pipe-add, .pipe-archive-toggle { transition: none; }
   .pipe-celebrate { display: none; }                       /* JS already skips it; belt-and-suspenders */
-  .pipe-fallback { rotate: none !important; scale: 1 !important; }
 }
 
 .pipe-modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(6,6,10,0.6); backdrop-filter: blur(3px); padding: 20px; }

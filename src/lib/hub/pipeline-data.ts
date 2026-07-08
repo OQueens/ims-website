@@ -29,6 +29,14 @@ export const CHECKLIST_LABELS: Record<ChecklistKey, string> = {
   start_dates_booked: 'Start Dates Booked', credentialing_started: 'Credentialing Started',
   credentialing_complete: 'Credentialing Complete', provider_working: 'Provider Working',
 };
+// Celsius Easter-egg overlay for Matthew Draughon — same 6 keys, re-themed to his legendary
+// Celsius habit. Rendered ONLY on the egg card (and its dossier); everyone else keeps the real
+// labels. The credentialing meter word likewise becomes "Caffeination" for him.
+export const CELSIUS_CHECKLIST_LABELS: Record<ChecklistKey, string> = {
+  collecting_docs: 'Stocking the Fridge', needs_contract: 'Securing the Case',
+  start_dates_booked: 'Restock Scheduled', credentialing_started: 'Cracking the First Can',
+  credentialing_complete: 'Fully Caffeinated', provider_working: 'Wired In ⚡',
+};
 export const chkCol = (k: ChecklistKey) => ('chk_' + k) as `chk_${ChecklistKey}`;
 
 // Curated, correctly-cased locum specialty display names for the add-provider

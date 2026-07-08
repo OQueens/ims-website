@@ -4,13 +4,12 @@
 // optimistically + polls for live updates. Mirrors the Weekly Sync client spine.
 import {
   readPerson, groupByStage, checklistCount, personInitials, disciplineColorFor,
-  BOARD_STAGES, STAGE_LABELS, CHECKLIST_KEYS, CHECKLIST_LABELS, chkCol, SPECIALTY_SUGGESTIONS,
+  BOARD_STAGES, STAGE_LABELS, CHECKLIST_KEYS, CHECKLIST_LABELS, CELSIUS_CHECKLIST_LABELS, chkCol, SPECIALTY_SUGGESTIONS,
   tiltStep, TILT_BALANCED, isPlacingTransition, celsiusEasterEgg,
   type PipelinePerson, type BoardStage,
 } from '../../lib/hub/pipeline-data';
 import { rosterEntry } from '../../lib/hub/hub-roster';
 import { applyOp, type PipelineOp } from '../../lib/hub/pipeline-ops';
-import Sortable from 'sortablejs';
 
 (function pipeline() {
   const board = document.getElementById('pipe-board');
@@ -55,9 +54,11 @@ import Sortable from 'sortablejs';
     const meter = CHECKLIST_KEYS.map((k) => `<i class="${p[chkCol(k)] ? 'on' : ''}"></i>`).join('');
     const spec = p.specialty_name || p.specialty_slug;
     const metaBits = [p.state, p.target_start_date].filter(Boolean).map((x) => esc(x as string)).join(' · ');
-    const celsius = celsiusEasterEgg(p.full_name) ? ' pipe-card--celsius' : '';  // founder Easter egg flair
+    const isCelsius = !!celsiusEasterEgg(p.full_name);                    // founder Easter egg
+    const celsius = isCelsius ? ' pipe-card--celsius' : '';
+    const credWord = isCelsius ? 'Caffeination' : 'Credentialing';
     return `
-      <article class="pipe-card${celsius}" draggable="true" data-id="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(p.full_name)}">
+      <article class="pipe-card${celsius}" data-id="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(p.full_name)}">
         <div class="pipe-card__top">
           <span class="pipe-av">${esc(personInitials(p.full_name))}</span>
           <div class="pipe-card__id">
@@ -66,8 +67,8 @@ import Sortable from 'sortablejs';
           </div>
         </div>
         ${metaBits ? `<div class="pipe-card__meta">${metaBits}</div>` : ''}
-        <div class="pipe-cred" aria-label="Credentialing ${done} of 6">
-          <div class="pipe-cred__lbl">Credentialing <span class="pipe-cred__ct">${done}/6</span></div>
+        <div class="pipe-cred" aria-label="${credWord} ${done} of 6">
+          <div class="pipe-cred__lbl">${credWord} <span class="pipe-cred__ct">${done}/6</span></div>
           <div class="pipe-meter">${meter}</div>
         </div>
         <div class="pipe-card__foot">${ownerAvatar(p)}</div>
@@ -83,12 +84,11 @@ import Sortable from 'sortablejs';
       board!.innerHTML = `<div class="pipe-archive-list">${list.map(cardHtml).join('') || '<div class="pipe-empty">Archive is empty</div>'}</div>`;
       return; // no sortables in archive mode
     }
-    // A drag gesture is in progress (between onStart/onEnd): rebuilding board.innerHTML
-    // now would run mountSortables() and destroy() the actively-dragging Sortable
-    // instance mid-gesture, which SortableJS forbids (codex-flagged: the poll/adopt
-    // path can call render() at any time, independent of the onEnd rAF deferral this
-    // file already uses for its own commit). Skip; onEnd clears `dragging` and its
-    // own render()/commit() call afterward will pick up whatever changed meanwhile.
+    // A drag is in progress (dragging=true, between beginLift and drop): rebuilding
+    // board.innerHTML now would yank the drag placeholder and reflow the lanes under the
+    // floating card. Skip — the dragged card lives on <body> so it survives regardless,
+    // and drop() clears `dragging` then commit()/render() repaints with whatever changed
+    // meanwhile (the poll/adopt path can call render() at any time).
     if (dragging) return;
     const lanes = groupByStage([...people.values()]);
     board!.innerHTML = BOARD_STAGES.map((stage) => {
@@ -104,7 +104,8 @@ import Sortable from 'sortablejs';
           </div>
         </div>`;
     }).join('');
-    mountSortables();
+    // Drag handlers are delegated on `board`/`window` (attached once), so a re-render
+    // needs no per-lane re-wiring — the pointer engine finds fresh cards via closest().
   }
 
   // ── Placed celebration (emoji firework) ───────────────────────────────────────
@@ -436,7 +437,10 @@ import Sortable from 'sortablejs';
     const p = people.get(id);
     if (!p) return;
     const done = checklistCount(p);
-    const chips = CHECKLIST_KEYS.map((k) => `<button class="pipe-chip ${p[chkCol(k)] ? 'on' : ''}" data-chk="${k}"><span class="pipe-chip__bx"></span>${esc(CHECKLIST_LABELS[k])}</button>`).join('');
+    const isCelsius = !!celsiusEasterEgg(p.full_name);                        // Easter egg: re-theme the credentialing labels
+    const clabels = isCelsius ? CELSIUS_CHECKLIST_LABELS : CHECKLIST_LABELS;
+    const credWord = isCelsius ? 'Caffeination' : 'Credentialing';
+    const chips = CHECKLIST_KEYS.map((k) => `<button class="pipe-chip ${p[chkCol(k)] ? 'on' : ''}" data-chk="${k}"><span class="pipe-chip__bx"></span>${esc(clabels[k])}</button>`).join('');
     const owner = rosterEntry(p.owner_email || '');
     const qa = (href: string, label: string, icon: string, on: boolean) => on ? `<a class="pipe-qa" href="${href}">${icon}${label}</a>` : `<span class="pipe-qa is-off">${icon}${label}</span>`;
     spot.innerHTML = `
@@ -461,7 +465,7 @@ import Sortable from 'sortablejs';
             <textarea class="pipe-notes" data-field="notes" rows="4" maxlength="2000" placeholder="Add notes…">${esc(p.notes || '')}</textarea>
           </div>
           <div>
-            <div class="pipe-spot__lbl">Credentialing · ${done} of 6</div>
+            <div class="pipe-spot__lbl">${credWord} · ${done} of 6</div>
             <div class="pipe-chips">${chips}</div>
           </div>
         </div>
@@ -578,91 +582,127 @@ import Sortable from 'sortablejs';
     loadView();
   });
 
-  // ── Drag tilt: the forceFallback clone gets weight via the spring (Motion Lab feel) ──
-  // SortableJS moves the clone with `transform: translate3d(...)`; we drive the independent
-  // CSS `rotate` property (composes with transform) from a low-passed pointer velocity, so
-  // the card hangs from the grab point and swings. Skipped entirely under reduced-motion.
-  let tiltRAF = 0;
-  let tiltState = { angle: 0, angleVel: 0 };
-  let tiltGhost: HTMLElement | null = null;
-  let grabOrigin = '50% 0';                        // transform-origin = where the card was grabbed
-  let grabX = 0;                                    // pointer X at grab (seeds the velocity smoother)
-  let tiltPtrX = 0, tiltSmoothX = 0, tiltPrevX = 0, tiltVx = 0;
-  const onTiltPointerMove = (e: PointerEvent) => { tiltPtrX = e.clientX; };
-  function tiltLoop() {
-    if (!tiltGhost) tiltGhost = document.querySelector<HTMLElement>('.pipe-fallback');
-    tiltSmoothX += (tiltPtrX - tiltSmoothX) * 0.6;               // low-pass the pointer (raw deltas are spiky at low speed)
-    const inst = tiltSmoothX - tiltPrevX; tiltPrevX = tiltSmoothX;
-    tiltVx = tiltVx * 0.55 + inst * 0.45;                         // gentle velocity EMA
-    tiltState = tiltStep(tiltState.angle, tiltState.angleVel, tiltVx, true, TILT_BALANCED);
-    if (tiltGhost) {
-      tiltGhost.style.setProperty('transform-origin', grabOrigin);
-      tiltGhost.style.setProperty('rotate', tiltState.angle.toFixed(2) + 'deg');
-    }
-    tiltRAF = requestAnimationFrame(tiltLoop);
-  }
-  function startTilt(startX: number) {
-    if (prefersReduced()) return;                                // no swing under reduced-motion
-    tiltState = { angle: 0, angleVel: 0 };
-    tiltGhost = null;
-    tiltPtrX = tiltSmoothX = tiltPrevX = startX; tiltVx = 0;
-    document.addEventListener('pointermove', onTiltPointerMove);
-    tiltRAF = requestAnimationFrame(tiltLoop);
-  }
-  function stopTilt() {
-    if (tiltRAF) cancelAnimationFrame(tiltRAF);
-    tiltRAF = 0;
-    document.removeEventListener('pointermove', onTiltPointerMove);
-    tiltGhost = null;
-  }
-  // Record the grab point within a card (for the tilt's transform-origin + velocity seed).
-  board.addEventListener('pointerdown', (e) => {
-    const card = (e.target as HTMLElement).closest('.pipe-card');
-    if (!card) return;
-    const r = card.getBoundingClientRect();
-    grabOrigin = `${e.clientX - r.left}px ${e.clientY - r.top}px`;
-    grabX = e.clientX;
-  });
+  // ── Drag: purpose-built pointer engine ─────────────────────────────────────────
+  // The dragged card is lifted onto <body> — OUTSIDE the board and any transformed
+  // ancestor (the hub-view runs a `transform` fade). That makes the swing immune to
+  // BOTH ancestor transforms AND a board re-render mid-drag: the card being dragged
+  // isn't in the board while you hold it, so nothing can destroy it. Physics = the
+  // Motion-Lab-validated spring (tiltStep); persistence reuses commit({moveStage}).
+  let dragging = false;                              // guards render() (the ~4s poll, adopt, etc.)
+  const noSelect = (e: Event) => e.preventDefault(); // block text-selection during a drag (never touches click)
+  let grab: { card: HTMLElement; sx: number; sy: number; ox: number; oy: number; rect: DOMRect } | null = null;
+  interface Drag { card: HTMLElement; id: string; ph: HTMLElement; ox: number; oy: number; px: number; py: number; smoothX: number; prevSmoothX: number; vx: number; angle: number; angleVel: number; scale: number; held: boolean; fromStage: BoardStage | undefined; }
+  let drag: Drag | null = null;
 
-  // ── Drag-and-drop between lanes (moveStage) ───────────────────────────────────
-  let sortables: Sortable[] = [];
-  // True for the span between a drag starting and SortableJS finishing its own
-  // internal cleanup for that drag (see render()'s guard above, codex-flagged).
-  let dragging = false;
-  function mountSortables() {
-    sortables.forEach((s) => s.destroy());
-    sortables = BOARD_STAGES.map((stage) => {
-      const el = board!.querySelector<HTMLElement>(`.pipe-lane__body[data-stage="${stage}"]`)!;
-      return Sortable.create(el, {
-        group: 'pipe', animation: 170, easing: 'cubic-bezier(0.2,0.7,0.2,1)',
-        draggable: '.pipe-card', ghostClass: 'is-dragging', filter: '.pipe-lane__add, .pipe-empty',
-        forceFallback: true, fallbackClass: 'pipe-fallback', fallbackOnBody: true,  // real DOM clone → we can give it weight
-        onStart: () => { dragging = true; board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.add('is-dropzone')); startTilt(grabX); },
-        onEnd: (evt) => {
-          stopTilt();
-          dragging = false; // SortableJS's own drag-end handling for this gesture is done; safe to render() again
-          board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.remove('is-dropzone', 'is-dragover'));
-          const id = evt.item.getAttribute('data-id');
-          const toStage = (evt.to as HTMLElement).dataset.stage as BoardStage | undefined;
-          const fromStage = (evt.from as HTMLElement).dataset.stage as BoardStage | undefined;
-          // Defer out of SortableJS's drag-end stack: render() rebuilds board.innerHTML and
-          // mountSortables() destroys every Sortable (incl. this firing one). Doing that
-          // synchronously inside onEnd tears the instance down mid-drop. rAF lets SortableJS finish.
-          requestAnimationFrame(() => {
-            if (!id || !toStage || toStage === fromStage) { render(); return; } // same lane → re-render (no in-lane order persistence in v1)
-            commit({ type: 'moveStage', id, stage: toStage });
-          });
-        },
-        // Clear every lane's dragover highlight before marking the current target so only
-        // one lane glows at a time (codex-flagged: previously only ever added, never cleared
-        // mid-drag, so a card dragged across several lanes left them all highlighted).
-        onMove: (evt) => {
-          board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.remove('is-dragover'));
-          (evt.to as HTMLElement).classList.add('is-dragover');
-          return true;
-        },
-      });
-    });
+  board.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || !e.isPrimary || archiveMode || drag || grab) return;  // no lifting in archive view; ignore if a gesture is already active
+    const card = (e.target as HTMLElement).closest<HTMLElement>('.pipe-card');
+    if (!card) return;                               // NOT preventDefault → a plain tap still fires click → opens the dossier
+    const rect = card.getBoundingClientRect();
+    grab = { card, sx: e.clientX, sy: e.clientY, ox: e.clientX - rect.left, oy: e.clientY - rect.top, rect };
+  });
+  // Cards no longer carry draggable="true", but suppress native HTML drag-and-drop anyway so it
+  // can never preempt the pointer engine (review-caught: native DnD fires dragstart→pointercancel).
+  board.addEventListener('dragstart', (e) => e.preventDefault());
+  window.addEventListener('pointermove', (e) => {
+    if (grab) {
+      if (Math.hypot(e.clientX - grab.sx, e.clientY - grab.sy) > 4) { beginLift(grab, e); grab = null; }
+      else return;
+    }
+    if (drag && drag.held) { drag.px = e.clientX; drag.py = e.clientY; updateDropzone(e.clientX, e.clientY); }
+  });
+  window.addEventListener('pointerup', (e) => { if (grab) { grab = null; return; } if (drag && drag.held) drop(e.clientX, e.clientY); });
+  window.addEventListener('pointercancel', () => { if (grab) { grab = null; return; } if (drag && drag.held) drop(drag.px, drag.py); });
+
+  function beginLift(p: NonNullable<typeof grab>, e: PointerEvent) {
+    const { card, ox, oy, rect } = p;
+    const laneBody = card.closest<HTMLElement>('.pipe-lane__body');
+    const fromStage = laneBody?.dataset.stage as BoardStage | undefined;
+    const id = card.getAttribute('data-id') || '';
+    const ph = document.createElement('div'); ph.className = 'pipe-ph'; ph.style.height = rect.height + 'px';
+    laneBody?.insertBefore(ph, card);
+    // Lift into the .hub container (NOT <body>): still outside .hub-view's transform + the
+    // board that re-renders — so the card stays immune — but INSIDE the hub's CSS-variable
+    // scope, so `background: var(--surface)` still resolves and the card stays SOLID. A
+    // <body>-mounted card loses --surface and renders see-through (real lab-vs-prod gap: the
+    // lab's cards used a hardcoded background, so it never surfaced there).
+    (board!.closest('.hub') ?? document.body).appendChild(card);
+    document.body.classList.add('pipe-noselect');
+    document.addEventListener('selectstart', noSelect);
+    card.classList.add('is-lifted');
+    card.style.position = 'fixed'; card.style.left = '0'; card.style.top = '0';
+    card.style.width = rect.width + 'px'; card.style.zIndex = '9999'; card.style.transformOrigin = `${ox}px ${oy}px`;
+    card.style.transform = `translate(${e.clientX - ox}px, ${e.clientY - oy}px)`;   // GPU-composited follow
+    dragging = true;
+    drag = { card, id, ph, ox, oy, px: e.clientX, py: e.clientY, smoothX: e.clientX, prevSmoothX: e.clientX, vx: 0, angle: 0, angleVel: 0, scale: 1, held: true, fromStage };
+    requestAnimationFrame(dragTick);                 // runs ONLY for the duration of this drag (stops itself on drop)
+  }
+
+  function updateDropzone(x: number, y: number) {
+    if (!drag) return;
+    drag.card.style.pointerEvents = 'none';          // so elementFromPoint sees the lane beneath the lifted card
+    const under = document.elementFromPoint(x, y);
+    drag.card.style.pointerEvents = '';
+    const laneBody = under?.closest<HTMLElement>('.pipe-lane__body') ?? null;
+    board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.toggle('is-dragover', b === laneBody));
+    const r = board!.getBoundingClientRect(), edge = 60;             // autoscroll near the board's horizontal edges
+    if (x < r.left + edge) board!.scrollLeft -= 14; else if (x > r.right - edge) board!.scrollLeft += 14;
+  }
+
+  function drop(x: number, y: number) {
+    if (!drag) return;
+    const { card, id, ph, fromStage, angle, scale, ox, oy } = drag;
+    document.body.classList.remove('pipe-noselect');
+    document.removeEventListener('selectstart', noSelect);
+    card.style.pointerEvents = 'none';
+    const under = document.elementFromPoint(x, y);
+    card.style.pointerEvents = '';
+    const toStage = (under?.closest<HTMLElement>('.pipe-lane__body')?.dataset.stage as BoardStage | undefined) || fromStage;
+    const first = card.getBoundingClientRect();      // FLIP start = the lifted (rotated) position
+    drag.held = false; drag = null; dragging = false;
+    board!.querySelectorAll('.pipe-lane__body').forEach((b) => b.classList.remove('is-dragover'));
+    if (ph.parentNode) ph.remove();
+    card.remove();                                   // discard the temporary lifted element; render() paints a fresh one
+    // Swallow the click the browser may synthesize after a drag, so a drop never ALSO opens
+    // the dossier. A plain tap never lifts (pending cleared on pointerup), so it's unaffected.
+    const swallow = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); };
+    board!.addEventListener('click', swallow, { capture: true, once: true });
+    setTimeout(() => board!.removeEventListener('click', swallow, true), 0);
+    // Persist + repaint through the SAME hardened path SortableJS used: commit → applyOp →
+    // render → send + the placed celebration. Same lane → just re-render the card back.
+    if (id && toStage && toStage !== fromStage) commit({ type: 'moveStage', id, stage: toStage });
+    else render();
+    // FLIP the freshly-rendered card from the drop position into its resting slot.
+    if (id && !prefersReduced()) {
+      const landed = board!.querySelector<HTMLElement>(`.pipe-card[data-id="${id}"]`);
+      if (landed) {
+        const last = landed.getBoundingClientRect();
+        landed.style.transformOrigin = `${ox}px ${oy}px`;
+        landed.style.transition = 'none';
+        landed.style.transform = `translate(${first.left - last.left}px, ${first.top - last.top}px) rotate(${angle.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+        void landed.offsetWidth;
+        landed.style.transition = 'transform 240ms cubic-bezier(.2,.85,.25,1)';
+        landed.style.transform = 'translate(0,0) rotate(0deg) scale(1)';
+        landed.addEventListener('transitionend', function te() { landed.style.transition = ''; landed.style.transform = ''; landed.style.transformOrigin = ''; landed.removeEventListener('transitionend', te); }, { once: true });
+      }
+    }
+  }
+
+  // Drives the swing ONLY while a card is held: started in beginLift, and it stops
+  // rescheduling itself the moment the drag ends — so there's no idle animation loop
+  // burning frames on the live page or accumulating across test imports (codex-caught).
+  function dragTick() {
+    if (!drag || !drag.held) return;                                // drag ended → let the loop die
+    const card = drag.card;
+    drag.smoothX += (drag.px - drag.smoothX) * 0.6;                 // low-pass the pointer (spiky at low speed)
+    const inst = drag.smoothX - drag.prevSmoothX; drag.prevSmoothX = drag.smoothX;
+    drag.vx = drag.vx * 0.55 + inst * 0.45;
+    const held = !prefersReduced();
+    const step = tiltStep(drag.angle, drag.angleVel, drag.vx, held, TILT_BALANCED);
+    drag.angle = step.angle; drag.angleVel = step.angleVel;
+    const targetScale = held ? 1.05 : 1; drag.scale += (targetScale - drag.scale) * 0.2;
+    card.style.transform = `translate(${drag.px - drag.ox}px, ${drag.py - drag.oy}px) rotate(${drag.angle.toFixed(2)}deg) scale(${drag.scale.toFixed(3)})`;
+    requestAnimationFrame(dragTick);
   }
 
   // Initial paint. All interaction handlers (Tasks 7-10) are inserted inside this
