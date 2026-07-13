@@ -152,14 +152,25 @@ const RENDERABLE_RATE_TYPES = new Set<string>([
   NULL_BUCKET_KEY,
 ])
 
-/** True iff `lastUpdated` is a finite, in-window timestamp (≤ 7 days old). A
- *  missing/non-finite/0 `lastUpdated` CANNOT prove freshness → treated as stale
- *  (rejected), never as epoch-0-fresh. Injectable `now` for tests; defaults to
- *  Date.now(). */
-function isFreshBucket(lastUpdated: unknown, now: number): boolean {
+/** Small tolerance (5 min) for benign client/server clock skew when testing a
+ *  bucket's `lastUpdated` against `now`. A timestamp more than this far in the
+ *  FUTURE cannot be a real freshness signal (a corrupted/mis-stamped write) —
+ *  without this bound, `now - lastUpdated` goes negative and passes the ≤7-day
+ *  window forever, keeping an obsolete anchor live indefinitely (Tier 0, Sol-N6
+ *  — 2026-07-10 accuracy audit). */
+const FUTURE_SKEW_MS = 5 * 60 * 1000
+
+/** True iff `lastUpdated` is a finite timestamp within the freshness window: not
+ *  more than ~7 days in the PAST and not more than FUTURE_SKEW_MS in the FUTURE.
+ *  A missing/non-finite/0 `lastUpdated` CANNOT prove freshness → treated as stale
+ *  (rejected), never as epoch-0-fresh. A far-future `lastUpdated` is likewise
+ *  rejected (Sol-N6), not treated as eternally-fresh. Injectable `now` for tests;
+ *  defaults to Date.now(). */
+export function isFreshBucket(lastUpdated: unknown, now: number): boolean {
   if (typeof lastUpdated !== 'number' || !Number.isFinite(lastUpdated) || lastUpdated <= 0) {
     return false
   }
+  if (lastUpdated - now > FUTURE_SKEW_MS) return false
   return now - lastUpdated <= RATE_READ_WINDOW_MS
 }
 
@@ -426,6 +437,23 @@ export const DEFAULT_ANCHORABLE_RATE_TYPES: ReadonlySet<string> = new Set([
   'advertised_clinician_pay',
 ])
 
+/** Family tokens the bridge writes when it CANNOT attribute a source (dedup
+ *  design: an un-orged aggregator row collapses to 'unattributed'; a missing
+ *  hiring_org resolves to 'unknown'). These are NOT independent corroboration —
+ *  one real family plus a sentinel is still ONE real vote — so they are excluded
+ *  from the distinct-family count in the corroboration gate (Tier 0, C11 —
+ *  2026-07-10 accuracy audit). Lowercase; matched after trim+toLowerCase. */
+const NON_INDEPENDENT_FAMILIES: ReadonlySet<string> = new Set(['unknown', 'unattributed'])
+
+/** Bucket confidence tiers a promoted anchor may carry — an ALLOW-list (Codex
+ *  gate, 2026-07-10). Only the two CORROBORATED tiers anchor: `multi_source`
+ *  (≥2 families) and `zero_spread` (all observations identical — with the ≥2-
+ *  family gate this is cross-family agreement, not templated inflation).
+ *  `single_source` is uncorroborated; `manual_review_bimodal` is a split
+ *  distribution whose mean is meaningless — a deny-list of only `single_source`
+ *  would let a CORRUPTED bimodal node with a finite mean anchor at high/live. */
+const ANCHORABLE_BUCKET_CONFIDENCE: ReadonlySet<string> = new Set(['multi_source', 'zero_spread'])
+
 export interface BucketOverlayOptions {
   /** Minimum distinct post-dedup observations for a primary bucket to anchor the
    *  quote. Default 4 — the robust-spread floor (Rousseeuw & Verboven 2002); below
@@ -439,6 +467,17 @@ export interface BucketOverlayOptions {
    *  (DEFAULT_ANCHORABLE_RATE_TYPES). Indirect rate types are excluded so the
    *  curated prior wins over article/survey prose. */
   anchorableRateTypes?: ReadonlySet<string>
+  /** Tier 0 (2026-07-10 audit, C9/Sol-N4) — plausibility band on the promoted
+   *  anchor vs the researched range. A corroborated posterior may legitimately run
+   *  hotter or cooler than the analyst band, but an anchor beyond
+   *  `maxAnchorFactor × range.max` (default 1.5) or below `minAnchorFactor ×
+   *  range.min` (default 0.5) is overwhelmingly a data defect (aspirational "up to
+   *  $X" ranges, daily-as-hourly unit errors, cross-specialty misclassification).
+   *  Such a cell KEEPS the audited prior (and the bucket persists for human
+   *  re-audit) rather than moving a real quote to an implausible number. The
+   *  researched band is the magnitude backstop the corroboration gate lacked. */
+  maxAnchorFactor?: number
+  minAnchorFactor?: number
 }
 
 /** Confidence tier a promoted bucket may display, by D-39 rate type. The displayed
@@ -478,6 +517,20 @@ export function applyMarketBucketsOverlay(
   const minDistinct = opts.minDistinct ?? 4
   const minFamilies = opts.minFamilies ?? 2
   const anchorable = opts.anchorableRateTypes ?? DEFAULT_ANCHORABLE_RATE_TYPES
+  // Validate the plausibility factors against SEMANTIC bounds (Codex gate R1+R2,
+  // 2026-07-10) — an invalid override must fall back to the safe default rather
+  // than fail open OR wrongly reject in-band anchors:
+  //   - maxAnchorFactor ∈ [1, 100]: a ceiling below the researched max (<1) would
+  //     reject anchors inside the researched band; an absurd value (e.g.
+  //     Number.MAX_VALUE) would overflow `factor × range.max` to Infinity and
+  //     disable the upper gate. The 100 cap keeps the threshold finite while being
+  //     far looser than any legitimate plausibility bound.
+  //   - minAnchorFactor ∈ (0, 1]: a floor above the researched min (>1) would
+  //     reject in-band anchors; 0/negative/non-finite would disable the lower gate.
+  const validFactor = (v: unknown, lo: number, hi: number): v is number =>
+    typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi
+  const maxAnchorFactor = validFactor(opts.maxAnchorFactor, 1, 100) ? opts.maxAnchorFactor : 1.5
+  const minAnchorFactor = validFactor(opts.minAnchorFactor, Number.MIN_VALUE, 1) ? opts.minAnchorFactor : 0.5
   let promoted = 0
 
   for (const [key, specBuckets] of Object.entries(result.specialties)) {
@@ -496,6 +549,12 @@ export function applyMarketBucketsOverlay(
     if (typeof b.weighted_mean !== 'number' || !Number.isFinite(b.weighted_mean) || b.weighted_mean <= 0) {
       continue
     }
+    // Confidence gate (Tier 0, Sol-N5 + Codex gate — 2026-07-10 audit): only the
+    // two CORROBORATED bucket tiers may anchor (ALLOW-list, not a single_source
+    // deny-list — a deny-list would let a corrupted manual_review_bimodal node with
+    // a finite mean anchor at high/live). single_source (uncorroborated) and any
+    // unexpected/corrupt confidence value keep the audited prior.
+    if (!ANCHORABLE_BUCKET_CONFIDENCE.has(b.confidence)) continue
     // Corroboration gate: robust spread needs n≥4; ≥2 independent families guards
     // the single-source-sets-the-price failure. n_distinct must be a positive
     // INTEGER (a fractional value is a corrupted RTDB node — the bridge always
@@ -507,11 +566,16 @@ export function applyMarketBucketsOverlay(
     // variant of ONE family ('exa' vs ' exa ' vs 'EXA', e.g. an RTDB round-trip or
     // hand-edit) can't masquerade as two independent votes and clear the >=2-family
     // gate (a single-source-sets-the-price faking the corroboration bar).
+    // Also EXCLUDE non-independent sentinel families ('unknown'/'unattributed' —
+    // the bridge's "could not attribute this source" tokens): one real family plus
+    // a sentinel is still ONE real vote and must not clear the ≥2-family bar
+    // (Tier 0, C11 — 2026-07-10 audit).
     const families = Array.isArray(b.source_families)
       ? new Set(
           b.source_families
             .filter((s) => typeof s === 'string' && s.trim().length > 0)
-            .map((s) => s.trim().toLowerCase()),
+            .map((s) => s.trim().toLowerCase())
+            .filter((s) => !NON_INDEPENDENT_FAMILIES.has(s)),
         ).size
       : 0
     if (families < minFamilies) continue
@@ -524,6 +588,16 @@ export function applyMarketBucketsOverlay(
     // of the frozen snapshot.
     const range = STATIC_SPECIALTY_RANGES[key]
     if (!range) continue
+    // Plausibility band (Tier 0, C9 upper / Sol-N4 lower — 2026-07-10 audit): the
+    // corroboration gate above has NO magnitude backstop, so a corroborated-but-
+    // wrong posterior (aspirational "up to $X" ranges recovered to distinct
+    // families, daily-as-hourly unit errors, cross-specialty misclassification)
+    // could set an arbitrary base/ceiling. A legitimate market may run hotter/
+    // cooler than the audited band, but an anchor beyond maxAnchorFactor×max or
+    // below minAnchorFactor×min is overwhelmingly a data defect — keep the audited
+    // prior (the bucket persists for human re-audit) rather than move a real quote
+    // to an implausible number.
+    if (anchor > maxAnchorFactor * range.max || anchor < minAnchorFactor * range.min) continue
     spec.p70 = anchor
     spec.min = Math.min(range.min, anchor)
     // Clamp CEILING for the promoted cell. rateCalculator clamps the final quote to

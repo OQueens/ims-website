@@ -33,6 +33,32 @@ describe('sim-adapter — faithful bridge to the real engine', () => {
     expect(q.isCallOnly).toBe(false);
   });
 
+  it('C6: a frozen factor set re-quotes off the CURRENT spec.p70 after a live-market promotion (not the stale base)', () => {
+    // Mirrors a parsed assignment whose baseRate was frozen (rateCalculator.ts:901 /
+    // sim-adapter.ts:144 both freeze baseRate=spec.p70 at build time), BEFORE the
+    // async market overlay promoted the cell. A re-quote must move the HERO (base),
+    // not just the ceiling — the observed anchor is the whole point of the overlay.
+    const key = 'radiology';
+    const orig = { ...SPECIALTIES[key] };
+    try {
+      const f = factorsFromControls(base({ specialtyKey: key, region: 'National', shift: 'day', urgency: 'Standard' }));
+      const before = quoteFromFactors(f, 22).payRate;
+      // Overlay promotes the cell AFTER the factors were frozen (raise p70 + ceiling).
+      SPECIALTIES[key].p70 = orig.p70 + 60;
+      SPECIALTIES[key].max = Math.max(orig.max, SPECIALTIES[key].p70);
+      const after = quoteFromFactors(f, 22).payRate;
+      expect(after).toBeGreaterThan(before);
+    } finally {
+      Object.assign(SPECIALTIES[key], orig);
+    }
+  });
+
+  it('C6 no-op guard: with spec.p70 unchanged, the refreshed quote is byte-identical to calculateRate(factors)', () => {
+    // The refresh must not perturb the normal path — same value in, same value out.
+    const f = factorsFromControls(base({ specialtyKey: 'psychiatry', region: 'National', shift: 'day' }));
+    expect(quoteFromFactors(f, 22).payRate).toBe(calculateRate(f).payRate);
+  });
+
   it('hero is the clinician PAY rate; bill is grossed up at the margin (roundUp5 invariant)', () => {
     const q = quoteFromControls(base({ specialtyKey: 'hospitalist', marginPct: 22 }));
     expect(q.payRate).toBeGreaterThan(0);

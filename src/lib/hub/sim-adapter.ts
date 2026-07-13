@@ -304,13 +304,28 @@ function bill(pay: number, marginPct: number): number {
 // shapes their output for the hub panel. Identical numbers to the dashboard.
 export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQuote {
   const spec = SPECIALTIES[factors.specialty.key];
+  // C6 (2026-07-10 accuracy audit): re-derive baseRate from the CURRENT spec.p70.
+  // Every factor-construction site (rateCalculator initFactors:901, factorsFromControls:144)
+  // FREEZES baseRate = spec.p70 at build time. When the async market overlay promotes
+  // a cell AFTER a parsed assignment's factors were frozen, a re-quote off the frozen
+  // base would move only the ceiling (calculateRate reads spec.max fresh) and leave the
+  // hero anchored to the stale base — the observed anchor never reaches the quote base.
+  // Refreshing ONLY baseRate lets the live anchor drive the hero while the parsed
+  // assignment's other factors (shift/facility/call/duration) stay correctly frozen.
+  // No-op when spec.p70 is unchanged (byte-identical to prior behavior). `spec` is a
+  // DEFINED invariant on this path — factorsFromControls throws on an unknown
+  // specialty and the parse paths resolve canonical keys — and the rest of the hourly
+  // math already dereferences it directly and unconditionally (computeAdjustedSpecRange,
+  // rateCalculator.ts:752), so a spec-undefined guard here would be inconsistent
+  // false-safety (Codex gate 2026-07-10).
+  const f = { ...factors, baseRate: spec.p70 };
   // HONEST confidence (see helpers above): weaker of identification vs data tier.
   const confidence = weakerConfidence(scoreConfidence(factors), dataTierConfidence(spec?.confidence));
   const confidenceData = confidenceLabel(spec?.confidence ?? 'modeled');
   const confidenceReason = confidenceReasonFor(factors, spec?.confidence);
 
   if (factors.callOnly.isCallOnly) {
-    const cr = calculateCallRate(factors) as CalculatedCallRate;
+    const cr = calculateCallRate(f) as CalculatedCallRate;
     // Honest $/hr conversion of the daily stipend (dashboard: daily ÷ coverageHrs).
     const div = cr.coverageHrs > 0 ? cr.coverageHrs : 1;
     const payRate = cr.insufficientData ? 0 : Math.round(cr.dailyPay / div);
@@ -351,8 +366,8 @@ export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQu
     };
   }
 
-  const r = calculateRate(factors) as CalculatedRate;
-  const { adjustedMin, adjustedMax } = computeAdjustedSpecRange(spec, factors, r);
+  const r = calculateRate(f) as CalculatedRate;
+  const { adjustedMin, adjustedMax } = computeAdjustedSpecRange(spec, f, r);
   return {
     isCallOnly: false,
     payRate: r.payRate,
