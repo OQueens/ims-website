@@ -9,7 +9,29 @@ export const esc = (s: unknown): string =>
   String(s).replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m] as string));
 
 const usd = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+// Exact-currency variant for CAP-DERIVED values (Sol gate R1, 2026-07-13): a
+// fractional contractual cap ($187.50) must never round UP to a displayed
+// number above the contract ($188). Whole dollars render identically to usd().
+const usdExact = (n: number) =>
+  Number.isInteger(n)
+    ? usd(n)
+    : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = (m: number) => (m === 1 ? '—' : `${m > 1 ? '+' : ''}${Math.round((m - 1) * 100)}%`);
+// Cap phrasing: only an explicit hour-unit cap may claim "/hr"; an unknown-unit
+// cap discloses the engine's hourly assumption instead of asserting it (Sol R1).
+const capPhrase = (cap: number, unit: SimQuote['billCapUnit']): string =>
+  unit === 'hour' ? `${usdExact(cap)}/hr` : `${usdExact(cap)} (unit not stated — assumed hourly; verify the contract)`;
+// Effective-margin precision (Sol R2+R3): collision-safe — raise precision until
+// the printed effective % differs from the requested %, so a sub-1% clamp never
+// prints "effective margin 22% (the requested 22% isn't attainable)". If they
+// are genuinely equal at 3dp, printing the same number IS the honest display.
+const effPctVs = (eff: number, requested: number): string => {
+  for (const dp of [1, 2, 3]) {
+    const s = eff.toFixed(dp);
+    if (parseFloat(s) !== requested) return s.replace(/\.?0+$/, '');
+  }
+  return String(requested);
+};
 
 // Context pills: category · specialty · state · confidence (+ Call-Only).
 export function pillsHTML(q: SimQuote, specialtyLabel: string, stateName: string | null): string {
@@ -83,9 +105,39 @@ export function maxNoteHTML(q: SimQuote): string {
 
 // The honest caption when the 1.75× multiplier ceiling clamped the hero pay
 // (distinct from the researched-max clamp above). Mirrors the dashboard chip.
+// Sol-N1 (2026-07-10 audit): also discloses when the DISPLAYED BILL was clamped
+// to the contractual rate cap — the slider margin is then unattainable, so the
+// note names the cap and the EFFECTIVE margin ((bill−pay)/bill).
 export function capNoteHTML(q: SimQuote): string {
-  if (q.isCallOnly || !q.capped || q.uncapped <= q.payRate) return '';
-  return `Rate capped — uncapped it would be ${usd(q.uncapped)}/hr.`;
+  if (q.isCallOnly) return '';
+  const parts: string[] = [];
+  if (q.capped && q.uncapped > q.payRate) {
+    parts.push(`Rate capped — uncapped it would be ${usd(q.uncapped)}/hr.`);
+  }
+  if (q.billCapApplied && q.billCap !== null && q.billRate > 0) {
+    parts.push(
+      `Bill clamped to the contractual rate cap (${capPhrase(q.billCap, q.billCapUnit)}) — ` +
+      `effective margin ${effPctVs(q.effectiveMarginPct, q.marginPct)}% (the requested ${q.marginPct}% isn't attainable under the cap).`,
+    );
+  }
+  // Sol R3: a USABLE cap with an unknown unit that did not clamp the bill — the
+  // number may actually be daily/shift, so the assumption must be visible on the
+  // main panel, not only inside the collapsed calculator. Sol R4: speak ONLY for
+  // the displayed bill — the ENGINE may still have capped pay at 0.80×cap (bill
+  // landing exactly AT the cap), so "does not bind this quote" would be false.
+  if (q.billCap !== null && !q.billCapApplied && q.billCapWarning) {
+    parts.push(
+      `The assignment mentions a rate cap of ${usdExact(q.billCap)} with no stated unit — assumed hourly ` +
+      `(does not constrain the displayed bill rate); verify the contract.`,
+    );
+  }
+  // Sol R2: the contract MENTIONED a rate cap but no usable amount parsed
+  // (extractBillRateCap {cap:null, hasWarning:true}) — a manual-review
+  // condition, never a silent ordinary-looking uncapped quote.
+  if (q.billCap === null && q.billCapWarning) {
+    parts.push('The contract mentions a rate cap, but no usable amount could be parsed — verify the contract before quoting.');
+  }
+  return parts.join(' ');
 }
 
 const COMP_MODEL: Record<string, string> = {
@@ -142,31 +194,41 @@ export function callOnlyHTML(q: SimQuote, specialtyLabel: string): string {
 export function billCalcHTML(q: SimQuote, ladder: BillLadderRow[], init: BillMarginResult): string {
   if (q.isCallOnly) return '';
   const pay = Math.round(q.payRate);
+  // Sol-N1: thread the contractual bill cap through the calculator — clamped
+  // ladder rows are badged, the cap is named in the note, and data-billcap lets
+  // the client-side slider/custom-bill recompute stay clamped after re-renders.
+  const cap = q.billCap;
   const rows = ladder.map((r) => `<tr class="sim-bc__row${r.rec ? ' sim-bc__rec' : ''}">
-        <td class="sim-bc__mk">${r.markup}%${r.rec ? '<span class="sim-bc__badge">REC</span>' : ''}</td>
-        <td class="sim-bc__bill-c">${usd(r.billRate)}</td>
-        <td class="sim-bc__prof-c">${usd(r.profit)}</td>
+        <td class="sim-bc__mk">${r.markup}%${r.rec ? '<span class="sim-bc__badge">REC</span>' : ''}${r.capped ? '<span class="sim-bc__cap-badge">CAP</span>' : ''}</td>
+        <td class="sim-bc__bill-c">${usdExact(r.billRate)}</td>
+        <td class="sim-bc__prof-c">${usdExact(r.profit)}</td>
       </tr>`).join('');
-  return `<details class="sim-billcalc" data-pay="${pay}">
+  const capNote = cap !== null
+    ? ` This assignment carries a contractual rate cap of <b>${capPhrase(cap, q.billCapUnit)}</b> — bill rates are clamped to the cap.`
+    : '';
+  const marginLabel = init.capped
+    ? `Margin: ${init.marginPct}% → ${effPctVs(init.effectiveMarginPct, init.marginPct)}% effective (cap)`
+    : `Margin: ${init.marginPct}%`;
+  return `<details class="sim-billcalc" data-pay="${pay}"${cap !== null ? ` data-billcap="${cap}"` : ''}>
     <summary class="sim-bc__summary">Bill rate calculator<span class="sim-bc__hint">markup ladder · margins · custom bill</span></summary>
     <div class="sim-bc__body">
-      <p class="sim-bc__note">Margin analysis for client billing — clinician pay is <b>${usd(pay)}</b>/hr. Bill rates round up to the nearest $5.</p>
+      <p class="sim-bc__note">Margin analysis for client billing — clinician pay is <b>${usd(pay)}</b>/hr. Bill rates round up to the nearest $5.${capNote}</p>
       <table class="sim-bc__table">
         <thead><tr><th>Markup %</th><th>Bill rate</th><th>Profit/hr</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
       <div class="sim-bc__slider-wrap">
-        <div class="sim-bc__slider-head"><span>${15}%</span><span class="sim-bc__margin">Margin: ${init.marginPct}%</span><span>${45}%</span></div>
+        <div class="sim-bc__slider-head"><span>${15}%</span><span class="sim-bc__margin">${marginLabel}</span><span>${45}%</span></div>
         <input class="sim-bc__slider" type="range" min="15" max="45" step="1" value="${init.marginPct}" aria-label="Bill margin percent">
         <div class="sim-bc__tiles">
-          <div class="sim-bc__tile is-bill"><span class="sim-bc__tile-l">Bill rate</span><span class="sim-bc__bill">${usd(init.billRate)}</span></div>
-          <div class="sim-bc__tile"><span class="sim-bc__tile-l">Profit/hr</span><span class="sim-bc__profit">${usd(init.profitPerHr)}</span><span class="sim-bc__daily">${usd(init.dailyProfit)}/day (10hr)</span></div>
-          <div class="sim-bc__tile"><span class="sim-bc__tile-l">Annual</span><span class="sim-bc__annual">${usd(init.annualProfit)}</span><span class="sim-bc__unit">2,080 hrs</span></div>
+          <div class="sim-bc__tile is-bill"><span class="sim-bc__tile-l">Bill rate</span><span class="sim-bc__bill">${usdExact(init.billRate)}</span></div>
+          <div class="sim-bc__tile"><span class="sim-bc__tile-l">Profit/hr</span><span class="sim-bc__profit">${usdExact(init.profitPerHr)}</span><span class="sim-bc__daily">${usdExact(init.dailyProfit)}/day (10hr)</span></div>
+          <div class="sim-bc__tile"><span class="sim-bc__tile-l">Annual</span><span class="sim-bc__annual">${usdExact(init.annualProfit)}</span><span class="sim-bc__unit">2,080 hrs</span></div>
         </div>
         <div class="sim-bc__foot"><span>Pay: ${usd(pay)}/hr</span><span class="sim-bc__mult">${init.multiplier.toFixed(3)}x</span></div>
       </div>
       <div class="sim-bc__custom">
-        <label class="sim-bc__custom-lbl">Custom bill rate ($)<input class="sim-bc__custom-in" type="number" inputmode="decimal" min="0" placeholder="e.g. ${usd(init.billRate).replace('$', '')}"></label>
+        <label class="sim-bc__custom-lbl">Custom bill rate ($)<input class="sim-bc__custom-in" type="number" inputmode="decimal" min="0" placeholder="e.g. ${usdExact(init.billRate).replace('$', '')}"></label>
         <div class="sim-bc__custom-res">Margin <b class="sim-bc__custom-out">—</b></div>
       </div>
     </div>

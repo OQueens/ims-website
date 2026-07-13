@@ -239,6 +239,22 @@ export interface SimQuote {
   capped: boolean;
   marketMaxApplied: boolean;
   uncapped: number;
+  // Sol-N1 (Tier 1, 2026-07-10 accuracy audit): the parsed rate cap is a BILL
+  // cap — the contractual client-facing maximum (extractBillRateCap; the engine
+  // derives max pay as 0.80×cap under it). Surfaced so every bill tool (ladder,
+  // margin slider, custom bill) can respect it, and flagged when the main bill
+  // was clamped so the UI shows the EFFECTIVE margin instead of the slider's.
+  billCap: number | null;
+  billCapApplied: boolean;
+  // Sol gate R1 (2026-07-13): unit + parse-warning honesty. The engine treats an
+  // unknown-unit cap as hourly (rateCalculator.ts:689) — the UI must disclose
+  // that assumption rather than assert "/hr". null when no applicable cap.
+  billCapUnit: 'hour' | 'unknown' | null;
+  billCapWarning: boolean;
+  // The TRUE margin of the displayed pair: (billRate − payRate) / billRate.
+  // Equals ~marginPct normally (roundUp5 wiggle); diverges when the cap binds —
+  // labels must show THIS next to a clamped bill, never the unattainable slider %.
+  effectiveMarginPct: number;
   // Call-only extras (insufficientData true → show the honest no-fabrication surface)
   callOnly?: {
     insufficientData: boolean;
@@ -300,6 +316,13 @@ function bill(pay: number, marginPct: number): number {
   return roundUp5(pay / (1 - m));  // engine invariant (BillRateCalculator), not Math.round
 }
 
+// Sol-N1: normalize a bill cap to a usable positive finite number or null.
+// Callers may feed raw parsed values or a `+dataset.billcap` string coercion
+// (NaN) — anything non-positive/non-finite means "no cap", never a 0-clamp.
+function normalizeBillCap(cap: unknown): number | null {
+  return typeof cap === 'number' && Number.isFinite(cap) && cap > 0 ? cap : null;
+}
+
 // THE quote. `calculateRate`/`calculateCallRate` are the engine — this only
 // shapes their output for the hub panel. Identical numbers to the dashboard.
 export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQuote {
@@ -319,6 +342,17 @@ export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQu
   // rateCalculator.ts:752), so a spec-undefined guard here would be inconsistent
   // false-safety (Codex gate 2026-07-10).
   const f = { ...factors, baseRate: spec.p70 };
+  // Sol-N1: contractual hourly BILL cap. The unit gate mirrors the engine's own
+  // hourly clamp (rateCalculator.ts:689 — hour/unknown only): a day/shift cap is
+  // not an hourly bill bound (unit honesty is Tier 2/N7 scope). The engine caps
+  // PAY at 0.80×cap, but the hub re-margins pay at the slider margin — without
+  // this, a $250/hr cap displays roundUp5(200/0.78) = $260/hr, a number the
+  // contract forbids. It also binds when the engine never capped pay but a high
+  // slider margin alone would push the bill past the cap.
+  const billCap =
+    f.rateCap.cap && (f.rateCap.unit === 'hour' || f.rateCap.unit === 'unknown')
+      ? normalizeBillCap(f.rateCap.cap)
+      : null;
   // HONEST confidence (see helpers above): weaker of identification vs data tier.
   const confidence = weakerConfidence(scoreConfidence(factors), dataTierConfidence(spec?.confidence));
   const confidenceData = confidenceLabel(spec?.confidence ?? 'modeled');
@@ -354,6 +388,14 @@ export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQu
       capped: cr.capped,
       marketMaxApplied: cr.marketMaxApplied,
       uncapped: cr.coverageHrs > 0 ? Math.round(cr.uncapped / div) : cr.uncapped,
+      // Per-diem cap semantics (a day/shift cap vs the derived hourly display)
+      // are Tier 2/N7 scope — the engine already caps dailyPay via
+      // getCallOnlyPayCap; no hourly bill cap is claimed here.
+      billCap: null,
+      billCapApplied: false,
+      billCapUnit: null,
+      billCapWarning: false,
+      effectiveMarginPct: callBill > 0 ? ((callBill - payRate) / callBill) * 100 : 0,
       callOnly: {
         insufficientData: cr.insufficientData,
         dayType: cr.dayType,
@@ -368,12 +410,18 @@ export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQu
 
   const r = calculateRate(f) as CalculatedRate;
   const { adjustedMin, adjustedMax } = computeAdjustedSpecRange(spec, f, r);
+  // Sol-N1: clamp the DISPLAYED bill to the contractual cap. Pay stays exactly
+  // the engine's output (parity invariant) — when the clamp binds, the slider
+  // margin is unattainable and marginPerHr reflects the effective spread.
+  const rawBill = bill(r.payRate, marginPct);
+  const billCapApplied = billCap !== null && rawBill > billCap;
+  const billRate = billCapApplied ? billCap : rawBill;
   return {
     isCallOnly: false,
     payRate: r.payRate,
-    billRate: bill(r.payRate, marginPct),
+    billRate,
     marginPct,
-    marginPerHr: bill(r.payRate, marginPct) - r.payRate,
+    marginPerHr: billRate - r.payRate,
     confidence,
     confidenceData,
     confidenceReason,
@@ -388,6 +436,15 @@ export function quoteFromFactors(factors: RateFactors, marginPct: number): SimQu
     capped: r.capped,
     marketMaxApplied: r.marketMaxApplied === true,
     uncapped: r.uncapped,
+    billCap,
+    billCapApplied,
+    billCapUnit: billCap !== null ? (f.rateCap.unit as 'hour' | 'unknown') : null,
+    // Sol R2: propagate the parse warning INDEPENDENTLY of a usable cap — a
+    // "rate cap" mention whose amount failed to parse ({cap:null, hasWarning:
+    // true}) must surface as a manual-review condition, not vanish into an
+    // ordinary uncapped quote.
+    billCapWarning: f.rateCap.hasWarning === true,
+    effectiveMarginPct: billRate > 0 ? ((billRate - r.payRate) / billRate) * 100 : marginPct,
   };
 }
 
@@ -407,32 +464,54 @@ export const BILL_REC_MAX = 32;
 export const BILL_SLIDER_MIN = 15;
 export const BILL_SLIDER_MAX = 45;
 
-export interface BillLadderRow { markup: number; billRate: number; profit: number; rec: boolean; }
+export interface BillLadderRow { markup: number; billRate: number; profit: number; rec: boolean; capped: boolean; }
 // The dashboard markup table: each row grosses pay up at that markup, REC band
-// (25-32%) highlighted. profit = bill - pay (per hour).
-export function billLadder(payRate: number): BillLadderRow[] {
+// (25-32%) highlighted. profit = bill - pay (per hour). Sol-N1: rows are clamped
+// to the contractual bill cap (SimQuote.billCap) when one exists — a markup row
+// above the cap is a number the contract forbids quoting.
+export function billLadder(payRate: number, billCap: number | null = null): BillLadderRow[] {
+  const cap = normalizeBillCap(billCap);
   return BILL_HOURLY_MARKUPS.map((markup) => {
-    const billRate = roundUp5(payRate / (1 - markup / 100));
-    return { markup, billRate, profit: billRate - payRate, rec: markup >= BILL_REC_MIN && markup <= BILL_REC_MAX };
+    const raw = roundUp5(payRate / (1 - markup / 100));
+    const capped = cap !== null && raw > cap;
+    const billRate = capped ? cap : raw;
+    return { markup, billRate, profit: billRate - payRate, rec: markup >= BILL_REC_MIN && markup <= BILL_REC_MAX, capped };
   });
 }
 
-export interface BillMarginResult { marginPct: number; billRate: number; profitPerHr: number; dailyProfit: number; annualProfit: number; multiplier: number; }
+export interface BillMarginResult { marginPct: number; billRate: number; profitPerHr: number; dailyProfit: number; annualProfit: number; multiplier: number; capped: boolean; effectiveMarginPct: number; }
 // The slider: gross up at the chosen margin (clamped to the slider band) + the
-// dashboard's profit projections (10-hr day, 2,080-hr year).
-export function billAtMargin(payRate: number, marginPct: number): BillMarginResult {
+// dashboard's profit projections (10-hr day, 2,080-hr year). Sol-N1: the bill is
+// clamped to the contractual cap; when the clamp binds, `multiplier` is the
+// EFFECTIVE bill/pay ratio (the theoretical 1/(1-m) is unattainable).
+// `marginPct` stays the REQUESTED slider value; `effectiveMarginPct` is the true
+// (bill−pay)/bill — labels beside a clamped bill must use the latter (Sol R1).
+export function billAtMargin(payRate: number, marginPct: number, billCap: number | null = null): BillMarginResult {
   const m = Math.min(Math.max(marginPct, BILL_SLIDER_MIN), BILL_SLIDER_MAX);
-  const billRate = roundUp5(payRate / (1 - m / 100));
+  const cap = normalizeBillCap(billCap);
+  const raw = roundUp5(payRate / (1 - m / 100));
+  const capped = cap !== null && raw > cap;
+  const billRate = capped ? cap : raw;
   const profitPerHr = billRate - payRate;
-  return { marginPct: m, billRate, profitPerHr, dailyProfit: profitPerHr * 10, annualProfit: profitPerHr * 2080, multiplier: 1 / (1 - m / 100) };
+  const multiplier = capped && payRate > 0 ? billRate / payRate : 1 / (1 - m / 100);
+  const effectiveMarginPct = billRate > 0 ? (profitPerHr / billRate) * 100 : m;
+  return { marginPct: m, billRate, profitPerHr, dailyProfit: profitPerHr * 10, annualProfit: profitPerHr * 2080, multiplier, capped, effectiveMarginPct };
 }
 
-export interface CustomBillResult { valid: boolean; marginPct: number; profit: number; }
+export interface CustomBillResult { valid: boolean; marginPct: number; profit: number; overCap: boolean; }
 // Reverse calc: type a bill rate → its margin (as % of the bill, the dashboard's
-// formula) + profit/hr. Invalid (renders "--") for any non-positive bill.
-export function marginFromCustomBill(payRate: number, customBill: number): CustomBillResult {
-  if (!(customBill > 0)) return { valid: false, marginPct: 0, profit: 0 };
-  return { valid: true, marginPct: ((customBill - payRate) / customBill) * 100, profit: customBill - payRate };
+// formula) + profit/hr. Invalid (renders "--") for any non-positive bill. Sol-N1:
+// a typed bill above the contractual cap is flagged (never blocked — the
+// recruiter typed it deliberately, but the UI must say the contract forbids it).
+export function marginFromCustomBill(payRate: number, customBill: number, billCap: number | null = null): CustomBillResult {
+  if (!(customBill > 0)) return { valid: false, marginPct: 0, profit: 0, overCap: false };
+  const cap = normalizeBillCap(billCap);
+  return {
+    valid: true,
+    marginPct: ((customBill - payRate) / customBill) * 100,
+    profit: customBill - payRate,
+    overCap: cap !== null && customBill > cap,
+  };
 }
 
 // ── UI option lists ────────────────────────────────────────────────────────────

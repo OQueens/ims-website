@@ -210,6 +210,21 @@ $$('#priorities .todo__check').forEach((c) => {
   let pendingFactors: SimParseResult['factors'] | null = null;
 
   const usd = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+  // Exact-currency for cap-derived values (Sol R1): a fractional contractual cap
+  // ($187.50) must never round UP to a displayed number above the contract.
+  const usdExact = (n: number) => Number.isInteger(n)
+    ? usd(n)
+    : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Effective-margin precision (Sol R2+R3): collision-safe — raise precision
+  // until the printed effective % differs from the requested %, so a sub-1%
+  // clamp never prints as the very number it disclaims.
+  const effPctVs = (eff: number, requested: number) => {
+    for (const dp of [1, 2, 3]) {
+      const s = eff.toFixed(dp);
+      if (parseFloat(s) !== requested) return s.replace(/\.?0+$/, '');
+    }
+    return String(requested);
+  };
   const set = (id: string, text: string) => { const el = $('#' + id); if (el) el.textContent = text; };
   const setHTML = (id: string, html: string) => { const el = $('#' + id); if (el) el.innerHTML = html; };
   const toggle = (id: string, show: boolean) => { const el = $('#' + id); if (el) (el as HTMLElement).hidden = !show; };
@@ -221,16 +236,27 @@ $$('#priorities .todo__check').forEach((c) => {
   let bcCustomVal = '';
   // Shared tile updaters used by BOTH the delegated input handler and render()'s
   // restore path, so the math lives in one place.
+  // Sol-N1: the contractual bill cap rides on data-billcap (set by billCalcHTML)
+  // so BOTH paths recompute with the clamp — a slider drag can never repaint a
+  // bill above the cap after an innerHTML swap.
+  function bcBillCap(details: Element): number | null {
+    const v = (details as HTMLElement).dataset?.billcap;
+    return v ? +v : null; // billAtMargin/marginFromCustomBill normalize NaN/≤0 to "no cap"
+  }
   function bcApplyMargin(details: Element, pay: number, val: number, a: Adapter) {
-    const m = a.billAtMargin(pay, val);
+    const m = a.billAtMargin(pay, val, bcBillCap(details));
     const put = (sel: string, txt: string) => { const el = details.querySelector(sel); if (el) el.textContent = txt; };
     const s = details.querySelector('.sim-bc__slider') as HTMLInputElement | null;
     if (s && s.value !== String(m.marginPct)) s.value = String(m.marginPct);
-    put('.sim-bc__margin', `Margin: ${m.marginPct}%`);
-    put('.sim-bc__bill', usd(m.billRate));
-    put('.sim-bc__profit', usd(m.profitPerHr));
-    put('.sim-bc__daily', `${usd(m.dailyProfit)}/day (10hr)`);
-    put('.sim-bc__annual', usd(m.annualProfit));
+    // Requested vs effective (Sol R1): beside a cap-clamped bill the requested %
+    // is unattainable — the label must carry the true (bill−pay)/bill margin.
+    put('.sim-bc__margin', m.capped
+      ? `Margin: ${m.marginPct}% → ${effPctVs(m.effectiveMarginPct, m.marginPct)}% effective (cap)`
+      : `Margin: ${m.marginPct}%`);
+    put('.sim-bc__bill', usdExact(m.billRate));
+    put('.sim-bc__profit', usdExact(m.profitPerHr));
+    put('.sim-bc__daily', `${usdExact(m.dailyProfit)}/day (10hr)`);
+    put('.sim-bc__annual', usdExact(m.annualProfit));
     put('.sim-bc__mult', m.multiplier.toFixed(3) + 'x');
   }
   function bcApplyCustom(details: Element, pay: number, valStr: string, a: Adapter) {
@@ -238,8 +264,10 @@ $$('#priorities .todo__check').forEach((c) => {
     if (inp && inp.value !== valStr) inp.value = valStr;
     const out = details.querySelector('.sim-bc__custom-out');
     if (!out) return;
-    const c = a.marginFromCustomBill(pay, parseFloat(valStr));
-    out.textContent = valStr !== '' && c.valid ? `${c.marginPct.toFixed(1)}% · ${usd(c.profit)}/hr` : '—';
+    const c = a.marginFromCustomBill(pay, parseFloat(valStr), bcBillCap(details));
+    out.textContent = valStr !== '' && c.valid
+      ? `${c.marginPct.toFixed(1)}% · ${usd(c.profit)}/hr${c.overCap ? ' — exceeds rate cap' : ''}`
+      : '—';
   }
 
   // Out-of-order-paint guard: if the engine is still lazy-loading when several
@@ -265,8 +293,11 @@ $$('#priorities .todo__check').forEach((c) => {
     toggle('sim-callonly', false);
     toggle('sim-hourly', true);
     set('sim-pay', Math.round(q.payRate).toLocaleString('en-US'));
-    set('sim-bill', usd(q.billRate));
-    set('sim-bill-margin', String(controls.marginPct));
+    set('sim-bill', usdExact(q.billRate));
+    // "Bill rate · N%" must be numerically TRUE (Sol R1): when the contractual
+    // cap clamps the bill, the requested slider % is unattainable — show the
+    // effective margin (capNoteHTML names both explicitly).
+    set('sim-bill-margin', q.billCapApplied ? effPctVs(q.effectiveMarginPct, controls.marginPct) : String(controls.marginPct));
     set('sim-conf', q.confidence);
     set('sim-conf-data', q.confidenceData + ' data');
     set('sim-range', usd(q.specMin) + '–' + usd(q.specMax));
@@ -286,7 +317,7 @@ $$('#priorities .todo__check').forEach((c) => {
     const bc = $('#sim-billcalc');
     if (bc) {
       const open = (bc.querySelector('.sim-billcalc') as HTMLDetailsElement | null)?.open ?? false;
-      bc.innerHTML = billCalcHTML(q, a.billLadder(q.payRate), a.billAtMargin(q.payRate, controls.marginPct));
+      bc.innerHTML = billCalcHTML(q, a.billLadder(q.payRate, q.billCap), a.billAtMargin(q.payRate, controls.marginPct, q.billCap));
       const d = bc.querySelector('.sim-billcalc') as HTMLDetailsElement | null;
       if (d) {
         d.open = open;
