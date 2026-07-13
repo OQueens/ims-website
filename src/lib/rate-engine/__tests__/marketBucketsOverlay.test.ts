@@ -32,7 +32,7 @@ import type {
 // firebase. The wired read (loadMarketBucketRates) is covered in sim-live.test.ts.
 vi.mock('firebase/database', () => ({ ref: vi.fn(), get: vi.fn() }))
 
-import { applyMarketBucketsOverlay, DEFAULT_ANCHORABLE_RATE_TYPES } from '../marketRates'
+import { applyMarketBucketsOverlay, DEFAULT_ANCHORABLE_RATE_TYPES, isFreshBucket } from '../marketRates'
 import { SPECIALTIES, STATIC_SPECIALTY_RANGES } from '../specialties'
 
 // A market-typed (anchorable) rate type for the promote cases.
@@ -303,5 +303,214 @@ describe('applyMarketBucketsOverlay — robustness', () => {
 
   it('O12: DEFAULT_ANCHORABLE_RATE_TYPES is exactly the two market-typed rates', () => {
     expect([...DEFAULT_ANCHORABLE_RATE_TYPES].sort()).toEqual(['actual_paid_locum', 'advertised_clinician_pay'])
+  })
+})
+
+// =============================================================================
+// TIER 0 (2026-07-10 accuracy audit — Claude+Sol) — promotion ROBUSTNESS gates.
+// These make promotion STRICTER only (never looser), so they are quote-neutral on
+// today's (dark) overlay but are the prerequisite that makes un-darking via the
+// WS1 fleet SAFE: a wrong/gamed/implausible posterior must NOT move a real quote.
+//   O13/O14  plausibility band  — anchor implausibly far from the researched range
+//                                 (C9 upper / Sol-N4 lower) keeps the audited prior.
+//   O15      sentinel families  — 'unknown'/'unattributed' are NOT independent
+//                                 corroboration (C11).
+//   O16      confidence gate    — a bridge-labeled single_source bucket cannot
+//                                 anchor even if its family array looks corroborated
+//                                 (Sol-N5, corrupt/contradictory node).
+// =============================================================================
+describe('applyMarketBucketsOverlay — Tier 0 promotion robustness', () => {
+  it('O13: does NOT promote an anchor implausibly far ABOVE the researched max (C9)', () => {
+    const before = { ...SPECIALTIES.radiology } // curated max ~330
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 900, median: 900, confidence: 'multi_source' })) }),
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+    expect(SPECIALTIES.radiology.provenance).toBe(before.provenance)
+  })
+
+  it('O14: does NOT promote an anchor implausibly far BELOW the researched min (Sol-N4)', () => {
+    const before = { ...SPECIALTIES.radiology } // curated min ~185
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 50, median: 50, confidence: 'multi_source' })) }),
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  it('O13b: STILL promotes a hot-but-plausible anchor inside the plausibility band', () => {
+    // 400 is above the curated max (~330) but within 1.5x — legitimate hot market,
+    // must still anchor (the bound rejects only the implausible tail).
+    applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 400, median: 400, confidence: 'multi_source' })) }),
+    )
+    expect(SPECIALTIES.radiology.p70).toBe(400)
+    expect(SPECIALTIES.radiology.provenance).toBe('live')
+  })
+
+  it('O13c: honors a configurable maxAnchorFactor (opts)', () => {
+    const before = { ...SPECIALTIES.radiology }
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 400, median: 400, confidence: 'multi_source' })) }),
+      { maxAnchorFactor: 1.1 }, // 400 > 1.1*330 = 363 → rejected under a tighter bound
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  it('O15: does NOT count "unattributed" as an independent family (C11)', () => {
+    const before = { ...SPECIALTIES.radiology }
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ n_distinct: 5, source_families: ['amn', 'unattributed'], confidence: 'multi_source' })) }),
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  it('O15b: does NOT count "unknown" as an independent family (C11)', () => {
+    const before = { ...SPECIALTIES.radiology }
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ n_distinct: 5, source_families: ['amn', 'UNKNOWN '], confidence: 'multi_source' })) }),
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  it('O16: does NOT promote a bucket the bridge labeled single_source (Sol-N5)', () => {
+    const before = { ...SPECIALTIES.radiology }
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ n_distinct: 5, source_families: ['amn', 'exa'], confidence: 'single_source' })) }),
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  // Codex gate (2026-07-10): a corrupted manual_review_bimodal node with a FINITE
+  // mean must NOT anchor — deny-listing only single_source left this hole. The gate
+  // is an ALLOW-list of the two corroborated tiers (multi_source, zero_spread).
+  it('O16b: does NOT promote a finite-mean manual_review_bimodal bucket (Codex gate)', () => {
+    const before = { ...SPECIALTIES.radiology }
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ n_distinct: 5, source_families: ['amn', 'exa'], confidence: 'manual_review_bimodal', weighted_mean: 260, median: 260 })) }),
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  it('O16c: promotes multi_source AND zero_spread explicitly (allow-list positive controls)', () => {
+    applyMarketBucketsOverlay(result({ radiology: cell(MKT, bucket({ confidence: 'multi_source', weighted_mean: 300, median: 300 })) }))
+    expect(SPECIALTIES.radiology.p70).toBe(300)
+    applyMarketBucketsOverlay(result({ urology: cell(MKT, bucket({ confidence: 'zero_spread', weighted_mean: 300, median: 300 })) }))
+    expect(SPECIALTIES.urology.p70).toBe(300)
+  })
+
+  it('O13d: an invalid maxAnchorFactor (NaN) does NOT fail open — the default bound still rejects an implausible anchor (Codex gate)', () => {
+    const before = { ...SPECIALTIES.radiology }
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 900, median: 900, confidence: 'multi_source' })) }),
+      { maxAnchorFactor: NaN },
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  it('O14b: an invalid minAnchorFactor (0) does NOT fail open — the default lower bound still rejects a below-band anchor (Codex gate)', () => {
+    const before = { ...SPECIALTIES.radiology }
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 50, median: 50, confidence: 'multi_source' })) }),
+      { minAnchorFactor: 0 },
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  it('O14c: a configurable (valid) minAnchorFactor tightens the lower bound', () => {
+    const before = { ...SPECIALTIES.radiology } // min ~185
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 170, median: 170, confidence: 'multi_source' })) }),
+      { minAnchorFactor: 0.95 }, // 170 < 0.95*185 = 175.75 → rejected
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  it('O15c: two REAL families plus a sentinel STILL promotes (sentinel ignored, not disqualifying)', () => {
+    applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ n_distinct: 6, source_families: ['amn', 'exa', 'unattributed'], confidence: 'multi_source', weighted_mean: 300, median: 300 })) }),
+    )
+    expect(SPECIALTIES.radiology.p70).toBe(300)
+  })
+
+  it('O15d: an all-sentinel family array does NOT promote', () => {
+    const before = { ...SPECIALTIES.radiology }
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ n_distinct: 6, source_families: ['unknown', 'unattributed'], confidence: 'multi_source' })) }),
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  // Codex R2: factor validation must enforce SEMANTIC bounds, not just finite+positive.
+  it('O13e: an absurd maxAnchorFactor (MAX_VALUE) does NOT overflow the gate open (Codex R2)', () => {
+    const before = { ...SPECIALTIES.radiology }
+    const n = applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 900, median: 900, confidence: 'multi_source' })) }),
+      { maxAnchorFactor: Number.MAX_VALUE }, // overflow → must fall back to default 1.5, still reject 900
+    )
+    expect(n).toBe(0)
+    expect(SPECIALTIES.radiology.p70).toBe(before.p70)
+  })
+
+  it('O13f: a backwards maxAnchorFactor (<1) falls back to default, NOT rejecting an in-band anchor (Codex R2)', () => {
+    applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 300, median: 300, confidence: 'multi_source' })) }),
+      { maxAnchorFactor: 0.5 }, // < 1 is invalid → default 1.5 → 300 is in-band → promotes
+    )
+    expect(SPECIALTIES.radiology.p70).toBe(300)
+    expect(SPECIALTIES.radiology.provenance).toBe('live')
+  })
+
+  it('O14d: a backwards minAnchorFactor (>1) falls back to default, NOT rejecting an in-band anchor (Codex R2)', () => {
+    applyMarketBucketsOverlay(
+      result({ radiology: cell(MKT, bucket({ weighted_mean: 300, median: 300, confidence: 'multi_source' })) }),
+      { minAnchorFactor: 2 }, // > 1 is invalid → default 0.5 → 300 is in-band → promotes
+    )
+    expect(SPECIALTIES.radiology.p70).toBe(300)
+  })
+})
+
+// isFreshBucket future-skew bound (Sol-N6): a far-future lastUpdated is a
+// corrupted/mis-stamped write, NOT eternal freshness — reject it, else `now -
+// lastUpdated` goes negative and passes the ≤7-day window forever.
+describe('isFreshBucket — future-skew bound (Sol-N6)', () => {
+  const now = 1_700_000_000_000
+  const DAY = 86400000
+  it('REJECTS a far-future timestamp (would otherwise stay fresh indefinitely)', () => {
+    expect(isFreshBucket(now + 365 * DAY, now)).toBe(false)
+  })
+  it('accepts a fresh recent timestamp (1 day old)', () => {
+    expect(isFreshBucket(now - DAY, now)).toBe(true)
+  })
+  it('rejects a stale timestamp (>7 days old)', () => {
+    expect(isFreshBucket(now - 8 * DAY, now)).toBe(false)
+  })
+  it('tolerates minor clock skew (a minute ahead is still fresh)', () => {
+    expect(isFreshBucket(now + 60000, now)).toBe(true)
+  })
+  it('accepts exactly the 7-day-old boundary', () => {
+    expect(isFreshBucket(now - 7 * DAY, now)).toBe(true)
+  })
+  it('accepts exactly the 5-minute future-skew boundary', () => {
+    expect(isFreshBucket(now + 5 * 60 * 1000, now)).toBe(true)
+  })
+  it('rejects just past the 5-minute future-skew boundary', () => {
+    expect(isFreshBucket(now + 5 * 60 * 1000 + 1, now)).toBe(false)
+  })
+  it('rejects a non-finite / zero / non-number / Infinity lastUpdated', () => {
+    expect(isFreshBucket(0, now)).toBe(false)
+    expect(isFreshBucket(NaN, now)).toBe(false)
+    expect(isFreshBucket(Infinity, now)).toBe(false)
+    expect(isFreshBucket('x' as unknown, now)).toBe(false)
   })
 })
