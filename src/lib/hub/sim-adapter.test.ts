@@ -323,3 +323,183 @@ describe('sim-adapter — bill rate calculator (BillRateCalculator port)', () =>
     expect(marginFromCustomBill(400, NaN)).toMatchObject({ valid: false });
   });
 });
+
+// =============================================================================
+// Sol-N1 (Tier 1, 2026-07-10 accuracy audit): the DISPLAYED bill must never
+// exceed a contractual hourly rate cap. The engine caps PAY at 0.80×cap
+// (rateCalculator.ts hourly clamp), but the hub re-margins that pay at the
+// slider margin — roundUp5(200/0.78)=$260 displayed against a $250 cap. The
+// cap is a BILL cap (extractBillRateCap): every computed bill surface (main
+// quote, markup ladder, margin slider, custom bill) must respect it. Pay stays
+// EXACTLY the engine's output (parity invariant) — only the bill is clamped,
+// and the clamp is surfaced (billCapApplied) so the UI can show the effective
+// margin honestly.
+// =============================================================================
+describe('sim-adapter — Sol-N1 contractual bill cap', () => {
+  // A parsed assignment carrying an hourly rate cap. Manual controls can't set
+  // a cap (C3/C12) — the cap only ever arrives via PDF/freetext factors.
+  const cappedFactors = (cap: number, unit: 'hour' | 'unknown' | 'day' | 'shift' = 'hour') => ({
+    ...factorsFromControls(base({ specialtyKey: 'radiology', region: 'National', shift: 'day', urgency: 'Standard' })),
+    rateCap: { cap, unit, source: `Rate Cap $${cap}`, hasWarning: false },
+  });
+
+  it('N1: displayed bill never exceeds the cap when the engine capped pay ($250 cap can NOT display $260)', () => {
+    const f = cappedFactors(250);
+    const q = quoteFromFactors(f, 22);
+    // Premise: radiology's researched band sits above the cap → engine clamps pay to 0.80×250.
+    expect(q.payRate).toBe(200);
+    expect(q.payRate).toBe(calculateRate({ ...f, baseRate: SPECIALTIES.radiology.p70 }).payRate); // pay parity holds
+    // The defect: bill was roundUp5(200/0.78)=$260 — above the contractual cap.
+    expect(q.billRate).toBe(250);
+    expect(q.billRate).toBeLessThanOrEqual(250);
+    expect(q.billCapApplied).toBe(true);
+    expect(q.billCap).toBe(250);
+    expect(q.marginPerHr).toBe(50); // 250-200 — the honest (effective 20%) margin, not the slider's 22%
+  });
+
+  it('N1: cap clamps the bill even when the engine did NOT cap pay (high margin over-bills a sub-cap pay)', () => {
+    const f = cappedFactors(400); // capPay 320 > radiology pay → engine pay untouched
+    const q = quoteFromFactors(f, 35);
+    expect(q.capped).toBe(false);               // engine never fired…
+    expect(q.payRate).toBeGreaterThan(260);     // …but 35% margin on this pay busts the cap (pay/0.65 > 400)
+    expect(q.payRate).toBeLessThan(320);
+    expect(q.billRate).toBe(400);
+    expect(q.billCapApplied).toBe(true);
+  });
+
+  it('N1: a margin that fits under the cap is untouched (clamp binds only past the cap)', () => {
+    const f = cappedFactors(400);
+    const q = quoteFromFactors(f, 20);
+    expect(q.billRate).toBe(roundUp5(q.payRate / 0.80)); // ~360 < 400 → unclamped math
+    expect(q.billRate).toBeLessThan(400);
+    expect(q.billCapApplied).toBe(false);
+    expect(q.billCap).toBe(400); // cap still surfaced for the ladder/slider tools
+  });
+
+  it('N1: the contractual number beats roundUp5 (a non-multiple-of-5 cap stays exact)', () => {
+    const f = cappedFactors(248); // capPay 198.4 → engine pay 198; roundUp5(198/0.8)=250 > 248
+    const q = quoteFromFactors(f, 20);
+    expect(q.payRate).toBe(198);
+    expect(q.billRate).toBe(248); // the cap itself — NOT rounded up past the contract
+    expect(q.billCapApplied).toBe(true);
+  });
+
+  it('N1: no cap → behavior identical to before (billCap null, unclamped roundUp5 math)', () => {
+    const q = quoteFromControls(base({ specialtyKey: 'radiology', marginPct: 22 }));
+    expect(q.billCap).toBe(null);
+    expect(q.billCapApplied).toBe(false);
+    expect(q.billRate).toBe(roundUp5(q.payRate / 0.78));
+  });
+
+  it('N1: a day/shift-unit cap does NOT clamp the hourly bill (parity with the engine unit gate)', () => {
+    // The engine only applies hour/unknown-unit caps on the hourly path; a daily
+    // cap number is NOT an hourly bill bound (Tier 2 N7 owns unit honesty).
+    const q = quoteFromFactors(cappedFactors(2000, 'day'), 22);
+    expect(q.billCap).toBe(null);
+    expect(q.billCapApplied).toBe(false);
+    expect(q.billRate).toBe(roundUp5(q.payRate / 0.78));
+  });
+
+  it('N1: billLadder clamps every row to the cap and flags the clamped ones', () => {
+    const rows = billLadder(400, 520);
+    for (const r of rows) {
+      expect(r.billRate).toBeLessThanOrEqual(520);
+      expect(r.profit).toBe(r.billRate - 400);
+    }
+    expect(rows.find((r) => r.markup === 20)).toMatchObject({ billRate: 500, capped: false }); // under cap → untouched
+    expect(rows.find((r) => r.markup === 25)).toMatchObject({ billRate: 520, capped: true });  // 535 → clamped
+    expect(rows.find((r) => r.markup === 40)).toMatchObject({ billRate: 520, capped: true });  // 670 → clamped
+  });
+
+  it('N1: billLadder without a cap keeps the exact legacy rows (capped false everywhere)', () => {
+    for (const r of billLadder(400)) {
+      expect(r.billRate).toBe(roundUp5(400 / (1 - r.markup / 100)));
+      expect(r.capped).toBe(false);
+    }
+  });
+
+  it('N1: billAtMargin clamps to the cap and reports the EFFECTIVE multiplier', () => {
+    const m = billAtMargin(400, 40, 520);
+    expect(m.billRate).toBe(520);              // roundUp5(400/0.6)=670 → clamped
+    expect(m.capped).toBe(true);
+    expect(m.profitPerHr).toBe(120);
+    expect(m.dailyProfit).toBe(1200);
+    expect(m.annualProfit).toBe(249600);
+    expect(m.multiplier).toBeCloseTo(1.3, 5);  // 520/400 — the effective markup, not 1/(1-0.40)
+    const under = billAtMargin(400, 20, 520);
+    expect(under).toMatchObject({ billRate: 500, capped: false });
+    expect(under.multiplier).toBeCloseTo(1.25, 5);
+  });
+
+  it('N1: marginFromCustomBill flags a typed bill above the cap (overCap)', () => {
+    expect(marginFromCustomBill(400, 600, 520)).toMatchObject({ valid: true, overCap: true });
+    expect(marginFromCustomBill(400, 500, 520)).toMatchObject({ valid: true, overCap: false });
+    expect(marginFromCustomBill(400, 600)).toMatchObject({ valid: true, overCap: false }); // no cap → never flags
+  });
+
+  it('N1: call-only quotes carry billCap null (per-diem cap honesty is Tier 2/N7 scope)', () => {
+    const f = factorsFromControls(base({ specialtyKey: 'ob/gyn' }));
+    f.callOnly = { isCallOnly: true, source: 'manual', reason: null };
+    f.dayType = { key: 'weekday', source: 'manual' };
+    const q = quoteFromFactors(f, 22);
+    expect(q.isCallOnly).toBe(true);
+    expect(q.billCap).toBe(null);
+    expect(q.billCapApplied).toBe(false);
+  });
+
+  // ── Sol gate round 1 (2026-07-13) ──────────────────────────────────────────
+  it('Sol-R1: a FRACTIONAL cap clamps to its exact value — never a rounded-up number above the contract', () => {
+    // extractBillRateCap parseFloats "$187.50"-style caps; the clamped bill must
+    // BE 187.50, not 188 (Math.round would display a forbidden number).
+    const f = cappedFactors(187.5);
+    const q = quoteFromFactors(f, 22);
+    expect(q.payRate).toBe(150); // 0.80×187.5, engine Math.round
+    expect(q.billRate).toBe(187.5); // exact — not 188, not 190
+    expect(q.billCapApplied).toBe(true);
+  });
+
+  it('Sol-R1: the quote carries the cap UNIT and parse-warning state for honest rendering', () => {
+    const hour = quoteFromFactors(cappedFactors(250, 'hour'), 22);
+    expect(hour.billCapUnit).toBe('hour');
+    expect(hour.billCapWarning).toBe(false);
+    const unk = quoteFromFactors({
+      ...cappedFactors(250, 'unknown'),
+      rateCap: { cap: 250, unit: 'unknown', source: 'Rate Cap $250', hasWarning: true },
+    }, 22);
+    expect(unk.billCapUnit).toBe('unknown'); // engine treats unknown as hourly; UI must NOT assert "/hr"
+    expect(unk.billCapWarning).toBe(true);
+    const none = quoteFromControls(base({ specialtyKey: 'radiology' }));
+    expect(none.billCapUnit).toBe(null);
+    expect(none.billCapWarning).toBe(false);
+  });
+
+  it('Sol-R1: effectiveMarginPct is the TRUE (bill−pay)/bill margin, capped or not', () => {
+    const capped = quoteFromFactors(cappedFactors(250), 22);
+    expect(capped.effectiveMarginPct).toBeCloseTo(20, 5); // (250−200)/250 — not the slider 22
+    const free = quoteFromControls(base({ specialtyKey: 'radiology', marginPct: 22 }));
+    expect(free.effectiveMarginPct).toBeCloseTo(((free.billRate - free.payRate) / free.billRate) * 100, 5);
+  });
+
+  it('Sol-R1: billAtMargin exposes effectiveMarginPct (requested stays in marginPct)', () => {
+    const m = billAtMargin(400, 40, 520);
+    expect(m.marginPct).toBe(40);                       // requested (slider position)
+    expect(m.effectiveMarginPct).toBeCloseTo((120 / 520) * 100, 5); // truth
+    const u = billAtMargin(400, 25);
+    expect(u.effectiveMarginPct).toBeCloseTo(((u.billRate - 400) / u.billRate) * 100, 5);
+  });
+
+  it('Sol-R1: a parsed $0 cap stays engine-parity IGNORED (falsy gate) — documented, full manual-review is N7 scope', () => {
+    const f = { ...cappedFactors(250), rateCap: { cap: 0, unit: 'hour' as const, source: 'Rate Cap $0', hasWarning: false } };
+    const q = quoteFromFactors(f, 22);
+    expect(q.billCap).toBe(null); // engine rateCalculator.ts:689 `if (f.rateCap.cap && …)` ignores 0 the same way
+    expect(q.billCapApplied).toBe(false);
+  });
+
+  it('Sol-R2: a cap MENTION with no usable amount keeps its warning (cap:null + hasWarning must reach the quote)', () => {
+    // extractBillRateCap: "rate cap" text present but unparseable → {cap:null, unit:'unknown', hasWarning:true}.
+    const f = { ...cappedFactors(250), rateCap: { cap: null, unit: 'unknown' as const, source: 'pdf', hasWarning: true } };
+    const q = quoteFromFactors(f, 22);
+    expect(q.billCap).toBe(null);            // nothing to clamp with…
+    expect(q.billCapWarning).toBe(true);     // …but the ambiguity must not be erased (round-1 defect class)
+  });
+});

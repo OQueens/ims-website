@@ -169,7 +169,7 @@ for (const o of specOptions) {
         {/* Bill Rate Calculator — collapsed advanced tool (faithful dashboard
             port: markup ladder / margin slider / custom bill). Client re-renders
             this container's innerHTML on each quote change. */}
-        <div id="sim-billcalc" set:html={billCalcHTML(q0, billLadder(q0.payRate), billAtMargin(q0.payRate, q0.marginPct))}></div>
+        <div id="sim-billcalc" set:html={billCalcHTML(q0, billLadder(q0.payRate, q0.billCap), billAtMargin(q0.payRate, q0.marginPct, q0.billCap))}></div>
       </div>
 
       {/* Call-only / per-diem surface — client-rendered after a call-only parse.
