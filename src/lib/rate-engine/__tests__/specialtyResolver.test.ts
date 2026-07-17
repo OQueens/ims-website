@@ -585,6 +585,12 @@ describe('Sol R11 — unconsumed physician beside a provider marker escalates', 
     expect(mapSpecialty('ACNP').key).toBe('np/pa (specialty)') // abbreviation control holds
   })
 
+  it('an explicit job axis beats the acute-title fallback (R35)', () => {
+    expect(mapSpecialty('Acute Care Nurse Practitioner - Hospitalist').key).toBe('np/pa (hospitalist)')
+    expect(mapSpecialty('ACNP - Hospitalist').key).toBe('np/pa (hospitalist)')
+    expect(parseFreetextInput('acute care nurse practitioner hospitalist coverage').specialty?.key).toBe('np/pa (hospitalist)')
+  })
+
   it('a role-list comma carries coordination into physician windows too (R32)', () => {
     expect(parseFreetextInput('hospitalist, pa are both needed for coverage').specialty).toBeNull()
     // physician specialty + generic MD credential is ONE role (an

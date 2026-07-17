@@ -348,10 +348,6 @@ const NPPA_CELLS: ReadonlyArray<{ cell: string; tokens: ReadonlySet<string> }> =
   { cell: 'np/pa (hospitalist)', tokens: new Set(['hospitalist']) },
   { cell: 'np/pa (neonatology)', tokens: new Set(['neonatology', 'nicu']) },
   { cell: 'np/pa (surgery)', tokens: new Set(['surgery', 'surgical']) },
-  // 'acute' = the spelled-out ACNP/AGACNP axis ("Acute Care Nurse
-  // Practitioner") — must land on the SAME specialty cell as the credential
-  // abbreviations, never the primary-care fallback (Sol R34).
-  { cell: 'np/pa (specialty)', tokens: new Set(['acute']) },
 ]
 
 /** Tokens that mean the np/pa PRIMARY CARE cell rather than a specialty cell. */
@@ -540,6 +536,14 @@ function resolveProviderClass(tokenList: ReadonlyArray<string>): ProviderResolut
   const specialtyAxis = rest.filter((t) => !NPPA_PRIMARY_TOKENS.has(t) && TAXONOMY_TOKENS.has(t))
   if (specialtyAxis.length > 0) {
     if (physicianConflict(new Set(specialtyAxis))) return { blocked: true }
+    return { key: 'np/pa (specialty)' }
+  }
+  // 'acute' = the spelled-out ACNP/AGACNP axis ("Acute Care Nurse
+  // Practitioner") — a FALLBACK exactly like the credential abbreviations,
+  // never a peer cell: an explicit job axis wins first ("Acute Care Nurse
+  // Practitioner - Hospitalist" prices np/pa (hospitalist); Sol R34/R35).
+  if (rest.includes('acute')) {
+    if (physicianConflict(new Set())) return { blocked: true }
     return { key: 'np/pa (specialty)' }
   }
   if (physicianConflict(new Set())) return { blocked: true }
