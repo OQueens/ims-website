@@ -585,6 +585,15 @@ describe('Sol R11 — unconsumed physician beside a provider marker escalates', 
     expect(mapSpecialty('ACNP').key).toBe('np/pa (specialty)') // abbreviation control holds
   })
 
+  it('spelled-out APP titles let a later axis resolve (R36)', () => {
+    const app = parseFreetextInput('advanced practice provider inpatient hospitalist needed in ohio')
+    expect(app.specialty?.key).toBe('np/pa (hospitalist)')
+    expect(app.state?.code).toBe('OH')
+    expect(mapSpecialty('Advanced Practice Provider - Hospitalist').key).toBe('np/pa (hospitalist)') // field parity holds
+    expect(parseFreetextInput('advanced practice provider needed').specialty?.key).toBe('np/pa (primary care)')
+    expect(parseFreetextInput('crna advanced practice coverage').specialty?.key).toBe('crna') // crna control holds
+  })
+
   it('an explicit job axis beats the acute-title fallback (R35)', () => {
     expect(mapSpecialty('Acute Care Nurse Practitioner - Hospitalist').key).toBe('np/pa (hospitalist)')
     expect(mapSpecialty('ACNP - Hospitalist').key).toBe('np/pa (hospitalist)')

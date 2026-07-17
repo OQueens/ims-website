@@ -316,6 +316,13 @@ const PROVIDER_PROFILES: ReadonlyArray<{ family: 'crna' | 'caa' | 'nppa'; tokens
   { family: 'nppa', tokens: ['physician', 'assistant'] },
 ]
 
+/** Spelled-out APP title. WEAK provider evidence (Sol R36): alone it is the
+ *  np/pa family ("advanced practice provider inpatient hospitalist" → np/pa
+ *  (hospitalist)), but beside a REAL provider marker it is decoration on the
+ *  same person — a CRNA IS an advanced-practice provider — never a second
+ *  family (mirrors the R7 'CRNA, APRN' exemption). */
+const APP_TITLE: ReadonlyArray<string> = ['advanced', 'practice']
+
 /** NP credential tokens that IMPLY a cell by themselves (Sol R2 F1 — these
  *  fail-open into physician cells otherwise: "Family Medicine - FNP" priced
  *  the physician). The credential is family evidence PLUS a default cell; an
@@ -406,6 +413,15 @@ function resolveProviderClass(tokenList: ReadonlyArray<string>): ProviderResolut
       if (family === null) family = p.family
       if (family === p.family) p.tokens.forEach((t) => consumed.add(t))
     }
+  }
+  // WEAK spelled-out APP title: establishes the np/pa family only when no
+  // real marker did; beside one it is consumed as decoration (Sol R36).
+  if (adjacentRun(APP_TITLE)) {
+    if (family === null) {
+      family = 'nppa'
+      familiesPresent.add('nppa')
+    }
+    APP_TITLE.forEach((t) => consumed.add(t))
   }
   // Distinct provider families are DIFFERENT priced cells ("CRNA/CAA",
   // "NP and CRNA") — never silently pick the first; escalate (Sol R7).
