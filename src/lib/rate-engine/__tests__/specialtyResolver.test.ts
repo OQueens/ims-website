@@ -585,6 +585,13 @@ describe('Sol R11 — unconsumed physician beside a provider marker escalates', 
     expect(mapSpecialty('ACNP').key).toBe('np/pa (specialty)') // abbreviation control holds
   })
 
+  it('midwife markers block every provider default — no midwifery cell exists (R37)', () => {
+    expect(mapSpecialty('Advanced Practice Provider - CNM')).toMatchObject(ESCALATE)
+    expect(mapSpecialty('NP - CNM')).toMatchObject(ESCALATE)
+    expect(parseFreetextInput('advanced practice provider certified nurse midwife needed').specialty).toBeNull()
+    expect(mapSpecialty('CNM')).toMatchObject(ESCALATE) // bare-CNM pin holds
+  })
+
   it('spelled-out APP titles let a later axis resolve (R36)', () => {
     const app = parseFreetextInput('advanced practice provider inpatient hospitalist needed in ohio')
     expect(app.specialty?.key).toBe('np/pa (hospitalist)')
