@@ -576,6 +576,15 @@ describe('Sol R11 — unconsumed physician beside a provider marker escalates', 
     expect(parseFreetextInput('crna, pa both are needed').specialty).toBeNull()
   })
 
+  it('spelled-out ACNP/AGACNP titles land on the specialty cell (R34)', () => {
+    expect(mapSpecialty('Acute Care Nurse Practitioner').key).toBe('np/pa (specialty)')
+    expect(mapSpecialty('Adult-Gerontology Acute Care Nurse Practitioner').key).toBe('np/pa (specialty)')
+    const ft = parseFreetextInput('acute care nurse practitioner needed in ohio')
+    expect(ft.specialty?.key).toBe('np/pa (specialty)')
+    expect(ft.state?.code).toBe('OH')
+    expect(mapSpecialty('ACNP').key).toBe('np/pa (specialty)') // abbreviation control holds
+  })
+
   it('a role-list comma carries coordination into physician windows too (R32)', () => {
     expect(parseFreetextInput('hospitalist, pa are both needed for coverage').specialty).toBeNull()
     // physician specialty + generic MD credential is ONE role (an
