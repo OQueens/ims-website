@@ -590,6 +590,11 @@ describe('Sol R11 — unconsumed physician beside a provider marker escalates', 
     expect(mapSpecialty('NP - CNM')).toMatchObject(ESCALATE)
     expect(parseFreetextInput('advanced practice provider certified nurse midwife needed').specialty).toBeNull()
     expect(mapSpecialty('CNM')).toMatchObject(ESCALATE) // bare-CNM pin holds
+    // credential-only evidence is covered too (guard runs after the
+    // credential loop; Sol R38)
+    expect(mapSpecialty('APRN-CNM')).toMatchObject(ESCALATE)
+    expect(parseFreetextInput('aprn-cnm needed').specialty).toBeNull()
+    expect(mapSpecialty('APRN - Cardiology').key).toBe('np/pa (specialty)') // control holds
   })
 
   it('spelled-out APP titles let a later axis resolve (R36)', () => {

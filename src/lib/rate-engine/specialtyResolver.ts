@@ -426,17 +426,6 @@ function resolveProviderClass(tokenList: ReadonlyArray<string>): ProviderResolut
   // Distinct provider families are DIFFERENT priced cells ("CRNA/CAA",
   // "NP and CRNA") — never silently pick the first; escalate (Sol R7).
   if (familiesPresent.size > 1) return { blocked: true }
-  // CNM / midwifery has NO priced cell (deliberately — see the
-  // NPPA_CREDENTIAL_CELLS note): a midwife marker beside ANY provider
-  // evidence blocks, so neither the weak APP title nor a real NP marker can
-  // default it into an np/pa band ("Advanced Practice Provider - CNM",
-  // "NP - CNM" escalate; Sol R37).
-  if (
-    family !== null &&
-    tokenList.some((t) => t === 'cnm' || t === 'midwife' || t === 'midwives' || t === 'midwifery')
-  ) {
-    return { blocked: true }
-  }
   const credentialsPresent = Object.keys(NPPA_CREDENTIAL_CELLS).filter((cred) => tokens.has(cred))
   // Competing credential-implied cells ("FNP and PMHNP") are a conflict, not a
   // declaration-order pick; same-cell combinations ("ACNP/AGACNP") are fine.
@@ -448,6 +437,18 @@ function resolveProviderClass(tokenList: ReadonlyArray<string>): ProviderResolut
       consumed.add(cred)
       credentialCell = credentialCell ?? NPPA_CREDENTIAL_CELLS[cred]
     }
+  }
+  // CNM / midwifery has NO priced cell (deliberately — see the
+  // NPPA_CREDENTIAL_CELLS note): a midwife marker beside ANY provider
+  // evidence blocks, so no marker, weak APP title, or bare CREDENTIAL can
+  // default it into an np/pa band ("Advanced Practice Provider - CNM",
+  // "NP - CNM", "APRN-CNM" escalate). Runs AFTER credential-family
+  // establishment so credential-only evidence is covered too (Sol R37/R38).
+  if (
+    family !== null &&
+    tokenList.some((t) => t === 'cnm' || t === 'midwife' || t === 'midwives' || t === 'midwifery')
+  ) {
+    return { blocked: true }
   }
   // An UNCONSUMED 'physician'/'doctor' beside a provider marker is explicit
   // role coordination ("Emergency Medicine Physician/PA", "Doctors/CRNA") —
