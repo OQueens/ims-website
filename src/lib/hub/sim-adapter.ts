@@ -179,13 +179,34 @@ function controlsFromFactors(f: RateFactors, marginPct: number): SimControls {
   };
 }
 
-// Parse LocumSmart PDF text → full factors + control reflection. Returns null
-// when no real specialty was resolved (the engine's unrecognized fallback) so
-// the UI can say "couldn't read it" instead of asserting a default specialty.
-export function simParseAssignment(text: string, marginPct = 22): SimParseResult | null {
+/** Typed manual-escalation result: the resolver refused to price the sheet's
+ *  specialty (source 'default'). Carries the phrase it could not price so the
+ *  UI can NAME it (Zach §6, 2026-07-13) instead of a generic "couldn't read
+ *  it" — a sheet naming "Radiation Oncology" reads very differently from a
+ *  sheet that named nothing. */
+export interface SimParseEscalation {
+  escalated: true;
+  unresolvedSpecialty: string | null;
+}
+
+export function isSimParseEscalation(
+  r: SimParseResult | SimParseEscalation | null,
+): r is SimParseEscalation {
+  return r !== null && 'escalated' in r;
+}
+
+function escalationFrom(f: RateFactors): SimParseEscalation {
+  return { escalated: true, unresolvedSpecialty: f.specialty.unresolvedRaw ?? null };
+}
+
+// Parse LocumSmart PDF text → full factors + control reflection. Returns a
+// typed escalation when no real specialty was resolved (the engine's
+// unrecognized fallback) so the UI can name the phrase instead of asserting a
+// default specialty.
+export function simParseAssignment(text: string, marginPct = 22): SimParseResult | SimParseEscalation | null {
   const parsed = parseLocumsmartAssignment(text);
   const f = initFactors(parsed);
-  if (f.specialty.source === 'default') return null;
+  if (f.specialty.source === 'default') return escalationFrom(f);
   return {
     factors: f,
     controls: controlsFromFactors(f, marginPct),
@@ -199,12 +220,14 @@ export function simParseAssignment(text: string, marginPct = 22): SimParseResult
 }
 
 // Freetext path ("CRNA nights in Houston, TX") — mirrors the dashboard's
-// freetext entry. Returns null when no specialty is recognized.
-export function simParseFreetext(text: string, marginPct = 22): SimParseResult | null {
+// freetext entry. Returns null when no specialty is recognized (the UI already
+// echoes the user's own text); the escalation branch mirrors the PDF path for
+// safety but is unreachable today (freetext resolves keys, never defaults).
+export function simParseFreetext(text: string, marginPct = 22): SimParseResult | SimParseEscalation | null {
   const parsed = buildParsedFromFreetext(text);
   if (!parsed) return null;
   const f = initFactors(parsed);
-  if (f.specialty.source === 'default') return null;
+  if (f.specialty.source === 'default') return escalationFrom(f);
   return {
     factors: f,
     controls: controlsFromFactors(f, marginPct),
@@ -286,7 +309,11 @@ function weakerConfidence(a: ConfidenceLevel, b: ConfidenceLevel): ConfidenceLev
 }
 // Names the LIMITING factor honestly (geography missing vs lightly-researched band).
 function confidenceReasonFor(factors: RateFactors, tier: string | undefined): string {
-  if (factors.specialty.source === 'default') return 'Specialty not recognized — quote manually.';
+  if (factors.specialty.source === 'default') {
+    return factors.specialty.unresolvedRaw
+      ? 'Specialty “' + factors.specialty.unresolvedRaw + '” not recognized. Quote manually.'
+      : 'Specialty not recognized — quote manually.';
+  }
   if (factors.state.source === 'default') return 'Geography not specified — national estimate.';
   if (tier === 'medium') return 'Geography identified; the rate band for this specialty is moderately researched — treat as an estimate.';
   if (tier !== 'high') return 'Geography identified, but the rate band for this specialty is lightly researched — treat as a rough estimate.';

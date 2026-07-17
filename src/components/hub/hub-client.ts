@@ -508,6 +508,18 @@ $$('#priorities .todo__check').forEach((c) => {
         const { simParseAssignment } = await loadAdapter();
         if (myGen !== parseGen) return; // superseded by a newer drop / freetext
         const r = simParseAssignment(text, controls.marginPct);
+        if (r && 'escalated' in r) {
+          // Manual escalation: name the phrase the engine couldn't price
+          // (textContent sink — the PDF-supplied string is inert here).
+          report(
+            file.name,
+            r.unresolvedSpecialty
+              ? 'Specialty “' + r.unresolvedSpecialty + '” isn’t in the rate engine yet. Set the inputs manually and we’ll price it.'
+              : 'Couldn’t read this as a LocumSmart sheet. Set the inputs manually.',
+            null,
+          );
+          return;
+        }
         if (!r) { report(file.name, 'Couldn’t read this as a LocumSmart sheet. Set the inputs manually.', null); return; }
         applyParse(r);
         report(file.name, r.assignmentNumber ? 'Pre-filled from ' + r.assignmentNumber : 'Pre-filled from PDF', r);
@@ -542,6 +554,16 @@ $$('#priorities .todo__check').forEach((c) => {
       const { simParseFreetext } = await loadAdapter();
       if (myGen !== parseGen) return; // superseded by a newer parse
       const r = simParseFreetext(text, controls.marginPct);
+      if (r && 'escalated' in r) {
+        report(
+          '“' + text + '”',
+          r.unresolvedSpecialty
+            ? 'Specialty “' + r.unresolvedSpecialty + '” isn’t in the rate engine yet. Set the inputs manually and we’ll price it.'
+            : 'Couldn’t identify a specialty. Try e.g. “CRNA nights in Houston, TX”.',
+          null,
+        );
+        return;
+      }
       if (!r) { report('“' + text + '”', 'Couldn’t identify a specialty. Try e.g. “CRNA nights in Houston, TX”.', null); return; }
       applyParse(r);
       report('“' + text + '”', 'Parsed from your description', r);

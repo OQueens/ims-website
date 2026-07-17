@@ -3,7 +3,7 @@ import {
   factorsFromControls, quoteFromControls, quoteFromFactors,
   simParseAssignment, simParseFreetext, defaultControls,
   simSpecialtyOptions, simShiftOptions, simUrgencyOptions, simRegionOptions,
-  simSpecialtyKeyForSlug, DEFAULT_SIM_SPECIALTY, type SimControls,
+  simSpecialtyKeyForSlug, DEFAULT_SIM_SPECIALTY, type SimControls, type SimParseResult,
   billLadder, billAtMargin, marginFromCustomBill,
 } from './sim-adapter';
 import { SPECIALTIES, STATE_MULT, calculateRate, roundUp5 } from '../rate-engine/index';
@@ -106,7 +106,7 @@ describe('sim-adapter — LocumSmart PDF / freetext → full factors (dashboard-
   ].join('\n');
 
   it('parses specialty, exact state, shift + reflects them in the controls', () => {
-    const r = simParseAssignment(SAMPLE)!;
+    const r = simParseAssignment(SAMPLE) as SimParseResult;
     expect(r).not.toBeNull();
     expect(r.factors.specialty.key).toBe('anesthesiology');
     expect(r.factors.state.code).toBe('WY');
@@ -119,23 +119,26 @@ describe('sim-adapter — LocumSmart PDF / freetext → full factors (dashboard-
   });
 
   it('the parsed factors quote through the engine (full fidelity, incl. the exact state geo)', () => {
-    const r = simParseAssignment(SAMPLE)!;
+    const r = simParseAssignment(SAMPLE) as SimParseResult;
     const q = quoteFromFactors(r.factors, 22);
     expect(q.payRate).toBe(calculateRate(r.factors).payRate); // identical to the dashboard
     expect(q.payRate).toBeGreaterThan(0);
   });
 
   it('freetext path mirrors the dashboard ("CRNA nights in Houston, TX")', () => {
-    const r = simParseFreetext('CRNA nights in Houston, TX')!;
+    const r = simParseFreetext('CRNA nights in Houston, TX') as SimParseResult;
     expect(r).not.toBeNull();
     expect(r.factors.specialty.key).toBe('crna');
     expect(r.factors.state.code).toBe('TX');
     expect(r.factors.shift.key).toBe('night');
   });
 
-  it('returns null when no specialty was resolved (never asserts a default)', () => {
-    expect(simParseAssignment('')).toBeNull();
-    expect(simParseAssignment('unrelated prose, no fields here')).toBeNull();
+  it('never asserts a default specialty: unresolved PDFs escalate (typed), unresolved freetext stays null', () => {
+    // Contract change with resolver v2 (2026-07-13): the PDF path returns a
+    // typed SimParseEscalation instead of null so the UI can name the phrase;
+    // a quote is still never produced from the default sentinel.
+    expect(simParseAssignment('')).toEqual({ escalated: true, unresolvedSpecialty: null });
+    expect(simParseAssignment('unrelated prose, no fields here')).toEqual({ escalated: true, unresolvedSpecialty: null });
     expect(simParseFreetext('hello there')).toBeNull();
   });
 });
@@ -167,7 +170,7 @@ describe('sim-adapter — call-only path stays honest', () => {
       'Assignment Details:',
       'Coverage Type: Call Only',
     ].join('\n');
-    const r = simParseAssignment(CALL_PDF)!;
+    const r = simParseAssignment(CALL_PDF) as SimParseResult;
     expect(r).not.toBeNull();
     expect(r.isCallOnly).toBe(true);
     expect(r.factors.callOnly.isCallOnly).toBe(true);
@@ -180,7 +183,7 @@ describe('sim-adapter — call-only path stays honest', () => {
       'Memorial - Casper (WY)',
       'Assignment Details:',
       'Schedule: Day shift',
-    ].join('\n'))!;
+    ].join('\n')) as SimParseResult;
     expect(r.isCallOnly).toBe(false);
   });
 
@@ -198,7 +201,7 @@ describe('sim-adapter — call-only path stays honest', () => {
       'Practice Setting: Academic teaching hospital',
       'Call Type: On Call',
     ].join('\n');
-    const r = simParseAssignment(PDF)!;
+    const r = simParseAssignment(PDF) as SimParseResult;
     expect(r.factors.facility.key).toBe('academic');
     expect(r.factors.call.hasCall).toBe(true);
     const full = quoteFromFactors(r.factors, 22).payRate;          // faithful (dashboard-identical)
@@ -501,5 +504,20 @@ describe('sim-adapter — Sol-N1 contractual bill cap', () => {
     const q = quoteFromFactors(f, 22);
     expect(q.billCap).toBe(null);            // nothing to clamp with…
     expect(q.billCapWarning).toBe(true);     // …but the ambiguity must not be erased (round-1 defect class)
+  });
+});
+
+describe('escalation names the unrecognized phrase (resolver v2, Zach §6 2026-07-13)', () => {
+  it('PDF path returns a typed escalation carrying the phrase the sheet named', () => {
+    const text = ['Assignment Number: B-77120', 'Specialty: Radiation Oncology'].join('\n');
+    expect(simParseAssignment(text)).toEqual({ escalated: true, unresolvedSpecialty: 'Radiation Oncology' });
+  });
+
+  it('PDF path escalates WITHOUT a phrase when the sheet named none', () => {
+    expect(simParseAssignment('completely unstructured junk')).toEqual({ escalated: true, unresolvedSpecialty: null });
+  });
+
+  it('freetext with no recognizable specialty still returns null (structural failure, phrase already echoed by the UI)', () => {
+    expect(simParseFreetext('oncology - radiation therapy in denver')).toBeNull();
   });
 });

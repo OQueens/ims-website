@@ -6,7 +6,7 @@
 // Used for free-text input parsing to match specialties, states, cities
 // ============================================================
 
-import { SPECIALTIES, SPECIALTY_ALIASES } from './specialties';
+import { resolveSpecialtyPhrase } from './specialtyResolver';
 import { STATE_MULT, STATE_NAMES, METRO_CITIES } from './stateData';
 import { GSA_OVERRIDES } from './callRates';
 import type { FuzzySpecialtyMatch, FuzzyStateMatch, FuzzyCityMatch } from './types';
@@ -57,32 +57,21 @@ function looseMatch(candidate: string, token: string): boolean {
 }
 
 /**
- * Fuzzy match a token against specialty names and aliases.
- * Exact equality wins. Otherwise one-way substring (token contained in
- * candidate key) with a 4-char floor on the token. Returns the SHORTEST
- * matching key when multiple candidates qualify (most specific wins —
- * "anesth" → "anesthesiology" rather than "general anesthesiology").
+ * Match a phrase against specialty names and aliases.
+ * Exact equality wins ('exact'). Otherwise the token-consumption resolver
+ * (specialtyResolver.ts) requires FULL consumption — every non-noise token in
+ * the phrase must be accounted for by the matched candidate (plus the alias
+ * UPGRADE rule), so "crna dallas tx" no longer matches 'crna' and swallows the
+ * location tokens. Replaced the one-way-substring/shortest-key scan, whose
+ * consumption blindness routed 'endo' ⊂ "endovascular" → endocrinology and
+ * whose shortest-key tie-break invented np/pa → np/pa (surgery).
  *
- * `matchKind` discriminates exact vs substring — callers that need to know
+ * `matchKind` discriminates exact vs non-exact — callers that need to know
  * whether the user typed the canonical form (vs. abbreviated) must read
  * `matchKind`, not `distance` (which is always 0 since Levenshtein is gone).
  */
 export function fuzzyMatchSpecialty(token: string): FuzzySpecialtyMatch | null {
-  if (!token) return null;
-  if (SPECIALTIES[token]) return { key: token, distance: 0, matchKind: 'exact' };
-  if (SPECIALTY_ALIASES[token]) return { key: SPECIALTY_ALIASES[token], distance: 0, matchKind: 'exact' };
-  if (token.length < MIN_TARGET_LEN) return null;
-
-  let best: string | null = null;
-  let bestLen = Infinity;
-  const allKeys = [...Object.keys(SPECIALTIES), ...Object.keys(SPECIALTY_ALIASES)];
-  for (const c of allKeys) {
-    if (looseMatch(c, token) && c.length < bestLen) {
-      bestLen = c.length;
-      best = SPECIALTIES[c] ? c : SPECIALTY_ALIASES[c];
-    }
-  }
-  return best ? { key: best, distance: 0, matchKind: 'substring' } : null;
+  return resolveSpecialtyPhrase(token);
 }
 
 /**
