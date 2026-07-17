@@ -14440,7 +14440,7 @@
       "kind": "fuzzy-spec",
       "input": "np/pa",
       "output": {
-        "key": "np/pa (surgery)",
+        "key": "np/pa (primary care)",
         "distance": 0,
         "matchKind": "substring"
       }

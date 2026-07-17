@@ -8,7 +8,8 @@
 // ============================================================
 
 import { STATE_MULT } from './stateData';
-import { fuzzyMatchSpecialty, fuzzyMatchState, fuzzyMatchCity, FILLER_WORDS } from './fuzzyMatch';
+import { fuzzyMatchState, fuzzyMatchCity, FILLER_WORDS } from './fuzzyMatch';
+import { resolveFreetextWindow, normalizeDottedCredentials } from './specialtyResolver';
 import type {
   ParsedAssignment,
   Facility,
@@ -220,6 +221,25 @@ export function regexFallbackExtract(text: string): ParsedAssignment {
 }
 
 // === FREE-TEXT PARSER ===
+
+/** The comma-role-list construction "<role>, pa|md [aux] both [aux]
+ *  needed|required|…" — LEFT-ANCHORED to a recognized role word right before
+ *  the comma (Sol R33): "crna, pa both needed" is a role list; "two
+ *  hospitalists in Philadelphia, PA are both needed" keeps its LOCATION comma
+ *  because 'philadelphia' is no role. */
+const ROLE_WORD_SRC = String.raw`(?:crnas?|caas?|nps?|pas?|aprns?|fnps?|pmhnps?|nnps?|acnps?|agacnps?|whnps?|practitioners?|assistants?|anesthetists?|hospitalists?|intensivists?|nocturnists?|laborists?|physicians?|doctors?|mds?|dos?|[a-z]+(?:ologists?|iatrists?|surgeons?))`;
+const ROLE_LIST_SRC = String.raw`\b${ROLE_WORD_SRC},\s*(pa|md)(?=\s+(?:(?:are|is|was|were)\s+)?both\s+(?:(?:are|is|was|were)\s+)?(?:needed|required|requested|welcome|considered)\b)`;
+
+/** Terminal 'in/near md|pa' = Maryland/Pennsylvania (see usage below). One
+ *  source string so the detector and the `cleaned` stripper can never drift
+ *  apart (Sol R16). Exactly the two codes that double as provider-role
+ *  evidence: bare 'md' feeds the credential-coordination guard and bare 'pa'
+ *  registers a second provider FAMILY ('CRNA in PA' must price crna +
+ *  Pennsylvania, never escalate as CRNA/PA coordination; Sol R17). 'id'
+ *  verified unaffected (no provider family), other codes never block. */
+const LOC_STATE_SRC =
+  String.raw`\b(?:in|near)\s+(md|pa)(?=\s*$|\s*[,.;)!?"(”]|\s+[-–—]\s|\s+\d|\s+for\b)`;
+
 export function parseFreetextInput(raw: string): FreetextParseResult {
   const input = raw.toLowerCase().trim();
   const result: FreetextParseResult = {
@@ -227,13 +247,34 @@ export function parseFreetextInput(raw: string): FreetextParseResult {
     shift: null, call: null, duration: null, holiday: false, corrections: [],
   };
 
+  // Provider-list evidence: "<role>, pa/md [aux] both [aux] needed" is a ROLE
+  // list ("CRNA, PA both needed"), not a location code — leave the token for
+  // the resolver's multi-family escalation instead of consuming it as a state
+  // (Sol R29). TIGHT grammar (R30/R31) + role-word LEFT ANCHOR (R33) so
+  // "Philadelphia, PA are both needed" and shift-'both' text stay geography.
+  const commaRoleList = new RegExp(ROLE_LIST_SRC).test(input);
+
   // State code match (e.g., ", TX" or ", tx")
   const stateCodeMatch = input.match(/,\s*([a-z]{2})(?:\s|$|,|\.|-)/);
-  if (stateCodeMatch) {
+  if (stateCodeMatch && !(commaRoleList && /^(pa|md)$/.test(stateCodeMatch[1]))) {
     const sm = fuzzyMatchState(stateCodeMatch[1]);
     if (sm) {
       result.state = sm;
     }
+  }
+
+  // TERMINAL 'in/near MD|PA' is a STATE, never a provider role: consume it
+  // here and strip it below (in `cleaned`) BEFORE tokenization, so the
+  // resolver can't read it as a second role ('physician assistant in md' and
+  // 'crna in pa' must keep quoting; Sol R14/R17). Terminal = end of input,
+  // closing punctuation, a spaced dash, a digit ('crna in md 8 weeks'), or
+  // 'for' before a duration (Sol R16). A possessive ("in md's office") or a
+  // continuing word ('in md-led care team', 'near md anderson') is NOT a
+  // state and falls through to the token path instead (Sol R15/R16).
+  const locState = input.match(new RegExp(LOC_STATE_SRC));
+  if (!result.state && locState) {
+    const sm = fuzzyMatchState(locState[1]);
+    if (sm) result.state = sm;
   }
 
   // Duration patterns
@@ -269,38 +310,64 @@ export function parseFreetextInput(raw: string): FreetextParseResult {
   // Holiday
   if (/\bholiday\b/.test(input)) result.holiday = true;
 
-  // Clean input for token-based matching
-  const cleaned = input
-    .replace(/,\s*[a-z]{2}(?:\s|$)/g, ' ')
+  // Clean input for token-based matching. The rate-cap phrase is stripped
+  // BEFORE tokenization: it is metadata (consumed by the cap extractor), and
+  // its 'cap' token collides with the child-psychiatry alias — today that
+  // could quote child psychiatry off "rate cap 300", and under the resolver's
+  // whole-field guard it would block a real specialty match (golden parse
+  // case "ob/gyn … rate cap of $300/hr").
+  const cleaned = normalizeDottedCredentials(input)
+    // '&' is a coordinator, not punctuation: keep it as the word 'and' so the
+    // resolver's pre-filler coordinator evidence sees "hospitalists & NPs"
+    // (Sol R24). Window matching is unaffected — 'and' is a filler there.
+    .replace(/&/g, ' and ')
+    // A recognized role-list comma IS a coordinator: rewrite EXACTLY that
+    // occurrence as 'and' so every coordination mechanism (walk, span mix,
+    // roleContext) sees it — "hospitalist, pa are both needed" escalates like
+    // "hospitalist and pa" (Sol R32/R33). All other location commas keep
+    // vanishing below.
+    .replace(new RegExp(ROLE_LIST_SRC, 'g'), (m: string) => m.replace(/,\s*/, ' and '))
+    .replace(/,\s*([a-z]{2})(?=\s|$)/g, ' ')
+    .replace(new RegExp(LOC_STATE_SRC, 'g'), ' ')
     .replace(/\d+\s*(?:weeks?|months?)/gi, '')
+    .replace(/\b(?:rate|bill|pay|patient|census|shift)[-\s]+caps?\b/g, ' ')
+    .replace(/\bcaps?\s+(?:of|on|at)\s+\d+\s+(?:patients?|pts)\b/g, ' ')
+    .replace(/\bcaps?\s+(?:of|on|at)\s+\d+(?=\s*$|\s*[,.;])/g, ' ')
+    .replace(/\bcaps?\s+(?:of|on)\s+(?:patients?|census)\b/g, ' ')
     .replace(/[^a-z0-9\s/]/g, ' ');
-  const tokens = cleaned.split(/\s+/).filter(t => t && !FILLER_WORDS.has(t));
+  // Keep each surviving token's ORIGINAL position so the resolver can tell
+  // truly-adjacent words from words that only became neighbors because a
+  // filler ('and', 'for', …) was elided between them (compound provider
+  // titles must be lexically adjacent — Sol R5).
+  const rawTokens = cleaned.split(/\s+/).filter(t => t);
+  const tokens: string[] = [];
+  const tokenOrigIdx: number[] = [];
+  rawTokens.forEach((t, i) => {
+    if (!FILLER_WORDS.has(t)) { tokens.push(t); tokenOrigIdx.push(i); }
+  });
 
-  // Multi-word specialty match (3-word then 2-word phrases)
-  for (let len = 3; len >= 2; len--) {
-    for (let i = 0; i <= tokens.length - len; i++) {
+  // Specialty windows, widest first (3 → 2 → 1 words). Each window must be
+  // FULLY consumed by a candidate (exact token-set equality + the alias
+  // UPGRADE rule) — subset matching would swallow city/state tokens ("crna
+  // dallas tx"). After a window matches, the resolver applies the whole-field
+  // upgrade ("children's hospital needs icu coverage" → pediatric critical
+  // care) and the whole-field modifier guard (an EXTRA_MODIFIERS/compatible-
+  // alternative token anywhere in the remaining text DISCARDS the match —
+  // "oncology - radiation therapy" must escalate, not quote medical oncology).
+  outer: for (let len = Math.min(3, tokens.length); len >= 1; len--) {
+    for (let i = 0; i + len <= tokens.length; i++) {
+      const win = resolveFreetextWindow(tokens, i, len, tokenOrigIdx, rawTokens);
+      if (!win) continue;
       const phrase = tokens.slice(i, i + len).join(' ');
-      const sm = fuzzyMatchSpecialty(phrase);
-      if (sm) {
-        result.specialty = sm;
-        if (sm.matchKind === 'substring') result.corrections.push({ field: 'specialty', from: phrase, to: sm.key });
-        tokens.splice(i, len);
-        break;
-      }
-    }
-    if (result.specialty) break;
-  }
-
-  // Single-word specialty match
-  if (!result.specialty) {
-    for (let i = 0; i < tokens.length; i++) {
-      const sm = fuzzyMatchSpecialty(tokens[i]);
-      if (sm) {
-        result.specialty = sm;
-        if (sm.matchKind === 'substring') result.corrections.push({ field: 'specialty', from: tokens[i], to: sm.key });
-        tokens.splice(i, 1);
-        break;
-      }
+      result.specialty = { key: win.key, distance: 0, matchKind: win.matchKind };
+      if (win.matchKind === 'substring') result.corrections.push({ field: 'specialty', from: phrase, to: win.key });
+      // Remove the window PLUS any whole-field tokens the upgrade consumed
+      // (descending so indices stay valid) — precise consumption is what keeps
+      // the later state/city passes working on exactly the unclaimed tokens.
+      const remove = [...win.extraConsumed, ...Array.from({ length: len }, (_, k) => i + k)]
+        .sort((a, b) => b - a);
+      for (const idx of remove) tokens.splice(idx, 1);
+      break outer;
     }
   }
 

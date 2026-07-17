@@ -7,7 +7,8 @@
 // call-only detection, confidence scoring, GSA lookup, and rate calculation
 // ============================================================
 
-import { SPECIALTIES, SPECIALTY_ALIASES } from './specialties';
+import { SPECIALTIES } from './specialties';
+import { resolveSpecialtyField } from './specialtyResolver';
 import { STATE_MULT, STATE_NAMES, METRO_CITIES } from './stateData';
 import { SHIFT_MULT, FACILITY_MULT, DURATION_MULT } from './multipliers';
 import { getCallRateEntry, GSA_STANDARD, GSA_OVERRIDES } from './callRates';
@@ -71,27 +72,13 @@ export function rawTextValuesOnly(rawText: string): string {
 }
 
 // === SPECIALTY MAPPING ===
-const _sortedAliases = Object.entries(SPECIALTY_ALIASES).sort((a, b) => b[0].length - a[0].length);
-const _shortAliases = new Set(['id', 'em', 'er', 'gi', 'ir', 'aa', 'np', 'pa', 'fm', 'im', 'rad', 'ent', 'uro', 'cap', 'pmr']);
-
+// Token-consumption resolver (specialtyResolver.ts) — replaced the substring
+// scan that ignored price-changing tokens ("Radiation Oncology" → medical
+// oncology, 'endo' ⊂ "endovascular" → endocrinology). Misroutes now escalate
+// (source 'default' + unresolvedRaw); routine decorated inputs keep quoting.
+// Design: docs/superpowers/specs/2026-07-13-specialty-resolver-design.md (v2).
 export function mapSpecialty(raw: string): SpecialtyFactor {
-  if (!raw) return { key: 'internal medicine', source: 'default' };
-  const lower = raw.toLowerCase().trim();
-  if (SPECIALTIES[lower]) return { key: lower, source: 'pdf' };
-  if (SPECIALTY_ALIASES[lower]) return { key: SPECIALTY_ALIASES[lower], source: 'pdf' };
-  for (const [alias, key] of _sortedAliases) {
-    if (_shortAliases.has(alias)) {
-      const re = new RegExp('\\b' + alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
-      if (re.test(lower)) return { key, source: 'inferred' };
-    } else {
-      if (lower.includes(alias)) return { key, source: 'inferred' };
-    }
-  }
-  const sortedSpecs = Object.keys(SPECIALTIES).sort((a, b) => b.length - a.length);
-  for (const key of sortedSpecs) {
-    if (lower.includes(key)) return { key, source: 'inferred' };
-  }
-  return { key: 'internal medicine', source: 'default' };
+  return resolveSpecialtyField(raw);
 }
 
 // === CONTEXT-AWARE SPECIALTY REFINEMENT ===
@@ -877,7 +864,14 @@ export function calculateCallRate(f: RateFactors): CalculatedCallRate {
 // === INIT FACTORS ===
 export function initFactors(parsed: ParsedAssignment): RateFactors {
   let specialty = mapSpecialty(parsed.specialty);
-  specialty = refineSpecialtyFromContext(specialty, parsed);
+  // Refine-hijack fix (red-team, 2026-07-13): the escalation sentinel is
+  // 'internal medicine' — the SAME key refineSpecialtyFromContext keys on — so
+  // an escalated unknown specialty whose text mentions ICU/hospitalist used to
+  // flip to a CONFIDENT wrong quote, escaping the manual hatch. A default-source
+  // factor must never be refined.
+  if (specialty.source !== 'default') {
+    specialty = refineSpecialtyFromContext(specialty, parsed);
+  }
   const spec = SPECIALTIES[specialty.key];
   const callOnly = detectCallOnly(parsed);
   const pdfIncludedHrs = detectIncludedHours(parsed);

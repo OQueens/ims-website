@@ -114,6 +114,10 @@ export type FactorSource = 'pdf' | 'inferred' | 'default' | 'manual' | 'typed';
 export interface SpecialtyFactor {
   key: string;
   source: FactorSource;
+  /** Set ONLY on an escalation (`source: 'default'` with non-empty input): the
+   *  original phrase the resolver could not price, so the manual-escalation UI
+   *  can name it (Zach §6, 2026-07-13). Absent on every resolved factor. */
+  unresolvedRaw?: string;
 }
 
 export interface StateFactor {
