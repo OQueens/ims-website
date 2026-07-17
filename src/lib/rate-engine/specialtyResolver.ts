@@ -348,6 +348,10 @@ const NPPA_CELLS: ReadonlyArray<{ cell: string; tokens: ReadonlySet<string> }> =
   { cell: 'np/pa (hospitalist)', tokens: new Set(['hospitalist']) },
   { cell: 'np/pa (neonatology)', tokens: new Set(['neonatology', 'nicu']) },
   { cell: 'np/pa (surgery)', tokens: new Set(['surgery', 'surgical']) },
+  // 'acute' = the spelled-out ACNP/AGACNP axis ("Acute Care Nurse
+  // Practitioner") — must land on the SAME specialty cell as the credential
+  // abbreviations, never the primary-care fallback (Sol R34).
+  { cell: 'np/pa (specialty)', tokens: new Set(['acute']) },
 ]
 
 /** Tokens that mean the np/pa PRIMARY CARE cell rather than a specialty cell. */
